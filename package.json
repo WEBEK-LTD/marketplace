@@ -19,7 +19,7 @@
     "supabase": "node scripts/toolchain/supabase-cli.mjs",
     "supabase:images": "node scripts/toolchain/supabase-images.mjs",
     "test": "turbo run test --concurrency=1",
-    "test:tooling": "turbo run build --filter=@repo/server-config && node --test scripts/toolchain/edge-manifest.test.mjs scripts/toolchain/supabase-tooling.test.mjs scripts/toolchain/env-tooling.test.mjs scripts/policy/policy.test.mjs scripts/security/security.test.mjs scripts/ci/ci.test.mjs",
+    "test:tooling": "turbo run build --filter=@repo/server-config && node --test scripts/toolchain/edge-manifest.test.mjs scripts/toolchain/tool1-guards.test.mjs scripts/toolchain/supabase-tooling.test.mjs scripts/toolchain/env-tooling.test.mjs scripts/policy/policy.test.mjs scripts/security/security.test.mjs scripts/ci/ci.test.mjs",
     "tool1": "node scripts/tool1.mjs web && node scripts/tool1.mjs admin",
     "tool3": "turbo run build --filter=@repo/db && node scripts/tool3.mjs",
     "tool4:negative-control": "pnpm --filter @repo/api run tool4:negative-control",

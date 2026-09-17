@@ -46,6 +46,7 @@ export function workspaceProblems(root = REPO_ROOT) {
   if (ws.scalars.engineStrict !== 'true') problems.push('engineStrict must be true');
   if (ws.scalars.savePrefix !== '') problems.push('savePrefix must be ""');
   for (const [name, allowed] of Object.entries(ws.allowBuilds)) if (allowed !== false) problems.push(`allowBuilds.${name} must be false`);
+  problems.push(...overrideProblems(ws.overrides, root));
   for (const path of workspaceManifests(root)) {
     const manifest = readJson(join(root, path));
     if (path !== 'package.json' && manifest.private !== true) problems.push(`${path} must be private`);
@@ -55,6 +56,33 @@ export function workspaceProblems(root = REPO_ROOT) {
         if (!EXACT.test(spec)) problems.push(`${path} ${section}.${name} must be an exact version (found ${spec})`);
       }
     }
+  }
+  return problems;
+}
+
+/**
+ * Security overrides (owner decision, Phase 1 Step 9): every pnpm override must pin an exact version and
+ * be documented in policy/dependency-overrides.json with its advisories and the upstream reason, and the
+ * register may not contain entries that are not applied. Overrides are temporary security fixes, not
+ * dependency upgrades.
+ */
+export function overrideProblems(overrides, root = REPO_ROOT) {
+  const problems = [];
+  const register = readJson(join(root, 'policy/dependency-overrides.json'));
+  const documented = new Map((register.overrides ?? []).map((entry) => [entry.package, entry]));
+  for (const [name, spec] of Object.entries(overrides)) {
+    if (!EXACT.test(spec)) problems.push(`overrides.${name} must be an exact version (found ${spec})`);
+    const entry = documented.get(name);
+    if (!entry) {
+      problems.push(`overrides.${name} is not documented in policy/dependency-overrides.json`);
+      continue;
+    }
+    if (entry.version !== spec) problems.push(`policy/dependency-overrides.json records ${name}@${entry.version}, pnpm-workspace.yaml pins ${spec}`);
+    if (!Array.isArray(entry.advisories) || entry.advisories.length === 0) problems.push(`policy/dependency-overrides.json ${name} must list the advisories it fixes`);
+    if (!entry.reason || !entry.upstream) problems.push(`policy/dependency-overrides.json ${name} must record the reason and the upstream status`);
+  }
+  for (const name of documented.keys()) {
+    if (!(name in overrides)) problems.push(`policy/dependency-overrides.json documents ${name}, which pnpm-workspace.yaml does not override`);
   }
   return problems;
 }

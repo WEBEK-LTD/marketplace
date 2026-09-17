@@ -1,4 +1,5 @@
-// TOOL-1: `netlify build --offline` for one app, under owner decisions D1-D6:
+// TOOL-1: `netlify build --offline --filter @repo/<app>` from the repository root, under owner decisions
+// D1-D6 (and the Phase 1 Step 9 correction: Netlify resolves paths against the git repository root):
 // pinned Deno first on PATH, fresh XDG/Deno directories, every external fetch blocked and recorded,
 // and failure if Netlify downloaded or cached its own Deno.
 import { spawn } from 'node:child_process';
@@ -9,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { DENO_TOOLCHAIN, ensureDeno, REPO_ROOT, ToolchainError } from './toolchain/deno.mjs';
 import { startDenyProxy } from './toolchain/deny-proxy.mjs';
 import { checkEntryExports, compareEdgeManifests } from './toolchain/edge-manifest.mjs';
+import { guardProblems, parseBuildContext } from './toolchain/tool1-guards.mjs';
 
 // Outbound attempts reviewed by the owner (decision E1). All are refused by the deny-all proxy;
 // none is an accepted dependency of TOOL-1. Anything else fails TOOL-1.
@@ -96,13 +98,18 @@ async function main() {
   if (resolved !== deno) fail(`deno on PATH resolves to ${resolved}`);
   if (versionLine !== DENO_TOOLCHAIN.platforms['linux-x64'].versionLine) fail(`deno on PATH reports ${versionLine}`);
 
-  const build = await capture(join(REPO_ROOT, 'node_modules/.bin/netlify'), ['build', '--offline', '--debug'], env, appDir);
+  // Run from the repository root with the app selected: Netlify resolves its paths against the repository
+  // root, so running inside the app folder writes the outputs to a doubled path (Phase 1 Step 9).
+  const build = await capture(join(REPO_ROOT, 'node_modules/.bin/netlify'), ['build', '--offline', '--debug', '--filter', `@repo/${app}`], env, REPO_ROOT);
   await proxy.close();
   const logPath = join(work, 'netlify-build.log');
   writeFileSync(logPath, build.output);
 
   const problems = [];
+  const buildContext = parseBuildContext(build.output);
+  const gitPresent = existsSync(join(REPO_ROOT, '.git'));
   if (build.code !== 0) problems.push(`netlify build exited with ${build.code}`);
+  problems.push(...guardProblems({ app, appDir, repoRoot: REPO_ROOT, context: buildContext, gitPresent }));
   if (/Downloading Deno CLI/.test(build.output)) problems.push('Netlify downloaded Deno');
   if (!/Using global installation of Deno CLI/.test(build.output)) problems.push('no evidence that the pinned global Deno was used');
   if (/Using cached Deno CLI/.test(build.output)) problems.push('Netlify used a cached Deno');
@@ -143,6 +150,10 @@ async function main() {
     denoBinary: deno,
     freshXdgConfigHome: xdgConfig,
     exitCode: build.code,
+    gitRepository: gitPresent,
+    repositoryRoot: buildContext.repositoryRoot ?? null,
+    packagePath: buildContext.packagePath ?? null,
+    publishDirs: buildContext.publishDirs,
     manifestCheck,
     configExtractionRetriesObserved: extractionFallbacks,
     blockedFetchAttempts: attempts.map((a) => ({ attempt: a, disposition: reviewOf(a) ?? 'UNREVIEWED' })),

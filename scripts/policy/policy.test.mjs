@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { allowlistProblems, exclusionFor, findCurrencyLiterals, scanRepository } from './currency-literals.mjs';
 import { installScriptProblems } from './install-scripts.mjs';
-import { changedFiles, snapshot, workspaceProblems } from './integrity.mjs';
-import { exceptionProblems, lockfilePackages, REPO_ROOT, workspaceSettings } from './lib.mjs';
+import { changedFiles, overrideProblems, snapshot, workspaceProblems } from './integrity.mjs';
+import { PolicyError, REPO_ROOT, exceptionProblems, lockfilePackages, workspaceSettings } from './lib.mjs';
 import { evaluateAges, exceptionRegisterProblems } from './package-age.mjs';
 import { dependabotProblems, playwrightProblems, repositoryProblems, workflowProblems } from './workflow-policy.mjs';
 
@@ -24,7 +24,8 @@ test('workspace settings are parsed strictly', () => {
   const ws = workspaceSettings(read('pnpm-workspace.yaml'));
   assert.equal(ws.scalars.minimumReleaseAge, '20160');
   assert.equal(ws.allowBuilds.esbuild, false);
-  assert.throws(() => workspaceSettings('overrides:\n  foo: 1.0.0\n'), /unsupported/);
+  assert.deepEqual(workspaceSettings('overrides:\n  foo: 1.0.0\n').overrides, { foo: '1.0.0' });
+  assert.throws(() => workspaceSettings('unknownSection:\n  foo: 1.0.0\n'), /unsupported/);
 });
 
 test('exception entries need every field and an unexpired date', () => {
@@ -78,7 +79,7 @@ function copyRepoSubset(files) {
 
 test('workspace integrity passes for the repository and catches drift', () => {
   assert.deepEqual(workspaceProblems(), []);
-  const root = copyRepoSubset(['package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml', '.nvmrc', 'apps/web/package.json', 'packages/ui/package.json']);
+  const root = copyRepoSubset(['package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml', '.nvmrc', 'policy/dependency-overrides.json', 'apps/web/package.json', 'packages/ui/package.json']);
   try {
     const manifest = JSON.parse(readFileSync(join(root, 'apps/web/package.json'), 'utf8'));
     manifest.dependencies.next = '^16.3.4';
@@ -186,3 +187,38 @@ test('dependabot and playwright policy: negative controls', () => {
   assert.match(playwrightProblems(pw.replace("trace: 'off'", "trace: 'on'")).join(), /traces/);
   assert.match(playwrightProblems(pw.replace("devices['Desktop Chrome'] } }]", "devices['Desktop Chrome'] } }, { name: 'firefox', use: { ...devices['Desktop Firefox'] } }]")).join(), /only project/);
 });
+
+// --- security overrides (Phase 1 Step 9) -------------------------------------------------------
+const WORKSPACE = readFileSync(new URL('../../pnpm-workspace.yaml', import.meta.url), 'utf8');
+
+test('the committed workspace file parses deterministically, overrides included', () => {
+  const first = workspaceSettings(WORKSPACE);
+  const second = workspaceSettings(WORKSPACE);
+  assert.deepEqual(first, second);
+  assert.deepEqual(first.overrides, { 'js-yaml': '4.3.2', sharp: '0.35.4', toml: '4.3.0' });
+  // Existing behaviour is unchanged by the new section.
+  assert.deepEqual(first.packages, ['apps/*', 'packages/*']);
+  assert.equal(first.scalars.minimumReleaseAge, '20160');
+  assert.equal(Object.values(first.allowBuilds).every((value) => value === false), true);
+});
+
+test('comments and quoting inside overrides are parsed, malformed lines are rejected', () => {
+  const base = 'overrides:\n  js-yaml: 4.3.2\n';
+  assert.deepEqual(workspaceSettings(`# a comment\n${base}  "@scope/pkg": "1.2.3" # why\n`).overrides, { 'js-yaml': '4.3.2', '@scope/pkg': '1.2.3' });
+  assert.throws(() => workspaceSettings(`${base}  broken line\n`), PolicyError);
+  assert.throws(() => workspaceSettings(`${base}  js-yaml: 4.3.3\n`), /duplicate override/);
+});
+
+test('overrides must pin exact versions', () => {
+  for (const spec of ['^4.3.2', '~4.3.2', '>=4.3.2', '4.3.x', 'latest', '4.3']) {
+    assert.match(overrideProblems({ 'js-yaml': spec }).join(), /must be an exact version/);
+  }
+  assert.deepEqual(overrideProblems({ 'js-yaml': '4.3.2', sharp: '0.35.4', toml: '4.3.0' }), []);
+});
+
+test('every override must be documented, and the register may not drift', () => {
+  assert.match(overrideProblems({ 'js-yaml': '4.3.2', sharp: '0.35.4', toml: '4.3.0', lodash: '4.17.21' }).join(), /lodash is not documented/);
+  assert.match(overrideProblems({ 'js-yaml': '4.3.3', sharp: '0.35.4', toml: '4.3.0' }).join(), /records js-yaml@4.3.2/);
+  assert.match(overrideProblems({ 'js-yaml': '4.3.2', sharp: '0.35.4' }).join(), /documents toml, which pnpm-workspace.yaml does not override/);
+});
+

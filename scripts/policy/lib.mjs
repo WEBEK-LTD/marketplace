@@ -60,11 +60,11 @@ export function lockfilePackages(text) {
 
 /** Minimal reader for the flat pnpm-workspace.yaml used by this repository. */
 export function workspaceSettings(text) {
-  const settings = { packages: [], allowBuilds: {}, minimumReleaseAgeExclude: [], scalars: {} };
+  const settings = { packages: [], allowBuilds: {}, minimumReleaseAgeExclude: [], overrides: {}, scalars: {} };
   let section;
   for (const raw of text.split('\n')) {
     const line = raw.replace(/\s+#.*$/, '');
-    if (line.trim() === '') continue;
+    if (line.trim() === '' || /^\s*#/.test(line)) continue;
     const top = /^([A-Za-z][\w-]*):\s*(.*)$/.exec(line);
     if (top) {
       section = top[1];
@@ -84,6 +84,13 @@ export function workspaceSettings(text) {
       const item = /^\s+"?([^":]+)"?:\s*(true|false)$/.exec(line);
       if (!item) throw new PolicyError(`unexpected line in allowBuilds: ${line}`);
       settings.allowBuilds[item[1]] = item[2] === 'true';
+    } else if (section === 'overrides') {
+      // Security overrides only (Phase 1 Step 9): `<package>: <exact version>`; integrity.mjs enforces
+      // that the version is exact and that policy/dependency-overrides.json documents it.
+      const item = /^\s+"?([^"]+?)"?:\s*"?([^"\s]+)"?$/.exec(line);
+      if (!item) throw new PolicyError(`unexpected line in overrides: ${line}`);
+      if (item[1] in settings.overrides) throw new PolicyError(`duplicate override: ${item[1]}`);
+      settings.overrides[item[1]] = item[2];
     } else {
       throw new PolicyError(`unsupported pnpm-workspace.yaml structure near: ${line}`);
     }

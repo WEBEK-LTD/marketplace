@@ -1,0 +1,52 @@
+{
+  "purpose": "Temporary pnpm overrides that fix osv-scanner findings whose dependency paths cannot be fixed by an in-range upgrade (Phase 1 Step 9). Each entry pins an exact version, names the advisories it fixes and records why the upstream chain cannot fix it yet. scripts/policy/integrity.mjs requires that this register and pnpm-workspace.yaml agree. These are security fixes, not dependency upgrades: when upstream ships a fix, remove the override and take the upstream version.",
+  "rules": [
+    "Exact versions only; ranges are rejected.",
+    "Every override must satisfy the 14-day minimumReleaseAge policy like any other package.",
+    "Every override must be re-verified by TOOL-1 (both apps) and the full test suite before it is committed.",
+    "reviewedOn is the date the override was validated and implemented; nextReviewDate is when it must be re-checked. Remove the override once the upstream chain carries a fixed version."
+  ],
+  "overrides": [
+    {
+      "package": "js-yaml",
+      "version": "4.3.2",
+      "advisories": [
+        "GHSA-2883-xcg3-v3hh"
+      ],
+      "path": "orval@8.27.0 -> js-yaml (contracts code generation, development tooling)",
+      "reason": "orval 8.27.0 pins js-yaml exactly 4.3.1, so no in-range upgrade can reach the patched 4.3.2.",
+      "upstream": "orval 8.31.0+ pins js-yaml 4.3.2 but was published 2026-09-10 and is not yet 14 days old; take it once it is eligible.",
+      "releasedOn": "2026-08-26",
+      "reviewedOn": "2026-09-17",
+      "nextReviewDate": "2026-10-15"
+    },
+    {
+      "package": "sharp",
+      "version": "0.35.4",
+      "advisories": [
+        "GHSA-f88m-g3jw-g9cj",
+        "GHSA-rgj7-g3m4-5g8c"
+      ],
+      "path": "netlify-cli@27.4.2 -> @netlify/dev -> @netlify/images@2.0.1 -> ipx@3.1.1 -> sharp (TOOL-1 tooling)",
+      "reason": "ipx 3.1.1 declares sharp ^0.34.3, so the patched 0.35.4 is outside the declared range. The Netlify image path does not execute during a netlify build (only /_ipx/* redirect rules are emitted); Next.js already resolves sharp 0.35.4.",
+      "upstream": "No stable fix exists: every @netlify/dev through 5.1.2 pins @netlify/images 2.0.1 -> ipx ^3.1.1, and ipx 4.x (sharp ^0.35.x) is alpha/beta only.",
+      "releasedOn": "2026-08-26",
+      "reviewedOn": "2026-09-17",
+      "nextReviewDate": "2026-10-15"
+    },
+    {
+      "package": "toml",
+      "version": "4.3.0",
+      "advisories": [
+        "GHSA-v5mp-jgw5-2x6j",
+        "GHSA-82x6-q7mm-w9cf"
+      ],
+      "path": "netlify-cli@27.4.2 and @netlify/zip-it-and-ship-it@15.4.2 -> toml (TOOL-1 tooling)",
+      "reason": "Both declare toml ^3.0.0, so the patched 4.2.0+ is outside the declared range.",
+      "upstream": "Upgrading netlify-cli is not sufficient: 27.5.1 still carries toml 3.0.0 via @netlify/dev@5.0.5 -> @netlify/functions-dev@2.0.5 -> zip-it-and-ship-it@15.4.2, and newer CLI releases are not yet 14 days old. Re-check when @netlify/dev 5.1.x becomes eligible.",
+      "releasedOn": "2026-07-13",
+      "reviewedOn": "2026-09-17",
+      "nextReviewDate": "2026-10-15"
+    }
+  ]
+}

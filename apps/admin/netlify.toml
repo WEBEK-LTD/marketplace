@@ -1,7 +1,10 @@
 # Build configuration only; no Netlify site is created in Phase 1.
+# Repository-root-relative build model (Phase 1 Step 9): Netlify resolves paths against the git
+# repository root, so `publish` is repo-root-relative and the command is package-scoped. TOOL-1 runs
+# `netlify build --offline --filter @repo/admin` from the repository root and verifies both.
 [build]
-  command = "pnpm run build"
-  publish = ".next"
+  command = "pnpm --filter @repo/admin run build"
+  publish = "apps/admin/.next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

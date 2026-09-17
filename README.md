@@ -170,6 +170,8 @@ Two separate policies govern dependency updates:
 
 Dependabot alerts may be enabled as a repository setting but are not relied on for `pnpm-lock.yaml`; osv-scanner is the authoritative Phase 1 dependency vulnerability scan.
 
+**Security overrides.** When an osv-scanner finding cannot be fixed by an in-range upgrade, the patched version is pinned with a pnpm override in `pnpm-workspace.yaml` and documented in `policy/dependency-overrides.json` (advisories, dependency path, reason, upstream status, review date). `scripts/policy/integrity.mjs` requires every override to be an exact version and to match the register in both directions. Overrides are temporary security fixes, not dependency upgrades, and they obey the same 14-day rule as any other package. Current entries: `js-yaml 4.3.2` (GHSA-2883-xcg3-v3hh; orval pins 4.3.1 exactly), `sharp 0.35.4` (GHSA-f88m-g3jw-g9cj, GHSA-rgj7-g3m4-5g8c; `ipx` declares `^0.34.3` and no stable upstream fix exists) and `toml 4.3.0` (GHSA-v5mp-jgw5-2x6j, GHSA-82x6-q7mm-w9cf; netlify-cli declares `^3.0.0`, and upgrading the CLI does not remove the vulnerable copy).
+
 ### GitHub repository settings (configured by the owner)
 
 These are not enabled by anything in this repository:
@@ -189,7 +191,13 @@ Gate B remains open until the owner provides real results: the GitHub repository
 
 ## TOOL-1 and the pinned Deno toolchain
 
-`pnpm run tool1` runs `netlify build --offline` for both apps. Netlify's edge bundler needs Deno, which is governed as a pinned external toolchain (not a pnpm package):
+`pnpm run tool1` runs `netlify build --offline --filter @repo/<app>` **from the repository root** for both apps.
+
+Netlify resolves its paths against the git repository root, so running the build inside an app folder writes the runtime outputs to a doubled path (`apps/web/apps/web/.netlify/...`) and TOOL-1 fails with missing outputs. This only happens in a real checkout, which is why a sandbox without `.git` passed while CI failed. Each app's `netlify.toml` therefore uses a repository-root-relative `publish` (`apps/<app>/.next`) and a package-scoped command (`pnpm --filter @repo/<app> run build`), so the app's own build runs and never the root workspace build.
+
+Four guards (`scripts/toolchain/tool1-guards.mjs`, tested by `scripts/toolchain/tool1-guards.test.mjs`) stop TOOL-1 from passing for environment-specific reasons: the resolved `publish`, `packagePath` and `buildDir` must match this app and the repository root; no doubled `.netlify` output path may exist (the repository-relative copy inside the packaged function bundle is not flagged); with `.git` present Netlify's `repositoryRoot` must equal the repository root (recorded in the result either way); and the log must show the package-scoped build command and no root `turbo run build`.
+
+Netlify's edge bundler needs Deno, which is governed as a pinned external toolchain (not a pnpm package):
 
 - `toolchain/deno.json` pins Deno 2.9.6 (released 2026-08-27; the bundler requires `>=2.4.2 <3`), the release archive SHA-256 and the binary SHA-256.
 - `pnpm run toolchain:deno` downloads the archive from the official GitHub release into `~/.cache/marketplace-toolchain` (or `MARKETPLACE_TOOLCHAIN_DIR`, which must be outside the repository), verifies both hashes and the exact `--version` line, and fails closed on any mismatch. It never replaces an existing different installation. Linux x64 only; requires `unzip`.

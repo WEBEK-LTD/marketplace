@@ -13,3 +13,11 @@ allowBuilds:
 engineStrict: true
 minimumReleaseAge: 20160
 savePrefix: ""
+
+# Temporary security overrides (Phase 1 Step 9). Exact versions only; documented in
+# policy/dependency-overrides.json with their advisories and upstream status, and enforced by
+# scripts/policy/integrity.mjs. Not dependency upgrades: remove each once upstream ships the fix.
+overrides:
+  js-yaml: 4.3.2
+  sharp: 0.35.4
+  toml: 4.3.0
