@@ -1,0 +1,19 @@
+{
+  "purpose": "CI system expectations (owner decisions E6, E9, E10, E23).",
+  "runner": "ubuntu-24.04",
+  "runnerNote": "GitHub-hosted runner images are updated by GitHub and are not digest-pinned; tool versions below are verified in every run instead.",
+  "node": "24.21.0",
+  "pnpm": "12.4.2",
+  "redis": {
+    "source": "Ubuntu 24.04 apt package redis-server",
+    "expectedVersion": "7.0.15"
+  },
+  "playwright": {
+    "package": "@playwright/test 1.62.1",
+    "browser": "chromium",
+    "browserTitle": "Chrome for Testing",
+    "browserVersion": "151.0.7922.34",
+    "revision": "1234",
+    "install": "pnpm --filter @repo/e2e exec playwright install --with-deps chromium"
+  }
+}

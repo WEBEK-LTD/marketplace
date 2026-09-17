@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@import "@repo/config/tokens.css";
+@source "../../../../packages/ui/src";
+
+/* Only the design-token palette, fonts and scales exist; Tailwind defaults are cleared. */
+@theme inline {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --color-neutral-0: var(--token-color-neutral-0);
+  --color-neutral-50: var(--token-color-neutral-50);
+  --color-neutral-100: var(--token-color-neutral-100);
+  --color-neutral-200: var(--token-color-neutral-200);
+  --color-neutral-300: var(--token-color-neutral-300);
+  --color-neutral-400: var(--token-color-neutral-400);
+  --color-neutral-500: var(--token-color-neutral-500);
+  --color-neutral-600: var(--token-color-neutral-600);
+  --color-neutral-700: var(--token-color-neutral-700);
+  --color-neutral-800: var(--token-color-neutral-800);
+  --color-neutral-900: var(--token-color-neutral-900);
+  --color-neutral-950: var(--token-color-neutral-950);
+  --color-neutral-1000: var(--token-color-neutral-1000);
+  --color-brand-primary: var(--token-color-brand-primary);
+  --color-brand-secondary: var(--token-color-brand-secondary);
+  --font-sans: var(--token-font-sans);
+  --text-xs: var(--token-text-xs);
+  --text-sm: var(--token-text-sm);
+  --text-base: var(--token-text-base);
+  --text-lg: var(--token-text-lg);
+  --text-xl: var(--token-text-xl);
+  --text-2xl: var(--token-text-2xl);
+  --text-3xl: var(--token-text-3xl);
+  --text-4xl: var(--token-text-4xl);
+  --radius-none: var(--token-radius-none);
+  --radius-sm: var(--token-radius-sm);
+  --radius-md: var(--token-radius-md);
+  --radius-lg: var(--token-radius-lg);
+  --radius-full: var(--token-radius-full);
+  --spacing: var(--token-spacing-1);
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-neutral-0);
+  color: var(--color-neutral-900);
+}

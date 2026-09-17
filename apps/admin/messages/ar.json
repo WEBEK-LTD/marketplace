@@ -1,0 +1,9 @@
+{
+  "Site": { "name": "السوق", "section": "الإدارة" },
+  "Accessibility": { "skipToContent": "تخطَّ إلى المحتوى" },
+  "Home": { "title": "الإدارة" },
+  "Footer": { "copyright": "© {year} {name}" },
+  "NotFound": { "title": "الصفحة غير موجودة", "description": "الصفحة التي تبحث عنها غير موجودة." },
+  "Error": { "title": "حدث خطأ ما", "retry": "حاول مرة أخرى" },
+  "Loading": { "label": "جارٍ التحميل" }
+}

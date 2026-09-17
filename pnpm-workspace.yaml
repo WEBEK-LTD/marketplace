@@ -1,0 +1,15 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  "@parcel/watcher": false
+  "@swc/core": false
+  esbuild: false
+  msgpackr-extract: false
+  netlify-cli: false
+  sharp: false
+  unix-dgram: false
+engineStrict: true
+minimumReleaseAge: 20160
+savePrefix: ""

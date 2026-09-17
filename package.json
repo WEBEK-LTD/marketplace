@@ -1,0 +1,43 @@
+{
+  "name": "@repo/root",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "check:client-env": "node scripts/check-client-env.mjs",
+    "check:env": "turbo run build --filter=@repo/server-config && node scripts/check-env.mjs",
+    "check:generated": "pnpm --filter @repo/contracts run check-generated",
+    "check:package-age": "node scripts/policy/package-age.mjs",
+    "check:policy": "node scripts/policy/integrity.mjs workspace && node scripts/policy/workflow-policy.mjs && node scripts/policy/install-scripts.mjs && node scripts/policy/currency-literals.mjs",
+    "db:supplemental": "turbo run build --filter=@repo/db && node scripts/db-supplemental.mjs",
+    "depcruise": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "lint": "eslint .",
+    "supabase": "node scripts/toolchain/supabase-cli.mjs",
+    "supabase:images": "node scripts/toolchain/supabase-images.mjs",
+    "test": "turbo run test --concurrency=1",
+    "test:tooling": "turbo run build --filter=@repo/server-config && node --test scripts/toolchain/edge-manifest.test.mjs scripts/toolchain/supabase-tooling.test.mjs scripts/toolchain/env-tooling.test.mjs scripts/policy/policy.test.mjs scripts/security/security.test.mjs scripts/ci/ci.test.mjs",
+    "tool1": "node scripts/tool1.mjs web && node scripts/tool1.mjs admin",
+    "tool3": "turbo run build --filter=@repo/db && node scripts/tool3.mjs",
+    "tool4:negative-control": "pnpm --filter @repo/api run tool4:negative-control",
+    "toolchain:deno": "node scripts/toolchain/deno.mjs",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "16.3.4",
+    "@types/node": "24.13.3",
+    "dependency-cruiser": "18.2.0",
+    "eslint": "10.9.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "fast-check": "4.9.0",
+    "netlify-cli": "27.4.2",
+    "supabase": "2.116.0",
+    "turbo": "2.10.12",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "4.1.11"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "Site": { "name": "السوق" },
+  "Accessibility": { "skipToContent": "تخطَّ إلى المحتوى" },
+  "Header": { "languageLink": "English", "languageLinkLabel": "التبديل إلى الإنجليزية" },
+  "Footer": { "copyright": "© {year} {name}" },
+  "NotFound": { "title": "الصفحة غير موجودة", "description": "الصفحة التي تبحث عنها غير موجودة." },
+  "Error": { "title": "حدث خطأ ما", "retry": "حاول مرة أخرى" },
+  "Loading": { "label": "جارٍ التحميل" }
+}

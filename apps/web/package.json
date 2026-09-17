@@ -1,0 +1,37 @@
+{
+  "name": "@repo/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "node ../../scripts/preflight-next-env.mjs web && next start --port 3000",
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "tool1": "netlify build --offline"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@repo/config": "workspace:*",
+    "@repo/contracts": "workspace:*",
+    "@repo/server-config": "workspace:*",
+    "@repo/shared-types": "workspace:*",
+    "@repo/telemetry": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "lucide-react": "1.39.0",
+    "next": "16.3.4",
+    "next-intl": "4.14.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@netlify/plugin-nextjs": "5.15.13",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "postcss": "8.5.26",
+    "tailwindcss": "4.3.3"
+  }
+}

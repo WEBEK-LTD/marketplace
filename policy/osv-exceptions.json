@@ -1,0 +1,5 @@
+{
+  "purpose": "Reviewed exceptions for osv-scanner findings (owner decision E17). Default: none; any other finding fails the scan.",
+  "rules": "Each entry needs id (OSV/GHSA/CVE id as reported), package, version, ecosystem (npm), justification, approvedBy, approvedOn (YYYY-MM-DD) and expires (YYYY-MM-DD, not in the past). An entry matches only the exact id, package and version.",
+  "exceptions": []
+}

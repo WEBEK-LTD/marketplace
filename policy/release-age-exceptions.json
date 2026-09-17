@@ -1,0 +1,5 @@
+{
+  "purpose": "Temporary, owner-approved exceptions to the 14-day release-age rule for urgent security fixes (owner decision E18). Default: none.",
+  "rules": "Each entry needs package, version, advisory, reason, approvedBy, approvedOn (YYYY-MM-DD) and expires (YYYY-MM-DD, not in the past). The same package@version must be listed in pnpm-workspace.yaml minimumReleaseAgeExclude, and nothing else may be listed there. Remove the entry once the version is older than 14 days or the review date passes.",
+  "exceptions": []
+}

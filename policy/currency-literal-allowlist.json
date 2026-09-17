@@ -1,0 +1,19 @@
+{
+  "purpose": "Reviewed exceptions for the currency-literal check (owner decision E3). Every entry needs a rationale and is reviewed like code.",
+  "rules": "Entry forms: {\"path\": <repository-relative file>, \"reason\": ...} excludes one whole file; {\"path\": ..., \"token\": <code>, \"reason\": ...} allows one code in one file. Paths are exact; no globs.",
+  "entries": [
+    {
+      "path": "policy/iso4217-currencies.json",
+      "reason": "The check's own reference list; it necessarily contains every code."
+    },
+    {
+      "path": "policy/currency-literal-allowlist.json",
+      "reason": "The allowlist itself names the allowed codes."
+    },
+    {
+      "path": "policy/osv-exceptions.json",
+      "token": "CVE",
+      "reason": "Vulnerability identifiers (CVE-...) are not currency literals; the Cape Verde escudo code only collides with the prefix."
+    }
+  ]
+}

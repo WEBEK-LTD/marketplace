@@ -1,0 +1,13 @@
+{
+  "purpose": "Container images of the local Supabase stack used by TOOL-3, B10-local and TOOL-7 pgTAP (owner decisions S13 b+c and E7). Digests are discovered only by the supabase-images-record workflow, reviewed and approved by the owner, and then committed here. Nothing is trusted automatically.",
+  "cliVersion": "2.116.0",
+  "status": "pending-owner-approval",
+  "approvedBy": null,
+  "approvedOn": null,
+  "requiredServices": ["supabase/postgres", "supabase/supavisor"],
+  "excludedServices": [],
+  "exclusionEvidence": null,
+  "poolerUserFormat": null,
+  "poolerUserFormatEvidence": null,
+  "images": []
+}

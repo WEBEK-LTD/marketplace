@@ -1,0 +1,22 @@
+# Dependabot (owner decision E19): GitHub Actions only, weekly, grouped, 14-day cooldown, no auto-merge.
+# Actions stay pinned to full commit SHAs; Dependabot pull requests update the SHA and its version comment.
+#
+# Two separate policies:
+# - GitHub Actions: Dependabot version updates wait for a 14-day cooldown (`cooldown.default-days`).
+# - pnpm dependencies: not managed by Dependabot, because GitHub documents Dependabot pnpm support for
+#   v7-v10 only and this repository uses pnpm 12.4.2. They are updated manually and remain governed by the
+#   separate 14-day pnpm `minimumReleaseAge` policy (pnpm-workspace.yaml). osv-scanner is the authoritative
+#   dependency vulnerability scan.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5

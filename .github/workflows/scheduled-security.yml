@@ -1,0 +1,67 @@
+# Weekly security and dependency scanning of main (owner decision E24). Scanning only; no deployment.
+name: Scheduled security
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: scheduled-security
+  cancel-in-progress: false
+
+env:
+  FORCE_COLOR: "0"
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  security:
+    name: Weekly gitleaks, osv-scanner and package age
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Secret scanning (gitleaks 8.30.1, redacted)
+        run: node scripts/security/gitleaks.mjs --require-git --summary "$RUNNER_TEMP/artifacts/gitleaks-summary.json"
+      - name: Dependency vulnerability scanning (osv-scanner 2.6.0)
+        if: always()
+        run: node scripts/security/osv.mjs --summary "$RUNNER_TEMP/artifacts/osv-summary.json"
+      - name: 14-day package-age policy (pnpm-managed packages)
+        if: always()
+        run: node scripts/policy/package-age.mjs --report "$RUNNER_TEMP/artifacts/package-age.json"
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job scheduled-security --output "$RUNNER_TEMP/artifacts/tool-versions-scheduled-security.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: scheduled-security
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: error

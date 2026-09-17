@@ -1,0 +1,482 @@
+# Phase 1 CI (owner decisions E1-E29, Phase 1 Step 9). No secrets, no environments, no deployments.
+# Stages of the v5.2 pipeline that need Phase 2/3 outputs are deliberately absent (see README, "CI").
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FORCE_COLOR: "0"
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  policy:
+    name: Policy (workspace, workflows, install scripts, package age, env, currency literals)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Workspace integrity
+        run: node scripts/policy/integrity.mjs workspace
+      - name: Workflow policy
+        run: node scripts/policy/workflow-policy.mjs
+      - name: Install-script policy
+        run: node scripts/policy/install-scripts.mjs
+      - name: 14-day package-age policy (pnpm-managed packages)
+        run: node scripts/policy/package-age.mjs --report "$RUNNER_TEMP/artifacts/package-age.json"
+      - name: Environment configuration checks
+        run: pnpm run check:env
+      - name: Currency-literal check
+        run: node scripts/policy/currency-literals.mjs
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job policy --output "$RUNNER_TEMP/artifacts/tool-versions-policy.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: policy
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+
+  security:
+    name: Security (gitleaks history and tree, osv-scanner)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Secret scanning (gitleaks 8.30.1, redacted)
+        run: node scripts/security/gitleaks.mjs --require-git --summary "$RUNNER_TEMP/artifacts/gitleaks-summary.json"
+      - name: Dependency vulnerability scanning (osv-scanner 2.6.0)
+        if: always()
+        run: node scripts/security/osv.mjs --summary "$RUNNER_TEMP/artifacts/osv-summary.json"
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job security --output "$RUNNER_TEMP/artifacts/tool-versions-security.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: security
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: error
+
+  lint-typecheck:
+    name: Lint and typecheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Lint (ESLint 10.9.1)
+        run: pnpm run lint
+      - name: Typecheck (strict)
+        run: pnpm run typecheck
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job lint-typecheck --output "$RUNNER_TEMP/artifacts/tool-versions-lint-typecheck.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lint-typecheck
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+
+  build-test:
+    name: Build, boundaries, tests and tooling (TOOL-2, TOOL-4, TOOL-5, TOOL-6)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Install redis-server from Ubuntu 24.04 (tests start their own servers)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends redis-server
+          sudo systemctl stop redis-server || true
+          sudo systemctl disable redis-server || true
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Verify redis-server version
+        run: node scripts/ci/checks.mjs redis-version
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Build all apps and packages
+        run: pnpm exec turbo run build --force
+      - name: Dependency boundaries (TOOL-6)
+        run: pnpm run depcruise
+      - name: Generated OpenAPI document and client are current (TOOL-2)
+        run: pnpm run check:generated
+      - name: Client-bundle environment leakage check
+        run: pnpm run check:client-env
+      - name: Tests (unit, Supertest API, Redis-down, TOOL-5)
+        run: pnpm run test
+      - name: Tooling tests
+        run: pnpm run test:tooling
+      - name: TOOL-4 negative control
+        run: pnpm run tool4:negative-control
+      - name: Verify dependency-defining files are still unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Verify no tracked file changed
+        run: |
+          git status --porcelain --untracked-files=no > "$RUNNER_TEMP/changed.txt"
+          if [ -s "$RUNNER_TEMP/changed.txt" ]; then cat "$RUNNER_TEMP/changed.txt"; exit 1; fi
+      - name: Save pnpm store (main branch only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job build-test --output "$RUNNER_TEMP/artifacts/tool-versions-build-test.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-test
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+
+  tool1:
+    name: TOOL-1 (${{ matrix.app }} on the Netlify runtime build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [web, admin]
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Build the app and its workspace dependencies
+        run: pnpm exec turbo run build --filter="@repo/${{ matrix.app }}..."
+      - name: TOOL-1 (pinned Deno 2.9.6, deny-all proxy)
+        run: node scripts/tool1.mjs "${{ matrix.app }}" > "$RUNNER_TEMP/tool1-raw.json"
+      - name: Sanitised TOOL-1 result
+        if: always()
+        run: |
+          if [ -s "$RUNNER_TEMP/tool1-raw.json" ]; then
+            node scripts/ci/checks.mjs tool1-summary --input "$RUNNER_TEMP/tool1-raw.json" --output "$RUNNER_TEMP/artifacts/tool1-${{ matrix.app }}.json"
+          fi
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job tool1-${{ matrix.app }} --output "$RUNNER_TEMP/artifacts/tool-versions-tool1-${{ matrix.app }}.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tool1-${{ matrix.app }}
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: error
+
+  supabase-local:
+    name: Local Supabase stack (TOOL-3, B10-local, TOOL-7 pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Build the database package (TOOL-3 harness)
+        run: pnpm exec turbo run build --filter=@repo/db
+      - name: Start the local stack with approved images (fails until the owner approves the digest lock)
+        id: start
+        run: node scripts/ci/supabase-local.mjs start
+      - name: TOOL-3 through the local transaction-mode pooler
+        if: always() && steps.start.outcome == 'success'
+        run: node scripts/ci/supabase-local.mjs tool3 --result "$RUNNER_TEMP/artifacts/tool3.json"
+      - name: B10-local (temporary migration, removed afterwards)
+        if: always() && steps.start.outcome == 'success'
+        run: node scripts/ci/supabase-local.mjs b10 --result "$RUNNER_TEMP/artifacts/b10-local.json"
+      - name: TOOL-7 pgTAP
+        if: always() && steps.start.outcome == 'success'
+        run: node scripts/ci/supabase-local.mjs pgtap --result "$RUNNER_TEMP/artifacts/tool7-pgtap.json"
+      - name: Stop the local stack
+        if: always()
+        run: node scripts/ci/supabase-local.mjs stop
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job supabase-local --output "$RUNNER_TEMP/artifacts/tool-versions-supabase-local.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: supabase-local
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+
+  e2e:
+    name: TOOL-7 Playwright smoke (Chromium only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Build web and admin
+        run: pnpm exec turbo run build --filter=@repo/web --filter=@repo/admin
+      - name: Verify the pinned Chromium build
+        run: node scripts/ci/checks.mjs playwright-browser
+      - name: Install Chromium for Playwright 1.62.1
+        run: pnpm --filter @repo/e2e exec playwright install --with-deps chromium
+      - name: Verify the installed Chromium build
+        run: node scripts/ci/checks.mjs playwright-browser --installed
+      - name: Playwright smoke tests
+        run: pnpm --filter @repo/e2e run test:e2e
+      - name: Sanitised Playwright summary
+        if: always()
+        run: |
+          if [ -s packages/e2e/test-results/report.json ]; then
+            node scripts/ci/checks.mjs e2e-summary --report packages/e2e/test-results/report.json --output "$RUNNER_TEMP/artifacts/tool7-playwright.json"
+          fi
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job e2e --output "$RUNNER_TEMP/artifacts/tool-versions-e2e.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: warn

@@ -1,0 +1,20 @@
+{
+  "tool": "deno",
+  "purpose": "Runtime required by @netlify/edge-bundler for TOOL-1 (owner decisions D1-D6, Phase 1 Step 5). Not a pnpm dependency; never committed.",
+  "version": "2.9.6",
+  "requiredRange": ">=2.4.2 <3.0.0",
+  "rangeSource": "@netlify/edge-bundler 16.0.4 DENO_VERSION_RANGE ^2.4.2",
+  "releaseTag": "v2.9.6",
+  "releasePublishedAt": "2026-08-27T17:29:30Z",
+  "adoptedAt": "2026-09-17",
+  "ageAtAdoptionDays": 20.3,
+  "downloadBase": "https://github.com/denoland/deno/releases/download/v2.9.6/",
+  "platforms": {
+    "linux-x64": {
+      "archive": "deno-x86_64-unknown-linux-gnu.zip",
+      "archiveSha256": "394f07f4da2bebe6ce6f1e7ce0fa16429b29b08c35e3fac3fe25972676dff4b2",
+      "binarySha256": "bceb5b6a6239b0b010418406d8c77a508f67cf4337d94288f1c19fe71304aab0",
+      "versionLine": "deno 2.9.6 (stable, release, x86_64-unknown-linux-gnu)"
+    }
+  }
+}

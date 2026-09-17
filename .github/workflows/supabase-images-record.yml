@@ -1,0 +1,79 @@
+# Discovery of Supabase image digests, service exclusions and the pooler user format (owner decisions E7, E8).
+# Manual only. It produces a proposal artifact for the owner to review; it never changes the repository.
+name: Supabase images (discovery for owner review)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: supabase-images-record
+  cancel-in-progress: false
+
+env:
+  FORCE_COLOR: "0"
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  record:
+    name: Discover and propose (not TOOL-3, not an approved lock)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifacts" "$RUNNER_TEMP/toolchain"
+          echo "MARKETPLACE_TOOLCHAIN_DIR=$RUNNER_TEMP/toolchain" >> "$GITHUB_ENV"
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Record dependency-defining files
+        run: node scripts/policy/integrity.mjs snapshot "$RUNNER_TEMP/integrity.json"
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Restore pnpm store (written only by main-branch runs)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Verify dependency-defining files are unchanged
+        run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
+      - name: Build the database package (TOOL-3 harness)
+        run: pnpm exec turbo run build --filter=@repo/db
+      - name: Discover images, exclusions and pooler user format
+        run: node scripts/ci/supabase-local.mjs record --output "$RUNNER_TEMP/artifacts/supabase-images-proposal.json"
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job supabase-images-record --output "$RUNNER_TEMP/artifacts/tool-versions-supabase-images-record.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: supabase-images-proposal
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: error
