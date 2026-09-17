@@ -188,20 +188,49 @@ async function runB10() {
   return result;
 }
 
-/** TAP summary without database content: plan and ok/not ok lines only. */
+/** Assertions planned by supabase/tests/tool7_tooling.test.sql; a tooling test keeps the two in sync. */
+export const TOOL7_PLANNED_TESTS = 5;
+
+/**
+ * TAP summary without database content. `supabase test db` runs pg_prove without --verbose, so the run
+ * reports itself through prove's summary line (`Files=N, Tests=N, ...`) and `Result:` rather than through
+ * per-assertion `ok N` lines; those appear only in verbose output and are still counted as a fallback.
+ */
 export function tapSummary(output) {
   const lines = output.split('\n').map((l) => l.trim());
+  const summary = lines.map((l) => /^Files=(\d+), Tests=(\d+)\b/.exec(l)).find(Boolean);
   return {
     ok: lines.filter((l) => /^ok \d+/.test(l)).length,
     notOk: lines.filter((l) => /^not ok \d+/.test(l)).length,
+    files: summary ? Number(summary[1]) : null,
+    tests: summary ? Number(summary[2]) : null,
     result: lines.find((l) => /^Result: /.test(l)) ?? null,
+  };
+}
+
+/**
+ * TOOL-7's verdict (owner decision E6): pgTAP must really have executed the committed assertions. An empty
+ * or partly executed suite is not evidence, so `Result: NOTESTS`, zero files and fewer than the planned
+ * assertions all fail. The executed count comes from prove's summary, falling back to verbose ok lines.
+ */
+export function pgtapVerdict({ exitCode, tap }) {
+  const executed = tap.tests ?? (tap.ok > 0 ? tap.ok : null);
+  return {
+    executedTests: executed,
+    passed:
+      exitCode === 0 &&
+      tap.result === 'Result: PASS' &&
+      tap.notOk === 0 &&
+      (tap.files ?? 0) >= 1 &&
+      (executed ?? 0) >= TOOL7_PLANNED_TESTS,
   };
 }
 
 async function runPgtap({ verifyDigest }) {
   const run = await cli(['test', 'db', '--local']);
   const tap = tapSummary(run.output);
-  const result = { check: 'TOOL-7 pgTAP', exitCode: run.code, tap, passed: run.code === 0 && tap.notOk === 0 && tap.ok > 0 && tap.result === 'Result: PASS' };
+  const verdict = pgtapVerdict({ exitCode: run.code, tap });
+  const result = { check: 'TOOL-7 pgTAP', exitCode: run.code, tap, plannedTests: TOOL7_PLANNED_TESTS, executedTests: verdict.executedTests, passed: verdict.passed };
   if (verifyDigest) {
     const problems = verifyTransient();
     result.pgProveDigest = problems.length === 0 ? 'verified' : problems;

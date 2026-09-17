@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { redisVersion, sanitizeE2eReport, sanitizeTool1 } from './checks.mjs';
-import { B10_MIGRATION, B10_SQL, B10_VERSION, CiError, connectionUrls, harnessResult, parseStatusEnv, poolerUser, poolerUserCandidates, tapSummary } from './supabase-local.mjs';
+import { B10_MIGRATION, B10_SQL, B10_VERSION, CiError, connectionUrls, harnessResult, parseStatusEnv, pgtapVerdict, poolerUser, poolerUserCandidates, tapSummary, TOOL7_PLANNED_TESTS } from './supabase-local.mjs';
 import { approvalProblems, proposeImages, verifyImages, verifyTransient } from '../toolchain/supabase-images.mjs';
 
 const settings = { dbPort: 54322, poolerPort: 54329 };
@@ -40,10 +40,78 @@ test('B10-local probe is far-future, self-contained and never committed', () => 
 });
 
 test('TAP and harness summaries keep outcomes only', () => {
-  const tap = tapSummary('supabase/tests/tool7_tooling.test.sql .. \n1..5\nok 1 - pgTAP is installed\nok 2\nnot ok 3 - x\nFiles=1, Tests=5\nResult: FAIL\n');
-  assert.deepEqual(tap, { ok: 2, notOk: 1, result: 'Result: FAIL' });
+  // Verbose pg_prove output (only produced with --verbose, which this repository does not pass).
+  const tap = tapSummary('supabase/tests/tool7_tooling.test.sql .. \n1..5\nok 1 - pgTAP is installed\nok 2\nnot ok 3 - x\nFiles=1, Tests=5, 1 wallclock secs\nResult: FAIL\n');
+  assert.deepEqual(tap, { ok: 2, notOk: 1, files: 1, tests: 5, result: 'Result: FAIL' });
   assert.deepEqual(harnessResult('== TOOL-3\n{\n  "result": "PASS"\n}\nTOOL-3 result: Local transaction-pooler behavior verified\n'), { result: 'PASS' });
   assert.equal(harnessResult('no json'), undefined);
+});
+
+// --- TOOL-7 verdict (owner decision E6) --------------------------------------------------------
+// `supabase test db --local` runs `pg_prove --ext .pg --ext .sql -r` without --verbose, so a passing run
+// prints prove's summary and no per-assertion ok lines. The verdict must accept that and still reject an
+// empty or partly executed suite.
+const PASSING_OUTPUT = [
+  'Connecting to local database...',
+  '/tmp/tests/tool7_tooling.test.sql .. ok',
+  'All tests successful.',
+  'Files=1, Tests=5,  1 wallclock secs ( 0.02 usr  0.01 sys +  0.03 cusr  0.01 csys =  0.07 CPU)',
+  'Result: PASS',
+  '',
+].join('\n');
+
+test('a real non-verbose passing run is accepted', () => {
+  const tap = tapSummary(PASSING_OUTPUT);
+  assert.deepEqual(tap, { ok: 0, notOk: 0, files: 1, tests: 5, result: 'Result: PASS' });
+  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap }), { executedTests: 5, passed: true });
+});
+
+test('an empty or unexecuted suite is never evidence', () => {
+  const notests = tapSummary('Files=0, Tests=0,  0 wallclock secs\nResult: NOTESTS\n');
+  assert.equal(notests.result, 'Result: NOTESTS');
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: notests }).passed, false);
+
+  const zeroTests = tapSummary('Files=1, Tests=0,  0 wallclock secs\nResult: PASS\n');
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: zeroTests }).passed, false);
+
+  const noSummary = tapSummary('Result: PASS\n');
+  assert.deepEqual([noSummary.files, noSummary.tests], [null, null]);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: noSummary }).passed, false);
+
+  const noFiles = tapSummary('Files=0, Tests=5,  0 wallclock secs\nResult: PASS\n');
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: noFiles }).passed, false);
+});
+
+test('fewer assertions than planned, failures and non-zero exits fail', () => {
+  const fewer = tapSummary('Files=1, Tests=3,  0 wallclock secs\nResult: PASS\n');
+  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap: fewer }), { executedTests: 3, passed: false });
+
+  const failed = tapSummary('Files=1, Tests=5,  0 wallclock secs\nResult: FAIL\n');
+  assert.equal(pgtapVerdict({ exitCode: 1, tap: failed }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: failed }).passed, false);
+
+  const notOk = tapSummary('ok 1\nnot ok 2 - the anon role exists\nFiles=1, Tests=5,  0 wallclock secs\nResult: PASS\n');
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: notOk }).passed, false);
+
+  assert.equal(pgtapVerdict({ exitCode: 1, tap: tapSummary(PASSING_OUTPUT) }).passed, false);
+});
+
+test('verbose output is still accepted through the ok-line fallback', () => {
+  const verbose = tapSummary(['/tmp/tests/tool7_tooling.test.sql .. ', '1..5', 'ok 1 - pgTAP is installed', 'ok 2 - anon', 'ok 3 - authenticated', 'ok 4 - service_role', 'ok 5 - no fixture schema', 'ok', 'All tests successful.', 'Result: PASS', ''].join('\n'));
+  assert.equal(verbose.ok, 5);
+  assert.deepEqual([verbose.files, verbose.tests], [null, null]);
+  // Without prove's summary the file count is unknown, so the verdict still fails closed.
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: verbose }).passed, false);
+  const withSummary = tapSummary(['ok 1', 'ok 2', 'ok 3', 'ok 4', 'ok 5', 'Files=1, Tests=5,  0 wallclock secs', 'Result: PASS'].join('\n'));
+  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap: withSummary }), { executedTests: 5, passed: true });
+});
+
+test('the planned assertion count matches the committed pgTAP file', () => {
+  const sql = readFileSync(new URL('../../supabase/tests/tool7_tooling.test.sql', import.meta.url), 'utf8');
+  const planned = /select\s+plan\((\d+)\)/.exec(sql);
+  assert.ok(planned, 'the pgTAP file declares a plan');
+  assert.equal(Number(planned[1]), TOOL7_PLANNED_TESTS);
+  assert.equal((sql.match(/^select (ok|has_role)\(/gm) ?? []).length, TOOL7_PLANNED_TESTS);
 });
 
 const approved = {
