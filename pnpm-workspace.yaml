@@ -8,7 +8,6 @@ allowBuilds:
   esbuild: false
   msgpackr-extract: false
   netlify-cli: false
-  sharp: false
   unix-dgram: false
 engineStrict: true
 minimumReleaseAge: 20160
