@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { reviewOfCliAttempt } from './supabase-cli.mjs';
 import { tool3StackSettings } from './supabase-config.mjs';
-import { ImageLockError, imageName, pullApprovedImages, verifyImages } from './supabase-images.mjs';
+import { ImageLockError, approvalProblems, imageName, pullApprovedImages, verifyImages } from './supabase-images.mjs';
 
 const toml = readFileSync(new URL('../../supabase/config.toml', import.meta.url), 'utf8');
 
@@ -25,11 +25,34 @@ test('only the GitHub latest-version check is a reviewed CLI request', () => {
   assert.equal(reviewOfCliAttempt('CONNECT github.com:443'), undefined);
 });
 
-test('the committed image lock waits for owner approval, so verification fails closed', () => {
+test('the committed image lock carries the owner-approved discovery result', () => {
   const committed = JSON.parse(readFileSync(new URL('../../toolchain/supabase-images.json', import.meta.url), 'utf8'));
-  assert.equal(committed.status, 'pending-owner-approval');
-  assert.deepEqual(committed.images, []);
-  assert.match(verifyImages(committed, [])[0], /not approved yet/);
+  assert.equal(committed.status, 'approved');
+  assert.deepEqual(approvalProblems(committed), []);
+  assert.deepEqual(
+    committed.images.map((image) => image.reference).sort(),
+    ['public.ecr.aws/supabase/pg_prove:3.36', 'public.ecr.aws/supabase/postgres:17.6.1.165', 'public.ecr.aws/supabase/supavisor:2.9.7'],
+  );
+  for (const image of committed.images) assert.match(image.digest, /^sha256:[0-9a-f]{64}$/);
+  assert.deepEqual(committed.excludedServices, ['gotrue', 'realtime', 'storage-api', 'imgproxy', 'kong', 'mailpit', 'postgrest', 'postgres-meta', 'studio', 'edge-runtime', 'logflare', 'vector']);
+  assert.equal(committed.excludedServices.length, 12);
+  assert.equal(committed.poolerUserFormat, '{role}.pooler-dev');
+  assert.deepEqual(committed.requiredServices, ['supabase/postgres', 'supabase/supavisor']);
+  assert.ok(committed.exclusionEvidence && committed.poolerUserFormatEvidence);
+});
+
+test('verification still fails closed for an unapproved or malformed lock', () => {
+  const committed = JSON.parse(readFileSync(new URL('../../toolchain/supabase-images.json', import.meta.url), 'utf8'));
+  assert.match(verifyImages({ ...committed, status: 'pending-owner-approval' }, [])[0], /not approved yet/);
+  assert.match(approvalProblems({ ...committed, approvedOn: '<YYYY-MM-DD>' }).join(), /approvedOn must be YYYY-MM-DD/);
+  assert.match(approvalProblems({ ...committed, approvedBy: '' }).join(), /approvedBy is required/);
+  assert.match(approvalProblems({ ...committed, excludedServices: [...committed.excludedServices, 'supavisor'] }).join(), /may not be excluded/);
+  assert.match(approvalProblems({ ...committed, exclusionEvidence: null }).join(), /exclusionEvidence/);
+  assert.match(approvalProblems({ ...committed, poolerUserFormat: 'tool3_app_api' }).join(), /poolerUserFormat/);
+  assert.match(approvalProblems({ ...committed, images: [{ reference: 'public.ecr.aws/supabase/postgres:17.6.1.165', digest: 'sha256:short' }] }).join(), /invalid image entry/);
+  // A running image that is not the approved digest is rejected.
+  const running = [{ container: 'supabase_db_marketplace', reference: 'public.ecr.aws/supabase/postgres:17.6.1.165', repoDigests: [`public.ecr.aws/supabase/postgres@sha256:${'b'.repeat(64)}`] }];
+  assert.match(verifyImages(committed, running).join(), /digest mismatch/);
 });
 
 test('approved images are pulled by digest under the name the CLI uses', () => {
@@ -41,7 +64,8 @@ test('approved images are pulled by digest under the name the CLI uses', () => {
 
 test('nothing is pulled from an unapproved lock', () => {
   const committed = JSON.parse(readFileSync(new URL('../../toolchain/supabase-images.json', import.meta.url), 'utf8'));
-  assert.throws(() => pullApprovedImages(committed), ImageLockError);
-  assert.throws(() => pullApprovedImages({ ...committed, status: 'approved' }), /approvedBy is required/);
+  assert.throws(() => pullApprovedImages({ ...committed, status: 'pending-owner-approval' }), ImageLockError);
+  assert.throws(() => pullApprovedImages({ ...committed, approvedBy: '' }), /approvedBy is required/);
+  assert.throws(() => pullApprovedImages({ ...committed, approvedOn: '<YYYY-MM-DD>' }), /approvedOn must be YYYY-MM-DD/);
 });
 

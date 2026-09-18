@@ -132,9 +132,18 @@ const running = [
 
 test('image lock: only a complete owner approval is usable (no trust on first use)', () => {
   const committed = JSON.parse(readFileSync(new URL('../../toolchain/supabase-images.json', import.meta.url), 'utf8'));
-  assert.equal(committed.status, 'pending-owner-approval');
-  assert.match(approvalProblems(committed).join(), /not approved yet/);
-  assert.match(verifyImages(committed, running).join(), /not approved yet/);
+  // The owner approved this lock from the supabase-images-record proposal; it must be complete.
+  assert.equal(committed.status, 'approved');
+  assert.deepEqual(approvalProblems(committed), []);
+  // Any incomplete approval of the same lock is still refused: no trust on first use.
+  assert.match(approvalProblems({ ...committed, status: 'pending-owner-approval' }).join(), /not approved yet/);
+  assert.match(verifyImages({ ...committed, status: 'pending-owner-approval' }, running).join(), /not approved yet/);
+  assert.match(approvalProblems({ ...committed, approvedOn: '<YYYY-MM-DD>' }).join(), /approvedOn must be YYYY-MM-DD/);
+  assert.match(approvalProblems({ ...committed, approvedOn: '18-09-2026' }).join(), /approvedOn must be YYYY-MM-DD/);
+  assert.match(approvalProblems({ ...committed, approvedOn: null }).join(), /approvedOn must be YYYY-MM-DD/);
+  assert.match(approvalProblems({ ...committed, approvedBy: '   ' }).join(), /approvedBy is required/);
+  assert.match(approvalProblems({ ...committed, poolerUserFormatEvidence: null }).join(), /poolerUserFormatEvidence is required/);
+  assert.match(approvalProblems({ ...committed, images: [] }).join(), /no approved images/);
   assert.deepEqual(approvalProblems(approved), []);
   assert.match(approvalProblems({ ...approved, approvedBy: '' }).join(), /approvedBy/);
   assert.match(approvalProblems({ ...approved, excludedServices: ['supavisor'] }).join(), /may not be excluded/);

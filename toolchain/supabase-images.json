@@ -1,13 +1,43 @@
 {
   "purpose": "Container images of the local Supabase stack used by TOOL-3, B10-local and TOOL-7 pgTAP (owner decisions S13 b+c and E7). Digests are discovered only by the supabase-images-record workflow, reviewed and approved by the owner, and then committed here. Nothing is trusted automatically.",
   "cliVersion": "2.116.0",
-  "status": "pending-owner-approval",
-  "approvedBy": null,
-  "approvedOn": null,
-  "requiredServices": ["supabase/postgres", "supabase/supavisor"],
-  "excludedServices": [],
-  "exclusionEvidence": null,
-  "poolerUserFormat": null,
-  "poolerUserFormatEvidence": null,
-  "images": []
+  "status": "approved",
+  "approvedBy": "بدون اوفر",
+  "approvedOn": "2026-09-18",
+  "requiredServices": [
+    "supabase/postgres",
+    "supabase/supavisor"
+  ],
+  "excludedServices": [
+    "gotrue",
+    "realtime",
+    "storage-api",
+    "imgproxy",
+    "kong",
+    "mailpit",
+    "postgrest",
+    "postgres-meta",
+    "studio",
+    "edge-runtime",
+    "logflare",
+    "vector"
+  ],
+  "exclusionEvidence": "supabase-images-record run at 2026-09-17: TOOL-3, B10-local and pgTAP discovery runs passed with these services excluded",
+  "poolerUserFormat": "{role}.pooler-dev",
+  "poolerUserFormatEvidence": "supabase-images-record run at 2026-09-17: only this format connected through the local pooler",
+  "images": [
+    {
+      "reference": "public.ecr.aws/supabase/pg_prove:3.36",
+      "digest": "sha256:eda7c5e68719e9c8287e78c017118407b48df904a51c935f5ab6098b8c0bc6bc",
+      "transient": true
+    },
+    {
+      "reference": "public.ecr.aws/supabase/postgres:17.6.1.165",
+      "digest": "sha256:28f0e16a019e648089fc1a6d333549a55548f6019c15ae4bd7cd58b989027518"
+    },
+    {
+      "reference": "public.ecr.aws/supabase/supavisor:2.9.7",
+      "digest": "sha256:be033cf4746a438fa7bfb6a7e589c9a4c950cc7fafea1ea8ec1a15952aa851e6"
+    }
+  ]
 }
