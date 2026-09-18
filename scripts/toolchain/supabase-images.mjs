@@ -15,7 +15,34 @@ export const EXCLUDABLE_SERVICES = Object.freeze(['gotrue', 'realtime', 'storage
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
 
-export class ImageLockError extends Error {}
+export class ImageLockError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ImageLockError';
+  }
+}
+
+/**
+ * A bounded, sanitised fragment of a tool's stderr, safe for CI logs. Docker is invoked here only with
+ * digests, references and container ids (never with credentials), but the registry may still echo text,
+ * so credential-shaped values are removed before anything is logged.
+ */
+export function sanitizeToolError(text, limit = 200) {
+  const line = (text ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .pop() ?? '';
+  const safe = line
+    .replace(/[a-z0-9+.-]+:\/\/[^\s]*/gi, '<url>')
+    .replace(/\b[\w.-]+:[^\s@/]+@/g, '<credentials>@')
+    // Everything after a credential keyword is dropped, not just the next word: a header such as
+    // "Authorization: Bearer <jwt>" must not leave any part of the value behind.
+    .replace(/\b(authorization|token|password|passwd|secret|api[-_]?key|bearer)\b.*$/i, '$1 <redacted>')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return safe.length > limit ? `${safe.slice(0, limit)}…` : safe;
+}
 
 export function readLock(path = IMAGES_FILE) {
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -23,7 +50,10 @@ export function readLock(path = IMAGES_FILE) {
 
 function docker(args) {
   const run = spawnSync('docker', args, { encoding: 'utf8' });
-  if (run.error || run.status !== 0) throw new ImageLockError(`docker ${args[0]} failed (is Docker available?)`);
+  if (run.error || run.status !== 0) {
+    const detail = sanitizeToolError(run.error ? (run.error.code ?? run.error.message) : run.stderr);
+    throw new ImageLockError(`docker ${args[0]} failed${detail ? `: ${detail}` : ' (is Docker available?)'}`);
+  }
   return run.stdout.trim();
 }
 

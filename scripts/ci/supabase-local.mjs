@@ -19,6 +19,7 @@ import { runSupabase } from '../toolchain/supabase-cli.mjs';
 import {
   approvalProblems,
   EXCLUDABLE_SERVICES,
+  ImageLockError,
   localImages,
   projectImages,
   proposeImages,
@@ -346,6 +347,7 @@ async function main() {
   const problems = approvalProblems(lock);
   if (problems.length > 0) throw new CiError(problems.join('; '));
   if (command === 'start') {
+    console.log('Pulling approved images by digest...');
     console.log(`Pulled ${pullApprovedImages(lock)} approved image(s) by digest.`);
     await start(lock.excludedServices);
     const images = verifyImages(lock);
@@ -371,7 +373,10 @@ async function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().then((code) => process.exit(code), (error) => {
-    console.error(error instanceof CiError ? error.message : `failed: ${error.code ?? error.name}`);
+    // CiError and ImageLockError messages are written by this repository and carry no credentials
+    // (docker details pass through sanitizeToolError first); anything else stays reduced to its name.
+    const known = error instanceof CiError || error instanceof ImageLockError;
+    console.error(known ? error.message : `failed: ${error.code ?? error.name}`);
     process.exit(1);
   });
 }

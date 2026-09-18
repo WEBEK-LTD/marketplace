@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { reviewOfCliAttempt } from './supabase-cli.mjs';
 import { tool3StackSettings } from './supabase-config.mjs';
-import { ImageLockError, approvalProblems, imageName, pullApprovedImages, verifyImages } from './supabase-images.mjs';
+import { ImageLockError, approvalProblems, imageName, pullApprovedImages, sanitizeToolError, verifyImages } from './supabase-images.mjs';
 
 const toml = readFileSync(new URL('../../supabase/config.toml', import.meta.url), 'utf8');
 
@@ -67,5 +67,41 @@ test('nothing is pulled from an unapproved lock', () => {
   assert.throws(() => pullApprovedImages({ ...committed, status: 'pending-owner-approval' }), ImageLockError);
   assert.throws(() => pullApprovedImages({ ...committed, approvedBy: '' }), /approvedBy is required/);
   assert.throws(() => pullApprovedImages({ ...committed, approvedOn: '<YYYY-MM-DD>' }), /approvedOn must be YYYY-MM-DD/);
+});
+
+// --- diagnostics (Phase 1 Step 9): failures must be identifiable without leaking anything ----------
+test('ImageLockError keeps its own name so failures are never reduced to "failed: Error"', () => {
+  const error = new ImageLockError('docker pull failed: toomanyrequests');
+  assert.equal(error.name, 'ImageLockError');
+  assert.ok(error instanceof Error);
+  assert.equal(`${error.name}: ${error.message}`, 'ImageLockError: docker pull failed: toomanyrequests');
+});
+
+test('docker stderr is surfaced, but sanitised and bounded', () => {
+  // The relevant detail survives: this is what identifies a registry rate limit or a missing manifest.
+  assert.equal(sanitizeToolError('Error response from daemon: toomanyrequests: Rate exceeded\n'), 'Error response from daemon: toomanyrequests: Rate exceeded');
+  assert.equal(sanitizeToolError('first line\nmanifest unknown\n'), 'manifest unknown');
+  assert.equal(sanitizeToolError(''), '');
+  assert.equal(sanitizeToolError(undefined), '');
+  assert.equal(sanitizeToolError('   \n  \n'), '');
+});
+
+test('credential-shaped values never reach the log', () => {
+  assert.equal(sanitizeToolError('failed for postgresql://user:hunter2@127.0.0.1:54322/postgres'), 'failed for <url>');
+  assert.equal(sanitizeToolError('denied for registry.example.com/x: Authorization: Bearer abc.def.ghi'), 'denied for registry.example.com/x: Authorization <redacted>');
+  assert.equal(sanitizeToolError('login admin:s3cr3t@registry.example.com refused'), 'login <credentials>@registry.example.com refused');
+  assert.equal(sanitizeToolError('token=abc123 rejected'), 'token <redacted>');
+  assert.equal(sanitizeToolError('password: hunter2'), 'password <redacted>');
+  for (const text of ['hunter2', 'abc.def.ghi', 's3cr3t', 'abc123']) {
+    assert.ok(!sanitizeToolError(`postgresql://user:hunter2@h/db Authorization: Bearer abc.def.ghi admin:s3cr3t@r token=abc123`).includes(text));
+  }
+});
+
+test('the diagnostic is length-bounded', () => {
+  const long = 'x'.repeat(5000);
+  assert.equal(sanitizeToolError(long).length, 201);
+  assert.ok(sanitizeToolError(long).endsWith('…'));
+  assert.equal(sanitizeToolError('y'.repeat(50), 10), 'yyyyyyyyyy…');
+  assert.equal(sanitizeToolError('short', 10), 'short');
 });
 
