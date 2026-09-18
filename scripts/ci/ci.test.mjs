@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { redisVersion, sanitizeE2eReport, sanitizeTool1 } from './checks.mjs';
-import { B10_MIGRATION, B10_SQL, B10_VERSION, CiError, connectionUrls, harnessResult, parseStatusEnv, pgtapVerdict, poolerUser, poolerUserCandidates, tapSummary, TOOL7_PLANNED_TESTS } from './supabase-local.mjs';
+import { B10_MIGRATION, B10_SQL, B10_VERSION, CiError, connectionUrls, harnessResult, parseStatusEnv, pgtapVerdict, plannedPgtap, poolerUser, poolerUserCandidates, tapSummary, TOOL7_MINIMUM_TESTS } from './supabase-local.mjs';
 import { approvalProblems, proposeImages, verifyImages, verifyTransient } from '../toolchain/supabase-images.mjs';
 
 const settings = { dbPort: 54322, poolerPort: 54329 };
@@ -60,40 +60,43 @@ const PASSING_OUTPUT = [
   '',
 ].join('\n');
 
+/** One file planning five assertions: the smallest suite the verdict may ever accept. */
+const ONE_FILE = { files: 1, tests: 5 };
+
 test('a real non-verbose passing run is accepted', () => {
   const tap = tapSummary(PASSING_OUTPUT);
   assert.deepEqual(tap, { ok: 0, notOk: 0, files: 1, tests: 5, result: 'Result: PASS' });
-  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap }), { executedTests: 5, passed: true });
+  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap, planned: ONE_FILE }), { executedTests: 5, passed: true });
 });
 
 test('an empty or unexecuted suite is never evidence', () => {
   const notests = tapSummary('Files=0, Tests=0,  0 wallclock secs\nResult: NOTESTS\n');
   assert.equal(notests.result, 'Result: NOTESTS');
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: notests }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: notests, planned: ONE_FILE }).passed, false);
 
   const zeroTests = tapSummary('Files=1, Tests=0,  0 wallclock secs\nResult: PASS\n');
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: zeroTests }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: zeroTests, planned: ONE_FILE }).passed, false);
 
   const noSummary = tapSummary('Result: PASS\n');
   assert.deepEqual([noSummary.files, noSummary.tests], [null, null]);
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: noSummary }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: noSummary, planned: ONE_FILE }).passed, false);
 
   const noFiles = tapSummary('Files=0, Tests=5,  0 wallclock secs\nResult: PASS\n');
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: noFiles }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: noFiles, planned: ONE_FILE }).passed, false);
 });
 
 test('fewer assertions than planned, failures and non-zero exits fail', () => {
   const fewer = tapSummary('Files=1, Tests=3,  0 wallclock secs\nResult: PASS\n');
-  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap: fewer }), { executedTests: 3, passed: false });
+  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap: fewer, planned: ONE_FILE }), { executedTests: 3, passed: false });
 
   const failed = tapSummary('Files=1, Tests=5,  0 wallclock secs\nResult: FAIL\n');
-  assert.equal(pgtapVerdict({ exitCode: 1, tap: failed }).passed, false);
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: failed }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 1, tap: failed, planned: ONE_FILE }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: failed, planned: ONE_FILE }).passed, false);
 
   const notOk = tapSummary('ok 1\nnot ok 2 - the anon role exists\nFiles=1, Tests=5,  0 wallclock secs\nResult: PASS\n');
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: notOk }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: notOk, planned: ONE_FILE }).passed, false);
 
-  assert.equal(pgtapVerdict({ exitCode: 1, tap: tapSummary(PASSING_OUTPUT) }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 1, tap: tapSummary(PASSING_OUTPUT), planned: ONE_FILE }).passed, false);
 });
 
 test('verbose output is still accepted through the ok-line fallback', () => {
@@ -101,17 +104,28 @@ test('verbose output is still accepted through the ok-line fallback', () => {
   assert.equal(verbose.ok, 5);
   assert.deepEqual([verbose.files, verbose.tests], [null, null]);
   // Without prove's summary the file count is unknown, so the verdict still fails closed.
-  assert.equal(pgtapVerdict({ exitCode: 0, tap: verbose }).passed, false);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: verbose, planned: ONE_FILE }).passed, false);
   const withSummary = tapSummary(['ok 1', 'ok 2', 'ok 3', 'ok 4', 'ok 5', 'Files=1, Tests=5,  0 wallclock secs', 'Result: PASS'].join('\n'));
-  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap: withSummary }), { executedTests: 5, passed: true });
+  assert.deepEqual(pgtapVerdict({ exitCode: 0, tap: withSummary, planned: ONE_FILE }), { executedTests: 5, passed: true });
 });
 
-test('the planned assertion count matches the committed pgTAP file', () => {
-  const sql = readFileSync(new URL('../../supabase/tests/tool7_tooling.test.sql', import.meta.url), 'utf8');
-  const planned = /select\s+plan\((\d+)\)/.exec(sql);
-  assert.ok(planned, 'the pgTAP file declares a plan');
-  assert.equal(Number(planned[1]), TOOL7_PLANNED_TESTS);
-  assert.equal((sql.match(/^select (ok|has_role)\(/gm) ?? []).length, TOOL7_PLANNED_TESTS);
+test('the planned total is read from the committed pgTAP files and cannot drift', () => {
+  const planned = plannedPgtap();
+  assert.ok(planned.files >= 1, 'at least one pgTAP file is committed');
+  assert.ok(planned.tests >= TOOL7_MINIMUM_TESTS, 'the suite plans at least the required minimum');
+
+  const dir = new URL('../../supabase/tests/', import.meta.url);
+  const names = readdirSync(dir).filter((name) => name.endsWith('.sql')).sort();
+  const total = names.reduce((sum, name) => sum + Number(/select\s+plan\((\d+)\)/.exec(readFileSync(new URL(name, dir), 'utf8'))[1]), 0);
+  assert.deepEqual(planned, { files: names.length, tests: total });
+
+  // A run that executes fewer assertions or fewer files than the committed suite is never evidence.
+  const short = tapSummary(`Files=${planned.files - 1}, Tests=${planned.tests},  0 wallclock secs\nResult: PASS\n`);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: short, planned }).passed, false);
+  const fewer = tapSummary(`Files=${planned.files}, Tests=${planned.tests - 1},  0 wallclock secs\nResult: PASS\n`);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: fewer, planned }).passed, false);
+  const exact = tapSummary(`Files=${planned.files}, Tests=${planned.tests},  0 wallclock secs\nResult: PASS\n`);
+  assert.equal(pgtapVerdict({ exitCode: 0, tap: exact, planned }).passed, true);
 });
 
 const approved = {

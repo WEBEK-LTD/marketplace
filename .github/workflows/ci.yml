@@ -26,7 +26,7 @@ defaults:
 
 jobs:
   policy:
-    name: Policy (workspace, workflows, install scripts, package age, env, currency literals)
+    name: Policy (workspace, workflows, install scripts, package age, env, currency literals, migrations)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -78,6 +78,8 @@ jobs:
         run: pnpm run check:env
       - name: Currency-literal check
         run: node scripts/policy/currency-literals.mjs
+      - name: Migration policy (naming, headers, RLS coverage, grants, pgTAP plans)
+        run: node scripts/policy/migrations.mjs
       - name: Record tool versions
         if: always()
         run: node scripts/ci/checks.mjs tool-versions --job policy --output "$RUNNER_TEMP/artifacts/tool-versions-policy.json"
@@ -343,7 +345,7 @@ jobs:
           if-no-files-found: error
 
   supabase-local:
-    name: Local Supabase stack (TOOL-3, B10-local, TOOL-7 pgTAP)
+    name: Local Supabase stack (migrations, TOOL-3, B10-local, TOOL-7 pgTAP, type drift)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -394,9 +396,15 @@ jobs:
       - name: B10-local (temporary migration, removed afterwards)
         if: always() && steps.start.outcome == 'success'
         run: node scripts/ci/supabase-local.mjs b10 --result "$RUNNER_TEMP/artifacts/b10-local.json"
+      - name: Every committed migration is applied
+        if: always() && steps.start.outcome == 'success'
+        run: node scripts/ci/supabase-local.mjs migrations --result "$RUNNER_TEMP/artifacts/migrations.json"
       - name: TOOL-7 pgTAP
         if: always() && steps.start.outcome == 'success'
         run: node scripts/ci/supabase-local.mjs pgtap --result "$RUNNER_TEMP/artifacts/tool7-pgtap.json"
+      - name: Generated Kysely types match the schema
+        if: always() && steps.start.outcome == 'success'
+        run: node scripts/ci/supabase-local.mjs types --result "$RUNNER_TEMP/artifacts/schema-types.json"
       - name: Stop the local stack
         if: always()
         run: node scripts/ci/supabase-local.mjs stop

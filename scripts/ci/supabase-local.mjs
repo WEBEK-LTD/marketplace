@@ -3,12 +3,14 @@
 //   tool3 --result <file>      TOOL-3 through the transaction pooler (connection values derived at runtime)
 //   b10 --result <file>        B10-local: a temporary migration applied by the Supabase CLI, then removed
 //   pgtap --result <file>      TOOL-7 pgTAP via `supabase test db --local`, then the pg_prove image digest
+//   migrations --result <file> every committed migration is recorded as applied by the Supabase CLI
+//   types --result <file>      packages/db/src/schema.ts matches the schema the migrations produced
 //   record --output <file>     discovery for owner review (digests, service exclusions, pooler user format)
 // Every CLI call goes through the V1 network policy wrapper. Connection values and passwords are never
 // printed or written to result files. Result files must be outside the repository.
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative } from 'node:path';
@@ -154,12 +156,16 @@ function realMigrationFiles() {
 
 async function runB10() {
   const before = realMigrationFiles();
-  if (JSON.stringify(before) !== JSON.stringify(['.gitkeep'])) throw new CiError('supabase/migrations must contain only .gitkeep in Phase 1');
+  // The probe must never collide with a real migration: its version is far in the future on purpose.
+  if (before.some((name) => name.startsWith(B10_VERSION))) throw new CiError(`supabase/migrations already contains the B10 probe version ${B10_VERSION}`);
   const work = mkdtempSync(join(tmpdir(), 'b10-local-'));
   const result = { check: 'B10-local', temporaryMigration: B10_MIGRATION, applied: false, verified: false, removed: false, passed: false };
   try {
-    mkdirSync(join(work, 'supabase', 'migrations'), { recursive: true });
+    mkdirSync(join(work, 'supabase'), { recursive: true });
     cpSync(join(REPO_ROOT, 'supabase/config.toml'), join(work, 'supabase/config.toml'));
+    // The real migrations come along so the CLI sees the same history as the running stack and applies
+    // only the probe; they are already applied, so nothing is re-run.
+    cpSync(join(REPO_ROOT, 'supabase/migrations'), join(work, 'supabase/migrations'), { recursive: true });
     writeFileSync(join(work, 'supabase/migrations', B10_MIGRATION), B10_SQL);
     const up = await cli(['migration', 'up', '--local', '--workdir', work]);
     result.applied = up.code === 0;
@@ -189,8 +195,25 @@ async function runB10() {
   return result;
 }
 
-/** Assertions planned by supabase/tests/tool7_tooling.test.sql; a tooling test keeps the two in sync. */
-export const TOOL7_PLANNED_TESTS = 5;
+/**
+ * Floor for the whole pgTAP suite. The planned total is read from the committed test files (so it can
+ * never drift), but it must never fall below this: emptying the suite must not turn TOOL-7 green.
+ */
+export const TOOL7_MINIMUM_TESTS = 5;
+
+/** Plan declared by the committed pgTAP files: how many files must run and how many assertions in total. */
+export function plannedPgtap(dir = join(REPO_ROOT, 'supabase/tests')) {
+  const files = readdirSync(dir).filter((name) => name.endsWith('.sql')).sort();
+  if (files.length === 0) throw new CiError('supabase/tests contains no pgTAP files');
+  let tests = 0;
+  for (const name of files) {
+    const planned = /select\s+plan\((\d+)\)/.exec(readFileSync(join(dir, name), 'utf8'));
+    if (planned === null) throw new CiError(`${name} does not declare a pgTAP plan`);
+    tests += Number(planned[1]);
+  }
+  if (tests < TOOL7_MINIMUM_TESTS) throw new CiError(`the pgTAP suite plans ${tests} assertions, below the required minimum of ${TOOL7_MINIMUM_TESTS}`);
+  return { files: files.length, tests };
+}
 
 /**
  * TAP summary without database content. `supabase test db` runs pg_prove without --verbose, so the run
@@ -214,7 +237,7 @@ export function tapSummary(output) {
  * or partly executed suite is not evidence, so `Result: NOTESTS`, zero files and fewer than the planned
  * assertions all fail. The executed count comes from prove's summary, falling back to verbose ok lines.
  */
-export function pgtapVerdict({ exitCode, tap }) {
+export function pgtapVerdict({ exitCode, tap, planned }) {
   const executed = tap.tests ?? (tap.ok > 0 ? tap.ok : null);
   return {
     executedTests: executed,
@@ -222,22 +245,55 @@ export function pgtapVerdict({ exitCode, tap }) {
       exitCode === 0 &&
       tap.result === 'Result: PASS' &&
       tap.notOk === 0 &&
-      (tap.files ?? 0) >= 1 &&
-      (executed ?? 0) >= TOOL7_PLANNED_TESTS,
+      (tap.files ?? 0) >= planned.files &&
+      (executed ?? 0) >= planned.tests,
   };
 }
 
 async function runPgtap({ verifyDigest }) {
+  const planned = plannedPgtap();
   const run = await cli(['test', 'db', '--local']);
   const tap = tapSummary(run.output);
-  const verdict = pgtapVerdict({ exitCode: run.code, tap });
-  const result = { check: 'TOOL-7 pgTAP', exitCode: run.code, tap, plannedTests: TOOL7_PLANNED_TESTS, executedTests: verdict.executedTests, passed: verdict.passed };
+  const verdict = pgtapVerdict({ exitCode: run.code, tap, planned });
+  const result = { check: 'TOOL-7 pgTAP', exitCode: run.code, tap, planned, executedTests: verdict.executedTests, passed: verdict.passed };
   if (verifyDigest) {
     const problems = verifyTransient();
     result.pgProveDigest = problems.length === 0 ? 'verified' : problems;
     result.passed = result.passed && problems.length === 0;
   }
   return result;
+}
+
+
+/** Every committed migration must be recorded as applied; a silently skipped file is a failure. */
+async function runMigrationsApplied() {
+  const files = realMigrationFiles().filter((name) => name.endsWith('.sql'));
+  const versions = files.map((name) => /^([0-9]+)_/.exec(name)?.[1]).filter((v) => v !== undefined);
+  if (versions.length !== files.length) throw new CiError('every migration file must start with a numeric version');
+  const applied = await withAdmin(async (client) => {
+    const history = await client.query("select to_regclass('supabase_migrations.schema_migrations') as t");
+    if (!history.rows[0].t) return [];
+    return (await client.query('select version from supabase_migrations.schema_migrations')).rows.map((r) => r.version);
+  });
+  const missing = versions.filter((version) => !applied.includes(version));
+  return { check: 'migrations applied', committed: versions.length, missing, passed: versions.length > 0 && missing.length === 0 };
+}
+
+/** Generated Kysely types must match the schema the migrations actually produced (v5.2 S17). */
+async function runTypeDrift() {
+  const status = await statusEnv();
+  const dbUrl = status.get('DB_URL');
+  if (!dbUrl) throw new CiError('supabase status did not provide DB_URL');
+  const { OUTPUT_PATH, readSchema, render } = await import('../db/generate-types.mjs');
+  const tables = await readSchema(dbUrl);
+  const current = render(tables);
+  const committed = readFileSync(OUTPUT_PATH, 'utf8');
+  return {
+    check: 'Kysely type drift',
+    relations: tables.length,
+    passed: tables.length > 0 && committed === current,
+    hint: committed === current ? null : 'run `pnpm run db:types` against the local stack and commit packages/db/src/schema.ts',
+  };
 }
 
 async function start(excluded) {
@@ -362,8 +418,10 @@ async function main() {
       pullApprovedImages(lock, { transient: true });
       return runPgtap({ verifyDigest: true });
     },
+    migrations: async () => runMigrationsApplied(),
+    types: async () => runTypeDrift(),
   };
-  if (!writers[command]) throw new CiError('Usage: supabase-local.mjs <start|stop|tool3|b10|pgtap> [--result <file>] | record --output <file>');
+  if (!writers[command]) throw new CiError('Usage: supabase-local.mjs <start|stop|tool3|b10|pgtap|migrations|types> [--result <file>] | record --output <file>');
   const file = argValue('--result');
   const result = await writers[command]();
   writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`);
