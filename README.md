@@ -120,7 +120,7 @@ Shared primitives used by both apps: `PageContainer`, `SkipLink`, `Heading`. App
 creates has row level security enabled by some migration, every `SECURITY DEFINER` function pins
 `search_path`, nothing is ever granted to `anon`, and no password literal appears in a migration.
 
-Committed so far (Phase 2 Step 1):
+Committed so far (Phase 2 Steps 1 and 2):
 
 | # | Contents |
 | --- | --- |
@@ -131,6 +131,10 @@ Committed so far (Phase 2 Step 1):
 | 0005 | `profiles` (synced from `auth.users`), `user_settings`, `addresses`, `user_blocks` |
 | 0006 | `audit.audit_logs` (monthly partitions, append-only) and the generic audit trigger |
 | 0007 | Transactional outbox, idempotency keys and job runs |
+| 0008 | `site_settings`, `email_templates`, `email_outbox`, `whatsapp_outbox` and the delivery functions |
+| 0009 | `seller_profiles`, `seller_verifications`, `seller_verification_documents`, `shipping_profiles`, `shipping_zones`, `shipping_rates` |
+| 0010 | `categories` (one tree, three levels, D8), `category_translations`, `attribute_definitions`, `attribute_options`, `category_attributes`, `tags` |
+| 0011 | `listings`, `listing_product_details`, `listing_attribute_values`, `listing_tags`, `listing_slug_history`, `listing_status_history`, `listing_media`, `media_variants`; search vectors and geography |
 
 ### Privilege model
 
@@ -150,12 +154,32 @@ API stays off (`auto_expose_new_tables = false`, `pg_graphql` never installed).
 > have RLS and at least one policy, and holds nothing in `app_private`. The pgTAP guard asserts exactly
 > that. Confirm or correct this reading when convenient; nothing else depends on the wording.
 
+### Visibility, media and search
+
+A listing's public surface follows one decision, `public.listing_is_visible()`, which combines listing
+state and seller state; `listing_status_is_public`, `..._is_purchasable` and `..._is_indexable` express
+the rest of the state table. Sold, expired and archived listings stay reachable with "No longer
+available" (D2, N7) but cannot be bought and are not indexed; rejected, suspended and deleted listings
+return 404; nothing of a suspended seller is public.
+
+Media follows the same decision. Originals stay in a private bucket and are never served publicly, a
+variant may never point at the original object, and a variant can only be public while its listing is
+visible. Leaving the visible set withdraws the public variants and publishes a `listing.withdrawn`
+outbox event so the worker deletes the objects and invalidates the public cache; entering it publishes
+`listing.published` (C11 revalidation). Slug changes are recorded in `listing_slug_history` for the 301
+redirects, and a slug that ever belonged to another listing can never be taken again.
+
+Search uses PostgreSQL full text with language-aware `tsvector` columns for English and Arabic,
+generated from the title and description, plus `pg_trgm` on the title for typo tolerance and PostGIS for
+distance. The ranking formula and promoted-slot merge are Phase 9 decisions and are not implemented.
+
 ### Not built yet, on purpose
 
 `mfa_backup_codes` is conditional on O-1 and its behaviour (D9) is blocked by the AUTH-4/AUTH-5 spikes,
-so it is not created. `is_verified_seller()` is a fail-closed stub that migration 0009 replaces once
-`seller_verifications` exists. The access-token hook exists but is not enabled in `supabase/config.toml`:
-wiring it in belongs to Phase 3, with owner Decision 1 and AUTH-10.
+so it is not created. The access-token hook exists but is not enabled in `supabase/config.toml`: wiring
+it in belongs to Phase 3, with owner Decision 1 and AUTH-10. Image variant sizes and formats are a
+Phase 4 proposal, so `media_variants.variant_key` is free text rather than a fixed set. Service detail
+tables, offers and quotes arrive with migration 0015; storage buckets and their policies with 0012.
 
 ### Running the schema locally
 

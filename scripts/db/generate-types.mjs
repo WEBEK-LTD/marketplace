@@ -50,6 +50,7 @@ export const TYPE_MAP = Object.freeze({
   timestamp: 'Timestamp',
   timestamptz: 'Timestamp',
   timetz: 'string',
+  tsvector: 'string',
   uuid: 'string',
   varchar: 'string',
 });
@@ -73,6 +74,8 @@ export function interfaceName(schema, table) {
 export function columnType(column) {
   const base = tsType(column.udt_name);
   const nullable = column.is_nullable ? `${base} | null` : base;
+  // A generated column is computed by PostgreSQL: it can be read but never written.
+  if (column.is_generated) return `GeneratedAlways<${nullable}>`;
   if (column.is_identity) return `Generated<${nullable}>`;
   if (column.has_default) return `Generated<${nullable}>`;
   return nullable;
@@ -86,6 +89,9 @@ import type { ColumnType } from 'kysely';
 
 /** A column the database fills in: optional on insert, not updatable by default. */
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U> ? ColumnType<S, I | undefined, U> : ColumnType<T, T | undefined, T>;
+
+/** A column PostgreSQL computes (GENERATED ALWAYS AS ... STORED): readable, never written. */
+export type GeneratedAlways<T> = ColumnType<T, never, never>;
 
 /** \`timestamptz\`/\`timestamp\`/\`date\`: read as Date, written as Date or ISO string. */
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
@@ -121,6 +127,7 @@ select
   c.is_nullable = 'YES' as is_nullable,
   c.column_default is not null as has_default,
   c.is_identity = 'YES' as is_identity,
+  c.is_generated = 'ALWAYS' as is_generated,
   c.ordinal_position as position
 from information_schema.columns c
 join pg_class rel on rel.relname = c.table_name
@@ -146,6 +153,7 @@ export async function readSchema(connectionString) {
         is_nullable: row.is_nullable,
         has_default: row.has_default,
         is_identity: row.is_identity,
+        is_generated: row.is_generated,
       });
     }
     return [...byTable.values()].sort((a, b) => `${a.schema}.${a.name}`.localeCompare(`${b.schema}.${b.name}`));

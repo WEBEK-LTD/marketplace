@@ -18,8 +18,8 @@ import {
 test('the committed migrations satisfy the migration policy', () => {
   const result = checkMigrations();
   assert.deepEqual(result.problems, []);
-  assert.ok(result.migrations >= 7, 'the Phase 2 foundation migrations are present');
-  assert.ok(result.tests >= 5, 'the pgTAP suite is committed');
+  assert.ok(result.migrations >= 11, 'the Phase 2 migrations committed so far are present');
+  assert.ok(result.tests >= 10, 'the pgTAP suite is committed');
 });
 
 test('migration names must be NNNN_lower_snake_case.sql', () => {
@@ -98,7 +98,9 @@ test('PostgreSQL types map to what node-postgres actually returns', () => {
   assert.equal(tsType('jsonb'), 'Json');
   assert.equal(tsType('_text'), 'string[]');
   assert.equal(tsType('_int4'), 'number[]');
-  assert.throws(() => tsType('tsvector'), TypeGenError, 'an unmapped type fails instead of guessing');
+  assert.equal(tsType('tsvector'), 'string', 'search vectors are read as text');
+  assert.equal(tsType('geography'), 'string', 'PostGIS values arrive as WKB hex text');
+  assert.throws(() => tsType('money'), TypeGenError, 'an unmapped type fails instead of guessing');
   assert.ok(Object.isFrozen(TYPE_MAP));
 });
 
@@ -108,6 +110,11 @@ test('nullability and defaults shape the column type', () => {
   assert.equal(columnType({ udt_name: 'text', is_nullable: false, has_default: true, is_identity: false }), 'Generated<string>');
   assert.equal(columnType({ udt_name: 'int8', is_nullable: false, has_default: false, is_identity: true }), 'Generated<string>');
   assert.equal(columnType({ udt_name: 'timestamptz', is_nullable: true, has_default: true, is_identity: false }), 'Generated<Timestamp | null>');
+  // A generated column is computed by PostgreSQL and must never be insertable or updatable.
+  assert.equal(
+    columnType({ udt_name: 'tsvector', is_nullable: true, has_default: false, is_identity: false, is_generated: true }),
+    'GeneratedAlways<string | null>',
+  );
 });
 
 test('interface names are derived from the qualified table name', () => {
@@ -132,7 +139,15 @@ test('the committed schema module is the generator output, not hand-written', ()
   assert.match(committed, /^\/\/ GENERATED FILE/);
   assert.match(committed, /export interface Database \{/);
   // Spot-check tables from each schema so a truncated regeneration is noticed here.
-  for (const key of ['"public.outbox_events": PublicOutboxEvents;', '"app_private.rate_limits": AppPrivateRateLimits;', '"audit.audit_logs": AuditAuditLogs;']) {
+  for (const key of [
+    '"public.outbox_events": PublicOutboxEvents;',
+    '"app_private.rate_limits": AppPrivateRateLimits;',
+    '"audit.audit_logs": AuditAuditLogs;',
+    '"public.listings": PublicListings;',
+    '"public.categories": PublicCategories;',
+    '"public.seller_profiles": PublicSellerProfiles;',
+    '"public.media_variants": PublicMediaVariants;',
+  ]) {
     assert.ok(committed.includes(key), `${key} is present`);
   }
 });
