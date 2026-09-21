@@ -79,16 +79,39 @@ export const httpUrlWithoutCredentials: FieldValidator<string> = {
   },
 };
 
+/**
+ * Exactly one internal BFF credential: 32 random bytes as base64url, which is 43 unpadded characters
+ * (owner decision C-2d).
+ *
+ * The API deliberately accepts `CURRENT,PREVIOUS` so that a credential can be replaced without
+ * downtime. A BFF is the other side of that rotation and sends only `CURRENT`, so a pair here is a
+ * configuration mistake rather than a rotation: sending `"CURRENT,PREVIOUS"` as one header value would
+ * match nothing and every call would be refused. Rejecting it at start-up turns that into an immediate,
+ * named failure instead of a site that builds and then 403s on every request.
+ */
+export const internalBffCredential: FieldValidator<string> = {
+  safeParse(value: unknown) {
+    return typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value)
+      ? { success: true, data: value }
+      : { success: false };
+  },
+};
+
 /** Fields of the Next.js server runtime (web and admin). */
-export const NEXT_SERVER_FIELDS = Object.freeze({ API_BASE_URL: httpUrlWithoutCredentials });
+export const NEXT_SERVER_FIELDS = Object.freeze({
+  API_BASE_URL: httpUrlWithoutCredentials,
+  INTERNAL_BFF_CREDENTIAL: internalBffCredential,
+});
 
 export interface NextServerConfig {
   readonly apiBaseUrl: string;
+  /** Server runtime only. Never returned to a browser, never logged, never in a client bundle. */
+  readonly internalBffCredential: string;
 }
 
 export function readNextServerConfig(app: 'web' | 'admin', source: Readonly<Record<string, string | undefined>>): NextServerConfig {
   const values = readEnv(app, NEXT_SERVER_FIELDS, source);
-  return Object.freeze({ apiBaseUrl: values.API_BASE_URL });
+  return Object.freeze({ apiBaseUrl: values.API_BASE_URL, internalBffCredential: values.INTERNAL_BFF_CREDENTIAL });
 }
 
 /**

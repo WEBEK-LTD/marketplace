@@ -69,3 +69,38 @@ language sql stable
 as $$
   select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb;
 $$;
+
+-- Minimal stand-ins for Supabase Storage. Only the columns and constraints the migrations touch exist.
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null unique,
+  public boolean not null default false,
+  file_size_limit bigint,
+  allowed_mime_types text[],
+  owner uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text not null references storage.buckets (id),
+  name text not null,
+  owner uuid,
+  metadata jsonb,
+  path_tokens text[],
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (bucket_id, name)
+);
+
+-- Minimal stand-in for Supabase Realtime's message table, which carries the private-topic policies.
+create table if not exists realtime.messages (
+  id bigint generated always as identity primary key,
+  topic text not null,
+  extension text not null default 'broadcast',
+  payload jsonb,
+  event text,
+  private boolean not null default true,
+  inserted_at timestamptz not null default now()
+);

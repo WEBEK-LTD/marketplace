@@ -18,10 +18,12 @@ export const REDACTED_PATHS = [
   'req.headers.authorization',
   'req.headers.cookie',
   'req.headers["proxy-authorization"]',
+  'req.headers["x-internal-credential"]',
   'res.headers["set-cookie"]',
   'headers.authorization',
   'headers.cookie',
   'headers["proxy-authorization"]',
+  'headers["x-internal-credential"]',
   'headers["set-cookie"]',
 ] as const;
 

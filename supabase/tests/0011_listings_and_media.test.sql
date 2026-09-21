@@ -7,15 +7,15 @@ select plan(25);
 
 -- Fixtures ------------------------------------------------------------------------------------------
 insert into public.locales (code, name_en, name_native, direction, is_active, is_default)
-values ('zz', 'Test locale', 'Test locale', 'ltr', true, true);
+values ('zz', 'Test locale', 'Test locale', 'ltr', true, false);
 
 insert into public.currencies (code, numeric_code, symbol, decimal_places, is_enabled, is_default, is_pricing_enabled, is_checkout_enabled)
-values ('XTS', '963', 'T', 2, true, true, true, true);
+values ('XTS', '963', 'T', 2, true, false, true, true);
 
 insert into public.countries (code, iso3, numeric_code, name_en, name_ar, phone_code, default_currency_code, is_marketplace_enabled)
 values ('ZZ', 'ZZZ', '999', 'Enabled country', 'Enabled country', '999', 'XTS', true);
 
-insert into public.listing_types (code, name_en, name_ar) values ('product', 'Product', 'Product');
+-- listing_types (`product`, `service`) are seeded reference data in 0033.
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-1111-4111-8111-111111111111', 'seller@example.test'),

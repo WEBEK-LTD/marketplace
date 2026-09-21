@@ -18,8 +18,8 @@ import {
 test('the committed migrations satisfy the migration policy', () => {
   const result = checkMigrations();
   assert.deepEqual(result.problems, []);
-  assert.ok(result.migrations >= 11, 'the Phase 2 migrations committed so far are present');
-  assert.ok(result.tests >= 10, 'the pgTAP suite is committed');
+  assert.ok(result.migrations >= 37, 'the Phase 2 migrations and the Phase 3 migrations so far are present');
+  assert.ok(result.tests >= 36, 'the pgTAP suite is committed');
 });
 
 test('migration names must be NNNN_lower_snake_case.sql', () => {
@@ -147,6 +147,63 @@ test('the committed schema module is the generator output, not hand-written', ()
     '"public.categories": PublicCategories;',
     '"public.seller_profiles": PublicSellerProfiles;',
     '"public.media_variants": PublicMediaVariants;',
+    '"public.conversations": PublicConversations;',
+    '"public.offers": PublicOffers;',
+    '"public.commission_rules": PublicCommissionRules;',
+    '"public.listing_events": PublicListingEvents;',
+    '"public.checkouts": PublicCheckouts;',
+    '"public.orders": PublicOrders;',
+    '"public.inventory_reservations": PublicInventoryReservations;',
+    '"public.payments": PublicPayments;',
+    '"public.payment_attempts": PublicPaymentAttempts;',
+    '"public.payment_exception_cases": PublicPaymentExceptionCases;',
+    '"public.payment_fee_allocations": PublicPaymentFeeAllocations;',
+    '"public.ledger_journals": PublicLedgerJournals;',
+    '"public.ledger_entries": PublicLedgerEntries;',
+    '"public.seller_balances": PublicSellerBalances;',
+    '"public.wallet_transactions": PublicWalletTransactions;',
+    '"public.withdrawals": PublicWithdrawals;',
+    '"public.commissions": PublicCommissions;',
+    '"public.payout_providers": PublicPayoutProviders;',
+    '"public.payout_destinations": PublicPayoutDestinations;',
+    '"public.payouts": PublicPayouts;',
+    '"public.payout_events": PublicPayoutEvents;',
+    '"public.payout_reversals": PublicPayoutReversals;',
+    '"public.provider_settlements": PublicProviderSettlements;',
+    '"public.provider_settlement_items": PublicProviderSettlementItems;',
+    '"public.coupons": PublicCoupons;',
+    '"public.coupon_amounts": PublicCouponAmounts;',
+    '"public.coupon_usage": PublicCouponUsage;',
+    '"public.promotion_packages": PublicPromotionPackages;',
+    '"public.promotions": PublicPromotions;',
+    '"public.promotion_events": PublicPromotionEvents;',
+    '"public.promotion_analytics": PublicPromotionAnalytics;',
+    '"public.promotion_ranking_settings": PublicPromotionRankingSettings;',
+    '"public.reviews": PublicReviews;',
+    '"public.review_replies": PublicReviewReplies;',
+    '"public.seller_ratings": PublicSellerRatings;',
+    '"public.reports": PublicReports;',
+    '"public.moderation_actions": PublicModerationActions;',
+    '"public.listing_moderation_actions": PublicListingModerationActions;',
+    '"public.disputes": PublicDisputes;',
+    '"public.dispute_messages": PublicDisputeMessages;',
+    '"public.dispute_evidence": PublicDisputeEvidence;',
+    '"public.support_tickets": PublicSupportTickets;',
+    '"public.support_messages": PublicSupportMessages;',
+    '"public.support_internal_notes": PublicSupportInternalNotes;',
+    '"public.support_ticket_events": PublicSupportTicketEvents;',
+    '"public.account_recovery_requests": PublicAccountRecoveryRequests;',
+    '"public.account_recovery_approvals": PublicAccountRecoveryApprovals;',
+    '"public.notifications": PublicNotifications;',
+    '"public.pages": PublicPages;',
+    '"public.page_translations": PublicPageTranslations;',
+    '"public.blog_posts": PublicBlogPosts;',
+    '"public.cms_media": PublicCmsMedia;',
+    '"public.navigation_items": PublicNavigationItems;',
+    '"public.seo_metadata": PublicSeoMetadata;',
+    '"public.redirects": PublicRedirects;',
+    '"app_private.append_only_contract": AppPrivateAppendOnlyContract;',
+    '"app_private.scheduled_job_contract": AppPrivateScheduledJobContract;',
   ]) {
     assert.ok(committed.includes(key), `${key} is present`);
   }

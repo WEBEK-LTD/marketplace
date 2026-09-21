@@ -13,17 +13,10 @@ insert into auth.users (id, email) values
 
 update public.profiles set status = 'suspended' where id = '33333333-3333-4333-8333-333333333333';
 
-insert into public.roles (key, name_en, name_ar, requires_mfa, is_admin_console) values
-  ('buyer', 'Buyer', 'Buyer', false, false),
-  ('admin', 'Admin', 'Admin', true, true);
-
-insert into public.permissions (key, module, description_en, description_ar) values
-  ('users.profile.read', 'users', 'Read any profile', 'Read any profile'),
-  ('users.role.manage', 'users', 'Manage role assignments', 'Manage role assignments');
-
-insert into public.role_permissions (role_key, permission_key) values
-  ('admin', 'users.profile.read'),
-  ('admin', 'users.role.manage');
+-- `buyer` and `admin`, the permissions `users.profile.read` and `users.role.manage`, and the mapping
+-- between them are canonical rows seeded by 0033. This test is about those very roles — an MFA role
+-- inactive at aal1, an administrator who can see suspended profiles — so it uses the seeded rows rather
+-- than inserting look-alikes beside them.
 
 insert into public.user_roles (user_id, role_key) values
   ('11111111-1111-4111-8111-111111111111', 'admin'),

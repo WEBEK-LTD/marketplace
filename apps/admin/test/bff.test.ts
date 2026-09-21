@@ -2,21 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { resetApiClientForTests } from '../src/server/bff/api-client';
 import { BffConfigError, checkSameOrigin, getApiClient, readApiBaseUrl } from '../src/server/bff/index';
 
+/** Obviously fake, 43 base64url characters like the real format. */
+const CREDENTIAL = 'test-current-credential-value-not-a-real-se';
+
 describe('API_BASE_URL', () => {
   it('accepts http and https URLs', () => {
-    expect(readApiBaseUrl({ API_BASE_URL: 'http://api.internal:8080' })).toBe('http://api.internal:8080');
-    expect(readApiBaseUrl({ API_BASE_URL: 'https://api.example' })).toBe('https://api.example');
+    expect(readApiBaseUrl({ API_BASE_URL: 'http://api.internal:8080', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })).toBe('http://api.internal:8080');
+    expect(readApiBaseUrl({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })).toBe('https://api.example');
   });
 
   it.each([undefined, '', 'not a url', 'ftp://api.internal', 'file:///etc/passwd', 'https://user:secret-pw@api.internal'])(
     'rejects %j without revealing the value',
     (value) => {
       try {
-        readApiBaseUrl({ API_BASE_URL: value });
+        readApiBaseUrl({ API_BASE_URL: value, INTERNAL_BFF_CREDENTIAL: CREDENTIAL });
         throw new Error('expected failure');
       } catch (error) {
         expect(error).toBeInstanceOf(BffConfigError);
-        expect((error as Error).message).toBe('Invalid or missing environment variable: API_BASE_URL');
+        expect((error as Error).message).toBe('Invalid or missing environment variables: API_BASE_URL');
         expect(JSON.stringify(error)).not.toContain('secret-pw');
       }
     },
@@ -25,7 +28,7 @@ describe('API_BASE_URL', () => {
   it('configures the generated API client on first use', () => {
     resetApiClientForTests();
     expect(() => getApiClient({})).toThrow(BffConfigError);
-    const client = getApiClient({ API_BASE_URL: 'http://api.internal:8080' });
+    const client = getApiClient({ API_BASE_URL: 'http://api.internal:8080', INTERNAL_BFF_CREDENTIAL: CREDENTIAL });
     expect(typeof client.getHealth).toBe('function');
     expect(typeof client.getReadiness).toBe('function');
     resetApiClientForTests();

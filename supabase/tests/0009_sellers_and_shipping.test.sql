@@ -7,7 +7,7 @@ select plan(19);
 
 -- Fixtures ------------------------------------------------------------------------------------------
 insert into public.currencies (code, numeric_code, symbol, decimal_places, is_enabled, is_default, is_pricing_enabled, is_checkout_enabled)
-values ('XTS', '963', 'T', 2, true, true, true, true);
+values ('XTS', '963', 'T', 2, true, false, true, true);
 
 insert into public.countries (code, iso3, numeric_code, name_en, name_ar, phone_code, default_currency_code, is_marketplace_enabled)
 values ('ZZ', 'ZZZ', '999', 'Enabled country', 'Enabled country', '999', 'XTS', true),

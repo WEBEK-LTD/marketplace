@@ -4,9 +4,11 @@ import { buildContentSecurityPolicy } from '@repo/config';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { APP_DIR, nonceFromCsp, scriptTags, startBuiltApp, type RunningApp } from './support/next-server.js';
 
+/** Obviously fake, 43 base64url characters. Distinct per app so a bundle hit names its source. */
+const CANARY_CREDENTIAL = 'test-admin-bundle-canary-credential-not-rea';
 let app: RunningApp;
 beforeAll(async () => {
-  app = await startBuiltApp({ API_BASE_URL: 'http://api-canary.internal.invalid:8080' });
+  app = await startBuiltApp({ API_BASE_URL: 'http://api-canary.internal.invalid:8080', INTERNAL_BFF_CREDENTIAL: CANARY_CREDENTIAL });
 });
 afterAll(async () => {
   await app.stop();
@@ -81,7 +83,7 @@ describe('admin client bundles', () => {
       .filter((file) => file.endsWith('.js'))
       .map((file) => readFileSync(file, 'utf8'))
       .join('\n');
-    for (const forbidden of ['API_BASE_URL', 'BffConfigError', 'checkSameOrigin', 'api-canary']) {
+    for (const forbidden of ['API_BASE_URL', 'BffConfigError', 'checkSameOrigin', 'api-canary', 'INTERNAL_BFF_CREDENTIAL', 'x-internal-credential', 'createInternalCredentialFetch', CANARY_CREDENTIAL]) {
       expect(js).not.toContain(forbidden);
     }
   });

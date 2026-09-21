@@ -1,6 +1,7 @@
 import { OpenApiGeneratorV31, OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import { HealthResponseSchema, ReadinessResponseSchema } from '../health.js';
 import { PROBLEM_JSON_MEDIA_TYPE, ProblemDetailsSchema } from '../problem-details.js';
+import { V1FoundationResponseSchema } from '../v1-foundation.js';
 
 const internalError = {
   description: 'Unexpected server error',
@@ -37,6 +38,26 @@ function buildRegistry(): OpenAPIRegistry {
       503: {
         description: 'At least one dependency check failed',
         content: { 'application/json': { schema: ReadinessResponseSchema } },
+      },
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/foundation',
+    operationId: 'getV1Foundation',
+    summary: 'Foundation probe for the /v1 boundary',
+    description:
+      'Requires the internal BFF credential. Carries no user context and authorizes nothing.',
+    responses: {
+      200: {
+        description: 'The /v1 boundary is reachable by an approved internal caller',
+        content: { 'application/json': { schema: V1FoundationResponseSchema } },
+      },
+      403: {
+        description: 'The internal BFF credential is missing, wrong or malformed',
+        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
       },
       500: internalError,
     },

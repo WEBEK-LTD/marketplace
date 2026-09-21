@@ -7,10 +7,10 @@ select plan(17);
 
 -- Fixtures ------------------------------------------------------------------------------------------
 insert into public.locales (code, name_en, name_native, direction, is_active, is_default)
-values ('zz', 'Test locale', 'Test locale', 'ltr', true, true);
+values ('zz', 'Test locale', 'Test locale', 'ltr', true, false);
 
 insert into public.currencies (code, numeric_code, symbol, decimal_places, is_enabled, is_default, is_pricing_enabled, is_checkout_enabled)
-values ('XTS', '963', 'T', 2, true, true, true, true);
+values ('XTS', '963', 'T', 2, true, false, true, true);
 
 insert into public.currencies (code, numeric_code, symbol, decimal_places)
 values ('XXX', '999', 'U', 2);
@@ -61,8 +61,10 @@ select lives_ok(
 );
 
 -- Default protection --------------------------------------------------------------------------------
+-- The default currency is the seeded EGP (0033), so the rule is exercised against it rather than
+-- against a second default the schema would never allow to exist.
 select throws_ok(
-  $$update public.currencies set is_default = false where code = 'XTS'$$,
+  $$update public.currencies set is_default = false where code = 'EGP'$$,
   '23001',
   null,
   'the default currency cannot simply be unset'

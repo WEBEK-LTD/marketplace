@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 select plan(14);
 
 insert into public.locales (code, name_en, name_native, direction, is_active, is_default)
-values ('zz', 'Test locale', 'Test locale', 'ltr', true, true);
+values ('zz', 'Test locale', 'Test locale', 'ltr', true, false);
 
 insert into public.categories (id, slug) values ('11111111-aaaa-4aaa-8aaa-111111111111', 'electronics');
 insert into public.categories (id, parent_id, slug)

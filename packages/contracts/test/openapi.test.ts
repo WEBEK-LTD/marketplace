@@ -12,10 +12,22 @@ describe('OpenAPI document', () => {
     expect(doc.info).toEqual({ title: 'API', version: '0.0.0' });
   });
 
-  it('contains only the Step 3 operations', () => {
-    expect(Object.keys(doc.paths ?? {}).sort()).toEqual(['/health', '/ready']);
+  it('contains only the documented operations', () => {
+    // The health and readiness checks from Phase 1 Step 3, plus the single `/v1` foundation probe added
+    // with the internal BFF credential boundary. Anything else appearing here is an undocumented route
+    // or a business endpoint that has not been approved.
+    expect(Object.keys(doc.paths ?? {}).sort()).toEqual(['/health', '/ready', '/v1/foundation']);
     expect(doc.paths?.['/health']?.get?.operationId).toBe('getHealth');
     expect(doc.paths?.['/ready']?.get?.operationId).toBe('getReadiness');
+    expect(doc.paths?.['/v1/foundation']?.get?.operationId).toBe('getV1Foundation');
+  });
+
+  it('documents the /v1 foundation probe as guarded and business-free', () => {
+    const responses = doc.paths?.['/v1/foundation']?.get?.responses ?? {};
+    // 403 for a refused internal credential; no 401, because this boundary is not user authentication.
+    expect(Object.keys(responses).sort()).toEqual(['200', '403', '500']);
+    const forbidden = responses['403'] as { content?: Record<string, unknown> };
+    expect(Object.keys(forbidden.content ?? {})).toEqual(['application/problem+json']);
   });
 
   it('uses application/problem+json for error responses', () => {

@@ -11,6 +11,19 @@ export interface ApiEnv {
   readonly host: string;
   readonly port: number;
   readonly logLevel: LogLevel;
+  /** Server-only `app_system` connection string. Never logged; never sent to a browser. */
+  readonly appSystemDatabaseUrl: string;
+  readonly appSystemDatabaseMaxConnections: number;
+  /** Server-only HMAC pepper for OTP digests (C-9). Never logged; never sent to a browser. */
+  readonly otpPepper: string;
+  readonly waabekBaseUrl: string;
+  /** Server-only Waabek API key. Never logged; never sent to a browser. */
+  readonly waabekApiKey: string;
+  /**
+   * Accepted internal BFF credentials, in order (CURRENT first, optional PREVIOUS second).
+   * Server-only; never logged, never sent to a browser.
+   */
+  readonly internalBffCredentials: readonly string[];
 }
 
 /** Validators for the API's inventory entries (required-ness and defaults come from the inventory). */
@@ -23,6 +36,20 @@ export const API_ENV_FIELDS = Object.freeze({
     .regex(/^[1-9]\d{0,4}$/)
     .transform(Number)
     .pipe(z.number().int().min(1).max(65535)),
+  APP_SYSTEM_DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
+  APP_SYSTEM_DATABASE_MAX_CONNECTIONS: z
+    .string()
+    .regex(/^[1-9]\d{0,2}$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(500)),
+  // At least 32 bytes: the pepper is the only thing standing between a leaked digest and a six-digit
+  // code that is trivially exhaustible.
+  OTP_PEPPER: z.string().min(32),
+  WAABEK_BASE_URL: z.string().regex(/^https?:\/\/\S+$/),
+  WAABEK_API_KEY: z.string().min(1),
+  // Owner decision C-2d: 32 random bytes as base64url (43 characters), one or two values separated by a
+  // comma for overlap rotation — CURRENT first, then the PREVIOUS value still being retired.
+  INTERNAL_BFF_CREDENTIAL: z.string().regex(/^[A-Za-z0-9_-]{43}(,[A-Za-z0-9_-]{43})?$/),
 });
 
 /**
@@ -36,6 +63,12 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>> = p
     host: values.API_HOST,
     port: values.API_PORT,
     logLevel: values.LOG_LEVEL,
+    appSystemDatabaseUrl: values.APP_SYSTEM_DATABASE_URL,
+    appSystemDatabaseMaxConnections: values.APP_SYSTEM_DATABASE_MAX_CONNECTIONS,
+    otpPepper: values.OTP_PEPPER,
+    waabekBaseUrl: values.WAABEK_BASE_URL,
+    waabekApiKey: values.WAABEK_API_KEY,
+    internalBffCredentials: Object.freeze(values.INTERNAL_BFF_CREDENTIAL.split(',')),
   });
 }
 

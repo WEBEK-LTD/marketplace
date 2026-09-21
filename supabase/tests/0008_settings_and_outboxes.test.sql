@@ -6,11 +6,12 @@ create extension if not exists pgtap with schema extensions;
 select plan(15);
 
 insert into public.locales (code, name_en, name_native, direction, is_active, is_default)
-values ('zz', 'Test locale', 'Test locale', 'ltr', true, true);
+values ('zz', 'Test locale', 'Test locale', 'ltr', true, false);
 
 insert into public.site_settings (key, category, value, value_type, is_public, description_en, description_ar)
+-- `branding.site_name` is seeded in 0033 with this same neutral value, so only the setting this test
+-- invents for itself is inserted here.
 values
-  ('branding.site_name', 'branding', '"Marketplace"'::jsonb, 'string', true, 'Site name', 'Site name'),
   ('security.session_timeout_minutes', 'security', '60'::jsonb, 'number', false, 'Session timeout', 'Session timeout');
 
 -- Settings --------------------------------------------------------------------------------------------

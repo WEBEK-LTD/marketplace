@@ -12,6 +12,7 @@ export {
   configLoadedEvent,
   EnvValidationError,
   httpUrlWithoutCredentials,
+  internalBffCredential,
   InventoryDriftError,
   NEXT_SERVER_FIELDS,
   readEnv,

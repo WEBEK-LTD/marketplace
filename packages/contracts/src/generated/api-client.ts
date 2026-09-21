@@ -81,6 +81,17 @@ export interface ReadinessResponse {
   checks: ReadinessCheckResult[];
 }
 
+export type V1FoundationResponseStatus = typeof V1FoundationResponseStatus[keyof typeof V1FoundationResponseStatus];
+
+
+export const V1FoundationResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface V1FoundationResponse {
+  status: V1FoundationResponseStatus;
+}
+
 export type getHealthResponse200 = {
   data: HealthResponse
   status: 200
@@ -162,6 +173,55 @@ export const getGetReadinessUrl = () => {
 export const getReadiness = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getReadinessResponse> => {
 
   return apiFetch<getReadinessResponse>(getGetReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1FoundationResponse200 = {
+  data: V1FoundationResponse
+  status: 200
+}
+
+export type getV1FoundationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1FoundationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1FoundationResponseSuccess = (getV1FoundationResponse200) & {
+  headers: Headers;
+};
+export type getV1FoundationResponseError = (getV1FoundationResponse403 | getV1FoundationResponse500) & {
+  headers: Headers;
+};
+
+export type getV1FoundationResponse = (getV1FoundationResponseSuccess | getV1FoundationResponseError)
+
+export const getGetV1FoundationUrl = () => {
+
+
+
+
+  return `/v1/foundation`
+}
+
+/**
+ * Requires the internal BFF credential. Carries no user context and authorizes nothing.
+ * @summary Foundation probe for the /v1 boundary
+ */
+export const getV1Foundation = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1FoundationResponse> => {
+
+  return apiFetch<getV1FoundationResponse>(getGetV1FoundationUrl(),
   {
     ...options,
     method: 'GET'

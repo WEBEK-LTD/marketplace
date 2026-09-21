@@ -134,6 +134,21 @@
           "status"
         ],
         "additionalProperties": false
+      },
+      "V1FoundationResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
       }
     },
     "parameters": {}
@@ -198,6 +213,45 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/foundation": {
+      "get": {
+        "operationId": "getV1Foundation",
+        "summary": "Foundation probe for the /v1 boundary",
+        "description": "Requires the internal BFF credential. Carries no user context and authorizes nothing.",
+        "responses": {
+          "200": {
+            "description": "The /v1 boundary is reachable by an approved internal caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1FoundationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }

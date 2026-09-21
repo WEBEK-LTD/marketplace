@@ -5,9 +5,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { APP_DIR, nonceFromCsp, scriptTags, startBuiltApp, type RunningApp } from './support/next-server.js';
 
 const CANARY_API_URL = 'http://api-canary.internal.invalid:8080';
+/** Obviously fake, 43 base64url characters. Distinct per app so a bundle hit names its source. */
+const CANARY_CREDENTIAL = 'test-web-bundle-canary-credential-not-realx';
 let app: RunningApp;
 beforeAll(async () => {
-  app = await startBuiltApp({ API_BASE_URL: CANARY_API_URL });
+  app = await startBuiltApp({ API_BASE_URL: CANARY_API_URL, INTERNAL_BFF_CREDENTIAL: CANARY_CREDENTIAL });
 });
 afterAll(async () => {
   await app.stop();
@@ -130,14 +132,17 @@ describe('client bundles', () => {
   it('contain no server-only BFF code or configuration', () => {
     const js = staticFiles.filter((file) => file.endsWith('.js')).map((file) => readFileSync(file, 'utf8')).join('\n');
     expect(js.length).toBeGreaterThan(0);
-    for (const forbidden of ['API_BASE_URL', 'BffConfigError', 'checkSameOrigin', 'api-canary', 'readApiBaseUrl']) {
+    for (const forbidden of ['API_BASE_URL', 'BffConfigError', 'checkSameOrigin', 'api-canary', 'readApiBaseUrl', 'INTERNAL_BFF_CREDENTIAL', 'x-internal-credential', 'createInternalCredentialFetch', CANARY_CREDENTIAL]) {
       expect(js).not.toContain(forbidden);
     }
   });
 
   it('never exposes the runtime API URL in pages', async () => {
     for (const path of ['/', '/ar', '/nope']) {
-      expect(await (await get(path)).text()).not.toContain('api-canary');
+      const html = await (await get(path)).text();
+      expect(html).not.toContain('api-canary');
+      expect(html).not.toContain(CANARY_CREDENTIAL);
+      expect(html).not.toContain('x-internal-credential');
     }
   });
 

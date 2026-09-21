@@ -13,7 +13,22 @@ export interface TestApp {
   logs(): Array<Record<string, unknown>>;
 }
 
-export const TEST_ENV = loadEnv({ NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: '3000', LOG_LEVEL: 'info' });
+// The app_system pool is created lazily by node-postgres, so an unreachable host costs nothing here:
+// none of these tests exercise the auth enforcement path, which has its own tests with a stub store.
+/** Obviously fake, 43 base64url characters like the real format. */
+export const TEST_INTERNAL_CREDENTIAL = 'test-current-credential-value-not-a-real-se';
+
+export const TEST_ENV = loadEnv({
+  NODE_ENV: 'test',
+  API_HOST: '127.0.0.1',
+  API_PORT: '3000',
+  LOG_LEVEL: 'info',
+  APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
+  OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
+  WAABEK_BASE_URL: 'https://waabek.invalid',
+  WAABEK_API_KEY: 'test-waabek-key-not-a-real-secret',
+  INTERNAL_BFF_CREDENTIAL: TEST_INTERNAL_CREDENTIAL,
+});
 
 export async function createTestApp(options: { readinessChecks?: readonly ReadinessCheck[] } = {}): Promise<TestApp> {
   const lines: string[] = [];

@@ -1,7 +1,9 @@
 import { Logger, Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from './config/config.module.js';
 import type { ApiEnv } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
+import { V1Module } from './v1/v1.module.js';
 
 @Module({})
 export class AppModule implements OnApplicationShutdown {
@@ -14,7 +16,7 @@ export class AppModule implements OnApplicationShutdown {
   static forRoot(env: ApiEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [ConfigModule.forRoot(env), HealthModule],
+      imports: [ConfigModule.forRoot(env), HealthModule, AuthModule.forRoot(env), V1Module.forRoot(env)],
     };
   }
 }
