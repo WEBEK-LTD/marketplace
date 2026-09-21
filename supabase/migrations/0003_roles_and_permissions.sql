@@ -104,9 +104,32 @@ begin
 end;
 $$;
 
-alter role app_api with login noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
-alter role app_system with login noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
-alter role app_worker with login noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
+-- S8 requires exactly these attributes, and `create role ... login noinherit` above already produces
+-- every one of them: PostgreSQL's CREATE ROLE defaults are NOSUPERUSER NOCREATEDB NOCREATEROLE
+-- NOREPLICATION NOBYPASSRLS. So this verifies rather than sets.
+--
+-- Setting them is not available here. Changing SUPERUSER, CREATEDB, REPLICATION or BYPASSRLS on any
+-- role requires the *executing* role to hold that attribute itself, and the role that applies
+-- migrations on Supabase (`postgres`) is deliberately not a superuser — the check is on the authority
+-- to set the attribute, not on whether the value would change, so even this no-op was refused.
+-- Verification needs no privilege, behaves identically in every environment, and fails closed: a
+-- pre-existing cluster role carrying the wrong attributes stops the migration instead of being
+-- silently accepted.
+do $$
+declare
+  wrong text;
+begin
+  select string_agg(rolname, ', ' order by rolname) into wrong
+    from pg_roles
+   where rolname in ('app_api', 'app_system', 'app_worker')
+     and (rolsuper or rolcreatedb or rolcreaterole or rolreplication or rolbypassrls
+          or not rolcanlogin or rolinherit);
+  if wrong is not null then
+    raise exception 'S8: % must be LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', wrong
+      using hint = 'A pre-existing cluster role has the wrong attributes; fix it with a superuser connection before applying this migration.';
+  end if;
+end;
+$$;
 
 comment on role app_api is 'API login role. Holds no privileges of its own; every request runs as authenticated inside one transaction.';
 comment on role app_system is 'System login role. Acts only through named SECURITY DEFINER functions that record a system actor.';
