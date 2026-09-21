@@ -1,0 +1,286 @@
+# E-3: which component creates storage.objects / storage.buckets, and under which role
+# (TEMPORARY DIAGNOSTIC, owner-approved 2026-09-22).
+#
+# E-1 established that the approved postgres image does NOT create the storage tables. This workflow
+# observes the REAL local stack startup lifecycle to find out which component does, and who ends up
+# owning the tables.
+#
+# It runs `supabase start` in a THROWAWAY project created under RUNNER_TEMP, so the repository's own
+# supabase/ directory is never used: no repository migration is applied, supabase/config.toml is not
+# read and not changed, and migration 0012 never runs. The approved image digests are pulled and tagged
+# first, so the stack runs approved content. Nothing is granted, no ownership changes, no SET ROLE, and
+# the three privilege probes each run inside a transaction that is rolled back.
+#
+# Manual dispatch only. Delete this file once the evidence has been collected.
+name: E-3 storage creator evidence (temporary, throwaway project)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: e3-storage-creator
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  FORCE_COLOR: "0"
+  TURBO_TELEMETRY_DISABLED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+  # The local stack's fixed development password. Not a repository secret: it is a constant of the
+  # Supabase CLI's local stack, reaches only this runner's throwaway containers, and is never printed.
+  PROBE_PASSWORD: postgres
+
+jobs:
+  storage-creator:
+    name: Observe the real startup lifecycle in a throwaway project
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Pull the approved image digests and tag them
+        run: |
+          mkdir -p "$RUNNER_TEMP/e3"
+          node --input-type=module -e '
+            const { pullApprovedImages, readLock } = await import(process.env.GITHUB_WORKSPACE + "/scripts/toolchain/supabase-images.mjs");
+            const lock = readLock();
+            console.log("lock status: " + lock.status + ", approved on " + lock.approvedOn);
+            console.log("pulled and tagged " + pullApprovedImages(lock) + " approved image(s) by digest");
+            console.log("excludedServices: " + lock.excludedServices.join(","));
+          '
+      - name: Create a throwaway Supabase project with no migrations
+        run: |
+          mkdir -p "$RUNNER_TEMP/e3/project"
+          cd "$RUNNER_TEMP/e3/project"
+          node "$GITHUB_WORKSPACE/scripts/toolchain/supabase-cli.mjs" init --yes
+          echo "--- throwaway project layout ---"
+          find . -maxdepth 3 -type f | sort
+          echo "--- migrations present (must be none) ---"
+          ls -A supabase/migrations 2>/dev/null || echo "no migrations directory"
+          echo "--- major_version and storage/pooler switches in the throwaway config ---"
+          grep -nE '^(major_version|enabled) *=|^\[(db|db\.migrations|db\.pooler|storage|auth|realtime)\]' supabase/config.toml
+      - name: Start the real stack with the repository's own service exclusions
+        run: |
+          cd "$RUNNER_TEMP/e3/project"
+          excluded=$(node -e '
+            const { readFileSync } = require("node:fs");
+            const lock = JSON.parse(readFileSync(process.env.GITHUB_WORKSPACE + "/toolchain/supabase-images.json", "utf8"));
+            process.stdout.write(lock.excludedServices.join(","));
+          ')
+          echo "excluding: $excluded"
+          node "$GITHUB_WORKSPACE/scripts/toolchain/supabase-cli.mjs" start -x "$excluded" 2>&1 \
+            | tee "$RUNNER_TEMP/e3/start.log"
+      - name: Record every container the startup created, including one-shot migrators
+        run: |
+          echo "--- all containers, running and exited ---"
+          docker ps -a --format 'NAME={{.Names}} IMAGE={{.Image}} STATUS={{.Status}} COMMAND={{.Command}}' \
+            | tee "$RUNNER_TEMP/e3/containers.txt"
+          echo "--- image reference to repository digest ---"
+          docker ps -a --format '{{.Image}}' | sort -u | while read -r ref; do
+            digest=$(docker image inspect --format '{{ if .RepoDigests }}{{ index .RepoDigests 0 }}{{ else }}<none>{{ end }}' "$ref" 2>/dev/null || echo "<unknown>")
+            echo "$ref -> $digest"
+          done | tee "$RUNNER_TEMP/e3/image-digests.txt"
+          echo "--- database user of any storage component, password redacted ---"
+          docker ps -a --format '{{.Names}} {{.Image}}' | grep -i storage || echo "no container whose name or image mentions storage"
+          for name in $(docker ps -a --format '{{.Names}} {{.Image}}' | grep -i storage | cut -d' ' -f1); do
+            echo "container $name:"
+            docker inspect "$name" --format '{{ range .Config.Env }}{{ println . }}{{ end }}' \
+              | grep -iE 'DATABASE_URL|DB_USER|PGUSER|DB_HOST' \
+              | sed -E 's#://([^:@/]+):[^@]*@#://\1:<redacted>@#g'
+          done | tee "$RUNNER_TEMP/e3/storage-component.txt"
+      - name: Catalog evidence, read-only
+        run: |
+          db=$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -1)
+          test -n "$db"
+          echo "database container: $db" | tee "$RUNNER_TEMP/e3/db-container.txt"
+          cat > "$RUNNER_TEMP/e3/catalog.sql" <<'SQL'
+          -- Errors do not stop this file: one failing query must not hide the rest of the evidence.
+          \set ON_ERROR_STOP off
+          \set VERBOSITY verbose
+          \pset pager off
+          \echo '== identity =='
+          select current_user, session_user, current_setting('server_version') as server_version;
+          \echo '== do the storage tables exist now? =='
+          select to_regclass('storage.buckets') is not null as buckets_exists,
+                 to_regclass('storage.objects') is not null as objects_exists;
+          \echo '== storage schema owner =='
+          select nspname, pg_get_userbyid(nspowner) as owner from pg_namespace where nspname = 'storage';
+          \echo '== ownership and row level security of every storage table =='
+          select c.relname,
+                 pg_get_userbyid(c.relowner) as owner,
+                 c.relrowsecurity,
+                 c.relforcerowsecurity
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relkind = 'r'
+           order by c.relname;
+          \echo '== creation time relative to postgres startup =='
+          select pg_postmaster_start_time() as postmaster_start,
+                 min(executed_at) as first_storage_migration,
+                 max(executed_at) as last_storage_migration,
+                 min(executed_at) - pg_postmaster_start_time() as delta_after_startup
+            from storage.migrations;
+          \echo '== the storage migration ledger, first and last entries =='
+          (select id, name, executed_at from storage.migrations order by id asc limit 5)
+          union all
+          (select id, name, executed_at from storage.migrations order by id desc limit 5)
+          order by id;
+          \echo '== repository migration ledger must be absent or empty =='
+          select to_regclass('supabase_migrations.schema_migrations') as repository_ledger;
+          \echo '== role attributes =='
+          select rolname,
+                 rolsuper,
+                 rolcanlogin,
+                 rolinherit,
+                 rolcreaterole,
+                 rolcreatedb,
+                 rolbypassrls,
+                 rolreplication
+            from pg_roles
+           where rolname in ('postgres','supabase_admin','supabase_storage_admin')
+           order by rolname;
+          \echo '== membership matrix =='
+          select r.rolname as role,
+                 m.rolname as member,
+                 am.admin_option,
+                 am.inherit_option,
+                 am.set_option
+            from pg_auth_members am
+            join pg_roles r on r.oid = am.roleid
+            join pg_roles m on m.oid = am.member
+           where r.rolname = 'supabase_storage_admin'
+              or m.rolname = 'postgres'
+           order by r.rolname, m.rolname;
+          \echo '== can postgres reach supabase_storage_admin at all? =='
+          select pg_has_role('postgres',
+                             (select oid from pg_roles where rolname = 'supabase_storage_admin'),
+                             'USAGE') as usage,
+                 pg_has_role('postgres',
+                             (select oid from pg_roles where rolname = 'supabase_storage_admin'),
+                             'MEMBER') as member;
+          \echo '== table privileges held by postgres =='
+          select has_table_privilege('postgres','storage.objects','UPDATE') as objects_update,
+                 has_table_privilege('postgres','storage.objects','SELECT') as objects_select,
+                 has_table_privilege('postgres','storage.buckets','UPDATE') as buckets_update;
+          \echo '== policies already present on storage.objects =='
+          select polname, polcmd from pg_policy p
+            join pg_class c on c.oid = p.polrelid
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relname = 'objects'
+           order by polname;
+          SQL
+          docker exec -i -e PGPASSWORD="$PROBE_PASSWORD" "$db" \
+            psql -h 127.0.0.1 -p 5432 -U postgres -d postgres --no-psqlrc \
+            < "$RUNNER_TEMP/e3/catalog.sql" 2>&1 | tee "$RUNNER_TEMP/e3/catalog.txt"
+      - name: The four statements migration 0012 needs, each rolled back
+        run: |
+          db=$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -1)
+          test -n "$db"
+          cat > "$RUNNER_TEMP/e3/probe.sql" <<'SQL'
+          \set ON_ERROR_STOP off
+          \set VERBOSITY verbose
+          \pset pager off
+          \echo '== each statement on its own, so psql prints the real SQLSTATE =='
+          begin;
+          alter table storage.objects enable row level security;
+          rollback;
+          begin;
+          revoke all on storage.objects from anon, authenticated;
+          rollback;
+          begin;
+          revoke all on storage.buckets from anon, authenticated;
+          rollback;
+          begin;
+          create policy e3_probe on storage.objects for select to authenticated using (bucket_id = 'e3');
+          rollback;
+          \echo '== the same statements with diagnostics captured as data =='
+          begin;
+          do $probe$
+          declare
+            stmt text;
+            captured_state text;
+            captured_message text;
+            captured_detail text;
+            captured_hint text;
+          begin
+            foreach stmt in array array[
+              'alter table storage.objects enable row level security',
+              'revoke all on storage.objects from anon, authenticated',
+              'revoke all on storage.buckets from anon, authenticated',
+              $q$create policy e3_probe on storage.objects for select to authenticated using (bucket_id = 'e3')$q$
+            ] loop
+              begin
+                execute stmt;
+                raise notice 'G OK   | % | the connected role can run this', stmt;
+              exception
+                when others then
+                  get stacked diagnostics
+                    captured_state = returned_sqlstate,
+                    captured_message = message_text,
+                    captured_detail = pg_exception_detail,
+                    captured_hint = pg_exception_hint;
+                  raise notice 'G FAIL | % | SQLSTATE=% | SQLERRM=% | DETAIL=% | HINT=%',
+                    stmt,
+                    captured_state,
+                    captured_message,
+                    coalesce(nullif(captured_detail, ''), '<none>'),
+                    coalesce(nullif(captured_hint, ''), '<none>');
+              end;
+            end loop;
+          end;
+          $probe$;
+          rollback;
+          \echo '== post-rollback state, which must equal the pre-probe state =='
+          select c.relname, c.relrowsecurity, pg_get_userbyid(c.relowner) as owner
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relname in ('buckets','objects')
+           order by c.relname;
+          SQL
+          docker exec -i -e PGPASSWORD="$PROBE_PASSWORD" "$db" \
+            psql -h 127.0.0.1 -p 5432 -U postgres -d postgres --no-psqlrc \
+            < "$RUNNER_TEMP/e3/probe.sql" 2>&1 | tee "$RUNNER_TEMP/e3/probe.txt"
+      - name: Database container log, for the record
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/e3"
+          db=$(docker ps -a --filter 'name=supabase_db_' --format '{{.Names}}' | head -1)
+          if [ -n "$db" ]; then docker logs "$db" > "$RUNNER_TEMP/e3/db-container.log" 2>&1 || true; fi
+          docker ps -a --format 'NAME={{.Names}} IMAGE={{.Image}} STATUS={{.Status}}' > "$RUNNER_TEMP/e3/containers-final.txt" 2>&1 || true
+          tail -30 "$RUNNER_TEMP/e3/db-container.log" 2>/dev/null || true
+      - name: Stop the throwaway stack
+        if: always()
+        run: |
+          cd "$RUNNER_TEMP/e3/project" 2>/dev/null || exit 0
+          node "$GITHUB_WORKSPACE/scripts/toolchain/supabase-cli.mjs" stop --no-backup || true
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e3-storage-creator-evidence
+          path: ${{ runner.temp }}/e3/
+          retention-days: 14
+          if-no-files-found: warn
