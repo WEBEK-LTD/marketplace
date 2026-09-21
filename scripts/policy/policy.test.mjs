@@ -8,7 +8,8 @@ import { installScriptProblems } from './install-scripts.mjs';
 import { changedFiles, overrideProblems, snapshot, workspaceProblems } from './integrity.mjs';
 import { PolicyError, REPO_ROOT, exceptionProblems, lockfilePackages, workspaceSettings } from './lib.mjs';
 import { evaluateAges, exceptionRegisterProblems } from './package-age.mjs';
-import { dependabotProblems, playwrightProblems, repositoryProblems, workflowProblems } from './workflow-policy.mjs';
+import { assertUsable, expiryMessage, findRegistration, registerProblems, registrationProblems } from './ci-secrets.mjs';
+import { dependabotProblems, playwrightProblems, repositoryProblems, scopedSecretRejections, secretUses, workflowProblems } from './workflow-policy.mjs';
 
 const read = (p) => readFileSync(join(REPO_ROOT, p), 'utf8');
 
@@ -143,7 +144,7 @@ test('workflow policy: the committed workflows pass', () => {
 test('workflow policy: negative controls', () => {
   const approved = JSON.parse(read('toolchain/github-actions.json')).actions;
   const ci = read('.github/workflows/ci.yml');
-  const check = (text) => workflowProblems('ci.yml', text, approved, '24.21.0').join('\n');
+  const check = (text) => workflowProblems('.github/workflows/ci.yml', text, approved, '24.21.0').join('\n');
   assert.equal(check(ci), '');
   assert.match(check(ci.replace(/actions\/checkout@[0-9a-f]{40}/, 'actions/checkout@v7')), /full commit SHA/);
   assert.match(check(ci.replace(/actions\/checkout@3d3c/, 'actions/checkout@0d3c')), /must be actions\/checkout@/);
@@ -222,3 +223,102 @@ test('every override must be documented, and the register may not drift', () => 
   assert.match(overrideProblems({ 'js-yaml': '4.3.2', sharp: '0.35.4' }).join(), /documents toml, which pnpm-workspace.yaml does not override/);
 });
 
+
+// ---------------------------------------------------------------- CI secret register (B10-hosted)
+
+const REGISTER = JSON.parse(read('policy/ci-secrets.json')).secrets;
+const APPROVED_ACTIONS = JSON.parse(read('toolchain/github-actions.json')).actions;
+const CI_YML = read('.github/workflows/ci.yml');
+const CI_PATH = '.github/workflows/ci.yml';
+const ACTIVE = '2026-09-21';
+const AFTER_EXPIRY = '2026-10-22';
+const fatal = (text, today, secrets = REGISTER) => workflowProblems(CI_PATH, text, APPROVED_ACTIONS, '24.21.0', { secrets, today }).join('\n');
+const scoped = (text, today, secrets = REGISTER) => scopedSecretRejections(CI_PATH, text, secrets, today).join('\n');
+
+test('B10 secret: an active registration is accepted for its own workflow and job', () => {
+  assert.equal(fatal(CI_YML, ACTIVE), '');
+  assert.equal(scoped(CI_YML, ACTIVE), '');
+  assert.equal(assertUsable({ name: 'B10_HOSTED_DATABASE_URL', workflow: CI_PATH, job: 'b10-hosted', register: REGISTER, today: ACTIVE }), undefined);
+  // The committed registration is exactly the approved one.
+  const entry = findRegistration(REGISTER, 'B10_HOSTED_DATABASE_URL');
+  assert.deepEqual(
+    { name: entry.name, workflow: entry.workflow, job: entry.job, approvedBy: entry.approvedBy, approvedOn: entry.approvedOn, expires: entry.expires },
+    { name: 'B10_HOSTED_DATABASE_URL', workflow: CI_PATH, job: 'b10-hosted', approvedBy: 'OWNER', approvedOn: '2026-09-21', expires: '2026-10-21' },
+  );
+  assert.equal(REGISTER.length, 1, 'exactly one registered CI secret');
+});
+
+test('B10 secret: an expired registration is rejected for b10-hosted', () => {
+  const message = scoped(CI_YML, AFTER_EXPIRY);
+  assert.match(message, /B10_HOSTED_DATABASE_URL registration expired on 2026-10-21/);
+  assert.match(message, /job b10-hosted in \.github\/workflows\/ci\.yml is disabled/);
+  // The job self-gates on the same register, so the rejection actually stops the run.
+  assert.equal(assertUsable({ name: 'B10_HOSTED_DATABASE_URL', workflow: CI_PATH, job: 'b10-hosted', register: REGISTER, today: AFTER_EXPIRY }), expiryMessage(findRegistration(REGISTER, 'B10_HOSTED_DATABASE_URL')));
+  assert.match(CI_YML, /run: node scripts\/policy\/ci-secrets\.mjs assert --name B10_HOSTED_DATABASE_URL/);
+});
+
+test('B10 secret: expiry never fails the repository-wide policy check (option B)', () => {
+  assert.equal(fatal(CI_YML, AFTER_EXPIRY), '', 'an expired registration is not a fatal workflow problem');
+  const expired = repositoryProblems(REPO_ROOT, { today: AFTER_EXPIRY });
+  assert.deepEqual(expired.problems, [], 'unrelated jobs and workflows still pass');
+  assert.equal(expired.scoped.length, 1);
+  const active = repositoryProblems(REPO_ROOT, { today: ACTIVE });
+  assert.deepEqual(active.problems, []);
+  assert.deepEqual(active.scoped, []);
+});
+
+test('B10 secret: scoping stays fatal whatever the expiry says', () => {
+  // The approved secret in another job.
+  const otherJob = CI_YML.replace('run: pnpm run lint', 'run: echo ${{ secrets.B10_HOSTED_DATABASE_URL }}');
+  assert.match(fatal(otherJob, ACTIVE), /registered for job b10-hosted, not lint-typecheck/);
+  assert.match(fatal(otherJob, AFTER_EXPIRY), /registered for job b10-hosted, not lint-typecheck/);
+  // An unregistered secret inside the approved job.
+  const unapproved = CI_YML.replace('secrets.B10_HOSTED_DATABASE_URL', 'secrets.SOME_OTHER_SECRET');
+  assert.match(fatal(unapproved, ACTIVE), /secrets\.SOME_OTHER_SECRET is not registered/);
+  // Workflow-level placement belongs to no job and can never match a registration.
+  const workflowLevel = CI_YML.replace('  FORCE_COLOR: "0"', '  FORCE_COLOR: ${{ secrets.B10_HOSTED_DATABASE_URL }}');
+  assert.match(fatal(workflowLevel, ACTIVE), /not the workflow level|registered for job b10-hosted, not the workflow level/);
+  // The whole context can never be serialised.
+  const dumped = CI_YML.replace('run: pnpm run lint', 'run: echo ${{ toJSON(secrets) }}');
+  assert.match(fatal(dumped, ACTIVE), /secrets\.\* is not registered/);
+  // A path that merely contains "secrets." is not a secret reference.
+  assert.deepEqual(secretUses('run: node scripts/policy/ci-secrets.mjs assert'), []);
+});
+
+test('B10 secret: a malformed registration is fatal, never merely expired', () => {
+  const broken = [{ ...REGISTER[0], approvedBy: '' }];
+  assert.match(registerProblems(broken, ACTIVE).join(), /missing approvedBy/);
+  assert.match(registerProblems([{ ...REGISTER[0], expires: 'never' }], ACTIVE).join(), /expires must be YYYY-MM-DD/);
+  assert.match(registerProblems([REGISTER[0], REGISTER[0]], ACTIVE).join(), /duplicate registration/);
+  assert.match(assertUsable({ name: 'B10_HOSTED_DATABASE_URL', workflow: CI_PATH, job: 'b10-hosted', register: broken, today: ACTIVE }), /registration is invalid/);
+  assert.match(assertUsable({ name: 'NOT_REGISTERED', workflow: CI_PATH, job: 'b10-hosted', register: REGISTER, today: ACTIVE }), /is not registered/);
+  assert.match(assertUsable({ name: 'B10_HOSTED_DATABASE_URL', workflow: '.github/workflows/other.yml', job: 'b10-hosted', register: REGISTER, today: ACTIVE }), /registered for \.github\/workflows\/ci\.yml/);
+});
+
+test('the scoped-expiry exception does not leak into the other policy registers', () => {
+  // The shared helper still treats expiry as a problem, which is what osv-exceptions.json,
+  // release-age-exceptions.json and the rest rely on. Only ci-secrets.json classifies it separately.
+  const fields = ['package', 'version', 'approvedBy', 'approvedOn', 'expires'];
+  const entry = { package: 'a', version: '1.0.0', approvedBy: 'owner', approvedOn: '2026-09-01', expires: '2026-10-01' };
+  assert.deepEqual(exceptionProblems(entry, fields, '2026-09-17'), []);
+  assert.match(exceptionProblems(entry, fields, '2026-10-02').join(), /expired on 2026-10-01/);
+  // ...and the B10 register deliberately drops only that one line, keeping every structural check.
+  const b10 = { ...REGISTER[0], approvedOn: '2026-08-01', expires: '2026-09-01' };
+  assert.deepEqual(registrationProblems(b10, '2026-10-02'), []);
+  assert.match(registrationProblems({ ...b10, approvedOn: 'soon' }, '2026-10-02').join(), /approvedOn/);
+});
+
+test('the B10-hosted decision register records decisions and unverified runtime facts', () => {
+  const register = JSON.parse(read('policy/b10-hosted-decisions.json'));
+  assert.equal(register.target.projectRef, 'slndmkpyakbaradiyaty');
+  assert.equal(register.target.environment, 'non-production');
+  assert.equal(register.target.host, 'aws-0-eu-central-1.pooler.supabase.com');
+  assert.equal(register.target.port, 5432);
+  assert.equal(register.target.poolerMode, 'session');
+  for (const id of ['O-2(b)', 'cli-path', 'ci-secret', 'secret-expiry', 'psql', 'pgtap', 'job-shape']) {
+    assert.ok(register.decisions.some((d) => d.id === id), `decision ${id} is recorded`);
+  }
+  // Nothing may claim a runtime fact before a hosted run establishes it.
+  const facts = Object.fromEntries(register.runtimeFacts.map((f) => [f.id, f.status]));
+  assert.deepEqual(facts, { 'authenticated-connection': 'unverified', createrole: 'unverified', 'server-version': 'unverified', 'o-3-plan': 'open' });
+});

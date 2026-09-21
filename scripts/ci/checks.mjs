@@ -1,5 +1,6 @@
 // Small CI checks and sanitised summaries (owner decisions E6, E9, E10, E22).
 //   redis-version                       redis-server must report the approved version
+//   psql-version                        psql must report the approved client major (b10-hosted)
 //   playwright-browser                  Playwright 1.62.1 must pin, and have installed, the approved Chromium build
 //   tool-versions --job <name> --output <file>   sanitised tool/version summary
 //   e2e-summary --report <file> --output <file>  test titles and outcomes only
@@ -22,6 +23,15 @@ function run(command, args) {
 
 export function redisVersion(output) {
   return /v=(\d+\.\d+\.\d+)/.exec(output ?? '')?.[1];
+}
+
+/** `psql (PostgreSQL) 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)` → `16.10`. */
+export function psqlVersion(output) {
+  return /\(PostgreSQL\)\s+(\d+(?:\.\d+)*)/.exec(output ?? '')?.[1];
+}
+
+export function psqlMajor(version) {
+  return /^(\d+)/.exec(version ?? '')?.[1];
 }
 
 export function playwrightBrowser() {
@@ -77,6 +87,13 @@ function main() {
     const found = redisVersion(run('redis-server', ['--version']));
     if (found !== SYSTEM.redis.expectedVersion) throw new CheckError(`redis-server version ${found ?? 'unknown'} does not match the approved ${SYSTEM.redis.expectedVersion}`);
     console.log(`redis-server ${found} (approved)`);
+  } else if (command === 'psql-version') {
+    // The major is pinned, not the patch: the Ubuntu archive moves patch versions under us, and a
+    // patch-exact pin would fail the job for a security update rather than for a policy breach.
+    const found = psqlVersion(run('psql', ['--version']));
+    const major = psqlMajor(found);
+    if (major !== SYSTEM.psql.expectedMajor) throw new CheckError(`psql major ${major ?? 'unknown'} does not match the approved ${SYSTEM.psql.expectedMajor}`);
+    console.log(`psql ${found} (approved major ${major})`);
   } else if (command === 'playwright-browser') {
     const found = playwrightBrowser();
     const expected = SYSTEM.playwright;
@@ -97,7 +114,8 @@ function main() {
       pnpm: run('pnpm', ['--version']) ?? null,
       docker: run('docker', ['version', '--format', '{{.Server.Version}}']) ?? null,
       redis: redisVersion(run('redis-server', ['--version'])) ?? null,
-      approved: { node: SYSTEM.node, pnpm: SYSTEM.pnpm, redis: SYSTEM.redis.expectedVersion, chromium: `${SYSTEM.playwright.browserVersion} (revision ${SYSTEM.playwright.revision})` },
+      psql: psqlVersion(run('psql', ['--version'])) ?? null,
+      approved: { node: SYSTEM.node, pnpm: SYSTEM.pnpm, redis: SYSTEM.redis.expectedVersion, psql: `major ${SYSTEM.psql.expectedMajor}`, chromium: `${SYSTEM.playwright.browserVersion} (revision ${SYSTEM.playwright.revision})` },
     };
     writeFileSync(arg('--output', { output: true }), `${JSON.stringify(summary, null, 2)}\n`);
     console.log(`tool versions recorded for ${job}`);
@@ -109,7 +127,7 @@ function main() {
     const summary = sanitizeTool1(JSON.parse(readFileSync(arg('--input'), 'utf8')));
     writeFileSync(arg('--output', { output: true }), `${JSON.stringify(summary, null, 2)}\n`);
     console.log(`TOOL-1 summary: ${summary.app ?? ''} ${summary.result}`);
-  } else throw new CheckError('Usage: checks.mjs <redis-version|playwright-browser [--installed]|tool-versions|e2e-summary|tool1-summary> ...');
+  } else throw new CheckError('Usage: checks.mjs <redis-version|psql-version|playwright-browser [--installed]|tool-versions|e2e-summary|tool1-summary> ...');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

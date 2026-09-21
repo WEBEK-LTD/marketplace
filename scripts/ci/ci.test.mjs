@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { redisVersion, sanitizeE2eReport, sanitizeTool1 } from './checks.mjs';
+import { psqlMajor, psqlVersion, redisVersion, sanitizeE2eReport, sanitizeTool1 } from './checks.mjs';
+import { assertTarget, categorise, GUARD_FUNCTIONS, plannedMigrations, sha256File, target } from './supabase-hosted.mjs';
 import { B10_MIGRATION, B10_SQL, B10_VERSION, CiError, connectionUrls, harnessResult, parseStatusEnv, pgtapVerdict, plannedPgtap, poolerUser, poolerUserCandidates, tapSummary, TOOL7_MINIMUM_TESTS } from './supabase-local.mjs';
 import { approvalProblems, proposeImages, verifyImages, verifyTransient } from '../toolchain/supabase-images.mjs';
 
@@ -192,4 +193,85 @@ test('sanitised CI summaries', () => {
   const e2e = sanitizeE2eReport({ stats: { expected: 1, unexpected: 0, flaky: 0, skipped: 0 }, suites: [{ title: 'smoke.spec.ts', suites: [{ title: 'web', specs: [{ title: 'home', tests: [{ projectName: 'chromium', status: 'expected', results: [{ stdout: ['secret-looking output'], error: { message: 'x' } }] }] }] }] }] });
   assert.deepEqual(e2e.tests, [{ title: 'smoke.spec.ts › web › home', project: 'chromium', status: 'expected' }]);
   assert.doesNotMatch(JSON.stringify(e2e), /secret-looking/);
+});
+
+// ---------------------------------------------------------------- psql (O-22) and B10-hosted
+
+test('psql version parsing and the approved major', () => {
+  assert.equal(psqlVersion('psql (PostgreSQL) 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)'), '16.10');
+  assert.equal(psqlMajor(psqlVersion('psql (PostgreSQL) 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)')), '16');
+  assert.equal(psqlMajor(psqlVersion('psql (PostgreSQL) 17.2')), '17');
+  assert.equal(psqlVersion('command not found'), undefined);
+  assert.equal(psqlMajor(undefined), undefined);
+  const system = JSON.parse(readFileSync(new URL('../../toolchain/ci-system.json', import.meta.url), 'utf8'));
+  assert.equal(system.psql.expectedMajor, '16');
+  assert.match(system.psql.source, /Ubuntu 24\.04 apt package postgresql-client-16/);
+  // No second package source: the client comes from the Ubuntu archive and nowhere else.
+  assert.doesNotMatch(system.psql.source, /pgdg|postgresql\.org|deb\s/i);
+  assert.match(system.psql.source, /^Ubuntu 24\.04 apt package /);
+});
+
+test('B10-hosted: the target assertion fails closed and never echoes the credential', () => {
+  const expected = target();
+  assert.equal(expected.projectRef, 'slndmkpyakbaradiyaty');
+  const good = `postgresql://postgres.${expected.projectRef}:PLACEHOLDER-NOT-A-SECRET@${expected.host}:${expected.port}/${expected.database}`;
+  const parts = assertTarget(good, expected);
+  assert.equal(parts.host, expected.host);
+  assert.equal(parts.user, `postgres.${expected.projectRef}`);
+
+  const rejects = (url, pattern) => assert.throws(() => assertTarget(url, expected), pattern);
+  rejects(undefined, /is required/);
+  rejects('nonsense', /not a valid URL/);
+  rejects(good.replace('postgresql://', 'mysql://'), /must be a postgres URL/);
+  rejects(good.replace(expected.host, 'db.slndmkpyakbaradiyaty.supabase.co'), /host is not/);
+  rejects(good.replace(`:${expected.port}`, ':6543'), /port is not/);
+  rejects(good.replace(new RegExp(`/${expected.database}$`), '/other'), /database is not/);
+  rejects(good.replace(`postgres.${expected.projectRef}`, 'postgres.otherref'), /does not name project/);
+  rejects(good.replace(`postgres.${expected.projectRef}`, 'someone'), /does not start with/);
+  rejects(good.replace(':PLACEHOLDER-NOT-A-SECRET', ''), /no password is present/);
+
+  // A rejection names what did not match, never the value that did not match.
+  try {
+    assertTarget(`postgresql://postgres.wrong:PLACEHOLDER-NOT-A-SECRET@${expected.host}:${expected.port}/${expected.database}`, expected);
+    assert.fail('expected a rejection');
+  } catch (error) {
+    assert.doesNotMatch(error.message, /PLACEHOLDER-NOT-A-SECRET/);
+  }
+});
+
+test('B10-hosted: failures are reduced to categories, never passed through', () => {
+  assert.equal(categorise('FATAL: password authentication failed for user "postgres.x"'), 'authentication_failed');
+  assert.equal(categorise('ERROR: permission denied to create role'), 'insufficient_privilege');
+  assert.equal(categorise('could not connect to server: Connection timed out'), 'unreachable');
+  assert.equal(categorise('ERROR: This database is not a Supabase database: missing schema auth'), 'baseline_assertion_failed');
+  assert.equal(categorise('ERROR: extension "pgtap" is not available'), 'pgtap_extension_missing');
+  assert.equal(categorise('ERROR: syntax error at or near "slect"'), 'sql_error');
+});
+
+test('B10-hosted: the planned migration set is the committed one, contiguous and ordered', () => {
+  const names = plannedMigrations();
+  assert.equal(names.length, 37);
+  assert.equal(names[0], '0001_extensions_and_schemas.sql');
+  assert.equal(names.at(-1), '0037_step_up_grant_consumption.sql');
+  assert.ok(names.every((name) => name.endsWith('.sql')));
+  names.forEach((name, index) => assert.equal(name.slice(0, 4), String(index + 1).padStart(4, '0')));
+  assert.equal(GUARD_FUNCTIONS.length, 10);
+  // The hash is of the committed bytes, so the result file states exactly what was applied.
+  assert.match(sha256File(new URL('../../supabase/migrations/0001_extensions_and_schemas.sql', import.meta.url)), /^[0-9a-f]{64}$/);
+});
+
+test('B10-hosted: the runner never puts the credential where it could be read back', () => {
+  const source = readFileSync(new URL('./supabase-hosted.mjs', import.meta.url), 'utf8');
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  // No connection argument on the command line, for psql or for docker.
+  assert.doesNotMatch(code, /PGPASSWORD/);
+  assert.doesNotMatch(code, /'-d',|"--dbname"|--dbname=/);
+  assert.doesNotMatch(code, /--verbose/);
+  // The password reaches libpq only through a 0600 file outside the repository.
+  assert.match(code, /mkdtempSync/);
+  assert.match(code, /mode: 0o600/);
+  assert.match(code, /PGPASSFILE/);
+  assert.match(code, /rmSync\(dir, \{ recursive: true, force: true \}\)/);
+  // Errors are categorised rather than passed through.
+  assert.match(code, /categorise\(/);
 });

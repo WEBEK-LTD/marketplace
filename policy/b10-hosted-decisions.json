@@ -1,0 +1,93 @@
+{
+  "purpose": "The owner decisions that authorise the B10-hosted Supabase verification path, and the runtime facts that only the first GitHub Actions run can establish (recorded 2026-09-21).",
+  "rules": "Decisions are recorded as confirmed by the owner; nothing here may be added without an owner decision. Every entry in runtimeFacts stays \"unverified\" until an actual b10-hosted run against the target project establishes it. A passing local suite never changes a runtimeFact.",
+  "target": {
+    "environment": "non-production",
+    "projectRef": "slndmkpyakbaradiyaty",
+    "region": "eu-central-1",
+    "regionDisplay": "Central EU (Frankfurt)",
+    "host": "aws-0-eu-central-1.pooler.supabase.com",
+    "port": 5432,
+    "database": "postgres",
+    "userPrefix": "postgres.",
+    "poolerMode": "session",
+    "note": "IPv4 session-mode shared pooler. The direct host db.<ref>.supabase.co publishes no A record, so GitHub-hosted runners (IPv4 only) can reach the project only through this pooler."
+  },
+  "decisions": [
+    {
+      "id": "O-2(b)",
+      "decision": "Region eu-central-1 (Central EU, Frankfurt) approved for this NON-PRODUCTION project.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "This non-production project only. Not approval for any production project. Specification-level O-2 and the data-residency part of B1-D remain OPEN."
+    },
+    {
+      "id": "cli-path",
+      "decision": "Decision B: the Supabase CLI stays local-only. Hosted migrations use psql. scripts/toolchain/supabase-cli.mjs and scripts/toolchain/deny-proxy.mjs are not modified.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "Consequence: the hosted database has no supabase_migrations.schema_migrations ledger, so hosted continuity is proved by the mechanism documented in README under b10-hosted."
+    },
+    {
+      "id": "ci-secret",
+      "decision": "Exactly one registered GitHub Actions secret, B10_HOSTED_DATABASE_URL, permitted only in .github/workflows/ci.yml and only in the b10-hosted job. environment: remains forbidden; secrets.* remains forbidden by default everywhere else.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "Registered in policy/ci-secrets.json, expiring 2026-10-21."
+    },
+    {
+      "id": "secret-expiry",
+      "decision": "Expiry option B: an expired registration is a scoped rejection that disables only the b10-hosted job. It never fails the repository-wide policy check, and the semantics of every other policy register are unchanged.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "Implemented in scripts/policy/ci-secrets.mjs and scripts/policy/workflow-policy.mjs; the b10-hosted job self-gates on the same register before any step can reach the secret."
+    },
+    {
+      "id": "psql",
+      "decision": "PostgreSQL client major 16 from the Ubuntu 24.04 archive. No PGDG repository and no other package source.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "Pinned in toolchain/ci-system.json and asserted by scripts/ci/checks.mjs psql-version. The job applies SQL and runs queries only; no pg_dump or pg_restore."
+    },
+    {
+      "id": "pgtap",
+      "decision": "pgtap may be enabled out-of-band on this non-production project only, and must never be added to the committed migrations. Hosted pgTAP reuses the already-approved digest-pinned image public.ecr.aws/supabase/pg_prove:3.36.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "The image digest in toolchain/supabase-images.json is unchanged and no new image approval is requested."
+    },
+    {
+      "id": "job-shape",
+      "decision": "b10-hosted is a new additive job in .github/workflows/ci.yml, workflow_dispatch-only initially. The existing seven jobs are untouched and supabase-local remains the B10-local evidence path.",
+      "approvedBy": "OWNER",
+      "approvedOn": "2026-09-21",
+      "scope": "The job never prints credentials, connection strings, raw database output, dumps or secret-bearing URLs; artifacts stay sanitised."
+    }
+  ],
+  "runtimeFacts": [
+    {
+      "id": "authenticated-connection",
+      "fact": "An authenticated connection to the session pooler succeeds.",
+      "status": "unverified",
+      "establishedBy": "the first b10-hosted GitHub Actions run"
+    },
+    {
+      "id": "createrole",
+      "fact": "The pooler role holds CREATEROLE, which migration 0003 requires to create app_api, app_system and app_worker.",
+      "status": "unverified",
+      "establishedBy": "the first b10-hosted GitHub Actions run"
+    },
+    {
+      "id": "server-version",
+      "fact": "The hosted PostgreSQL server version.",
+      "status": "unverified",
+      "establishedBy": "the first b10-hosted GitHub Actions run"
+    },
+    {
+      "id": "o-3-plan",
+      "fact": "The Supabase plan (O-3). Session pooler availability is evidenced by the dashboard; the plan itself is still undecided and gates unrelated Phase 3 features.",
+      "status": "open",
+      "establishedBy": "an owner decision, not this increment"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-# Phase 1 CI (owner decisions E1-E29, Phase 1 Step 9). No secrets, no environments, no deployments.
+# Phase 1 CI (owner decisions E1-E29, Phase 1 Step 9), plus the manual b10-hosted job. The only
+# secret any workflow may reference is registered in policy/ci-secrets.json. No environments, no deployments.
 # Stages of the v5.2 pipeline that need Phase 2/3 outputs are deliberately absent (see README, "CI").
 name: CI
 
@@ -485,6 +486,64 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: e2e
+          path: ${{ runner.temp }}/artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+
+  b10-hosted:
+    name: B10-hosted (non-production Supabase: migrations 0001-0037 and verification)
+    # Manual only while the path is being proven: a job that can reach a credential never runs on
+    # every push. B10-local (the supabase-local job) is unaffected and keeps running on every trigger.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare CI directories
+        run: mkdir -p "$RUNNER_TEMP/artifacts"
+      # Self-gate. Runs before any step that can reach the secret, so an expired registration stops the
+      # job here instead of after a connection has been made. No secret is in scope for this step.
+      - name: Secret registration must be active (policy/ci-secrets.json)
+        run: node scripts/policy/ci-secrets.mjs assert --name B10_HOSTED_DATABASE_URL --workflow .github/workflows/ci.yml --job b10-hosted
+      - name: Set up pnpm (packageManager pnpm@12.4.2)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Verify pnpm version
+        run: test "$(pnpm --version)" = "12.4.2"
+      - name: Install dependencies (frozen lockfile, install scripts blocked)
+        run: pnpm install --frozen-lockfile
+      - name: Install the approved PostgreSQL client (Ubuntu 24.04 archive, major 16)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-16
+      - name: Verify the psql client major (O-22)
+        run: node scripts/ci/checks.mjs psql-version
+      # The only step the credential is in scope for. It is never a command-line argument: the runner
+      # writes a 0600 .pgpass outside the repository and lets libpq read it.
+      - name: Apply migrations 0001-0037 and verify the hosted database
+        env:
+          B10_HOSTED_DATABASE_URL: ${{ secrets.B10_HOSTED_DATABASE_URL }}
+        run: node scripts/ci/supabase-hosted.mjs verify --result "$RUNNER_TEMP/artifacts/b10-hosted.json"
+      - name: Record tool versions
+        if: always()
+        run: node scripts/ci/checks.mjs tool-versions --job b10-hosted --output "$RUNNER_TEMP/artifacts/tool-versions-b10-hosted.json"
+      - name: Upload sanitised artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: b10-hosted
           path: ${{ runner.temp }}/artifacts/
           retention-days: 14
           if-no-files-found: warn

@@ -2,14 +2,14 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readJson, REPO_ROOT } from './lib.mjs';
+import { expiryMessage, findRegistration, isExpired, loadRegister, registerProblems, registrationProblems } from './ci-secrets.mjs';
+import { readJson, REPO_ROOT, todayUtc } from './lib.mjs';
 
 const FORBIDDEN = [
   [/pull_request_target/, 'pull_request_target is not allowed'],
   [/^\s*workflow_run:/m, 'workflow_run is not allowed'],
   [/ubuntu-latest/, 'use ubuntu-24.04, not ubuntu-latest'],
   [/self-hosted/, 'self-hosted runners are not allowed'],
-  [/\bsecrets\./, 'workflows must not use secrets in Phase 1'],
   [/^\s*environment:/m, 'GitHub Environments are not used in Phase 1'],
   [/:\s*write\b/, 'write permissions are not allowed'],
   [/continue-on-error:\s*true/, 'continue-on-error is not allowed'],
@@ -35,11 +35,94 @@ function steps(jobText) {
   return parts.map((part) => `- ${part}`);
 }
 
-export function workflowProblems(file, text, approved, nodeVersion) {
+/** GitHub Actions expressions. The `secrets` context only means anything inside one of these. */
+const EXPRESSION = /\$\{\{([\s\S]*?)\}\}/g;
+const SECRET_PROPERTY = /\bsecrets\.([A-Za-z_][A-Za-z0-9_]*)/g;
+const SECRET_CONTEXT = /\bsecrets\b/;
+
+/**
+ * Every use of the `secrets` context in a workflow, with the job it sits in.
+ *
+ * Only `${{ ... }}` expressions are scanned, so a path such as `policy/ci-secrets.json` is not mistaken
+ * for a secret reference. Anything before `jobs:` belongs to no job and is reported with
+ * `job: undefined`, which never matches a registration — a workflow-level `env:` is exactly the
+ * placement the register exists to prevent.
+ *
+ * A use of the context in any shape other than `secrets.NAME` — `toJSON(secrets)`, `secrets['NAME']` —
+ * is reported as the unnamed use `*`, which can match no registration and is therefore always fatal.
+ * `toJSON(secrets)` would otherwise serialise every secret the job can see.
+ */
+export function secretUses(text) {
+  const uses = [];
+  const collect = (chunk, job) => {
+    for (const expression of chunk.matchAll(EXPRESSION)) {
+      const body = expression[1];
+      if (!SECRET_CONTEXT.test(body)) continue;
+      const named = [...body.matchAll(SECRET_PROPERTY)];
+      for (const match of named) uses.push({ name: match[1], job });
+      if (named.length === 0) uses.push({ name: '*', job });
+    }
+  };
+  const index = text.split('\n').findIndex((line) => line === 'jobs:');
+  collect(index === -1 ? text : text.split('\n').slice(0, index + 1).join('\n'), undefined);
+  for (const job of splitJobs(text)) collect(job.text, job.name);
+  return uses;
+}
+
+/**
+ * Fatal secret problems for one workflow: an unregistered name, or a registered name outside the one
+ * workflow and job it was approved for. A registration that is merely expired is NOT reported here —
+ * see `scopedSecretRejections`.
+ */
+function secretProblems(file, text, register, today) {
+  const problems = [];
+  for (const use of secretUses(text)) {
+    const entry = findRegistration(register, use.name);
+    if (entry === undefined) {
+      problems.push(`secrets.${use.name} is not registered in policy/ci-secrets.json`);
+      continue;
+    }
+    if (registrationProblems(entry, today).length > 0) continue; // reported once by registerProblems
+    if (entry.workflow !== file) problems.push(`secrets.${use.name} is registered for ${entry.workflow}, not ${file}`);
+    else if (entry.job !== use.job) problems.push(`secrets.${use.name} is registered for job ${entry.job}, not ${use.job ?? 'the workflow level'}`);
+  }
+  return problems;
+}
+
+/**
+ * Scoped rejections: structurally valid registrations that have expired, used in exactly the workflow
+ * and job they were approved for. These never fail the repository policy check; they disable only the
+ * job named in the message (owner decision: expiry option B).
+ */
+export function scopedSecretRejections(file, text, register, today) {
+  const rejections = [];
+  for (const use of secretUses(text)) {
+    const entry = findRegistration(register, use.name);
+    if (entry === undefined || registrationProblems(entry, today).length > 0) continue;
+    if (entry.workflow === file && entry.job === use.job && isExpired(entry, today)) {
+      const message = `${file}: ${expiryMessage(entry)}`;
+      if (!rejections.includes(message)) rejections.push(message);
+    }
+  }
+  return rejections;
+}
+
+/**
+ * Fatal problems with one workflow. The return shape is unchanged — a flat array of strings — so
+ * existing callers and their negative controls keep working; expiry is surfaced separately by
+ * `scopedSecretRejections`.
+ *
+ * `options.secrets` and `options.today` are injectable so that tests can exercise an active and an
+ * expired registration against a fixed clock instead of the real date.
+ */
+export function workflowProblems(file, text, approved, nodeVersion, options = {}) {
+  const register = options.secrets ?? loadRegister();
+  const today = options.today ?? todayUtc();
   const problems = [];
   const at = (message) => problems.push(`${file}: ${message}`);
   if (!/^permissions: \{\}$/m.test(text)) at('top-level permissions must be {}');
   for (const [pattern, message] of FORBIDDEN) if (pattern.test(text)) at(message);
+  for (const problem of secretProblems(file, text, register, today)) at(problem);
   for (const match of text.matchAll(/uses:\s*(\S+)(.*)$/gm)) {
     const ref = /^([\w.-]+\/[\w.-]+)(\/[\w./-]+)?@([0-9a-f]{40})$/.exec(match[1]);
     const comment = /^\s*#\s*(\S+)/.exec(match[2])?.[1];
@@ -128,23 +211,34 @@ export function playwrightProblems(text) {
   return problems;
 }
 
-export function repositoryProblems(root = REPO_ROOT) {
+export function repositoryProblems(root = REPO_ROOT, options = {}) {
   const approved = readJson(join(root, 'toolchain/github-actions.json')).actions;
   const nodeVersion = readFileSync(join(root, '.nvmrc'), 'utf8').trim();
+  const register = options.secrets ?? loadRegister();
+  const today = options.today ?? todayUtc();
   const dir = join(root, '.github/workflows');
   const files = readdirSync(dir).filter((f) => /\.ya?ml$/.test(f)).sort();
-  const problems = [];
-  for (const file of files) problems.push(...workflowProblems(`.github/workflows/${file}`, readFileSync(join(dir, file), 'utf8'), approved, nodeVersion));
+  const problems = [...registerProblems(register, today)];
+  const scoped = [];
+  for (const file of files) {
+    const text = readFileSync(join(dir, file), 'utf8');
+    const path = `.github/workflows/${file}`;
+    problems.push(...workflowProblems(path, text, approved, nodeVersion, { secrets: register, today }));
+    scoped.push(...scopedSecretRejections(path, text, register, today));
+  }
   problems.push(...dependabotProblems(readFileSync(join(root, '.github/dependabot.yml'), 'utf8')));
   problems.push(...playwrightProblems(readFileSync(join(root, 'packages/e2e/playwright.config.ts'), 'utf8')));
-  return { files, problems };
+  return { files, problems, scoped };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { files, problems } = repositoryProblems();
+  const { files, problems, scoped } = repositoryProblems();
   if (problems.length > 0) {
     console.error(`workflow policy failed:\n  ${problems.join('\n  ')}`);
     process.exit(1);
   }
-  console.log(`workflow policy passed: ${files.join(', ')}; Dependabot limited to GitHub Actions with a 14-day cooldown; Playwright Chromium-only without retries.`);
+  // Scoped rejections are reported and deliberately do not fail this check: an expired registration
+  // disables its own job (which self-gates on the same register) and nothing else.
+  for (const rejection of scoped) console.warn(`workflow policy scoped rejection: ${rejection}`);
+  console.log(`workflow policy passed: ${files.join(', ')}; Dependabot limited to GitHub Actions with a 14-day cooldown; Playwright Chromium-only without retries; ${scoped.length} scoped secret rejection(s).`);
 }

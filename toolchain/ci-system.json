@@ -8,6 +8,11 @@
     "source": "Ubuntu 24.04 apt package redis-server",
     "expectedVersion": "7.0.15"
   },
+  "psql": {
+    "source": "Ubuntu 24.04 apt package postgresql-client-16",
+    "expectedMajor": "16",
+    "note": "Client only, for the b10-hosted job: it applies SQL and runs verification queries. No pg_dump or pg_restore, so a 16 client against the hosted PostgreSQL 17 server is sufficient and no PGDG package source is introduced (owner decision, 2026-09-21). Patch versions follow the Ubuntu archive, so the major is what is pinned."
+  },
   "playwright": {
     "package": "@playwright/test 1.62.1",
     "browser": "chromium",
