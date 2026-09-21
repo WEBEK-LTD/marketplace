@@ -391,6 +391,75 @@ jobs:
       - name: Start the local stack with approved images (fails until the owner approves the digest lock)
         id: start
         run: node scripts/ci/supabase-local.mjs start
+      # TEMPORARY — EVIDENCE ONLY for the 0012 storage ownership blocker. Read-only: the single
+      # ALTER TABLE runs inside BEGIN/ROLLBACK and leaves nothing behind. `if: always()` so it runs
+      # after a failed `start`, while the containers are still up. psql comes from the approved,
+      # digest-pinned postgres image itself, so no unpinned client is introduced (O-22). Remove this
+      # step once the evidence has been captured.
+      - name: Storage ownership probe (temporary, read-only evidence)
+        if: always()
+        run: |
+          container="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -1)"
+          if [ -z "$container" ]; then
+            echo "No supabase_db_ container is running: the stack never reached the database."
+            exit 0
+          fi
+          echo "container: $container"
+          echo "host port mapping for 5432: $(docker port "$container" 5432 || echo 'not published')"
+          docker exec -i "$container" psql -U postgres -d postgres -f - <<'PROBE_SQL'
+          \set VERBOSITY verbose
+
+          \echo === A. current / session role ===
+          select current_user, session_user, current_setting('server_version') as server_version;
+
+          \echo === B + C. storage ownership and RLS flags ===
+          select c.relname,
+                 pg_get_userbyid(c.relowner) as owner,
+                 c.relrowsecurity,
+                 c.relforcerowsecurity
+            from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relname in ('objects','buckets')
+           order by c.relname;
+
+          \echo === D. membership / INHERIT against the real owners (no SET ROLE) ===
+          select distinct
+                 c.relname,
+                 pg_get_userbyid(c.relowner)                     as owner_role,
+                 pg_has_role(current_user, c.relowner, 'USAGE')  as inherits,
+                 pg_has_role(current_user, c.relowner, 'MEMBER') as member
+            from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relname in ('objects','buckets')
+           order by c.relname;
+
+          \echo === D2. how the membership was granted, if it exists ===
+          select pg_get_userbyid(m.roleid) as granted_role,
+                 pg_get_userbyid(m.member) as member_role,
+                 m.admin_option, m.inherit_option, m.set_option
+            from pg_auth_members m
+           where m.member = (select oid from pg_roles where rolname = current_user);
+
+          \echo === E. role attributes: current_user and the storage owners ===
+          select r.rolname, r.rolsuper, r.rolcreaterole, r.rolcreatedb,
+                 r.rolinherit, r.rolcanlogin, r.rolbypassrls, r.rolreplication
+            from pg_roles r
+           where r.rolname = current_user
+              or r.oid in (select c.relowner from pg_class c
+                             join pg_namespace n on n.oid = c.relnamespace
+                            where n.nspname = 'storage' and c.relname in ('objects','buckets'))
+           order by r.rolname;
+
+          \echo === 5. do the storage tables predate migration 0012? ===
+          select (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                   where n.nspname = 'storage' and c.relname in ('objects','buckets'))  as storage_tables_present,
+                 (select count(*) from supabase_migrations.schema_migrations
+                   where version = '0012')                                              as migration_0012_recorded,
+                 (select max(version) from supabase_migrations.schema_migrations)        as last_applied_migration;
+
+          \echo === F. the underlying privilege result, rolled back, changes nothing ===
+          begin;
+            alter table storage.objects enable row level security;
+          rollback;
+          PROBE_SQL
       - name: TOOL-3 through the local transaction-mode pooler
         if: always() && steps.start.outcome == 'success'
         run: node scripts/ci/supabase-local.mjs tool3 --result "$RUNNER_TEMP/artifacts/tool3.json"
