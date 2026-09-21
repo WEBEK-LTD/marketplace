@@ -1,0 +1,250 @@
+# E-1: image-only storage ownership evidence (TEMPORARY DIAGNOSTIC, owner-approved 2026-09-22).
+#
+# This workflow exists to answer one question with facts instead of inference: who owns
+# storage.objects and storage.buckets in the approved Supabase Postgres image, before any repository
+# migration runs.
+#
+# It starts ONLY the approved postgres image and lets the image initialise itself. It does not invoke
+# the Supabase CLI, does not start the repository stack, applies no repository migration, grants and
+# revokes nothing, changes no ownership, never uses SET ROLE, and touches no secret. The single
+# privilege probe runs inside a transaction that is rolled back.
+#
+# Manual dispatch only. Delete this file once the evidence has been collected.
+name: E-1 storage ownership evidence (temporary, image only)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: e1-storage-ownership
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  FORCE_COLOR: "0"
+  # The approved postgres image, addressed by digest so the tag cannot drift.
+  PROBE_IMAGE: public.ecr.aws/supabase/postgres@sha256:28f0e16a019e648089fc1a6d333549a55548f6019c15ae4bd7cd58b989027518
+  PROBE_CONTAINER: e1-storage-ownership
+  # A throwaway bootstrap password for a container that lives for seconds and is then destroyed. It is
+  # not a repository secret, is never persisted, and grants access to nothing outside this runner.
+  PROBE_PASSWORD: postgres
+
+jobs:
+  storage-ownership:
+    name: Image-only storage ownership evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Node.js 24.21.0 (official setup-node)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+      - name: Verify Node.js version (I2)
+        run: |
+          node --version
+          test "$(node --version)" = "v24.21.0"
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify the probe image is exactly the approved postgres image
+        run: |
+          node -e '
+            const { readFileSync } = require("node:fs");
+            const lock = JSON.parse(readFileSync("toolchain/supabase-images.json", "utf8"));
+            if (lock.status !== "approved") {
+              console.error("the image lock is not approved");
+              process.exit(1);
+            }
+            const entry = lock.images.find((image) => image.reference.startsWith("public.ecr.aws/supabase/postgres:"));
+            if (entry === undefined) {
+              console.error("no postgres image in the approved lock");
+              process.exit(1);
+            }
+            const approved = entry.reference.split(":")[0] + "@" + entry.digest;
+            if (approved !== process.env.PROBE_IMAGE) {
+              console.error("probe image " + process.env.PROBE_IMAGE + " is not the approved digest " + approved);
+              process.exit(1);
+            }
+            console.log("probe image matches the approved lock: " + approved);
+          '
+      - name: Pull the approved postgres image by digest
+        run: |
+          docker pull "$PROBE_IMAGE"
+          echo "resolved repo digest:"
+          docker image inspect --format '{{ index .RepoDigests 0 }}' "$PROBE_IMAGE"
+      - name: Start ONLY that image and let its own initialisation complete
+        run: |
+          docker run -d --name "$PROBE_CONTAINER" -e POSTGRES_PASSWORD="$PROBE_PASSWORD" "$PROBE_IMAGE"
+          ready=no
+          for attempt in $(seq 1 180); do
+            if docker exec "$PROBE_CONTAINER" pg_isready -h 127.0.0.1 -p 5432 -U postgres >/dev/null 2>&1; then
+              echo "accepting TCP connections after ${attempt}s"
+              ready=yes
+              break
+            fi
+            if [ "$(docker inspect -f '{{ .State.Running }}' "$PROBE_CONTAINER")" != "true" ]; then
+              echo "the container exited during initialisation"
+              break
+            fi
+            sleep 1
+          done
+          echo "--- initialisation log (last 60 lines) ---"
+          docker logs "$PROBE_CONTAINER" 2>&1 | tail -60
+          echo "--- initialisation markers ---"
+          docker logs "$PROBE_CONTAINER" 2>&1 | grep -E "init process complete|database system is ready to accept connections" || true
+          test "$ready" = "yes"
+      - name: Existence check, before anything else touches this database
+        run: |
+          mkdir -p "$RUNNER_TEMP/e1"
+          cat > "$RUNNER_TEMP/e1/exists.sql" <<'SQL'
+          \set ON_ERROR_STOP on
+          \pset pager off
+          select to_regclass('storage.buckets') is not null as storage_buckets_exists,
+                 to_regclass('storage.objects') is not null as storage_objects_exists;
+          select n.nspname, count(*) as relations
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage'
+           group by n.nspname;
+          select count(*) = 0 as no_repository_migration_ledger
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'supabase_migrations' and c.relname = 'schema_migrations';
+          SQL
+          docker exec -i -e PGPASSWORD="$PROBE_PASSWORD" "$PROBE_CONTAINER" \
+            psql -h 127.0.0.1 -p 5432 -U postgres -d postgres --no-psqlrc \
+            < "$RUNNER_TEMP/e1/exists.sql" | tee "$RUNNER_TEMP/e1/exists.txt"
+      - name: Catalog evidence A to F (read-only)
+        run: |
+          cat > "$RUNNER_TEMP/e1/catalog.sql" <<'SQL'
+          -- Errors do not stop this file: one failing query must not hide the rest of the evidence.
+          \set ON_ERROR_STOP off
+          \set VERBOSITY verbose
+          \pset pager off
+          \echo '== A: session identity and server version =='
+          select current_user, session_user, current_setting('server_version') as server_version;
+          \echo '== B and C and D and E: storage table ownership and row level security =='
+          select c.relname,
+                 pg_get_userbyid(c.relowner) as owner,
+                 c.relrowsecurity,
+                 c.relforcerowsecurity
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage'
+             and c.relname in ('buckets','objects')
+           order by c.relname;
+          \echo '== F: role attributes =='
+          select rolname,
+                 rolsuper,
+                 rolcanlogin,
+                 rolinherit,
+                 rolcreaterole,
+                 rolcreatedb,
+                 rolbypassrls,
+                 rolreplication
+            from pg_roles
+           where rolname in ('postgres','supabase_admin','supabase_storage_admin')
+           order by rolname;
+          \echo '== membership matrix =='
+          select r.rolname as role,
+                 m.rolname as member,
+                 am.admin_option,
+                 am.inherit_option,
+                 am.set_option
+            from pg_auth_members am
+            join pg_roles r on r.oid = am.roleid
+            join pg_roles m on m.oid = am.member
+           where r.rolname = 'supabase_storage_admin'
+              or m.rolname = 'postgres'
+           order by r.rolname, m.rolname;
+          \echo '== pg_has_role for the connected role =='
+          select pg_has_role(current_user,
+                             (select oid from pg_roles where rolname = 'supabase_storage_admin'),
+                             'USAGE') as usage,
+                 pg_has_role(current_user,
+                             (select oid from pg_roles where rolname = 'supabase_storage_admin'),
+                             'MEMBER') as member;
+          \echo '== table privileges held by postgres =='
+          select has_table_privilege('postgres','storage.objects','UPDATE') as pg_can_update,
+                 has_table_privilege('postgres','storage.objects','SELECT') as pg_can_select,
+                 has_table_privilege('postgres','storage.buckets','UPDATE') as pg_can_update_buckets;
+          \echo '== policies already present on storage.objects =='
+          select polname, polcmd from pg_policy p
+            join pg_class c on c.oid = p.polrelid
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relname = 'objects'
+           order by polname;
+          SQL
+          docker exec -i -e PGPASSWORD="$PROBE_PASSWORD" "$PROBE_CONTAINER" \
+            psql -h 127.0.0.1 -p 5432 -U postgres -d postgres --no-psqlrc \
+            < "$RUNNER_TEMP/e1/catalog.sql" | tee "$RUNNER_TEMP/e1/catalog.txt"
+      - name: G, the single privilege probe, rolled back
+        run: |
+          cat > "$RUNNER_TEMP/e1/probe.sql" <<'SQL'
+          \set ON_ERROR_STOP off
+          \set VERBOSITY verbose
+          \pset pager off
+          \echo '== G.1: the statement itself, inside a transaction that is rolled back =='
+          begin;
+          alter table storage.objects enable row level security;
+          rollback;
+          \echo '== G.2: the same statement with its diagnostics captured as data =='
+          begin;
+          do $probe$
+          declare
+            captured_state text;
+            captured_message text;
+            captured_detail text;
+            captured_hint text;
+          begin
+            execute 'alter table storage.objects enable row level security';
+            raise notice 'G RESULT: statement succeeded (the connected role can manage storage.objects)';
+          exception
+            when others then
+              get stacked diagnostics
+                captured_state = returned_sqlstate,
+                captured_message = message_text,
+                captured_detail = pg_exception_detail,
+                captured_hint = pg_exception_hint;
+              raise notice 'G SQLSTATE: %', captured_state;
+              raise notice 'G SQLERRM: %', captured_message;
+              -- these come back as empty strings rather than NULL when PostgreSQL supplies neither
+              raise notice 'G DETAIL: %', coalesce(nullif(captured_detail, ''), '<none>');
+              raise notice 'G HINT: %', coalesce(nullif(captured_hint, ''), '<none>');
+          end;
+          $probe$;
+          rollback;
+          \echo '== post-rollback state, which must equal the pre-probe state =='
+          select c.relname, c.relrowsecurity, pg_get_userbyid(c.relowner) as owner
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'storage' and c.relname = 'objects';
+          SQL
+          docker exec -i -e PGPASSWORD="$PROBE_PASSWORD" "$PROBE_CONTAINER" \
+            psql -h 127.0.0.1 -p 5432 -U postgres -d postgres --no-psqlrc \
+            < "$RUNNER_TEMP/e1/probe.sql" 2>&1 | tee "$RUNNER_TEMP/e1/probe.txt"
+      - name: Container log, for the record
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/e1"
+          docker logs "$PROBE_CONTAINER" > "$RUNNER_TEMP/e1/container.log" 2>&1 || true
+          tail -40 "$RUNNER_TEMP/e1/container.log" || true
+      - name: Destroy the probe container
+        if: always()
+        run: docker rm -f "$PROBE_CONTAINER" || true
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e1-storage-ownership-evidence
+          path: ${{ runner.temp }}/e1/
+          retention-days: 14
+          if-no-files-found: warn
