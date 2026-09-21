@@ -491,7 +491,7 @@ jobs:
           if-no-files-found: warn
 
   b10-hosted:
-    name: B10-hosted (non-production Supabase: migrations 0001-0037 and verification)
+    name: "B10-hosted (non-production Supabase: migrations 0001-0037 and verification)"
     # Manual only while the path is being proven: a job that can reach a credential never runs on
     # every push. B10-local (the supabase-local job) is unaffected and keeps running on every trigger.
     if: github.event_name == 'workflow_dispatch'
