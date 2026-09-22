@@ -136,3 +136,23 @@ test('R5: client-bundle scan uses the inventory, honours only the NODE_ENV excep
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('the Playwright smoke run supplies every required web/admin server variable', () => {
+  // TOOL-7 starts the built apps, and both validate their whole configuration at start-up (R4-B).
+  // A required variable missing from the Playwright `env` block does not fail a check — it makes the
+  // server refuse to start, and the run dies as a 60s webServer timeout with the cause buried in
+  // stderr. This asserts the invariant directly: whatever the inventory requires of web and admin,
+  // the smoke configuration provides.
+  const config = readFileSync(new URL('../../packages/e2e/playwright.config.ts', import.meta.url), 'utf8');
+  const env = /env:\s*\{([\s\S]*?)\}/.exec(config);
+  assert.ok(env, 'playwright.config.ts declares an env block for the servers');
+  const supplied = new Set([...env[1].matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*:/gm)].map((m) => m[1]));
+  for (const app of ['web', 'admin']) {
+    for (const entry of variablesFor(app).filter((e) => e.required)) {
+      assert.ok(supplied.has(entry.name), `playwright.config.ts must supply ${entry.name} for ${app}`);
+    }
+  }
+  // The credential is generated per run, never a literal: no committed value, and nothing to leak.
+  assert.match(config, /randomBytes\(32\)\.toString\('base64url'\)/);
+  assert.doesNotMatch(config, /INTERNAL_BFF_CREDENTIAL:\s*'[^']+'/);
+});

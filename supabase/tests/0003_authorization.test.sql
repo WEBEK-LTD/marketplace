@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(23);
 
 -- Fixtures ------------------------------------------------------------------------------------------
 insert into auth.users (id, email) values
@@ -34,6 +34,14 @@ select has_role('app_worker', 'the app_worker role exists');
 select ok(
   (select not rolinherit from pg_roles where rolname = 'app_api'),
   'app_api does not inherit: reaching data always needs SET ROLE'
+);
+select is(
+  (select count(*) from pg_roles
+    where rolname in ('app_api', 'app_system', 'app_worker')
+      and rolcanlogin and not rolinherit and not rolsuper
+      and not rolcreatedb and not rolcreaterole and not rolreplication and not rolbypassrls),
+  3::bigint,
+  'app_api, app_system and app_worker are LOGIN NOINHERIT with no superuser, createdb, createrole, replication or bypassrls (S8)'
 );
 select ok(
   (select m.set_option and not m.admin_option and not m.inherit_option
