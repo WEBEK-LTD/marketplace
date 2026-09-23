@@ -114,3 +114,10 @@ create table if not exists realtime.messages (
   private boolean not null default true,
   inserted_at timestamptz not null default now()
 );
+
+-- Supabase Realtime owns realtime.messages and creates it with row level security already enabled.
+-- 0014 verifies that state rather than setting it, for the same reason as the storage tables, so the
+-- stand-in has to start in the same state or the sandbox would diverge from CI exactly where it
+-- matters. The stand-in stays owned by the migrating role: the sandbox cannot reproduce Supabase's
+-- ownership split, and CI against the real stack remains the authority on privilege behaviour.
+alter table realtime.messages enable row level security;
