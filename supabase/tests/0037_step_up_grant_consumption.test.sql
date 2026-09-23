@@ -68,8 +68,10 @@ select is(
      from pg_roles r
     cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'])
       as p(privilege)
+    cross join (select to_regclass('public.step_up_grants') as oid) t
     where r.rolname = 'anon'
-      and has_table_privilege(r.oid, 'public.step_up_grants'::regclass, p.privilege)),
+      and t.oid is not null
+      and has_table_privilege(r.oid, t.oid, p.privilege)),
   '',
   'anon holds none'
 );
