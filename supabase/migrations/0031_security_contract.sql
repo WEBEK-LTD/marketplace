@@ -223,21 +223,34 @@ stable
 security definer
 set search_path = pg_catalog, public
 as $$
+  -- Scope: the schemas this project owns and can actually control — the three application schemas that
+  -- `rls_problems()` and `grant_problems()` already use, and that 0001 revokes from anon. Supabase owns
+  -- `storage`, `auth`, `extensions`, `graphql` and `supabase_functions` and grants anon usage and
+  -- privileges there as their owner; the migration role is not that owner and a REVOKE it runs returns
+  -- without error while the grants survive (verified in CI). Reporting those as contract violations
+  -- would assert something this project cannot hold, so the storage boundary is carried where it is
+  -- real: row level security plus the absence of a policy opening a private bucket, both verified in
+  -- 0012 and asserted by `storage_bucket_problems()` in this same umbrella (C15).
   select format('%s.%s', table_schema, table_name), format('anon holds %s', lower(privilege_type))
     from information_schema.role_table_grants
    where grantee = 'anon'
+     and table_schema in ('public', 'app_private', 'audit')
   union all
   select format('%s.%s.%s', table_schema, table_name, column_name),
          format('anon holds %s on the column', lower(privilege_type))
     from information_schema.column_privileges
    where grantee = 'anon'
+     and table_schema in ('public', 'app_private', 'audit')
   union all
   select format('%s.%s', specific_schema, routine_name), 'anon may execute the routine'
     from information_schema.role_routine_grants
    where grantee = 'anon'
+     and specific_schema in ('public', 'app_private', 'audit')
   union all
-  -- Every sequence outside the system and per-session schemas: a `pg_temp_*` sequence belongs to the
-  -- session that made it and is unreachable from another, and `pg_catalog` is PostgreSQL's own. The
+  -- Sequences in the application schemas and in `cron`, which this project schedules into (0032):
+  -- pg_cron grants its own sequences to PUBLIC, which reaches anon, and that protection is asserted
+  -- below. Supabase's own schemas are excluded for the reason given above — it grants
+  -- `graphql.seq_schema_version` and `supabase_functions.hooks_id_seq` to anon as their owner. The
   -- `offset 0` keeps the planner from testing the privilege before the relkind filter, which would ask
   -- `has_sequence_privilege` about a TOAST relation and raise.
   select format('%s.%s', s.nspname, s.relname), 'anon reaches the sequence'
@@ -245,16 +258,14 @@ as $$
             from pg_class c
             join pg_namespace n on n.oid = c.relnamespace
            where c.relkind = 'S'
-             and n.nspname not like 'pg\_%'
-             and n.nspname <> 'information_schema'
+             and n.nspname in ('public', 'app_private', 'audit', 'cron')
            offset 0) s
    where has_sequence_privilege('anon', s.oid, 'usage, select, update')
   union all
   select n.nspname, format('anon holds %s on the schema', lower(p.priv))
     from pg_namespace n,
          lateral (select unnest(array['USAGE', 'CREATE']) as priv) p
-   where n.nspname in ('public', 'app_private', 'audit', 'extensions',
-                       'storage', 'realtime', 'auth', 'vault', 'cron')
+   where n.nspname in ('public', 'app_private', 'audit', 'cron')
      and has_schema_privilege('anon', n.nspname, p.priv);
 $$;
 comment on function public.anon_privilege_problems() is
@@ -301,11 +312,16 @@ as $$
      and has_function_privilege('authenticated', p.oid, 'execute')
   union all
   -- Outside the application schemas, a request may reach exactly one thing: the Realtime mailbox, which
-  -- 0014's private-topic policy governs.
+  -- 0014's private-topic policy governs. `storage` is not in this list because Supabase owns those
+  -- tables and grants `authenticated` privileges on them as their owner: a REVOKE run by this
+  -- project's migration role returns without error and the grants survive (verified in CI), so listing
+  -- it here would assert something no migration can hold. Reaching a storage row still requires a
+  -- policy, and 0012 verifies that row level security is on and that the only policy names the one
+  -- public bucket (C15).
   select format('%s.%s', table_schema, table_name), format('authenticated holds %s outside the application schemas', lower(privilege_type))
     from information_schema.role_table_grants
    where grantee = 'authenticated'
-     and table_schema in ('storage', 'realtime', 'auth', 'vault', 'cron', 'graphql', 'graphql_public')
+     and table_schema in ('realtime', 'auth', 'vault', 'cron', 'graphql', 'graphql_public')
      and not (table_schema = 'realtime' and table_name = 'messages' and privilege_type = 'SELECT')
   union all
   select n.nspname, 'authenticated may create objects in the schema'

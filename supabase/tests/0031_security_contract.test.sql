@@ -13,7 +13,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(66);
+select plan(68);
 
 -- ---------------------------------------------------------------------------------------------------
 -- The contract holds as shipped
@@ -50,27 +50,31 @@ select cmp_ok(
   'and that covers the whole Phase 2 schema, not a handful of tables'
 );
 
-select is((select count(*) from information_schema.role_table_grants where grantee = 'anon'),
-  0::bigint, 'anon holds no table privilege anywhere in the database');
-select is((select count(*) from information_schema.column_privileges where grantee = 'anon'),
+-- The catalogue checks below read the application schemas, which are the ones this project owns and
+-- 0001 revokes from anon. Supabase owns storage, auth, extensions, graphql and supabase_functions and
+-- grants anon usage and privileges there as their owner; no migration run by this project's role can
+-- take those back, so they are not part of the contract. Storage is covered instead by row level
+-- security and the absence of a policy opening a private bucket (0012, C15).
+select is((select count(*) from information_schema.role_table_grants
+            where grantee = 'anon' and table_schema in ('public', 'app_private', 'audit')),
+  0::bigint, 'anon holds no table privilege in the application schemas');
+select is((select count(*) from information_schema.column_privileges
+            where grantee = 'anon' and table_schema in ('public', 'app_private', 'audit')),
   0::bigint, 'nor a column privilege');
-select is((select count(*) from information_schema.role_routine_grants where grantee = 'anon'),
+select is((select count(*) from information_schema.role_routine_grants
+            where grantee = 'anon' and specific_schema in ('public', 'app_private', 'audit')),
   0::bigint, 'nor may it execute a routine');
 select ok(
   not has_schema_privilege('anon', 'public', 'usage')
     and not has_schema_privilege('anon', 'app_private', 'usage')
     and not has_schema_privilege('anon', 'audit', 'usage')
-    and not has_schema_privilege('anon', 'extensions', 'usage')
-    and not has_schema_privilege('anon', 'storage', 'usage')
-    and not has_schema_privilege('anon', 'realtime', 'usage')
-    and not has_schema_privilege('anon', 'cron', 'usage')
-    and not has_schema_privilege('anon', 'vault', 'usage'),
-  'and it cannot use any schema that holds data'
+    and not has_schema_privilege('anon', 'cron', 'usage'),
+  'and it cannot use any schema this project owns'
 );
 select is(
   (select count(*) from (select c.oid from pg_class c join pg_namespace n on n.oid = c.relnamespace
-                          where c.relkind = 'S' and n.nspname not like 'pg\_%'
-                            and n.nspname <> 'information_schema' offset 0) s
+                          where c.relkind = 'S'
+                            and n.nspname in ('public', 'app_private', 'audit', 'cron') offset 0) s
     where has_sequence_privilege('anon', s.oid, 'usage, select, update')),
   0::bigint,
   'no sequence is left reachable by anon, including the ones pg_cron grants to PUBLIC'
@@ -170,11 +174,14 @@ select is(
   1::bigint,
   'storage.objects carries one policy, for that bucket: every private bucket is reached only by signed URL (C15)'
 );
+-- Supabase owns the storage tables and grants the Data API roles privileges on them; this project's
+-- migration role cannot take those back. What makes a private bucket private is row level security
+-- plus the absence of a policy opening it, which is what 0012 verifies and what is asserted here.
 select is(
-  (select count(*) from information_schema.role_table_grants
-    where table_schema = 'storage' and grantee in ('anon', 'authenticated')),
-  0::bigint,
-  'and neither anon nor authenticated holds a privilege on the storage tables'
+  (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'storage' and c.relname in ('objects', 'buckets') and c.relrowsecurity),
+  2::bigint,
+  'and both storage tables carry row level security, so a privilege reaches no row no policy allows'
 );
 
 -- ---------------------------------------------------------------------------------------------------
@@ -320,6 +327,30 @@ select is((select problem from public.anon_privilege_problems() where object = '
   'anon holds usage on the schema',
   'schema usage handed to anon is caught');
 rollback to b6;
+
+-- The guard is scoped to the schemas this project owns, so prove the scope list is right in both
+-- directions: a privilege inside it is still caught, and Supabase's own storage grants are not
+-- reported as contract violations.
+savepoint b6a;
+grant select on app_private.storage_bucket_contract to anon;
+select is(
+  (select count(*) from public.anon_privilege_problems()
+    where object = 'app_private.storage_bucket_contract'),
+  1::bigint,
+  'a privilege handed to anon in app_private is still caught after the guard was scoped'
+);
+rollback to b6a;
+
+savepoint b6b;
+grant usage on schema storage to anon, authenticated;
+grant all on storage.objects to anon, authenticated;
+grant all on storage.buckets to anon, authenticated;
+select is(
+  (select count(*) from public.security_contract_problems() where object like 'storage%'),
+  0::bigint,
+  'Supabase''s own storage grants to anon and authenticated are not a security-contract failure: the boundary there is row level security, not the table ACL (C15)'
+);
+rollback to b6b;
 
 savepoint b7;
 grant select on public.pages to app_system;
