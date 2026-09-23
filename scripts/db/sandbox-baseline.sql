@@ -94,15 +94,15 @@ create table if not exists storage.objects (
   unique (bucket_id, name)
 );
 
--- Supabase Storage creates storage.objects with row level security already enabled and forced
+-- Supabase Storage creates both storage tables with row level security already enabled and NOT forced
 -- (verified against the approved postgres image and the storage migrator: owner
--- supabase_storage_admin, relrowsecurity = t, relforcerowsecurity = t). 0012 verifies that state
--- rather than setting it, because the migrating role does not own the table, so the stand-in has to
--- start in the same state or the sandbox would diverge from CI exactly where it matters.
--- The stand-in stays owned by the migrating role: this sandbox cannot reproduce Supabase's ownership
+-- supabase_storage_admin, relrowsecurity = t, relforcerowsecurity = f on both). 0012 verifies that
+-- state rather than setting it, because the migrating role does not own the tables, so the stand-ins
+-- have to start in the same state or the sandbox would diverge from CI exactly where it matters.
+-- The stand-ins stay owned by the migrating role: this sandbox cannot reproduce Supabase's ownership
 -- split, and CI against the real stack remains the authority on privilege behaviour.
 alter table storage.objects enable row level security;
-alter table storage.objects force row level security;
+alter table storage.buckets enable row level security;
 
 -- Minimal stand-in for Supabase Realtime's message table, which carries the private-topic policies.
 create table if not exists realtime.messages (

@@ -95,87 +95,82 @@ comment on function public.storage_bucket_problems() is
 -- `supabase_storage_admin`, before this migration runs. The migrating role is not that owner and is not
 -- a member of it, so `alter table storage.objects …` is owner-only and unreachable from here:
 -- PostgreSQL offers no GRANT that confers ownership, and granting the membership or moving the owner
--- would be a privilege escalation this project does not accept. Everything else this section needs —
--- revoking the Data API roles' direct grants, and defining the one read policy — is permitted and is
--- kept exactly as before.
+-- would be a privilege escalation this project does not accept.
 --
--- Each part below carries its own diagnostics. The previous single handler collapsed five statements
--- into one opaque code and discarded SQLSTATE and the message, which hid for days that only the first
+-- The same ownership model settles what the security boundary can be. Supabase grants the Data API
+-- roles table privileges on both storage tables as their owner, and a REVOKE run by the migrating role
+-- removes only what that role is itself entitled to revoke: it returns without error and the grants
+-- survive (verified in CI). So those grants are not something this migration can take away, and a
+-- check that demands their absence would only ever be a false guarantee.
+--
+-- What actually keeps a private bucket private is row level security, which Supabase enables on both
+-- tables, together with the absence of any policy that opens a private bucket. A table privilege on an
+-- RLS-protected table reaches no row that no policy allows. This migration therefore verifies both
+-- halves of that boundary and refuses to continue without them.
+--
+-- Each part below carries its own diagnostics. The original single handler collapsed five statements
+-- into one opaque code and discarded SQLSTATE and the message, which hid for days that only one
 -- statement was ever the problem.
 
--- 1. Row level security: verified, not set.
--- Supabase enables it when it creates the table. This migration refuses to continue without it, because
--- every private bucket's protection rests on it (C15) and nothing else in the repository asserts it.
+-- 1. Row level security on both storage tables: verified, not set.
 do $$
 declare
+  relation text;
   enabled boolean;
 begin
-  select c.relrowsecurity into enabled
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-   where n.nspname = 'storage' and c.relname = 'objects';
-  if enabled is null then
-    raise exception 'storage.objects disappeared between the check above and here';
-  end if;
-  if not enabled then
-    raise exception 'row level security is not enabled on storage.objects'
-      using hint = 'Supabase Storage enables it when it creates the table. Without it every private bucket is readable by anyone who can reach the table, and the migration role does not own storage.objects, so it cannot enable it here (C15).';
-  end if;
+  foreach relation in array array['objects', 'buckets'] loop
+    select c.relrowsecurity into enabled
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'storage' and c.relname = relation;
+    if enabled is null then
+      raise exception 'storage.% disappeared between the check above and here', relation;
+    end if;
+    if not enabled then
+      raise exception 'row level security is not enabled on storage.%', relation
+        using hint = 'Supabase Storage enables it when it creates the table, and it is what keeps a private bucket private: the Data API roles hold table privileges here that this migration cannot revoke, so without row level security those privileges would reach every row (C15). The migration role does not own the table and cannot enable it.';
+    end if;
+  end loop;
 end;
 $$;
 
--- 2. The Data API roles hold no direct grants on the storage tables.
--- A REVOKE removes only what the current role may revoke, so returning without error is not proof. The
--- post-condition below is the proof.
-do $$
-declare
-  failed_state text;
-  failed_message text;
-  remaining text;
-begin
-  begin
-    execute 'revoke all on storage.objects from anon, authenticated';
-    execute 'revoke all on storage.buckets from anon, authenticated';
-  exception
-    when others then
-      get stacked diagnostics failed_state = returned_sqlstate, failed_message = message_text;
-      raise exception 'cannot revoke storage privileges from anon and authenticated (SQLSTATE %): %', failed_state, failed_message
-        using hint = 'Supabase grants these roles privileges on storage.objects and storage.buckets when it creates them; 0012 takes them back so that reaching a private bucket always goes through a signed URL (C15).';
-  end;
-
-  select string_agg(format('%s holds %s on %s', r.role, p.privilege, t.relation), ', ' order by r.role, t.relation, p.privilege)
-    into remaining
-    from (values ('anon'), ('authenticated')) as r(role)
-   cross join (values ('storage.objects'), ('storage.buckets')) as t(relation)
-   cross join (values ('select'), ('insert'), ('update'), ('delete'), ('truncate'), ('references'), ('trigger')) as p(privilege)
-   where has_table_privilege(r.role, t.relation, p.privilege);
-
-  if remaining is not null then
-    raise exception 'the revoke did not take effect: %', remaining
-      using hint = 'The migration role may revoke only privileges it is entitled to revoke. A privilege that survives here is reachable without a signed URL, which C15 does not allow.';
-  end if;
-end;
-$$;
-
--- 3. The one read policy.
+-- 2. The one read policy, and nothing else.
 -- The only readable bucket. Private buckets deliberately have no policy at all: a signed URL issued by
 -- the API is the one way in (C15).
 do $$
 declare
   failed_state text;
   failed_message text;
+  extra text;
 begin
-  execute 'drop policy if exists listing_variants_public_read on storage.objects';
-  execute $p$
-    create policy listing_variants_public_read on storage.objects
-      for select to authenticated, anon
-      using (bucket_id = 'listing-variants')
-  $p$;
-exception
-  when others then
-    get stacked diagnostics failed_state = returned_sqlstate, failed_message = message_text;
-    raise exception 'cannot define the listing-variants read policy on storage.objects (SQLSTATE %): %', failed_state, failed_message
-      using hint = 'Bucket access stays defined in migrations, never in a dashboard. If this is a privilege error, the migration role lost a capability it had when 0012 was written.';
+  begin
+    execute 'drop policy if exists listing_variants_public_read on storage.objects';
+    execute $p$
+      create policy listing_variants_public_read on storage.objects
+        for select to authenticated, anon
+        using (bucket_id = 'listing-variants')
+    $p$;
+  exception
+    when others then
+      get stacked diagnostics failed_state = returned_sqlstate, failed_message = message_text;
+      raise exception 'cannot define the listing-variants read policy on storage.objects (SQLSTATE %): %', failed_state, failed_message
+        using hint = 'Bucket access stays defined in migrations, never in a dashboard. If this is a privilege error, the migration role lost a capability it had when 0012 was written.';
+  end;
+
+  -- With row level security on, a policy is the only thing that can open a row. One policy exists and
+  -- it names the one public bucket, so no private bucket is reachable through the table.
+  select string_agg(p.polname, ', ' order by p.polname) into extra
+    from pg_policy p
+    join pg_class c on c.oid = p.polrelid
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'storage'
+     and c.relname = 'objects'
+     and p.polname <> 'listing_variants_public_read';
+
+  if extra is not null then
+    raise exception 'storage.objects carries a policy this migration did not define: %', extra
+      using hint = 'Every private bucket is reached only through an API-signed URL (C15). A second policy on storage.objects can open one of them, so bucket access must stay defined here and nowhere else.';
+  end if;
 end;
 $$;
 
