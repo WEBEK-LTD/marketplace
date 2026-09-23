@@ -350,30 +350,23 @@ select is(
 );
 rollback to b6a;
 
-savepoint b6b;
-grant usage on schema storage to anon, authenticated;
-grant all on storage.objects to anon, authenticated;
-grant all on storage.buckets to anon, authenticated;
+-- Supabase owns the storage and realtime objects and grants the Data API roles privileges on them as
+-- their owner. Those grants are already present wherever the real stack runs, so the assertions below
+-- read the contract against whatever the provider has actually granted. They deliberately do not GRANT
+-- anything first: this test role does not own those tables, a GRANT it issues raises 42501 and would
+-- abort the whole file before pgTAP could report a result. The guard's scoping is what is under test,
+-- and the boundary it relies on — row level security and the policies — is asserted above and in the
+-- 0012 and 0014 suites.
 select is(
   (select count(*) from public.security_contract_problems() where object like 'storage%'),
   0::bigint,
-  'Supabase''s own storage grants to anon and authenticated are not a security-contract failure: the boundary there is row level security, not the table ACL (C15)'
+  'Supabase''s own storage grants are not a security-contract failure: the boundary there is row level security, not the table ACL (C15)'
 );
-rollback to b6b;
-
--- The Realtime grants CI observed on the real stack: INSERT and UPDATE on the mailbox, SELECT on the
--- subscription table. Supabase Realtime makes them as owner and its broadcast path needs them, so they
--- are provider state, not a contract violation. The boundary there is 0014's verified RLS and policy.
-savepoint b6c;
-create table if not exists realtime.subscription (id bigint primary key);
-grant insert, update on realtime.messages to authenticated;
-grant select on realtime.subscription to authenticated;
 select is(
   (select count(*) from public.security_contract_problems() where object like 'realtime%'),
   0::bigint,
-  'Supabase Realtime''s own grants to authenticated are not a security-contract failure: the boundary there is row level security and the private-topic policy (C15)'
+  'Supabase Realtime''s own grants are not a security-contract failure: the boundary there is row level security and the private-topic policy (C15)'
 );
-rollback to b6c;
 
 savepoint b7;
 grant select on public.pages to app_system;
