@@ -311,18 +311,23 @@ as $$
    where n.nspname = 'app_private'
      and has_function_privilege('authenticated', p.oid, 'execute')
   union all
-  -- Outside the application schemas, a request may reach exactly one thing: the Realtime mailbox, which
-  -- 0014's private-topic policy governs. `storage` is not in this list because Supabase owns those
-  -- tables and grants `authenticated` privileges on them as their owner: a REVOKE run by this
-  -- project's migration role returns without error and the grants survive (verified in CI), so listing
-  -- it here would assert something no migration can hold. Reaching a storage row still requires a
-  -- policy, and 0012 verifies that row level security is on and that the only policy names the one
-  -- public bucket (C15).
+  -- Outside the application schemas, `authenticated` may hold nothing — with two provider-managed
+  -- exceptions that no migration run by this project's role can change.
+  --
+  -- `storage`: Supabase owns those tables and grants `authenticated` privileges on them as their
+  -- owner, so a REVOKE run here returns without error while the grants survive (verified in CI).
+  -- `realtime`: Supabase Realtime likewise grants `authenticated` INSERT and UPDATE on
+  -- realtime.messages and SELECT on realtime.subscription — its broadcast path needs them (verified in
+  -- CI). Listing either schema here would assert something this project cannot hold.
+  --
+  -- In both cases the ACL is not the boundary. Reaching a row still requires a policy: 0012 verifies
+  -- that row level security is on for the storage tables and that the only policy names the one public
+  -- bucket, and 0014 verifies the same for realtime.messages — RLS on, one SELECT-only policy for
+  -- `authenticated` gated by can_join_realtime_topic(), no INSERT policy, and no other policy (C15).
   select format('%s.%s', table_schema, table_name), format('authenticated holds %s outside the application schemas', lower(privilege_type))
     from information_schema.role_table_grants
    where grantee = 'authenticated'
-     and table_schema in ('realtime', 'auth', 'vault', 'cron', 'graphql', 'graphql_public')
-     and not (table_schema = 'realtime' and table_name = 'messages' and privilege_type = 'SELECT')
+     and table_schema in ('auth', 'vault', 'cron', 'graphql', 'graphql_public')
   union all
   select n.nspname, 'authenticated may create objects in the schema'
     from pg_namespace n

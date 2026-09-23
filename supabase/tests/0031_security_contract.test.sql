@@ -13,7 +13,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(68);
+select plan(70);
 
 -- ---------------------------------------------------------------------------------------------------
 -- The contract holds as shipped
@@ -145,14 +145,23 @@ select is(
   'both views are security_invoker, so neither can launder row level security'
 );
 
--- The one thing a request may reach outside the application schemas.
+-- Outside the application schemas, `authenticated` may hold nothing except in the two schemas whose
+-- ACLs Supabase owns and no migration of ours can change: `storage` and `realtime`. What confines a
+-- request there is row level security and the policies 0012 and 0014 verify, not the table ACL.
 select is(
   (select coalesce(string_agg(format('%s.%s:%s', table_schema, table_name, privilege_type), ', '), '')
      from information_schema.role_table_grants
     where grantee = 'authenticated'
-      and table_schema not in ('public', 'app_private', 'audit')),
-  'realtime.messages:SELECT',
-  'outside the application schemas a request may only read the Realtime mailbox'
+      and table_schema not in ('public', 'app_private', 'audit', 'storage', 'realtime')),
+  '',
+  'outside the application schemas a request holds nothing except in the provider-managed schemas'
+);
+select ok(
+  (select c.relrowsecurity
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'realtime' and c.relname = 'messages'),
+  'the Realtime mailbox carries row level security, so the provider ACL reaches no row without a policy'
 );
 select is(
   (select p.polcmd::text from pg_policy p join pg_class c on c.oid = p.polrelid
@@ -351,6 +360,20 @@ select is(
   'Supabase''s own storage grants to anon and authenticated are not a security-contract failure: the boundary there is row level security, not the table ACL (C15)'
 );
 rollback to b6b;
+
+-- The Realtime grants CI observed on the real stack: INSERT and UPDATE on the mailbox, SELECT on the
+-- subscription table. Supabase Realtime makes them as owner and its broadcast path needs them, so they
+-- are provider state, not a contract violation. The boundary there is 0014's verified RLS and policy.
+savepoint b6c;
+create table if not exists realtime.subscription (id bigint primary key);
+grant insert, update on realtime.messages to authenticated;
+grant select on realtime.subscription to authenticated;
+select is(
+  (select count(*) from public.security_contract_problems() where object like 'realtime%'),
+  0::bigint,
+  'Supabase Realtime''s own grants to authenticated are not a security-contract failure: the boundary there is row level security and the private-topic policy (C15)'
+);
+rollback to b6c;
 
 savepoint b7;
 grant select on public.pages to app_system;
