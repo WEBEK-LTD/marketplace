@@ -55,7 +55,24 @@ select table_privs_are('public', 'step_up_grants', 'authenticated', array['SELEC
 select table_privs_are('public', 'step_up_grants', 'app_system', array[]::text[],
   'app_system holds no table privilege even though it calls the consumer');
 select table_privs_are('public', 'step_up_grants', 'app_worker', array[]::text[], 'the worker holds none');
-select table_privs_are('public', 'step_up_grants', 'anon', array[]::text[], 'anon holds none');
+-- Same invariant as the three above, read straight from the catalogue rather than through
+-- `table_privs_are`. That wrapper resolves the role by name and the table by text inside
+-- `_get_table_privs`, and on the real Supabase stack this one call raises instead of returning a
+-- result, which aborts the file before pgTAP can report anything. Passing the role's oid and a
+-- regclass removes both lookups, and selecting from pg_roles means a missing role yields no rows
+-- rather than an error — which is the same verdict, since a role that does not exist holds nothing.
+-- The other three keep `table_privs_are`: they return results on the real stack, so nothing about
+-- them needs changing.
+select is(
+  (select coalesce(string_agg(p.privilege, ', ' order by p.privilege), '')
+     from pg_roles r
+    cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'])
+      as p(privilege)
+    where r.rolname = 'anon'
+      and has_table_privilege(r.oid, 'public.step_up_grants'::regclass, p.privilege)),
+  '',
+  'anon holds none'
+);
 select is((select relrowsecurity from pg_class where oid = 'public.step_up_grants'::regclass), true,
   'row level security is still enabled');
 select is(
