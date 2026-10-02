@@ -5,6 +5,7 @@ import { initTelemetry } from '@repo/telemetry';
 import { EnvValidationError, loadEnv, workerConfigLoadedEvent } from './config/env.js';
 import { createLogger, errorSummary } from './logging/logger.js';
 import { NestJsonLogger } from './logging/nest-logger.js';
+import { buildQueueDefinitions } from './queue/registry.js';
 import { WorkerRuntime } from './runtime/worker-runtime.js';
 import { WorkerModule } from './worker.module.js';
 
@@ -25,7 +26,8 @@ async function main(): Promise<void> {
   const logger = createLogger(env.logLevel);
   // Safe metadata only: no configuration values and no variable names (owner decision R11).
   logger.info({ module: 'config', ...workerConfigLoadedEvent() }, 'Configuration loaded');
-  const app = await NestFactory.createApplicationContext(WorkerModule.forRoot(env, logger), {
+  const definitions = buildQueueDefinitions(env, logger);
+  const app = await NestFactory.createApplicationContext(WorkerModule.forRoot(env, logger, definitions), {
     logger: new NestJsonLogger(logger),
   });
   const runtime = app.get(WorkerRuntime);

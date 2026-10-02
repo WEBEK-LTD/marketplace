@@ -13,7 +13,8 @@ import {
 /** Obviously fake, 43 base64url characters like the real format. Never a real credential. */
 const CREDENTIAL = 'test-current-credential-value-not-a-real-se';
 const BASE_URL = 'http://api.internal:8080';
-const ENV = { API_BASE_URL: BASE_URL, INTERNAL_BFF_CREDENTIAL: CREDENTIAL };
+const ORIGIN = 'https://web.test';
+const ENV = { API_BASE_URL: BASE_URL, INTERNAL_BFF_CREDENTIAL: CREDENTIAL, PUBLIC_WEB_ORIGIN: ORIGIN };
 
 const BFF_DIR = fileURLToPath(new URL('../src/server/bff/', import.meta.url));
 const CONTRACTS_SRC = fileURLToPath(new URL('../../../packages/contracts/src/', import.meta.url));
@@ -154,7 +155,7 @@ describe('failing safely', () => {
   it('refuses to build a client when the credential is missing, before any request is made', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
-    expect(() => getApiClient({ API_BASE_URL: BASE_URL })).toThrow(BffConfigError);
+    expect(() => getApiClient({ API_BASE_URL: BASE_URL, PUBLIC_WEB_ORIGIN: ORIGIN })).toThrow(BffConfigError);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -166,7 +167,7 @@ describe('failing safely', () => {
     ['a CURRENT,PREVIOUS pair, which a BFF never sends', `${CREDENTIAL},test-previous-credential-value-not-a-real-s`],
   ])('rejects a %s credential by name, never by value', (_label, value) => {
     try {
-      readBffConfig({ API_BASE_URL: BASE_URL, INTERNAL_BFF_CREDENTIAL: value });
+      readBffConfig({ API_BASE_URL: BASE_URL, INTERNAL_BFF_CREDENTIAL: value, PUBLIC_WEB_ORIGIN: ORIGIN });
       throw new Error('expected failure');
     } catch (error) {
       expect(error).toBeInstanceOf(BffConfigError);
@@ -179,6 +180,6 @@ describe('failing safely', () => {
   });
 
   it('accepts a valid credential', () => {
-    expect(readBffConfig(ENV)).toEqual({ apiBaseUrl: BASE_URL, internalBffCredential: CREDENTIAL });
+    expect(readBffConfig(ENV)).toEqual({ apiBaseUrl: BASE_URL, internalBffCredential: CREDENTIAL, publicWebOrigin: ORIGIN });
   });
 });

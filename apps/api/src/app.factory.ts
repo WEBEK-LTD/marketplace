@@ -8,6 +8,7 @@ import { ProblemDetailsFilter } from './common/problem-details.filter.js';
 import type { ApiEnv } from './config/env.js';
 import { buildLoggerOptions, REQUEST_ID_HEADER, requestIdFor } from './logging/logger-options.js';
 import { NestJsonLogger } from './logging/nest-logger.js';
+import { registerRequestLogIdentity } from './logging/request-log-identity.js';
 import { registerRequestTracing } from './telemetry/request-tracing.js';
 
 /** Maximum JSON request body: 1 MiB (owner decision). */
@@ -41,7 +42,9 @@ export function createFastifyAdapter(env: ApiEnv, options: AdapterOptions = {}):
 export async function configureApp(app: NestFastifyApplication): Promise<void> {
   const fastify = app.getHttpAdapter().getInstance();
   app.useLogger(new NestJsonLogger(fastify.log));
-  // Registered first so that every later hook and the handler run inside the request span.
+  // Registered first so that every later hook and the handler run inside the log-identity scope and
+  // then inside the request span.
+  registerRequestLogIdentity(fastify);
   registerRequestTracing(fastify);
 
   // helmet security headers; CORS is deliberately never enabled (strict: no cross-origin access).

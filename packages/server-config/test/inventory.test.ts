@@ -43,35 +43,92 @@ describe('environment inventory', () => {
     expect(variablesFor('api').map((e) => e.name)).toEqual([
       'NODE_ENV',
       'LOG_LEVEL',
+      'PSEUDONYMOUS_USER_ID_KEY',
       'API_HOST',
       'API_PORT',
       'APP_SYSTEM_DATABASE_URL',
       'APP_SYSTEM_DATABASE_MAX_CONNECTIONS',
+      'DEVICE_IDENTITY_KEY',
       'OTP_PEPPER',
       'WAABEK_BASE_URL',
       'WAABEK_API_KEY',
       'INTERNAL_BFF_CREDENTIAL',
+      'SUPABASE_URL',
+      'SUPABASE_SECRET_KEY',
+      'WEB_PUBLIC_ORIGIN',
+      'REDIS_URL',
     ]);
     expect(variablesFor('worker').map((e) => e.name)).toEqual([
-      'NODE_ENV', 'LOG_LEVEL', 'REDIS_URL', 'WORKER_CONCURRENCY', 'WORKER_HEALTH_HOST', 'WORKER_HEALTH_PORT', 'WORKER_SHUTDOWN_TIMEOUT_MS',
+      'NODE_ENV', 'LOG_LEVEL', 'PSEUDONYMOUS_USER_ID_KEY', 'REDIS_URL', 'WORKER_CONCURRENCY', 'WORKER_HEALTH_HOST', 'WORKER_HEALTH_PORT', 'WORKER_SHUTDOWN_TIMEOUT_MS',
+      // Phase 7-D: the outbox relay's own connection and its polling cadence.
+      'APP_WORKER_DATABASE_URL', 'APP_WORKER_DATABASE_MAX_CONNECTIONS', 'EMAIL_RELAY_INTERVAL_MS',
+      // Phase 8-A: the transactional outbox relay and its sweeper. Cadence only — what may be claimed
+      // is the handler registry's decision, and the staleness threshold is the database function's own.
+      'OUTBOX_RELAY_INTERVAL_MS', 'OUTBOX_SWEEPER_INTERVAL_MS',
     ]);
-    expect(variablesFor('web').map((e) => e.name)).toEqual(['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL']);
+    // The public origin is the public web's alone: the admin console is never indexed and has no sitemap.
+    expect(variablesFor('web').map((e) => e.name)).toEqual(['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'PUBLIC_WEB_ORIGIN']);
     expect(variablesFor('admin').map((e) => e.name)).toEqual(['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL']);
   });
 
   it('contains no variables for features that are not built yet (R13)', () => {
     const names = ENV_INVENTORY.map((entry) => entry.name).join(' ');
-    expect(names).not.toMatch(/SUPABASE|SERVICE_ROLE|PUBLISHABLE|TURNSTILE|SMTP|WABEK|PAYMENT|PAYOUT|APP_ENV|OTEL|SENTRY/);
+    expect(names).not.toMatch(/SERVICE_ROLE|PUBLISHABLE|TURNSTILE|SMTP|WABEK|PAYMENT|PAYOUT|APP_ENV|OTEL|SENTRY/);
   });
 
-  it('admits exactly two database variables, both for the built app_system connection (R13)', () => {
+  it('admits exactly the two Supabase variables the login flow builds (R13)', () => {
+    // `SUPABASE` was forbidden outright while nothing signed anyone in. F2 gives the API a server-side
+    // password sign-in, so the guard narrows to the two names that call needs rather than disappearing.
+    // `SERVICE_ROLE` and `PUBLISHABLE` stay forbidden above: no browser-facing Supabase key is built,
+    // and the browser never speaks to Supabase at all.
+    expect(ENV_INVENTORY.filter((entry) => entry.name.includes('SUPABASE')).map((entry) => entry.name)).toEqual([
+      'SUPABASE_URL',
+      'SUPABASE_SECRET_KEY',
+    ]);
+    const secret = ENV_INVENTORY.find((entry) => entry.name === 'SUPABASE_SECRET_KEY');
+    expect(secret?.secret).toBe(true);
+    expect(secret?.apps).toEqual(['api']);
+  });
+
+  it('shares one Redis variable between the worker and the API login throttle (C-1)', () => {
+    const entry = ENV_INVENTORY.find((candidate) => candidate.name === 'REDIS_URL');
+    expect(entry?.apps).toEqual(['api', 'worker']);
+    expect(entry?.secret).toBe(true);
+    expect(entry?.required).toBe(true);
+  });
+
+  it('admits exactly two database connections, one per role that holds one (R13)', () => {
     // `DATABASE` was forbidden outright while nothing held a database connection. Phase 3 Step 1 gives
-    // the API one, so the guard narrows to the two names that connection needs rather than disappearing:
-    // any third database variable is a new feature and must be justified here first.
+    // the API one and Phase 7-D gives the worker one, so the guard narrows to the names those two
+    // connections need rather than disappearing: any further database variable is a new feature and
+    // must be justified here first.
+    //
+    // Two roles, deliberately two variables. `app_system` and `app_worker` are separate login roles
+    // with separate EXECUTE grants (migrations 0003 and 0008), and sharing one connection string
+    // between them would collapse that separation into a convention.
     expect(ENV_INVENTORY.filter((entry) => entry.name.includes('DATABASE')).map((entry) => entry.name)).toEqual([
       'APP_SYSTEM_DATABASE_URL',
       'APP_SYSTEM_DATABASE_MAX_CONNECTIONS',
+      'APP_WORKER_DATABASE_URL',
+      'APP_WORKER_DATABASE_MAX_CONNECTIONS',
     ]);
+    const workerUrl = ENV_INVENTORY.find((entry) => entry.name === 'APP_WORKER_DATABASE_URL');
+    expect(workerUrl?.apps).toEqual(['worker']);
+    expect(workerUrl?.secret).toBe(true);
+    expect(workerUrl?.required).toBe(true);
+  });
+
+  it('admits the email relay cadence and no email provider credential (R13)', () => {
+    // Phase 7-D builds the delivery layer and chooses no provider, so the only email variable is the
+    // relay's polling cadence: transport, not a credential and not a business rule. `SMTP` stays
+    // forbidden outright by the R13 guard below, and any provider key is a new feature.
+    expect(ENV_INVENTORY.filter((entry) => /EMAIL|MAIL/.test(entry.name)).map((entry) => entry.name)).toEqual([
+      'EMAIL_RELAY_INTERVAL_MS',
+    ]);
+    const relay = ENV_INVENTORY.find((entry) => entry.name === 'EMAIL_RELAY_INTERVAL_MS');
+    expect(relay?.secret).toBe(false);
+    expect(relay?.required).toBe(false);
+    expect(relay?.default).toBe('15000');
   });
 
   it('admits exactly the provider and OTP secrets this phase builds (R13)', () => {

@@ -1,15 +1,18 @@
 import { Worker, type Job, UnrecoverableError } from 'bullmq';
 import type { Redis } from 'ioredis';
 import type { ReadinessResponse } from '@repo/contracts';
-import { SpanKind, SpanStatusCode, trace } from '@repo/telemetry';
+import { PseudonymousUserId } from '@repo/server-config';
+import { runInLogIdentityScope, setLogIdentity, SpanKind, SpanStatusCode, trace } from '@repo/telemetry';
 import type { WorkerEnv } from '../config/env.js';
 import { HealthServer } from '../health/health-server.js';
 import { errorSummary, type WorkerLogger } from '../logging/logger.js';
 import { verifyNoEviction } from '../redis/eviction-policy.js';
 import { DeadLetterQueue } from '../queue/dead-letter.js';
-import type { QueueDefinition } from '../queue/definitions.js';
-import { assertIdPayload } from '../queue/payload.js';
+import type { QueueDefinition, QueueJob, QueuePublisher } from '../queue/definitions.js';
+import { assertIdPayload, type IdPayload } from '../queue/payload.js';
+import { createProducer } from '../queue/producer.js';
 import { assertQueueName, BACKOFF_TYPE, backoffDelay, QUEUE_PREFIX } from '../queue/policy.js';
+import { scheduledOccurrence } from '../queue/scheduling.js';
 
 export interface RuntimeOptions {
   /** Test hooks only. */
@@ -23,6 +26,22 @@ export interface RuntimeOptions {
 const PING_TIMEOUT_MS = 1_000;
 const FORCED_CLOSE_GRACE_MS = 1_000;
 const DEFAULT_PURGE_INTERVAL_MS = 60 * 60 * 1_000;
+
+/**
+ * One BullMQ job as a definition sees it.
+ *
+ * `scheduledFor` is the scheduler occurrence the job belongs to, stable across retries, and `null` for
+ * a job that no schedule produced. It is what lets a repeatable job record exactly one `job_runs` row
+ * per occurrence through 0007's `(job_name, scheduled_for)` unique index.
+ */
+function asQueueJob(job: Job): QueueJob {
+  return {
+    id: String(job.id),
+    name: job.name,
+    data: job.data as IdPayload,
+    scheduledFor: scheduledOccurrence(job),
+  };
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -46,8 +65,14 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  */
 export class WorkerRuntime {
   private readonly health: HealthServer;
+  /** C-13: the same derivation and the same key the API uses, so one person reads the same in both. */
+  private readonly pseudonymous: PseudonymousUserId;
   private readonly workers: Worker[] = [];
   private readonly deadLetters = new Map<string, DeadLetterQueue>();
+  /** Queues held open only to keep a definition's repeatable schedule current. */
+  private readonly schedulers = new Map<string, ReturnType<typeof createProducer>>();
+  /** Queues held open so a definition can publish to another queue (Phase 8-A: the outbox relay). */
+  private readonly publishers = new Map<string, ReturnType<typeof createProducer>>();
   private evictionVerified = false;
   private stopping = false;
   private started = false;
@@ -67,12 +92,32 @@ export class WorkerRuntime {
     for (const definition of definitions) {
       assertQueueName(definition.name);
     }
+    this.pseudonymous = new PseudonymousUserId(env.pseudonymousUserIdKey);
     this.health = new HealthServer(() => this.readiness());
   }
 
   get healthServer(): HealthServer {
     return this.health;
   }
+
+  /**
+   * The publish port handed to any definition that asks for one.
+   *
+   * The runtime owns Redis, so it owns the producers too: one per destination queue, created on first
+   * use and closed with everything else on shutdown. Payloads go through the same IDs-only assertion as
+   * any other enqueued job, and the queue name through the same `assertQueueName`.
+   */
+  private readonly publisher: QueuePublisher = {
+    publish: async (queue: string, jobName: string, data: IdPayload): Promise<string> => {
+      assertQueueName(queue);
+      let producer = this.publishers.get(queue);
+      if (producer === undefined) {
+        producer = createProducer(queue, this.redis);
+        this.publishers.set(queue, producer);
+      }
+      return producer.enqueue(jobName, data);
+    },
+  };
 
   async readiness(): Promise<ReadinessResponse> {
     let redisOk = false;
@@ -111,9 +156,14 @@ export class WorkerRuntime {
     this.evictionVerified = true;
     this.logger.info({ event: 'eviction_policy_verified', method }, 'Redis maxmemory-policy is noeviction');
 
+    // A definition that publishes receives its port before any job can run.
+    for (const definition of this.definitions) {
+      definition.attach?.(this.publisher);
+    }
     for (const definition of this.definitions) {
       this.startWorker(definition);
     }
+    await this.installSchedules();
     this.started = true;
     await this.purgeDeadLetters();
     this.purgeTimer = setInterval(() => void this.purgeDeadLetters(), this.options.purgeIntervalMs ?? DEFAULT_PURGE_INTERVAL_MS);
@@ -174,31 +224,37 @@ export class WorkerRuntime {
       async (job: Job) => {
         this.activeJobs += 1;
         try {
-          // Explicit job span (O8-8): new root per job; only queue, job name and attempt are recorded.
-          await trace.getTracer('worker').startActiveSpan(
-            `process ${definition.name}`,
-            {
-              kind: SpanKind.CONSUMER,
-              root: true,
-              attributes: { 'queue.name': definition.name, 'job.name': job.name, 'job.attempt': job.attemptsMade + 1 },
-            },
-            async (span) => {
-              try {
+          // One log-identity scope per job (C-13, O8-12). The identity comes from the job's own
+          // payload — `userId` is an ordinary key of the existing ID-only payload contract — and
+          // nothing is invented: a job without one simply has no `user_pseudo_id` on its lines.
+          await runInLogIdentityScope(async () => {
+            setLogIdentity(this.pseudonymous.forUser((job.data as Record<string, unknown> | null)?.userId));
+            // Explicit job span (O8-8): new root per job; only queue, job name and attempt are recorded.
+            await trace.getTracer('worker').startActiveSpan(
+              `process ${definition.name}`,
+              {
+                kind: SpanKind.CONSUMER,
+                root: true,
+                attributes: { 'queue.name': definition.name, 'job.name': job.name, 'job.attempt': job.attemptsMade + 1 },
+              },
+              async (span) => {
                 try {
-                  assertIdPayload(job.data);
+                  try {
+                    assertIdPayload(job.data);
+                  } catch (error) {
+                    throw new UnrecoverableError((error as Error).name);
+                  }
+                  await definition.process(asQueueJob(job));
                 } catch (error) {
-                  throw new UnrecoverableError((error as Error).name);
+                  span.setAttribute('error.type', errorSummary(error).errorType);
+                  span.setStatus({ code: SpanStatusCode.ERROR });
+                  throw error;
+                } finally {
+                  span.end();
                 }
-                await definition.process({ id: String(job.id), name: job.name, data: job.data });
-              } catch (error) {
-                span.setAttribute('error.type', errorSummary(error).errorType);
-                span.setStatus({ code: SpanStatusCode.ERROR });
-                throw error;
-              } finally {
-                span.end();
-              }
-            },
-          );
+              },
+            );
+          });
         } finally {
           this.activeJobs -= 1;
           if (this.activeJobs === 0) {
@@ -231,12 +287,48 @@ export class WorkerRuntime {
         deadLetter.moveToDeadLetter(job, error).catch((dlqError: unknown) => {
           this.logger.error({ event: 'dead_letter_store_failed', queue: definition.name, jobId: job.id, ...errorSummary(dlqError) }, 'Could not store dead-letter entry');
         });
+        // A definition with state outside the queue settles it here — the outbox marks the event so it
+        // is never republished. The dead-letter entry above is stored either way; a throw here is
+        // logged and changes nothing about it.
+        definition.onFinalFailure?.(asQueueJob(job), errorSummary(error).errorType).catch((hookError: unknown) => {
+          this.logger.error(
+            { event: 'final_failure_hook_failed', queue: definition.name, jobId: job.id, ...errorSummary(hookError) },
+            'A definition could not settle its own final failure',
+          );
+        });
       }
     });
     worker.on('error', (error: Error) => {
       this.logger.warn({ event: 'worker_error', queue: definition.name, ...errorSummary(error) }, 'Worker error');
     });
     this.workers.push(worker);
+  }
+
+  /**
+   * Installs each definition's repeatable schedule.
+   *
+   * The scheduler id is stable, so a restart updates the existing schedule rather than adding another
+   * one, and the template payload goes through the same IDs-only assertion as any enqueued job. A
+   * schedule that cannot be installed fails start-up: a relay nobody triggers is not a running relay,
+   * and failing loudly is better than a worker that looks healthy and drains nothing.
+   */
+  private async installSchedules(): Promise<void> {
+    for (const definition of this.definitions) {
+      const schedule = definition.schedule;
+      if (schedule === undefined) continue;
+      assertIdPayload(schedule.data);
+      const producer = createProducer(definition.name, this.redis);
+      this.schedulers.set(definition.name, producer);
+      await producer.queue.upsertJobScheduler(
+        schedule.schedulerId,
+        { every: schedule.everyMs },
+        { name: schedule.jobName, data: schedule.data },
+      );
+      this.logger.info(
+        { event: 'queue_schedule_installed', queue: definition.name, everyMs: schedule.everyMs },
+        'Repeatable job scheduled',
+      );
+    }
   }
 
   private async purgeDeadLetters(): Promise<void> {
@@ -308,6 +400,8 @@ export class WorkerRuntime {
     );
     this.logger.debug({ event: 'shutdown_stage', stage: 'workers_closed' }, 'Workers closed');
     await Promise.all([...this.deadLetters.values()].map((deadLetter) => deadLetter.close().catch(() => undefined)));
+    await Promise.all([...this.schedulers.values()].map((producer) => producer.close().catch(() => undefined)));
+    await Promise.all([...this.publishers.values()].map((producer) => producer.close().catch(() => undefined)));
     this.logger.debug({ event: 'shutdown_stage', stage: 'queues_closed' }, 'Queues closed');
     await this.closeRedis();
     this.logger.debug({ event: 'shutdown_stage', stage: 'redis_closed' }, 'Redis closed');

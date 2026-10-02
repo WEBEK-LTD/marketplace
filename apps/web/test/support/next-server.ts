@@ -23,14 +23,25 @@ export interface RunningApp {
   stop(): Promise<void>;
 }
 
-/** Starts the built app with `next start` (run the build first). */
+/**
+ * Starts the built app with `next start` (run the build first).
+ *
+ * Nothing is supplied here that the caller did not ask for. `PUBLIC_WEB_ORIGIN` in particular is **not** defaulted:
+ * it is optional while the production domain is undecided, so an app booted without it is the app as it runs
+ * today, and a suite that wants the configured behaviour passes its own origin. That is what lets one suite drive
+ * both states.
+ */
 export async function startBuiltApp(env: Record<string, string>): Promise<RunningApp> {
   if (!existsSync(`${APP_DIR}/.next/BUILD_ID`)) {
     throw new Error('Build the app before running the HTTP tests.');
   }
   const port = await freePort();
   // Default binding: `next start --hostname …` makes the root path redirect to itself with next-intl.
-  const childEnv = { PATH: process.env.PATH ?? '', NEXT_TELEMETRY_DISABLED: '1', ...env } as unknown as NodeJS.ProcessEnv;
+  const childEnv = {
+    PATH: process.env.PATH ?? '',
+    NEXT_TELEMETRY_DISABLED: '1',
+    ...env,
+  } as unknown as NodeJS.ProcessEnv;
   const child: ChildProcess = spawn(`${APP_DIR}/node_modules/.bin/next`, ['start', '--port', String(port)], {
     cwd: APP_DIR,
     env: childEnv,

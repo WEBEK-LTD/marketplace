@@ -59,7 +59,8 @@ export const DECISIONS_PATH = join(REPO_ROOT, 'policy/b10-hosted-decisions.json'
 const CREDENTIAL_VARIABLE = 'B10_HOSTED_DATABASE_URL';
 const PGTAP_IMAGE = 'public.ecr.aws/supabase/pg_prove:3.36';
 
-/** The guard functions migration 0031 installs. All ten must report zero problems. */
+/** The guard functions of the security contract: ten from 0031 and the attribution guard from 0084.
+ * All eleven must report zero problems. */
 export const GUARD_FUNCTIONS = Object.freeze([
   'security_contract_problems',
   'rls_problems',
@@ -71,6 +72,7 @@ export const GUARD_FUNCTIONS = Object.freeze([
   'append_only_problems',
   'cron_job_problems',
   'storage_bucket_problems',
+  'audit_attribution_problems',
 ]);
 
 export function target(path = DECISIONS_PATH) {

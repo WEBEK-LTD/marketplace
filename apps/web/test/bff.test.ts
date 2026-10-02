@@ -4,18 +4,19 @@ import { BffConfigError, checkSameOrigin, getApiClient, readApiBaseUrl } from '.
 
 /** Obviously fake, 43 base64url characters like the real format. */
 const CREDENTIAL = 'test-current-credential-value-not-a-real-se';
+const ORIGIN = 'https://web.test';
 
 describe('API_BASE_URL', () => {
   it('accepts http and https URLs', () => {
-    expect(readApiBaseUrl({ API_BASE_URL: 'http://api.internal:8080', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })).toBe('http://api.internal:8080');
-    expect(readApiBaseUrl({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })).toBe('https://api.example');
+    expect(readApiBaseUrl({ API_BASE_URL: 'http://api.internal:8080', INTERNAL_BFF_CREDENTIAL: CREDENTIAL, PUBLIC_WEB_ORIGIN: ORIGIN })).toBe('http://api.internal:8080');
+    expect(readApiBaseUrl({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL, PUBLIC_WEB_ORIGIN: ORIGIN })).toBe('https://api.example');
   });
 
   it.each([undefined, '', 'not a url', 'ftp://api.internal', 'file:///etc/passwd', 'https://user:secret-pw@api.internal'])(
     'rejects %j without revealing the value',
     (value) => {
       try {
-        readApiBaseUrl({ API_BASE_URL: value, INTERNAL_BFF_CREDENTIAL: CREDENTIAL });
+        readApiBaseUrl({ API_BASE_URL: value, INTERNAL_BFF_CREDENTIAL: CREDENTIAL, PUBLIC_WEB_ORIGIN: ORIGIN });
         throw new Error('expected failure');
       } catch (error) {
         expect(error).toBeInstanceOf(BffConfigError);
@@ -28,7 +29,7 @@ describe('API_BASE_URL', () => {
   it('configures the generated API client on first use', () => {
     resetApiClientForTests();
     expect(() => getApiClient({})).toThrow(BffConfigError);
-    const client = getApiClient({ API_BASE_URL: 'http://api.internal:8080', INTERNAL_BFF_CREDENTIAL: CREDENTIAL });
+    const client = getApiClient({ API_BASE_URL: 'http://api.internal:8080', INTERNAL_BFF_CREDENTIAL: CREDENTIAL, PUBLIC_WEB_ORIGIN: ORIGIN });
     expect(typeof client.getHealth).toBe('function');
     expect(typeof client.getReadiness).toBe('function');
     resetApiClientForTests();

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
-import { activeTraceFields } from '@repo/telemetry';
+import { activeLogIdentityFields, activeTraceFields } from '@repo/telemetry';
 import type { LogLevel } from '../config/env.js';
 
 export const REQUEST_ID_HEADER = 'x-request-id';
@@ -37,11 +37,12 @@ export function buildLoggerOptions(level: LogLevel, stream?: LogStream) {
     level,
     ...(stream === undefined ? {} : { stream }),
     redact: { paths: [...REDACTED_PATHS], censor: '[REDACTED]' },
-    // Log correlation (O8-12): trace and span IDs of the active span, and a module name
+    // Log correlation (O8-12): trace and span IDs of the active span, the pseudonymous user ID of the
+    // request (C-13; absent on anonymous requests, never a placeholder), and a module name
     // ("http" unless the line or logger already names one).
     mixin(mergeObject: object, _level: number, logger: { bindings(): Record<string, unknown> }) {
       const named = 'module' in mergeObject || 'module' in logger.bindings();
-      return { ...(named ? {} : { module: 'http' }), ...activeTraceFields() };
+      return { ...(named ? {} : { module: 'http' }), ...activeTraceFields(), ...activeLogIdentityFields() };
     },
     serializers: {
       req(request: { method: string; url: string }) {

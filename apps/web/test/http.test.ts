@@ -113,6 +113,8 @@ describe('not-found pages', () => {
 });
 
 describe('noindex', () => {
+  // The robots header is route-aware since the public catalogue went live: these paths are outside it, so
+  // they keep the blanket header. `test/robots-policy.test.ts` covers the catalogue routes themselves.
   it.each(['/', '/ar', '/nope'])('%s is not indexable', async (path) => {
     const res = await get(path);
     expect(res.headers.get('x-robots-tag')).toBe('noindex');

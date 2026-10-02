@@ -34,6 +34,20 @@ export interface AppPrivateAppendOnlyContract {
   "reason": string;
 }
 
+export interface AppPrivateAuditAttributionContract {
+  "function_schema": string;
+  "function_name": string;
+  "role": string;
+  "actor_parameter": string | null;
+  "reason": string;
+}
+
+export interface AppPrivateConversationDedupe {
+  "dedupe_key": string;
+  "conversation_id": string;
+  "created_at": Generated<Timestamp>;
+}
+
 export interface AppPrivateCurrencyDependencies {
   "dependency_key": string;
   "table_schema": string;
@@ -2066,7 +2080,7 @@ export interface PublicServiceRequests {
   "currency_code": string;
   "listing_id": string | null;
   "buyer_user_id": string;
-  "seller_user_id": string;
+  "seller_user_id": string | null;
   "title": string;
   "brief": string;
   "budget_minor": string | null;
@@ -2075,6 +2089,9 @@ export interface PublicServiceRequests {
   "closed_at": Timestamp | null;
   "created_at": Generated<Timestamp>;
   "updated_at": Generated<Timestamp>;
+  "routing_mode": Generated<string>;
+  "preferred_payment_method": string | null;
+  "payment_notes": string | null;
 }
 
 export interface PublicShippingProfiles {
@@ -2338,6 +2355,8 @@ export interface PublicWithdrawals {
 export interface Database {
   "app_private.account_lockouts": AppPrivateAccountLockouts;
   "app_private.append_only_contract": AppPrivateAppendOnlyContract;
+  "app_private.audit_attribution_contract": AppPrivateAuditAttributionContract;
+  "app_private.conversation_dedupe": AppPrivateConversationDedupe;
   "app_private.currency_dependencies": AppPrivateCurrencyDependencies;
   "app_private.login_attempts": AppPrivateLoginAttempts;
   "app_private.otp_challenges": AppPrivateOtpChallenges;

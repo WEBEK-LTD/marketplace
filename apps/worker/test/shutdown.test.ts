@@ -199,12 +199,12 @@ describe('built worker process', () => {
 
   it('exits with code 0 after SIGTERM and logs only JSON', async () => {
     const result = await runMain(
-      { NODE_ENV: 'test', REDIS_URL: server.url, WORKER_HEALTH_HOST: '127.0.0.1', WORKER_HEALTH_PORT: String(await freePort()) },
+      { NODE_ENV: 'test', PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret', APP_WORKER_DATABASE_URL: 'postgres://app_worker@127.0.0.1:5432/marketplace_test', REDIS_URL: server.url, WORKER_HEALTH_HOST: '127.0.0.1', WORKER_HEALTH_PORT: String(await freePort()) },
       (child) => child.kill('SIGTERM'),
     );
     expect(result.code).toBe(0);
     const configLine = result.stdout.split('\n').find((line) => line.includes('"config_loaded"')) ?? '';
-    expect(JSON.parse(configLine)).toMatchObject({ event: 'config_loaded', component: 'worker', variablesValidated: 7 });
+    expect(JSON.parse(configLine)).toMatchObject({ event: 'config_loaded', component: 'worker', variablesValidated: 13 });
     for (const forbidden of ['redis://', String(server.port), '127.0.0.1', 'REDIS_URL', 'NODE_ENV', '"test"']) {
       expect(configLine).not.toContain(forbidden);
     }
@@ -218,6 +218,8 @@ describe('built worker process', () => {
     try {
       const result = await runMain({
         NODE_ENV: 'test',
+        PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
+        APP_WORKER_DATABASE_URL: 'postgres://app_worker@127.0.0.1:5432/marketplace_test',
         REDIS_URL: lru.url,
         WORKER_HEALTH_HOST: '127.0.0.1',
         WORKER_HEALTH_PORT: String(await freePort()),
@@ -234,6 +236,8 @@ describe('built worker process', () => {
   it('exits with code 1 on invalid environment without printing values', async () => {
     const result = await runMain({
       NODE_ENV: 'production',
+      PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
+      APP_WORKER_DATABASE_URL: 'postgres://app_worker@127.0.0.1:5432/marketplace_test',
       REDIS_URL: 'redis://:prod-password-not-printed@redis:6379',
       WORKER_HEALTH_HOST: '127.0.0.1',
       WORKER_HEALTH_PORT: '8081',

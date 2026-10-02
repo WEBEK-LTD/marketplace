@@ -32,6 +32,10 @@ function nextServer(app: 'web' | 'admin', port: number) {
     env: {
       API_BASE_URL: 'http://127.0.0.1:9',
       INTERNAL_BFF_CREDENTIAL: SMOKE_INTERNAL_BFF_CREDENTIAL,
+      // Optional in the inventory and supplied here anyway, so the smoke servers run in the shape they will
+      // have once a domain exists; the admin console ignores what it has no field for. A reserved test host —
+      // the smoke pages never ask for a sitemap, and no real domain is named anywhere in this repository.
+      PUBLIC_WEB_ORIGIN: 'https://smoke.test',
       NEXT_TELEMETRY_DISABLED: '1',
     },
     stdout: 'ignore' as const,

@@ -23,6 +23,7 @@ describe('web instrumentation telemetry (O8-11)', () => {
     vi.stubEnv('NEXT_RUNTIME', 'nodejs');
     vi.stubEnv('API_BASE_URL', 'http://127.0.0.1:9');
     vi.stubEnv('INTERNAL_BFF_CREDENTIAL', 'test-current-credential-value-not-a-real-se');
+    vi.stubEnv('PUBLIC_WEB_ORIGIN', 'https://web.test');
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     await register();
     const span = trace.getTracer('probe').startSpan('probe');

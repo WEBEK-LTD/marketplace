@@ -18,6 +18,21 @@ export function hashIdentifier(identifier: string): Buffer {
   return createHash('sha256').update(normalized, 'utf8').digest();
 }
 
+/**
+ * Hashes a client IP for the throttle buckets and the security-event payload (C-1, C-20).
+ *
+ * Same reasoning as {@link hashIdentifier}: the counter needs a stable key per client, not the address
+ * itself, and a security event records a pseudonymous IP rather than a real one. Absent or blank yields
+ * null, which the callers treat as "no IP bucket for this request" rather than as a shared empty key —
+ * lumping every unknown-IP request into one bucket would let one client throttle everyone.
+ */
+export function hashClientIp(ip: string | undefined | null): Buffer | null {
+  if (ip === undefined || ip === null) return null;
+  const trimmed = ip.trim();
+  if (trimmed === '') return null;
+  return createHash('sha256').update(trimmed, 'utf8').digest();
+}
+
 /** Hashes a user agent for `login_attempts.user_agent_hash`. Absent or blank yields null. */
 export function hashUserAgent(userAgent: string | undefined | null): Buffer | null {
   if (userAgent === undefined || userAgent === null) return null;

@@ -45,8 +45,11 @@ describe('TOOL-2: generated client against the running API', () => {
     const fastify = app.getHttpAdapter().getInstance();
     const doc = generateOpenApiDocument();
     for (const [path, item] of Object.entries(doc.paths ?? {})) {
+      // OpenAPI templates a path parameter as `{slug}`; the router registered it as `:slug`. Both name
+      // the same route, so the name is translated rather than the assertion weakened.
+      const url = path.replace(/\{([^}]+)\}/g, ':$1');
       for (const method of Object.keys(item as object)) {
-        expect(fastify.hasRoute({ method: method.toUpperCase() as 'GET', url: path }), `${method} ${path}`).toBe(true);
+        expect(fastify.hasRoute({ method: method.toUpperCase() as 'GET', url }), `${method} ${path}`).toBe(true);
       }
     }
   });

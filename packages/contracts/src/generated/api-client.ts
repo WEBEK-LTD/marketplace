@@ -5,6 +5,15 @@
  * OpenAPI spec version: 0.0.0
  */
 import { apiFetch } from '../client/api-fetch.js';
+export interface CategoryNode {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+  children: CategoryNode[];
+}
+
 export type HealthResponseStatus = typeof HealthResponseStatus[keyof typeof HealthResponseStatus];
 
 
@@ -34,6 +43,97 @@ export const ProblemCode = {
   UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
   HTTP_ERROR: 'HTTP_ERROR',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
+  AUTHENTICATION_FAILED: 'AUTHENTICATION_FAILED',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED',
+  THROTTLED: 'THROTTLED',
+  TOTP_ALREADY_ENROLLED: 'TOTP_ALREADY_ENROLLED',
+  TOTP_NOT_ENROLLED: 'TOTP_NOT_ENROLLED',
+  NOTIFICATIONS_CURSOR_INVALID: 'NOTIFICATIONS_CURSOR_INVALID',
+  MESSAGING_CURSOR_INVALID: 'MESSAGING_CURSOR_INVALID',
+  MESSAGING_CONVERSATION_NOT_FOUND: 'MESSAGING_CONVERSATION_NOT_FOUND',
+  MESSAGING_CONVERSATION_CLOSED: 'MESSAGING_CONVERSATION_CLOSED',
+  MESSAGING_BLOCKED: 'MESSAGING_BLOCKED',
+  MESSAGING_SELLER_NOT_CONTACTABLE: 'MESSAGING_SELLER_NOT_CONTACTABLE',
+  MESSAGING_REPORT_TARGET_NOT_FOUND: 'MESSAGING_REPORT_TARGET_NOT_FOUND',
+  SELLER_PROFILE_EXISTS: 'SELLER_PROFILE_EXISTS',
+  SELLER_SLUG_TAKEN: 'SELLER_SLUG_TAKEN',
+  SELLER_PROFILE_NOT_EDITABLE: 'SELLER_PROFILE_NOT_EDITABLE',
+  SELLER_MEDIA_OBJECT_MISSING: 'SELLER_MEDIA_OBJECT_MISSING',
+  SELLER_LISTING_NOT_EDITABLE: 'SELLER_LISTING_NOT_EDITABLE',
+  SELLER_LISTING_SLUG_TAKEN: 'SELLER_LISTING_SLUG_TAKEN',
+  SELLER_LISTING_INCOMPLETE: 'SELLER_LISTING_INCOMPLETE',
+  SELLER_LISTING_CURSOR_INVALID: 'SELLER_LISTING_CURSOR_INVALID',
+  SELLER_VERIFICATION_EXISTS: 'SELLER_VERIFICATION_EXISTS',
+  SELLER_VERIFICATION_ALREADY_VERIFIED: 'SELLER_VERIFICATION_ALREADY_VERIFIED',
+  SELLER_VERIFICATION_NOT_EDITABLE: 'SELLER_VERIFICATION_NOT_EDITABLE',
+  SELLER_VERIFICATION_DOCUMENT_PATH_TAKEN: 'SELLER_VERIFICATION_DOCUMENT_PATH_TAKEN',
+  SAVED_SEARCH_NAME_TAKEN: 'SAVED_SEARCH_NAME_TAKEN',
+  ADDRESS_COUNTRY_NOT_SHIPPABLE: 'ADDRESS_COUNTRY_NOT_SHIPPABLE',
+  ACCOUNT_CURSOR_INVALID: 'ACCOUNT_CURSOR_INVALID',
+  VERIFICATION_NOT_DECIDABLE: 'VERIFICATION_NOT_DECIDABLE',
+  VERIFICATION_CONTACTS_UNVERIFIED: 'VERIFICATION_CONTACTS_UNVERIFIED',
+  VERIFICATION_CURSOR_INVALID: 'VERIFICATION_CURSOR_INVALID',
+  OFFER_ALREADY_OPEN: 'OFFER_ALREADY_OPEN',
+  OFFER_NOT_AVAILABLE: 'OFFER_NOT_AVAILABLE',
+  OFFER_OWN_LISTING: 'OFFER_OWN_LISTING',
+  OFFER_BLOCKED: 'OFFER_BLOCKED',
+  OFFER_NOT_ACTIONABLE: 'OFFER_NOT_ACTIONABLE',
+  OFFER_LAPSED: 'OFFER_LAPSED',
+  OFFER_PAYMENT_POLICY_MISSING: 'OFFER_PAYMENT_POLICY_MISSING',
+  OFFERS_CURSOR_INVALID: 'OFFERS_CURSOR_INVALID',
+  SERVICE_REQUEST_NOT_AVAILABLE: 'SERVICE_REQUEST_NOT_AVAILABLE',
+  SERVICE_REQUEST_NOT_CUSTOM: 'SERVICE_REQUEST_NOT_CUSTOM',
+  SERVICE_REQUEST_OWN_LISTING: 'SERVICE_REQUEST_OWN_LISTING',
+  SERVICE_REQUEST_BLOCKED: 'SERVICE_REQUEST_BLOCKED',
+  SERVICE_REQUEST_NOT_ACTIONABLE: 'SERVICE_REQUEST_NOT_ACTIONABLE',
+  SERVICE_QUOTE_LAPSED: 'SERVICE_QUOTE_LAPSED',
+  SERVICE_QUOTE_PAYMENT_POLICY_MISSING: 'SERVICE_QUOTE_PAYMENT_POLICY_MISSING',
+  SERVICE_REQUEST_CURRENCY_UNAVAILABLE: 'SERVICE_REQUEST_CURRENCY_UNAVAILABLE',
+  SERVICE_REQUESTS_CURSOR_INVALID: 'SERVICE_REQUESTS_CURSOR_INVALID',
+  SUPPORT_TICKET_NOT_ACTIONABLE: 'SUPPORT_TICKET_NOT_ACTIONABLE',
+  SUPPORT_ATTACHMENT_OBJECT_MISSING: 'SUPPORT_ATTACHMENT_OBJECT_MISSING',
+  SUPPORT_TICKETS_CURSOR_INVALID: 'SUPPORT_TICKETS_CURSOR_INVALID',
+  SUPPORT_TICKET_NOT_WORKABLE: 'SUPPORT_TICKET_NOT_WORKABLE',
+  REPORT_SUBJECT_NOT_REPORTABLE: 'REPORT_SUBJECT_NOT_REPORTABLE',
+  REPORT_SUBJECT_IS_THE_REPORTER: 'REPORT_SUBJECT_IS_THE_REPORTER',
+  REPORTS_CURSOR_INVALID: 'REPORTS_CURSOR_INVALID',
+  REPORT_ALREADY_FINAL: 'REPORT_ALREADY_FINAL',
+  REPORT_IS_OWN: 'REPORT_IS_OWN',
+  LISTING_IS_OWN: 'LISTING_IS_OWN',
+  LISTING_MODERATION_NO_CHANGE: 'LISTING_MODERATION_NO_CHANGE',
+  LISTING_MODERATION_NOT_APPLICABLE: 'LISTING_MODERATION_NOT_APPLICABLE',
+  RECOVERY_IS_OWN: 'RECOVERY_IS_OWN',
+  RECOVERY_NEEDS_ANOTHER_PERSON: 'RECOVERY_NEEDS_ANOTHER_PERSON',
+  RECOVERY_NOT_REVIEWABLE: 'RECOVERY_NOT_REVIEWABLE',
+  RECOVERY_NOT_DECIDABLE: 'RECOVERY_NOT_DECIDABLE',
+  RECOVERY_NOT_COMPLETABLE: 'RECOVERY_NOT_COMPLETABLE',
+  SELLER_STATUS_NOT_ALLOWED: 'SELLER_STATUS_NOT_ALLOWED',
+  SELLER_STATUS_NO_CHANGE: 'SELLER_STATUS_NO_CHANGE',
+  SELLER_STATUS_REASON_REQUIRED: 'SELLER_STATUS_REASON_REQUIRED',
+  SELLER_STATUS_NOT_VERIFIED: 'SELLER_STATUS_NOT_VERIFIED',
+  SELLER_STATUS_ALREADY_VERIFIED: 'SELLER_STATUS_ALREADY_VERIFIED',
+  REVIEW_IS_PARTY: 'REVIEW_IS_PARTY',
+  REVIEW_REASON_REQUIRED: 'REVIEW_REASON_REQUIRED',
+  DISPUTE_IS_PARTY: 'DISPUTE_IS_PARTY',
+  DISPUTE_THREAD_CLOSED: 'DISPUTE_THREAD_CLOSED',
+  DISPUTE_ALREADY_RESOLVED: 'DISPUTE_ALREADY_RESOLVED',
+  DISPUTE_REASON_REQUIRED: 'DISPUTE_REASON_REQUIRED',
+  DISPUTE_AMOUNT_NOT_ALLOWED: 'DISPUTE_AMOUNT_NOT_ALLOWED',
+  CMS_PAGE_LOCALE_REQUIRED: 'CMS_PAGE_LOCALE_REQUIRED',
+  CMS_PAGE_TRANSITION_NOT_ALLOWED: 'CMS_PAGE_TRANSITION_NOT_ALLOWED',
+  CMS_PAGE_SLUG_TAKEN: 'CMS_PAGE_SLUG_TAKEN',
+  SEO_REDIRECT_PATH_TAKEN: 'SEO_REDIRECT_PATH_TAKEN',
+  SEO_REDIRECT_NOT_ALLOWED: 'SEO_REDIRECT_NOT_ALLOWED',
+  CATEGORY_TREE_NOT_ALLOWED: 'CATEGORY_TREE_NOT_ALLOWED',
+  CATEGORY_SLUG_TAKEN: 'CATEGORY_SLUG_TAKEN',
+  CATEGORY_NAME_REQUIRED: 'CATEGORY_NAME_REQUIRED',
+  CATEGORY_VALUE_NOT_ALLOWED: 'CATEGORY_VALUE_NOT_ALLOWED',
+  ATTRIBUTE_KEY_TAKEN: 'ATTRIBUTE_KEY_TAKEN',
+  ATTRIBUTE_NOT_ANSWERABLE: 'ATTRIBUTE_NOT_ANSWERABLE',
+  ATTRIBUTE_VALUE_NOT_ALLOWED: 'ATTRIBUTE_VALUE_NOT_ALLOWED',
+  LISTING_ATTRIBUTE_ANSWER_NOT_ALLOWED: 'LISTING_ATTRIBUTE_ANSWER_NOT_ALLOWED',
 } as const;
 
 export interface ValidationIssue {
@@ -91,6 +191,7038 @@ export const V1FoundationResponseStatus = {
 export interface V1FoundationResponse {
   status: V1FoundationResponseStatus;
 }
+
+export interface CategoriesResponse {
+  categories: CategoryNode[];
+}
+
+/**
+ * @nullable
+ */
+export type CategoryLink = {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+} | null;
+
+export interface CategoryDetail {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  description: string | null;
+  parent: CategoryLink | null;
+  children: (CategoryLink | null)[];
+}
+
+export interface CategorySeo {
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+}
+
+export interface CategoryDetailResponse {
+  category: CategoryDetail;
+  seo: CategorySeo;
+}
+
+export interface ListingSummary {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  isNegotiable: boolean;
+  /** @minLength 1 */
+  listingTypeCode: string;
+}
+
+export interface ListingsResponse {
+  items: ListingSummary[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export type ListingDetailAvailability = typeof ListingDetailAvailability[keyof typeof ListingDetailAvailability];
+
+
+export const ListingDetailAvailability = {
+  available: 'available',
+  no_longer_available: 'no_longer_available',
+} as const;
+
+export interface ListingCategory {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+}
+
+export interface PublicSeller {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  displayName: string;
+}
+
+export type ListingAttributeKind = typeof ListingAttributeKind[keyof typeof ListingAttributeKind];
+
+
+export const ListingAttributeKind = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export interface ListingAttribute {
+  /** @minLength 1 */
+  key: string;
+  /** @minLength 1 */
+  label: string;
+  /** @nullable */
+  unit: string | null;
+  kind: ListingAttributeKind;
+  /** @nullable */
+  text: string | null;
+  /** @nullable */
+  boolean: boolean | null;
+  options: string[];
+}
+
+export interface ListingTag {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+}
+
+export interface ListingDetail {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  isNegotiable: boolean;
+  /** @minLength 1 */
+  listingTypeCode: string;
+  /** @minLength 1 */
+  description: string;
+  /** @minLength 2 */
+  contentLanguage: string;
+  createdAt: string;
+  availability: ListingDetailAvailability;
+  category: ListingCategory;
+  seller: PublicSeller;
+  attributes: ListingAttribute[];
+  tags: ListingTag[];
+}
+
+export interface ListingDetailResponse {
+  listing: ListingDetail;
+}
+
+/**
+ * @nullable
+ */
+export type ServiceSummaryPricingModel = typeof ServiceSummaryPricingModel[keyof typeof ServiceSummaryPricingModel] | null;
+
+
+export const ServiceSummaryPricingModel = {
+  fixed: 'fixed',
+  custom: 'custom',
+} as const;
+
+export interface ServiceSummary {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  pricingModel: ServiceSummaryPricingModel;
+  /**
+     * @minimum 1
+     * @maximum 365
+     * @nullable
+     */
+  deliveryDays: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  revisionsIncluded: number | null;
+}
+
+export interface ServicesResponse {
+  items: ServiceSummary[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type ServiceDetailPricingModel = typeof ServiceDetailPricingModel[keyof typeof ServiceDetailPricingModel] | null;
+
+
+export const ServiceDetailPricingModel = {
+  fixed: 'fixed',
+  custom: 'custom',
+} as const;
+
+export type ServiceDetailAvailability = typeof ServiceDetailAvailability[keyof typeof ServiceDetailAvailability];
+
+
+export const ServiceDetailAvailability = {
+  available: 'available',
+  no_longer_available: 'no_longer_available',
+} as const;
+
+export interface ServiceDetail {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  pricingModel: ServiceDetailPricingModel;
+  /**
+     * @minimum 1
+     * @maximum 365
+     * @nullable
+     */
+  deliveryDays: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  revisionsIncluded: number | null;
+  /** @minLength 1 */
+  description: string;
+  /** @minLength 2 */
+  contentLanguage: string;
+  /** @nullable */
+  requiresBrief: boolean | null;
+  /** @nullable */
+  scope: string | null;
+  availability: ServiceDetailAvailability;
+  category: ListingCategory;
+  seller: PublicSeller;
+  attributes: ListingAttribute[];
+  tags: ListingTag[];
+}
+
+export interface ServiceDetailResponse {
+  service: ServiceDetail;
+}
+
+export type SearchListingResultType = typeof SearchListingResultType[keyof typeof SearchListingResultType];
+
+
+export const SearchListingResultType = {
+  listing: 'listing',
+} as const;
+
+export interface SearchListingResult {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  isNegotiable: boolean;
+  /** @minLength 1 */
+  listingTypeCode: string;
+  type: SearchListingResultType;
+}
+
+/**
+ * @nullable
+ */
+export type SearchServiceResultPricingModel = typeof SearchServiceResultPricingModel[keyof typeof SearchServiceResultPricingModel] | null;
+
+
+export const SearchServiceResultPricingModel = {
+  fixed: 'fixed',
+  custom: 'custom',
+} as const;
+
+export type SearchServiceResultType = typeof SearchServiceResultType[keyof typeof SearchServiceResultType];
+
+
+export const SearchServiceResultType = {
+  service: 'service',
+} as const;
+
+export interface SearchServiceResult {
+  id: string;
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  pricingModel: SearchServiceResultPricingModel;
+  /**
+     * @minimum 1
+     * @maximum 365
+     * @nullable
+     */
+  deliveryDays: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  revisionsIncluded: number | null;
+  type: SearchServiceResultType;
+}
+
+export type SearchResult = SearchListingResult | SearchServiceResult;
+
+export type CatalogFacetKind = typeof CatalogFacetKind[keyof typeof CatalogFacetKind];
+
+
+export const CatalogFacetKind = {
+  attribute: 'attribute',
+  tag: 'tag',
+  listing_type: 'listing_type',
+  currency: 'currency',
+} as const;
+
+/**
+ * @nullable
+ */
+export type CatalogFacetDataType = typeof CatalogFacetDataType[keyof typeof CatalogFacetDataType] | null;
+
+
+export const CatalogFacetDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export interface CatalogFacetValue {
+  value: string;
+  label: string;
+  /** @minimum 0 */
+  matchCount: number;
+}
+
+export interface CatalogFacet {
+  kind: CatalogFacetKind;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @nullable
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string | null;
+  /** @nullable */
+  label: string | null;
+  /** @nullable */
+  dataType: CatalogFacetDataType;
+  /** @nullable */
+  unit: string | null;
+  values: CatalogFacetValue[];
+  /** @nullable */
+  rangeMin: string | null;
+  /** @nullable */
+  rangeMax: string | null;
+  /**
+     * @minimum 0
+     * @maximum 4
+     * @nullable
+     */
+  minorUnit: number | null;
+}
+
+export interface CategoryFeedResponse {
+  items: SearchResult[];
+  /** @nullable */
+  nextCursor: string | null;
+  facets: CatalogFacet[];
+}
+
+export interface SearchResponse {
+  items: SearchResult[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export type SellerProfileResponseAvailability = typeof SellerProfileResponseAvailability[keyof typeof SellerProfileResponseAvailability];
+
+
+export const SellerProfileResponseAvailability = {
+  available: 'available',
+  unavailable: 'unavailable',
+} as const;
+
+export interface PublicSellerProfile {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  displayName: string;
+  /** @nullable */
+  bio: string | null;
+  /**
+     * @minLength 2
+     * @nullable
+     */
+  contentLanguage: string | null;
+  /** @nullable */
+  city: string | null;
+}
+
+export interface SellerProfileResponse {
+  seller: PublicSellerProfile;
+  availability: SellerProfileResponseAvailability;
+}
+
+export type LoginResponseStatus = typeof LoginResponseStatus[keyof typeof LoginResponseStatus];
+
+
+export const LoginResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface LoginResponse {
+  status: LoginResponseStatus;
+}
+
+export interface LoginRequest {
+  /**
+     * @minLength 1
+     * @maxLength 320
+     */
+  identifier: string;
+  password: string;
+}
+
+export type RegisterResponseStatus = typeof RegisterResponseStatus[keyof typeof RegisterResponseStatus];
+
+
+export const RegisterResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface RegisterResponse {
+  status: RegisterResponseStatus;
+  challengeId: string;
+}
+
+export interface RegisterRequest {
+  /**
+     * @minLength 3
+     * @maxLength 254
+     */
+  email: string;
+  /** @pattern ^\+[1-9][0-9]{7,14}$ */
+  phone: string;
+  password: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  displayName?: string;
+}
+
+export type RegisterVerifyResponseStatus = typeof RegisterVerifyResponseStatus[keyof typeof RegisterVerifyResponseStatus];
+
+
+export const RegisterVerifyResponseStatus = {
+  verified: 'verified',
+} as const;
+
+export interface RegisterVerifyResponse {
+  status: RegisterVerifyResponseStatus;
+}
+
+export interface RegisterVerifyRequest {
+  challengeId: string;
+  /** @pattern ^[0-9]{6}$ */
+  otp: string;
+}
+
+export type RegisterResendResponseStatus = typeof RegisterResendResponseStatus[keyof typeof RegisterResendResponseStatus];
+
+
+export const RegisterResendResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface RegisterResendResponse {
+  status: RegisterResendResponseStatus;
+  challengeId: string;
+}
+
+export interface RegisterResendRequest {
+  challengeId: string;
+}
+
+export type RecoveryStartResponseStatus = typeof RecoveryStartResponseStatus[keyof typeof RecoveryStartResponseStatus];
+
+
+export const RecoveryStartResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface RecoveryStartResponse {
+  status: RecoveryStartResponseStatus;
+  challengeId: string;
+}
+
+export interface RecoveryStartRequest {
+  /**
+     * @minLength 1
+     * @maxLength 320
+     */
+  identifier: string;
+}
+
+export type RecoveryVerifyResponseStatus = typeof RecoveryVerifyResponseStatus[keyof typeof RecoveryVerifyResponseStatus];
+
+
+export const RecoveryVerifyResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface RecoveryVerifyResponse {
+  status: RecoveryVerifyResponseStatus;
+}
+
+export interface RecoveryVerifyRequest {
+  challengeId: string;
+  /** @pattern ^[0-9]{6}$ */
+  otp: string;
+}
+
+export type RecoveryResetResponseStatus = typeof RecoveryResetResponseStatus[keyof typeof RecoveryResetResponseStatus];
+
+
+export const RecoveryResetResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface RecoveryResetResponse {
+  status: RecoveryResetResponseStatus;
+}
+
+export interface RecoveryResetRequest {
+  newPassword: string;
+}
+
+export type SessionRefreshResponseStatus = typeof SessionRefreshResponseStatus[keyof typeof SessionRefreshResponseStatus];
+
+
+export const SessionRefreshResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface SessionRefreshResponse {
+  status: SessionRefreshResponseStatus;
+}
+
+export type LogoutResponseStatus = typeof LogoutResponseStatus[keyof typeof LogoutResponseStatus];
+
+
+export const LogoutResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface LogoutResponse {
+  status: LogoutResponseStatus;
+}
+
+export interface CurrentUser {
+  id: string;
+  /** @nullable */
+  displayName: string | null;
+}
+
+export interface CurrentUserResponse {
+  user: CurrentUser;
+}
+
+export type SellerIdentityStatus = typeof SellerIdentityStatus[keyof typeof SellerIdentityStatus];
+
+
+export const SellerIdentityStatus = {
+  pending: 'pending',
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+export type SellerIdentityVerificationStatus = typeof SellerIdentityVerificationStatus[keyof typeof SellerIdentityVerificationStatus];
+
+
+export const SellerIdentityVerificationStatus = {
+  unverified: 'unverified',
+  pending: 'pending',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export interface SellerIdentity {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  displayName: string;
+  status: SellerIdentityStatus;
+  verificationStatus: SellerIdentityVerificationStatus;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+}
+
+export interface SellerIdentityResponse {
+  seller: SellerIdentity;
+}
+
+export interface SellerOnboardingResponse {
+  seller: SellerIdentity;
+}
+
+/**
+ * @pattern ^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])$
+ */
+export type SellerSlug = string;
+
+export interface SellerOnboardingRequest {
+  slug: SellerSlug;
+  displayName: string;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  legalName?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  bio?: string | null;
+  /**
+     * @minLength 2
+     * @maxLength 10
+     * @nullable
+     */
+  contentLanguage?: string | null;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  governorate?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  city?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  contactEmail?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\+[1-9][0-9]{6,14}$
+     */
+  contactPhone?: string | null;
+}
+
+export interface SellerProfileUpdateResponse {
+  seller: SellerIdentity;
+}
+
+export interface SellerProfileUpdateRequest {
+  displayName?: string;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  legalName?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  bio?: string | null;
+  /**
+     * @minLength 2
+     * @maxLength 10
+     * @nullable
+     */
+  contentLanguage?: string | null;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode?: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  governorate?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  city?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  contactEmail?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\+[1-9][0-9]{6,14}$
+     */
+  contactPhone?: string | null;
+}
+
+export type SellerMediaKind = typeof SellerMediaKind[keyof typeof SellerMediaKind];
+
+
+export const SellerMediaKind = {
+  logo: 'logo',
+  banner: 'banner',
+} as const;
+
+export interface SellerMediaUpload {
+  mediaKind: SellerMediaKind;
+  uploadUrl: string;
+  /** @minLength 1 */
+  objectPath: string;
+  expiresAt: string;
+  /** @exclusiveMinimum 0 */
+  maxByteSize: number;
+}
+
+export interface SellerMediaUploadResponse {
+  upload: SellerMediaUpload;
+}
+
+export type SellerMediaContentType = typeof SellerMediaContentType[keyof typeof SellerMediaContentType];
+
+
+export const SellerMediaContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/avif': 'image/avif',
+} as const;
+
+export interface SellerMediaUploadRequest {
+  mediaKind: SellerMediaKind;
+  contentType: SellerMediaContentType;
+  /**
+     * @maximum 5242880
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface SellerMediaState {
+  hasLogo: boolean;
+  hasBanner: boolean;
+}
+
+export interface SellerMediaAttachResponse {
+  media: SellerMediaState;
+}
+
+export interface SellerMediaAttachRequest {
+  mediaKind: SellerMediaKind;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+}
+
+export type SellerListingType = typeof SellerListingType[keyof typeof SellerListingType];
+
+
+export const SellerListingType = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type SellerListingStatus = typeof SellerListingStatus[keyof typeof SellerListingStatus];
+
+
+export const SellerListingStatus = {
+  draft: 'draft',
+  pending_review: 'pending_review',
+  approved: 'approved',
+  active: 'active',
+  sold: 'sold',
+  expired: 'expired',
+  archived: 'archived',
+  rejected: 'rejected',
+  suspended: 'suspended',
+} as const;
+
+export interface SellerListing {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  description: string;
+  listingTypeCode: SellerListingType;
+  /** @minLength 1 */
+  categorySlug: string;
+  status: SellerListingStatus;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /** @nullable */
+  priceMinor: number | null;
+  isNegotiable: boolean;
+  /** @minLength 2 */
+  contentLanguage: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+  /** @nullable */
+  governorate: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @minimum 0 */
+  mediaCount: number;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  submittedAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+}
+
+export interface SellerListingsResponse {
+  listings: SellerListing[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SellerListingRef {
+  /** @minLength 1 */
+  slug: string;
+  status: SellerListingStatus;
+}
+
+export interface SellerListingMutationResponse {
+  listing: SellerListingRef;
+}
+
+/**
+ * @pattern ^[a-z0-9](?:[a-z0-9-]{1,118}[a-z0-9])$
+ */
+export type ListingSlug = string;
+
+export interface SellerListingCreateRequest {
+  slug: ListingSlug;
+  /** @maxLength 200 */
+  title: string;
+  /** @maxLength 24000 */
+  description: string;
+  listingTypeCode: SellerListingType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  categorySlug: string;
+  /**
+     * @minLength 2
+     * @maxLength 10
+     */
+  contentLanguage: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+  /**
+     * @minimum 0
+     * @maximum 9007199254740991
+     * @nullable
+     */
+  priceMinor?: number | null;
+  isNegotiable?: boolean;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  governorate?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  city?: string | null;
+}
+
+export interface SellerListingUpdateRequest {
+  /** @maxLength 200 */
+  title?: string;
+  /** @maxLength 24000 */
+  description?: string;
+  /**
+     * @minimum 0
+     * @maximum 9007199254740991
+     * @nullable
+     */
+  priceMinor?: number | null;
+  isNegotiable?: boolean;
+  /**
+     * @minLength 2
+     * @maxLength 10
+     */
+  contentLanguage?: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode?: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode?: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  governorate?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  city?: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type SellerServicePricingModel = typeof SellerServicePricingModel[keyof typeof SellerServicePricingModel] | null;
+
+
+export const SellerServicePricingModel = {
+  fixed: 'fixed',
+  custom: 'custom',
+} as const;
+
+export interface SellerService {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  description: string;
+  /** @minLength 1 */
+  categorySlug: string;
+  status: SellerListingStatus;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  isNegotiable: boolean;
+  /** @minLength 2 */
+  contentLanguage: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+  /** @nullable */
+  governorate: string | null;
+  /** @nullable */
+  city: string | null;
+  pricingModel: SellerServicePricingModel | null;
+  /**
+     * @minimum 1
+     * @maximum 365
+     * @nullable
+     */
+  deliveryDays: number | null;
+  /**
+     * @minimum 0
+     * @maximum 32767
+     * @nullable
+     */
+  revisionsIncluded: number | null;
+  /** @nullable */
+  requiresBrief: boolean | null;
+  /** @nullable */
+  scope: string | null;
+  /** @minimum 0 */
+  mediaCount: number;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  submittedAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+}
+
+export interface SellerServicesResponse {
+  services: SellerService[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SellerServiceCreateRequest {
+  slug: ListingSlug;
+  /** @maxLength 200 */
+  title: string;
+  /** @maxLength 24000 */
+  description: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  categorySlug: string;
+  /**
+     * @minLength 2
+     * @maxLength 10
+     */
+  contentLanguage: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor?: string | null;
+  isNegotiable?: boolean;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  governorate?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  city?: string | null;
+  pricingModel?: SellerServicePricingModel | null;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  deliveryDays?: number;
+  /**
+     * @minimum 0
+     * @maximum 32767
+     */
+  revisionsIncluded?: number;
+  requiresBrief?: boolean;
+  /**
+     * @maxLength 5000
+     * @nullable
+     */
+  scope?: string | null;
+}
+
+export interface SellerServiceUpdateRequest {
+  /** @maxLength 200 */
+  title?: string;
+  /** @maxLength 24000 */
+  description?: string;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor?: string | null;
+  isNegotiable?: boolean;
+  /**
+     * @minLength 2
+     * @maxLength 10
+     */
+  contentLanguage?: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode?: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode?: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  governorate?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  city?: string | null;
+  pricingModel?: SellerServicePricingModel | null;
+  /**
+     * @minimum 1
+     * @maximum 365
+     * @nullable
+     */
+  deliveryDays?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 32767
+     */
+  revisionsIncluded?: number;
+  requiresBrief?: boolean;
+  /**
+     * @maxLength 5000
+     * @nullable
+     */
+  scope?: string | null;
+}
+
+export type SellerVerificationState = typeof SellerVerificationState[keyof typeof SellerVerificationState];
+
+
+export const SellerVerificationState = {
+  draft: 'draft',
+  submitted: 'submitted',
+  under_review: 'under_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  expired: 'expired',
+} as const;
+
+export type SellerVerificationDocumentType = typeof SellerVerificationDocumentType[keyof typeof SellerVerificationDocumentType];
+
+
+export const SellerVerificationDocumentType = {
+  national_id: 'national_id',
+  passport: 'passport',
+  commercial_register: 'commercial_register',
+  tax_card: 'tax_card',
+  bank_statement: 'bank_statement',
+  other: 'other',
+} as const;
+
+export type SellerVerificationDocumentStatus = typeof SellerVerificationDocumentStatus[keyof typeof SellerVerificationDocumentStatus];
+
+
+export const SellerVerificationDocumentStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  rejected: 'rejected',
+} as const;
+
+export interface SellerVerificationDocument {
+  id: string;
+  documentType: SellerVerificationDocumentType;
+  /** @minLength 1 */
+  originalFilename: string;
+  /** @minLength 1 */
+  contentType: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  byteSize: string;
+  status: SellerVerificationDocumentStatus;
+  uploadedAt: string;
+}
+
+/**
+ * @nullable
+ */
+export type SellerVerification = {
+  status: SellerVerificationState;
+  /** @nullable */
+  submittedAt: string | null;
+  createdAt: string;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  /** @minimum 0 */
+  documentCount: number;
+  documents: SellerVerificationDocument[];
+} | null;
+
+export interface SellerVerificationResponse {
+  verification: SellerVerification | null;
+}
+
+export interface SellerVerificationStateResponse {
+  status: SellerVerificationState;
+}
+
+export interface SellerVerificationUpload {
+  documentType: SellerVerificationDocumentType;
+  uploadUrl: string;
+  /** @minLength 1 */
+  objectPath: string;
+  expiresAt: string;
+  /** @exclusiveMinimum 0 */
+  maxByteSize: number;
+}
+
+export interface SellerVerificationUploadResponse {
+  upload: SellerVerificationUpload;
+}
+
+export type SellerVerificationDocumentContentType = typeof SellerVerificationDocumentContentType[keyof typeof SellerVerificationDocumentContentType];
+
+
+export const SellerVerificationDocumentContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface SellerVerificationUploadRequest {
+  documentType: SellerVerificationDocumentType;
+  contentType: SellerVerificationDocumentContentType;
+  /**
+     * @maximum 20971520
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface SellerVerificationDocumentCountResponse {
+  /** @minimum 0 */
+  documentCount: number;
+}
+
+export interface SellerVerificationDocumentRequest {
+  documentType: SellerVerificationDocumentType;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  originalFilename: string;
+  contentType: SellerVerificationDocumentContentType;
+  /**
+     * @maximum 20971520
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export type SellerOrderStatus = typeof SellerOrderStatus[keyof typeof SellerOrderStatus];
+
+
+export const SellerOrderStatus = {
+  pending_payment: 'pending_payment',
+  paid: 'paid',
+  processing: 'processing',
+  shipped: 'shipped',
+  delivered: 'delivered',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  refund_requested: 'refund_requested',
+  refunded: 'refunded',
+  disputed: 'disputed',
+  requested: 'requested',
+  accepted: 'accepted',
+  in_progress: 'in_progress',
+  revision_requested: 'revision_requested',
+} as const;
+
+export interface SellerOrderItem {
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  slug: string;
+  listingTypeCode: SellerListingType;
+  /** @minimum 0 */
+  quantity: number;
+  /** @minimum 0 */
+  cancelledQuantity: number;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  unitPriceMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  lineTotalMinor: string;
+}
+
+export interface SellerOrder {
+  /** @minLength 1 */
+  orderNumber: string;
+  orderType: SellerListingType;
+  status: SellerOrderStatus;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyDecimalPlaces: number;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  subtotalMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  shippingTotalMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  taxTotalMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  discountTotalMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  commissionTotalMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  grandTotalMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  sellerNetMinor: string;
+  /** @minimum 0 */
+  itemCount: number;
+  placedAt: string;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  shippedAt: string | null;
+  /** @nullable */
+  deliveredAt: string | null;
+  /** @nullable */
+  completedAt: string | null;
+  /** @nullable */
+  cancelledAt: string | null;
+  items: SellerOrderItem[];
+}
+
+export interface SellerOrdersResponse {
+  orders: SellerOrder[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type SellerReviewSummary = {
+  /** @minimum 0 */
+  reviewCount: number;
+  /**
+     * @minimum 0
+     * @maximum 50000
+     */
+  averageRatingBasisPoints: number;
+  /** @minimum 0 */
+  fiveStarCount: number;
+  /** @minimum 0 */
+  fourStarCount: number;
+  /** @minimum 0 */
+  threeStarCount: number;
+  /** @minimum 0 */
+  twoStarCount: number;
+  /** @minimum 0 */
+  oneStarCount: number;
+  /** @nullable */
+  latestReviewAt: string | null;
+} | null;
+
+export type SellerReviewStatus = typeof SellerReviewStatus[keyof typeof SellerReviewStatus];
+
+
+export const SellerReviewStatus = {
+  published: 'published',
+  pending_moderation: 'pending_moderation',
+  hidden: 'hidden',
+  removed: 'removed',
+} as const;
+
+export interface SellerReview {
+  /** @minLength 1 */
+  orderNumber: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  body: string | null;
+  status: SellerReviewStatus;
+  publishedAt: string;
+  createdAt: string;
+  /** @nullable */
+  replyBody: string | null;
+  replyStatus: SellerReviewStatus & (string | null);
+  /** @nullable */
+  replyCreatedAt: string | null;
+}
+
+export interface SellerReviewsResponse {
+  summary: SellerReviewSummary | null;
+  reviews: SellerReview[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SellerBalance {
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyDecimalPlaces: number;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  pendingMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  availableMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  reservedMinor: string;
+  updatedAt: string;
+}
+
+export interface SellerEarningsResponse {
+  balances: SellerBalance[];
+}
+
+export type SellerPromotionStatus = typeof SellerPromotionStatus[keyof typeof SellerPromotionStatus];
+
+
+export const SellerPromotionStatus = {
+  draft: 'draft',
+  pending_payment: 'pending_payment',
+  paid: 'paid',
+  scheduled: 'scheduled',
+  active: 'active',
+  paused: 'paused',
+  expired: 'expired',
+  cancelled: 'cancelled',
+  refunded: 'refunded',
+} as const;
+
+export interface SellerPromotion {
+  /** @minLength 1 */
+  listingSlug: string;
+  /** @minLength 1 */
+  listingTitle: string;
+  status: SellerPromotionStatus;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyDecimalPlaces: number;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  priceMinor: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  refundedAmountMinor: string;
+  priority: number;
+  durationDays: number;
+  /** @nullable */
+  startsAt: string | null;
+  /** @nullable */
+  endsAt: string | null;
+  /** @nullable */
+  activatedAt: string | null;
+  /** @nullable */
+  pausedAt: string | null;
+  /** @nullable */
+  expiredAt: string | null;
+  /** @nullable */
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface SellerPromotionsResponse {
+  promotions: SellerPromotion[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SellerPromotionPerformance {
+  /** @minLength 1 */
+  listingSlug: string;
+  /** @minLength 1 */
+  listingTitle: string;
+  status: SellerPromotionStatus;
+  /** @minLength 1 */
+  firstDay: string;
+  /** @minLength 1 */
+  lastDay: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  impressions: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  views: string;
+  /** @pattern ^(0|[1-9][0-9]*)$ */
+  clicks: string;
+}
+
+export interface SellerAnalyticsResponse {
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  days: number;
+  promotions: SellerPromotionPerformance[];
+}
+
+export type ConversationSubjectType = typeof ConversationSubjectType[keyof typeof ConversationSubjectType];
+
+
+export const ConversationSubjectType = {
+  direct: 'direct',
+  listing: 'listing',
+  service_request: 'service_request',
+  order: 'order',
+} as const;
+
+export type ConversationMembershipState = typeof ConversationMembershipState[keyof typeof ConversationMembershipState];
+
+
+export const ConversationMembershipState = {
+  active: 'active',
+  left: 'left',
+} as const;
+
+/**
+ * @nullable
+ */
+export type MessageType = typeof MessageType[keyof typeof MessageType] | null;
+
+
+export const MessageType = {
+  text: 'text',
+  system: 'system',
+  reference: 'reference',
+} as const;
+
+export interface InboxItem {
+  conversationId: string;
+  subjectType: ConversationSubjectType;
+  /** @nullable */
+  listingId: string | null;
+  /** @nullable */
+  listingTitleSnapshot: string | null;
+  membershipState: ConversationMembershipState;
+  isMuted: boolean;
+  isClosed: boolean;
+  /** @nullable */
+  closedAt: string | null;
+  /** @minimum 0 */
+  unreadCount: number;
+  /** @nullable */
+  lastMessageId: string | null;
+  /**
+     * @nullable
+     * @pattern ^[1-9][0-9]*$
+     */
+  lastMessageSeq: string | null;
+  /** @nullable */
+  lastMessageAt: string | null;
+  lastMessageType: MessageType | null;
+  /** @nullable */
+  lastMessageBody: string | null;
+  /** @nullable */
+  lastMessageSenderUserId: string | null;
+  /** @nullable */
+  lastMessageDeletedAt: string | null;
+  createdAt: string;
+}
+
+export interface MessagingInboxResponse {
+  items: InboxItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type MessageReferenceType = typeof MessageReferenceType[keyof typeof MessageReferenceType] | null;
+
+
+export const MessageReferenceType = {
+  listing: 'listing',
+  offer: 'offer',
+  service_request: 'service_request',
+  service_quote: 'service_quote',
+  order: 'order',
+} as const;
+
+export interface MessageItem {
+  id: string;
+  /** @pattern ^[1-9][0-9]*$ */
+  seq: string;
+  conversationId: string;
+  /** @nullable */
+  senderUserId: string | null;
+  isOwnMessage: boolean;
+  messageType: MessageType | null;
+  /** @nullable */
+  body: string | null;
+  referenceType: MessageReferenceType | null;
+  /** @nullable */
+  referenceId: string | null;
+  createdAt: string;
+  /** @nullable */
+  editedAt: string | null;
+  /** @nullable */
+  deletedAt: string | null;
+}
+
+export interface ConversationMessagesResponse {
+  items: MessageItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface UnreadCountResponse {
+  /** @minimum 0 */
+  unreadCount: number;
+}
+
+export type StartConversationResponseOutcome = typeof StartConversationResponseOutcome[keyof typeof StartConversationResponseOutcome];
+
+
+export const StartConversationResponseOutcome = {
+  created: 'created',
+  reused: 'reused',
+} as const;
+
+export interface StartConversationResponse {
+  outcome: StartConversationResponseOutcome;
+  conversationId: string;
+}
+
+export type StartListingConversationRequestSubjectType = typeof StartListingConversationRequestSubjectType[keyof typeof StartListingConversationRequestSubjectType];
+
+
+export const StartListingConversationRequestSubjectType = {
+  listing: 'listing',
+} as const;
+
+export interface StartListingConversationRequest {
+  subjectType: StartListingConversationRequestSubjectType;
+  listingId: string;
+}
+
+export type StartDirectConversationRequestSubjectType = typeof StartDirectConversationRequestSubjectType[keyof typeof StartDirectConversationRequestSubjectType];
+
+
+export const StartDirectConversationRequestSubjectType = {
+  direct: 'direct',
+} as const;
+
+export interface StartDirectConversationRequest {
+  subjectType: StartDirectConversationRequestSubjectType;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  sellerSlug: string;
+}
+
+export type StartConversationRequest = StartListingConversationRequest | StartDirectConversationRequest;
+
+export interface SendMessageResponse {
+  message: MessageItem;
+}
+
+export interface SendMessageRequest {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  body: string;
+}
+
+export interface MarkReadResponse {
+  /**
+     * @nullable
+     * @pattern ^[1-9][0-9]*$
+     */
+  lastReadSeq: string | null;
+}
+
+export interface MarkReadRequest {
+  /** @pattern ^[1-9][0-9]*$ */
+  seq: string;
+}
+
+export interface SetMutedResponse {
+  isMuted: boolean;
+}
+
+export interface SetMutedRequest {
+  isMuted: boolean;
+}
+
+export type LeaveConversationResponseMembershipState = typeof LeaveConversationResponseMembershipState[keyof typeof LeaveConversationResponseMembershipState];
+
+
+export const LeaveConversationResponseMembershipState = {
+  left: 'left',
+} as const;
+
+export interface LeaveConversationResponse {
+  membershipState: LeaveConversationResponseMembershipState;
+}
+
+export interface CloseConversationResponse {
+  isClosed: true;
+  closedAt: string;
+}
+
+export type FileMessagingReportResponseOutcome = typeof FileMessagingReportResponseOutcome[keyof typeof FileMessagingReportResponseOutcome];
+
+
+export const FileMessagingReportResponseOutcome = {
+  filed: 'filed',
+} as const;
+
+export interface FileMessagingReportResponse {
+  outcome: FileMessagingReportResponseOutcome;
+  reportId: string;
+}
+
+export type FileMessagingReportRequestSubjectType = typeof FileMessagingReportRequestSubjectType[keyof typeof FileMessagingReportRequestSubjectType];
+
+
+export const FileMessagingReportRequestSubjectType = {
+  message: 'message',
+  conversation: 'conversation',
+} as const;
+
+export type FileMessagingReportRequestReasonCode = typeof FileMessagingReportRequestReasonCode[keyof typeof FileMessagingReportRequestReasonCode];
+
+
+export const FileMessagingReportRequestReasonCode = {
+  prohibited_item: 'prohibited_item',
+  counterfeit: 'counterfeit',
+  intellectual_property: 'intellectual_property',
+  fraud_or_scam: 'fraud_or_scam',
+  harassment: 'harassment',
+  adult_content: 'adult_content',
+  violence: 'violence',
+  spam: 'spam',
+  misleading: 'misleading',
+  off_platform: 'off_platform',
+  other: 'other',
+} as const;
+
+export interface FileMessagingReportRequest {
+  subjectType: FileMessagingReportRequestSubjectType;
+  subjectId: string;
+  reasonCode: FileMessagingReportRequestReasonCode;
+}
+
+export type TotpStatusResponseStatus = typeof TotpStatusResponseStatus[keyof typeof TotpStatusResponseStatus];
+
+
+export const TotpStatusResponseStatus = {
+  not_enrolled: 'not_enrolled',
+  enrolled: 'enrolled',
+} as const;
+
+export interface TotpStatusResponse {
+  status: TotpStatusResponseStatus;
+}
+
+export type TotpEnrolmentResponseStatus = typeof TotpEnrolmentResponseStatus[keyof typeof TotpEnrolmentResponseStatus];
+
+
+export const TotpEnrolmentResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface TotpEnrolmentResponse {
+  status: TotpEnrolmentResponseStatus;
+  /** @minLength 1 */
+  secret: string;
+  /** @minLength 1 */
+  otpauthUri: string;
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  qrSvg: string | null;
+}
+
+export type TotpChallengeResponseStatus = typeof TotpChallengeResponseStatus[keyof typeof TotpChallengeResponseStatus];
+
+
+export const TotpChallengeResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export type TotpChallengeResponseChallenge = {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[A-Za-z0-9_-]+$
+     */
+  factorId: string;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[A-Za-z0-9_-]+$
+     */
+  challengeId: string;
+};
+
+export interface TotpChallengeResponse {
+  status: TotpChallengeResponseStatus;
+  challenge: TotpChallengeResponseChallenge;
+}
+
+export interface TotpChallengeRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_.]*$
+     */
+  operation?: string;
+}
+
+export type TotpVerifyResponseStatus = typeof TotpVerifyResponseStatus[keyof typeof TotpVerifyResponseStatus];
+
+
+export const TotpVerifyResponseStatus = {
+  verified: 'verified',
+} as const;
+
+export interface TotpVerifyResponse {
+  status: TotpVerifyResponseStatus;
+}
+
+export interface TotpVerifyRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[A-Za-z0-9_-]+$
+     */
+  factorId: string;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[A-Za-z0-9_-]+$
+     */
+  challengeId: string;
+  /** @pattern ^[0-9]{6}$ */
+  code: string;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_.]*$
+     */
+  operation?: string;
+}
+
+export type NotificationCategory = typeof NotificationCategory[keyof typeof NotificationCategory];
+
+
+export const NotificationCategory = {
+  orders: 'orders',
+  payments: 'payments',
+  payouts: 'payouts',
+  listings: 'listings',
+  messages: 'messages',
+  offers: 'offers',
+  reviews: 'reviews',
+  promotions: 'promotions',
+  support: 'support',
+  security: 'security',
+  account: 'account',
+  system: 'system',
+} as const;
+
+/**
+ * @pattern ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
+ */
+export type NotificationEventType = string;
+
+/**
+ * @nullable
+ */
+export type NotificationSubjectType = typeof NotificationSubjectType[keyof typeof NotificationSubjectType] | null;
+
+
+export const NotificationSubjectType = {
+  order: 'order',
+  checkout: 'checkout',
+  payment: 'payment',
+  payout: 'payout',
+  withdrawal: 'withdrawal',
+  listing: 'listing',
+  conversation: 'conversation',
+  message: 'message',
+  offer: 'offer',
+  service_request: 'service_request',
+  review: 'review',
+  promotion: 'promotion',
+  support_ticket: 'support_ticket',
+  dispute: 'dispute',
+  report: 'report',
+  account_recovery: 'account_recovery',
+  seller_verification: 'seller_verification',
+} as const;
+
+export interface NotificationItem {
+  id: string;
+  category: NotificationCategory;
+  eventType: NotificationEventType;
+  subjectType: NotificationSubjectType | null;
+  /** @nullable */
+  subjectId: string | null;
+  /**
+     * @nullable
+     * @pattern ^\/[A-Za-z0-9/_\-?=&.%]*$
+     */
+  actionPath: string | null;
+  createdAt: string;
+  /** @nullable */
+  readAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+}
+
+export interface NotificationsResponse {
+  items: NotificationItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface NotificationsUnreadCountResponse {
+  /** @minimum 0 */
+  unreadCount: number;
+}
+
+export interface NotificationsMutationResponse {
+  /** @minimum 0 */
+  changed: number;
+  /** @minimum 0 */
+  unreadCount: number;
+}
+
+export interface MarkNotificationsReadRequest {
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  ids?: string[];
+}
+
+export interface ArchiveNotificationsRequest {
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  ids: string[];
+}
+
+export type ContactPhoneStartResponseStatus = typeof ContactPhoneStartResponseStatus[keyof typeof ContactPhoneStartResponseStatus];
+
+
+export const ContactPhoneStartResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface ContactPhoneStartResponse {
+  status: ContactPhoneStartResponseStatus;
+}
+
+export interface ContactPhoneStartRequest {
+  /** @pattern ^\+[1-9][0-9]{6,14}$ */
+  phone: string;
+}
+
+export type ContactPhoneVerifyResponseStatus = typeof ContactPhoneVerifyResponseStatus[keyof typeof ContactPhoneVerifyResponseStatus];
+
+
+export const ContactPhoneVerifyResponseStatus = {
+  ok: 'ok',
+} as const;
+
+export interface ContactPhoneVerifyResponse {
+  status: ContactPhoneVerifyResponseStatus;
+}
+
+export interface ContactPhoneVerifyRequest {
+  challengeId: string;
+  /** @pattern ^[0-9]{6}$ */
+  otp: string;
+}
+
+export type FavoriteItemListing = ListingSummary & ({ [key: string]: unknown } | null);
+
+export interface FavoriteItem {
+  listingId: string;
+  savedAt: string;
+  isAvailable: boolean;
+  listing: FavoriteItemListing;
+}
+
+export interface FavoritesResponse {
+  items: FavoriteItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface FavoriteMutationResponse {
+  changed: boolean;
+}
+
+export interface AddFavoriteRequest {
+  listingId: string;
+}
+
+export type SavedSearchQueryProperty = {[key: string]: unknown};
+
+export interface SavedSearch {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  query: SavedSearchQueryProperty;
+  notify: boolean;
+  /** @nullable */
+  lastMatchedAt: string | null;
+  /** @nullable */
+  lastNotifiedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedSearchesResponse {
+  items: SavedSearch[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SavedSearchCreatedResponse {
+  id: string;
+}
+
+export interface SavedSearchQuery {[key: string]: unknown}
+
+export interface SavedSearchInput {
+  name: string;
+  query: SavedSearchQuery;
+  notify?: boolean;
+}
+
+export interface SavedSearchMutationResponse {
+  changed: boolean;
+}
+
+export type AddressPurpose = typeof AddressPurpose[keyof typeof AddressPurpose];
+
+
+export const AddressPurpose = {
+  shipping: 'shipping',
+  billing: 'billing',
+  both: 'both',
+} as const;
+
+export interface Address {
+  id: string;
+  /** @nullable */
+  label: string | null;
+  purpose: AddressPurpose;
+  /** @minLength 1 */
+  recipientName: string;
+  /** @pattern ^\+[1-9][0-9]{6,14}$ */
+  phoneE164: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  countryCode: string;
+  /** @minLength 1 */
+  governorate: string;
+  /** @minLength 1 */
+  city: string;
+  /** @nullable */
+  district: string | null;
+  /** @minLength 1 */
+  streetAddress: string;
+  /** @nullable */
+  building: string | null;
+  /** @nullable */
+  apartment: string | null;
+  /** @nullable */
+  postalCode: string | null;
+  /** @nullable */
+  landmark: string | null;
+  isDefaultShipping: boolean;
+  isDefaultBilling: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddressesResponse {
+  items: Address[];
+}
+
+export interface AddressCreatedResponse {
+  id: string;
+}
+
+export interface AddressInput {
+  /** @nullable */
+  label?: string | null;
+  purpose: AddressPurpose;
+  recipientName: string;
+  /** @pattern ^\+[1-9][0-9]{6,14}$ */
+  phoneE164: string;
+  countryCode: string;
+  governorate: string;
+  city: string;
+  /** @nullable */
+  district?: string | null;
+  streetAddress: string;
+  /** @nullable */
+  building?: string | null;
+  /** @nullable */
+  apartment?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
+  /** @nullable */
+  landmark?: string | null;
+  isDefaultShipping?: boolean;
+  isDefaultBilling?: boolean;
+}
+
+export interface AddressMutationResponse {
+  changed: boolean;
+}
+
+export type ProfileStatus = typeof ProfileStatus[keyof typeof ProfileStatus];
+
+
+export const ProfileStatus = {
+  active: 'active',
+  suspended: 'suspended',
+  deleted: 'deleted',
+} as const;
+
+export interface BuyerProfile {
+  id: string;
+  /** @nullable */
+  displayName: string | null;
+  /** @nullable */
+  fullName: string | null;
+  /** @nullable */
+  phoneE164: string | null;
+  /** @nullable */
+  localeCode: string | null;
+  /** @minLength 1 */
+  timezone: string;
+  status: ProfileStatus;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  /** @nullable */
+  phoneVerifiedAt: string | null;
+  createdAt: string;
+}
+
+export interface BuyerProfileResponse {
+  profile: BuyerProfile;
+}
+
+export interface BuyerProfileMutationResponse {
+  changed: boolean;
+}
+
+export interface UpdateBuyerProfileRequest {
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  fullName?: string | null;
+  /** @nullable */
+  localeCode?: string | null;
+  timezone?: string;
+}
+
+/**
+ * @nullable
+ */
+export type DigitStyle = typeof DigitStyle[keyof typeof DigitStyle] | null;
+
+
+export const DigitStyle = {
+  western: 'western',
+  arabic_indic: 'arabic_indic',
+} as const;
+
+export interface BuyerSettings {
+  notifyEmail: boolean;
+  notifySms: boolean;
+  notifyWhatsapp: boolean;
+  notifyInApp: boolean;
+  marketingOptIn: boolean;
+  digitStyle: DigitStyle | null;
+}
+
+export interface BuyerSettingsResponse {
+  settings: BuyerSettings;
+}
+
+export interface BuyerSettingsMutationResponse {
+  changed: boolean;
+}
+
+export interface UpdateBuyerSettingsRequest {
+  notifyEmail: boolean;
+  notifySms: boolean;
+  notifyWhatsapp: boolean;
+  notifyInApp: boolean;
+  marketingOptIn: boolean;
+  digitStyle: DigitStyle | null;
+}
+
+export interface CountryReference {
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  code: string;
+  /** @minLength 1 */
+  nameEn: string;
+  /** @minLength 1 */
+  nameAr: string;
+  /** @minLength 1 */
+  phoneCode: string;
+  isMarketplaceEnabled: boolean;
+}
+
+export interface CountriesResponse {
+  items: CountryReference[];
+}
+
+export type StaffRole = typeof StaffRole[keyof typeof StaffRole];
+
+
+export const StaffRole = {
+  support_agent: 'support_agent',
+  moderator: 'moderator',
+  admin: 'admin',
+  super_admin: 'super_admin',
+} as const;
+
+/**
+ * @maxLength 120
+ * @pattern ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
+ */
+export type PermissionKey = string;
+
+export interface AdminSession {
+  id: string;
+  /** @nullable */
+  displayName: string | null;
+  /**
+     * @maxLength 35
+     * @nullable
+     */
+  localeCode: string | null;
+  isStaff: boolean;
+  requiresStepUp: boolean;
+  roles: StaffRole[];
+  permissions: PermissionKey[];
+}
+
+export interface AdminSessionResponse {
+  session: AdminSession;
+}
+
+export type VerificationStatus = typeof VerificationStatus[keyof typeof VerificationStatus];
+
+
+export const VerificationStatus = {
+  draft: 'draft',
+  submitted: 'submitted',
+  under_review: 'under_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  expired: 'expired',
+} as const;
+
+export interface VerificationQueueItem {
+  id: string;
+  status: VerificationStatus;
+  submittedAt: string;
+  createdAt: string;
+  /** @nullable */
+  reviewedAt: string | null;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  /** @minimum 0 */
+  documentCount: number;
+  sellerSlug: string;
+  sellerDisplayName: string;
+  sellerStatus: string;
+  sellerVerificationStatus: string;
+}
+
+export interface VerificationQueueResponse {
+  items: VerificationQueueItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface VerificationReviewSeller {
+  slug: string;
+  displayName: string;
+  /** @nullable */
+  legalName: string | null;
+  /** @nullable */
+  countryCode: string | null;
+  /** @nullable */
+  governorate: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /** @nullable */
+  contactPhone: string | null;
+  status: string;
+  verificationStatus: string;
+  createdAt: string;
+}
+
+export type VerificationDocumentType = typeof VerificationDocumentType[keyof typeof VerificationDocumentType];
+
+
+export const VerificationDocumentType = {
+  national_id: 'national_id',
+  passport: 'passport',
+  commercial_register: 'commercial_register',
+  tax_card: 'tax_card',
+  bank_statement: 'bank_statement',
+  other: 'other',
+} as const;
+
+export type VerificationDocumentStatus = typeof VerificationDocumentStatus[keyof typeof VerificationDocumentStatus];
+
+
+export const VerificationDocumentStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  rejected: 'rejected',
+} as const;
+
+export interface VerificationReviewDocument {
+  id: string;
+  documentType: VerificationDocumentType;
+  /** @nullable */
+  originalFilename: string | null;
+  /** @nullable */
+  contentType: string | null;
+  /** @nullable */
+  byteSize: string | null;
+  status: VerificationDocumentStatus;
+  uploadedAt: string;
+}
+
+export interface VerificationReview {
+  id: string;
+  status: VerificationStatus;
+  /** @nullable */
+  submittedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  decisionReason: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  decidable: boolean;
+  seller: VerificationReviewSeller;
+  documents: VerificationReviewDocument[];
+}
+
+export interface VerificationReviewResponse {
+  verification: VerificationReview;
+}
+
+export interface VerificationDecisionResponse {
+  status: VerificationStatus;
+}
+
+export type VerificationDecision = typeof VerificationDecision[keyof typeof VerificationDecision];
+
+
+export const VerificationDecision = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface VerificationDecisionRequest {
+  decision: VerificationDecision;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  reason?: string;
+}
+
+export interface VerificationDocumentLinkResponse {
+  documentId: string;
+  url: string;
+  expiresAt: string;
+}
+
+/**
+ * @pattern ^[1-9][0-9]{0,18}$
+ */
+export type OfferAmountMinor = string;
+
+export type OfferStatus = typeof OfferStatus[keyof typeof OfferStatus];
+
+
+export const OfferStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  countered: 'countered',
+  withdrawn: 'withdrawn',
+  expired: 'expired',
+} as const;
+
+export interface Offer {
+  id: string;
+  listingId: string;
+  /** @minLength 1 */
+  listingSlug: string;
+  /** @minLength 1 */
+  listingTitle: string;
+  amountMinor: OfferAmountMinor;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @minimum 1 */
+  quantity: number;
+  /** @nullable */
+  message: string | null;
+  status: OfferStatus;
+  isLapsed: boolean;
+  expiresAt: string;
+  /** @nullable */
+  respondedAt: string | null;
+  /** @nullable */
+  acceptedAt: string | null;
+  /** @nullable */
+  paymentDueAt: string | null;
+  /** @nullable */
+  parentOfferId: string | null;
+  createdAt: string;
+  /** @minLength 1 */
+  sellerSlug: string;
+  /** @minLength 1 */
+  sellerDisplayName: string;
+}
+
+export interface OffersResponse {
+  items: Offer[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SellerOffer {
+  id: string;
+  listingId: string;
+  /** @minLength 1 */
+  listingSlug: string;
+  /** @minLength 1 */
+  listingTitle: string;
+  amountMinor: OfferAmountMinor;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @minimum 1 */
+  quantity: number;
+  /** @nullable */
+  message: string | null;
+  status: OfferStatus;
+  isLapsed: boolean;
+  expiresAt: string;
+  /** @nullable */
+  respondedAt: string | null;
+  /** @nullable */
+  acceptedAt: string | null;
+  /** @nullable */
+  paymentDueAt: string | null;
+  /** @nullable */
+  parentOfferId: string | null;
+  createdAt: string;
+  /** @nullable */
+  buyerDisplayName: string | null;
+}
+
+export interface SellerOffersResponse {
+  items: SellerOffer[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface OfferMutationResponse {
+  offerId: string;
+  status: OfferStatus;
+}
+
+/**
+ * @minLength 1
+ * @maxLength 2000
+ */
+export type OfferMessage = string;
+
+export interface CreateOfferRequest {
+  listingId: string;
+  amountMinor: OfferAmountMinor;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  quantity?: number;
+  message?: OfferMessage;
+}
+
+export interface CounterOfferRequest {
+  amountMinor: OfferAmountMinor;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  quantity?: number;
+  message?: OfferMessage;
+}
+
+export interface OfferDecisionResponse {
+  status: OfferStatus;
+  /** @nullable */
+  acceptedAt: string | null;
+  /** @nullable */
+  paymentDueAt: string | null;
+}
+
+export type ServiceRequestStatus = typeof ServiceRequestStatus[keyof typeof ServiceRequestStatus];
+
+
+export const ServiceRequestStatus = {
+  open: 'open',
+  quoted: 'quoted',
+  accepted: 'accepted',
+  declined: 'declined',
+  cancelled: 'cancelled',
+  expired: 'expired',
+} as const;
+
+export type ServiceRequestRoutingMode = typeof ServiceRequestRoutingMode[keyof typeof ServiceRequestRoutingMode];
+
+
+export const ServiceRequestRoutingMode = {
+  seller: 'seller',
+  admin_only: 'admin_only',
+} as const;
+
+/**
+ * @nullable
+ * @pattern ^[1-9][0-9]{0,18}$
+ */
+export type ServiceAmountMinor = string | null;
+
+export interface ServiceRequestSummary {
+  id: string;
+  status: ServiceRequestStatus;
+  routingMode: ServiceRequestRoutingMode;
+  /** @minLength 1 */
+  title: string;
+  budgetMinor: ServiceAmountMinor | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  neededBy: string | null;
+  /** @nullable */
+  listingSlug: string | null;
+  /** @nullable */
+  listingTitle: string | null;
+  /** @nullable */
+  counterpartyName: string | null;
+  /** @minimum 0 */
+  quoteCount: number;
+  /** @minimum 0 */
+  liveQuoteCount: number;
+  /** @nullable */
+  acceptedPaymentDueAt: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export interface ServiceRequestsResponse {
+  items: ServiceRequestSummary[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export type ServiceQuoteStatus = typeof ServiceQuoteStatus[keyof typeof ServiceQuoteStatus];
+
+
+export const ServiceQuoteStatus = {
+  sent: 'sent',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  withdrawn: 'withdrawn',
+  expired: 'expired',
+} as const;
+
+export interface ServiceQuote {
+  id: string;
+  status: ServiceQuoteStatus;
+  amountMinor: ServiceAmountMinor | null;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  deliveryDays: number;
+  /** @minimum 0 */
+  revisionsIncluded: number;
+  /** @minLength 1 */
+  scope: string;
+  isLapsed: boolean;
+  expiresAt: string;
+  /** @nullable */
+  respondedAt: string | null;
+  /** @nullable */
+  acceptedAt: string | null;
+  /** @nullable */
+  paymentDueAt: string | null;
+  createdAt: string;
+}
+
+export interface ServiceRequestDetail {
+  id: string;
+  status: ServiceRequestStatus;
+  routingMode: ServiceRequestRoutingMode;
+  isBuyer: boolean;
+  isSeller: boolean;
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  brief: string;
+  budgetMinor: ServiceAmountMinor | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  neededBy: string | null;
+  /** @nullable */
+  listingSlug: string | null;
+  /** @nullable */
+  listingTitle: string | null;
+  /** @nullable */
+  buyerName: string | null;
+  /** @nullable */
+  sellerSlug: string | null;
+  /** @nullable */
+  sellerName: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+  quotes: ServiceQuote[];
+}
+
+export interface ServiceRequestDetailResponse {
+  request: ServiceRequestDetail;
+}
+
+export interface ServiceRequestMutationResponse {
+  requestId: string;
+  status: ServiceRequestStatus;
+}
+
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+export type ServiceNeededBy = string;
+
+export interface CreateServiceRequest {
+  listingId: string;
+  /**
+     * @minLength 3
+     * @maxLength 140
+     */
+  title: string;
+  /**
+     * @minLength 10
+     * @maxLength 10000
+     */
+  brief: string;
+  budgetMinor?: ServiceAmountMinor | null;
+  neededBy?: ServiceNeededBy;
+}
+
+export interface ServiceRequestStatusResponse {
+  status: ServiceRequestStatus;
+}
+
+export interface ServiceQuoteMutationResponse {
+  quoteId: string;
+  status: ServiceQuoteStatus;
+}
+
+export interface CreateServiceQuote {
+  amountMinor: ServiceAmountMinor | null;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  deliveryDays: number;
+  /**
+     * @minimum 0
+     * @maximum 32767
+     */
+  revisionsIncluded?: number;
+  /**
+     * @minLength 10
+     * @maxLength 10000
+     */
+  scope: string;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  validForDays: number;
+}
+
+export interface ServiceQuoteDecisionResponse {
+  status: ServiceQuoteStatus;
+  /** @nullable */
+  acceptedAt: string | null;
+  /** @nullable */
+  paymentDueAt: string | null;
+}
+
+export interface CreateAdminOnlyServiceRequest {
+  /**
+     * @minLength 3
+     * @maxLength 140
+     */
+  title: string;
+  /**
+     * @minLength 10
+     * @maxLength 10000
+     */
+  brief: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  preferredPaymentMethod: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  paymentNotes?: string;
+  budgetMinor?: ServiceAmountMinor | null;
+  neededBy?: ServiceNeededBy;
+}
+
+export interface AdminServiceRequestSummary {
+  id: string;
+  status: ServiceRequestStatus;
+  /** @minLength 1 */
+  title: string;
+  budgetMinor: ServiceAmountMinor | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  neededBy: string | null;
+  /** @nullable */
+  buyerName: string | null;
+  hasPaymentNotes: boolean;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminServiceRequestsResponse {
+  items: AdminServiceRequestSummary[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface AdminServiceRequestDetail {
+  id: string;
+  status: ServiceRequestStatus;
+  /** @minLength 1 */
+  title: string;
+  budgetMinor: ServiceAmountMinor | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  neededBy: string | null;
+  /** @nullable */
+  buyerName: string | null;
+  hasPaymentNotes: boolean;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @minLength 1 */
+  brief: string;
+}
+
+export interface AdminServiceRequestDetailResponse {
+  request: AdminServiceRequestDetail;
+}
+
+export interface ServiceRequestPaymentInformation {
+  /** @nullable */
+  preferredPaymentMethod: string | null;
+  /** @nullable */
+  paymentNotes: string | null;
+}
+
+export interface ServiceRequestPaymentInformationResponse {
+  paymentInformation: ServiceRequestPaymentInformation;
+}
+
+export interface AdminServiceRequestDecisionResponse {
+  status: ServiceRequestStatus;
+}
+
+export type SupportTicketCategory = typeof SupportTicketCategory[keyof typeof SupportTicketCategory];
+
+
+export const SupportTicketCategory = {
+  account: 'account',
+  orders: 'orders',
+  payments: 'payments',
+  payouts: 'payouts',
+  listings: 'listings',
+  verification: 'verification',
+  technical: 'technical',
+  other: 'other',
+} as const;
+
+export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof SupportTicketStatus];
+
+
+export const SupportTicketStatus = {
+  open: 'open',
+  pending_agent: 'pending_agent',
+  pending_requester: 'pending_requester',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export interface SupportTicketSummary {
+  id: string;
+  /** @nullable */
+  reference: string | null;
+  /** @minLength 1 */
+  subject: string;
+  category: SupportTicketCategory;
+  status: SupportTicketStatus;
+  /** @minimum 0 */
+  messageCount: number;
+  /** @minimum 0 */
+  attachmentCount: number;
+  /** @nullable */
+  lastMessageAt: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export interface SupportTicketsResponse {
+  items: SupportTicketSummary[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface OpenSupportTicketResponse {
+  ticketId: string;
+  messageId: string;
+  /** @nullable */
+  reference: string | null;
+  status: SupportTicketStatus;
+}
+
+export interface OpenSupportTicket {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  subject: string;
+  category: SupportTicketCategory;
+  /**
+     * @minLength 1
+     * @maxLength 8000
+     */
+  body: string;
+}
+
+export interface SupportTicketDetail {
+  id: string;
+  /** @nullable */
+  reference: string | null;
+  /** @minLength 1 */
+  subject: string;
+  category: SupportTicketCategory;
+  status: SupportTicketStatus;
+  /** @minimum 0 */
+  messageCount: number;
+  /** @nullable */
+  lastMessageAt: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export interface SupportTicketDetailResponse {
+  ticket: SupportTicketDetail;
+}
+
+export type SupportMessageAuthorRole = typeof SupportMessageAuthorRole[keyof typeof SupportMessageAuthorRole];
+
+
+export const SupportMessageAuthorRole = {
+  requester: 'requester',
+  agent: 'agent',
+} as const;
+
+export interface SupportAttachment {
+  id: string;
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  originalFilename: string | null;
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  contentType: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  byteSize: string | null;
+}
+
+export interface SupportMessage {
+  id: string;
+  authorRole: SupportMessageAuthorRole;
+  isOwnMessage: boolean;
+  /** @minLength 1 */
+  body: string;
+  createdAt: string;
+  attachments: SupportAttachment[];
+}
+
+export interface SupportMessagesResponse {
+  items: SupportMessage[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SupportMessageMutationResponse {
+  messageId: string;
+  status: SupportTicketStatus;
+}
+
+export interface PostSupportMessage {
+  /**
+     * @minLength 1
+     * @maxLength 8000
+     */
+  body: string;
+}
+
+export interface SupportTicketClosureResponse {
+  status: SupportTicketStatus;
+}
+
+export interface SupportAttachmentUpload {
+  uploadUrl: string;
+  /** @minLength 1 */
+  objectPath: string;
+  expiresAt: string;
+  /** @exclusiveMinimum 0 */
+  maxByteSize: number;
+}
+
+export interface SupportAttachmentUploadResponse {
+  upload: SupportAttachmentUpload;
+}
+
+export type SupportAttachmentContentType = typeof SupportAttachmentContentType[keyof typeof SupportAttachmentContentType];
+
+
+export const SupportAttachmentContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface SupportAttachmentUploadRequest {
+  contentType: SupportAttachmentContentType;
+  /**
+     * @maximum 20971520
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface SupportAttachmentRecordResponse {
+  attachmentId: string;
+  /** @exclusiveMinimum 0 */
+  attachmentCount: number;
+}
+
+export interface SupportAttachmentRecord {
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  originalFilename: string;
+  contentType: SupportAttachmentContentType;
+  /**
+     * @maximum 20971520
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface SupportAttachmentLinkResponse {
+  attachmentId: string;
+  url: string;
+  expiresAt: string;
+}
+
+export type SupportTicketPriority = typeof SupportTicketPriority[keyof typeof SupportTicketPriority];
+
+
+export const SupportTicketPriority = {
+  low: 'low',
+  normal: 'normal',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export interface SupportQueueItem {
+  id: string;
+  /** @nullable */
+  reference: string | null;
+  /** @minLength 1 */
+  subject: string;
+  category: SupportTicketCategory;
+  priority: SupportTicketPriority;
+  status: SupportTicketStatus;
+  /** @nullable */
+  requesterName: string | null;
+  /** @minimum 0 */
+  messageCount: number;
+  /** @minimum 0 */
+  attachmentCount: number;
+  /** @minimum 0 */
+  noteCount: number;
+  /** @nullable */
+  lastMessageAt: string | null;
+  createdAt: string;
+}
+
+export interface SupportQueueResponse {
+  items: SupportQueueItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SupportAssignedItem {
+  id: string;
+  /** @nullable */
+  reference: string | null;
+  /** @minLength 1 */
+  subject: string;
+  category: SupportTicketCategory;
+  priority: SupportTicketPriority;
+  status: SupportTicketStatus;
+  /** @nullable */
+  requesterName: string | null;
+  /** @minimum 0 */
+  messageCount: number;
+  /** @minimum 0 */
+  attachmentCount: number;
+  /** @minimum 0 */
+  noteCount: number;
+  /** @nullable */
+  lastMessageAt: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export interface SupportAssignedResponse {
+  items: SupportAssignedItem[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SupportConsoleTicket {
+  id: string;
+  /** @nullable */
+  reference: string | null;
+  /** @minLength 1 */
+  subject: string;
+  category: SupportTicketCategory;
+  priority: SupportTicketPriority;
+  status: SupportTicketStatus;
+  /** @nullable */
+  requesterName: string | null;
+  isMine: boolean;
+  isAssigned: boolean;
+  /** @minimum 0 */
+  messageCount: number;
+  /** @minimum 0 */
+  noteCount: number;
+  /** @nullable */
+  firstResponseAt: string | null;
+  /** @nullable */
+  lastMessageAt: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export interface SupportConsoleTicketResponse {
+  ticket: SupportConsoleTicket;
+}
+
+export interface SupportConsoleMessage {
+  id: string;
+  authorRole: SupportMessageAuthorRole;
+  isOwnMessage: boolean;
+  /** @minLength 1 */
+  body: string;
+  createdAt: string;
+  attachments: SupportAttachment[];
+}
+
+export interface SupportConsoleMessagesResponse {
+  items: SupportConsoleMessage[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SupportConsoleMessageMutationResponse {
+  messageId: string;
+  status: SupportTicketStatus;
+}
+
+export interface PostSupportAgentMessage {
+  /**
+     * @minLength 1
+     * @maxLength 8000
+     */
+  body: string;
+}
+
+export interface SupportInternalNote {
+  id: string;
+  isOwnNote: boolean;
+  /** @minLength 1 */
+  body: string;
+  createdAt: string;
+}
+
+export interface SupportInternalNotesResponse {
+  items: SupportInternalNote[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SupportInternalNoteMutationResponse {
+  noteId: string;
+  /** @exclusiveMinimum 0 */
+  noteCount: number;
+}
+
+export interface AddSupportInternalNote {
+  /**
+     * @minLength 1
+     * @maxLength 8000
+     */
+  body: string;
+}
+
+export interface SupportAssignmentResponse {
+  status: SupportTicketStatus;
+  isMine: boolean;
+}
+
+export interface SupportAgentDecisionResponse {
+  status: SupportTicketStatus;
+}
+
+export type SupportAgentDecision = typeof SupportAgentDecision[keyof typeof SupportAgentDecision];
+
+
+export const SupportAgentDecision = {
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export interface SupportAgentDecisionRequest {
+  status: SupportAgentDecision;
+}
+
+export interface SupportConsoleAttachmentLinkResponse {
+  attachmentId: string;
+  url: string;
+  expiresAt: string;
+}
+
+export type FileReportResponseOutcome = typeof FileReportResponseOutcome[keyof typeof FileReportResponseOutcome];
+
+
+export const FileReportResponseOutcome = {
+  filed: 'filed',
+} as const;
+
+export interface FileReportResponse {
+  outcome: FileReportResponseOutcome;
+  reportId: string;
+}
+
+export type FileReportRequestReasonCode = typeof FileReportRequestReasonCode[keyof typeof FileReportRequestReasonCode];
+
+
+export const FileReportRequestReasonCode = {
+  prohibited_item: 'prohibited_item',
+  counterfeit: 'counterfeit',
+  intellectual_property: 'intellectual_property',
+  fraud_or_scam: 'fraud_or_scam',
+  harassment: 'harassment',
+  adult_content: 'adult_content',
+  violence: 'violence',
+  spam: 'spam',
+  misleading: 'misleading',
+  off_platform: 'off_platform',
+  other: 'other',
+} as const;
+
+/**
+ * What is being reported: a listing (a product or a service, which share one table and one slug namespace) or a seller. Both are subject types the reports table already allows.
+ */
+export type ReportSubjectType = typeof ReportSubjectType[keyof typeof ReportSubjectType];
+
+
+export const ReportSubjectType = {
+  listing: 'listing',
+  seller: 'seller',
+} as const;
+
+export interface FileReportRequest {
+  subjectType: ReportSubjectType;
+  /**
+     * @minLength 3
+     * @maxLength 120
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{1,118}[a-z0-9])$/u
+     */
+  subjectSlug: string;
+  reasonCode: FileReportRequestReasonCode;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  details?: string;
+}
+
+export type ReporterReportReasonCode = typeof ReporterReportReasonCode[keyof typeof ReporterReportReasonCode];
+
+
+export const ReporterReportReasonCode = {
+  prohibited_item: 'prohibited_item',
+  counterfeit: 'counterfeit',
+  intellectual_property: 'intellectual_property',
+  fraud_or_scam: 'fraud_or_scam',
+  harassment: 'harassment',
+  adult_content: 'adult_content',
+  violence: 'violence',
+  spam: 'spam',
+  misleading: 'misleading',
+  off_platform: 'off_platform',
+  other: 'other',
+} as const;
+
+/**
+ * What has become of the report, in the vocabulary the reports table itself uses. A reduced reporter-facing vocabulary would be an invented one.
+ */
+export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
+
+
+export const ReportStatus = {
+  open: 'open',
+  triaged: 'triaged',
+  actioned: 'actioned',
+  dismissed: 'dismissed',
+  duplicate: 'duplicate',
+} as const;
+
+export interface ReporterReport {
+  id: string;
+  subjectType: ReportSubjectType;
+  /**
+     * @minLength 3
+     * @maxLength 120
+     * @nullable
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{1,118}[a-z0-9])$/u
+     */
+  subjectSlug: string | null;
+  /** @nullable */
+  subjectLabel: string | null;
+  reasonCode: ReporterReportReasonCode;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     * @nullable
+     */
+  details: string | null;
+  status: ReportStatus;
+  createdAt: string;
+}
+
+export interface ReporterReportsResponse {
+  items: ReporterReport[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * What a report is about, in the reports table’s own eight values. Only `listing` and `seller` can be resolved to a summary on this surface: the other six have no staff read path in this repository.
+ */
+export type ReportSubjectTypeAll = typeof ReportSubjectTypeAll[keyof typeof ReportSubjectTypeAll];
+
+
+export const ReportSubjectTypeAll = {
+  listing: 'listing',
+  review: 'review',
+  review_reply: 'review_reply',
+  message: 'message',
+  conversation: 'conversation',
+  seller: 'seller',
+  user: 'user',
+  promotion: 'promotion',
+} as const;
+
+export type ModerationReportRowReasonCode = typeof ModerationReportRowReasonCode[keyof typeof ModerationReportRowReasonCode];
+
+
+export const ModerationReportRowReasonCode = {
+  prohibited_item: 'prohibited_item',
+  counterfeit: 'counterfeit',
+  intellectual_property: 'intellectual_property',
+  fraud_or_scam: 'fraud_or_scam',
+  harassment: 'harassment',
+  adult_content: 'adult_content',
+  violence: 'violence',
+  spam: 'spam',
+  misleading: 'misleading',
+  off_platform: 'off_platform',
+  other: 'other',
+} as const;
+
+export type ReportPriority = typeof ReportPriority[keyof typeof ReportPriority];
+
+
+export const ReportPriority = {
+  low: 'low',
+  normal: 'normal',
+  high: 'high',
+} as const;
+
+export interface ModerationReportRow {
+  id: string;
+  subjectType: ReportSubjectTypeAll;
+  /** @nullable */
+  subjectLabel: string | null;
+  reasonCode: ModerationReportRowReasonCode;
+  status: ReportStatus;
+  priority: ReportPriority;
+  isOwnReport: boolean;
+  /** @minimum 0 */
+  actionCount: number;
+  createdAt: string;
+}
+
+export interface ModerationReportQueueResponse {
+  items: ModerationReportRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type ListingStatus = typeof ListingStatus[keyof typeof ListingStatus] | null;
+
+
+export const ListingStatus = {
+  draft: 'draft',
+  pending_review: 'pending_review',
+  approved: 'approved',
+  active: 'active',
+  sold: 'sold',
+  expired: 'expired',
+  archived: 'archived',
+  rejected: 'rejected',
+  suspended: 'suspended',
+  deleted: 'deleted',
+} as const;
+
+export type ModerationReportDetailReasonCode = typeof ModerationReportDetailReasonCode[keyof typeof ModerationReportDetailReasonCode];
+
+
+export const ModerationReportDetailReasonCode = {
+  prohibited_item: 'prohibited_item',
+  counterfeit: 'counterfeit',
+  intellectual_property: 'intellectual_property',
+  fraud_or_scam: 'fraud_or_scam',
+  harassment: 'harassment',
+  adult_content: 'adult_content',
+  violence: 'violence',
+  spam: 'spam',
+  misleading: 'misleading',
+  off_platform: 'off_platform',
+  other: 'other',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ReportResolutionRecorded = typeof ReportResolutionRecorded[keyof typeof ReportResolutionRecorded] | null;
+
+
+export const ReportResolutionRecorded = {
+  actioned: 'actioned',
+  dismissed: 'dismissed',
+  duplicate: 'duplicate',
+} as const;
+
+export interface ModerationReportDetail {
+  id: string;
+  subjectType: ReportSubjectTypeAll;
+  /** @nullable */
+  subjectSlug: string | null;
+  /** @nullable */
+  subjectLabel: string | null;
+  subjectStatus: ListingStatus | null;
+  subjectIsResolvable: boolean;
+  reasonCode: ModerationReportDetailReasonCode;
+  /** @nullable */
+  details: string | null;
+  status: ReportStatus;
+  priority: ReportPriority;
+  isOwnReport: boolean;
+  resolution: ReportResolutionRecorded | null;
+  /** @nullable */
+  resolutionNote: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  resolvedByMe: boolean;
+  /** @nullable */
+  duplicateOfReportId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ModerationReportDetailResponse {
+  report: ModerationReportDetail;
+}
+
+export type ResolveReportResponseOutcome = typeof ResolveReportResponseOutcome[keyof typeof ResolveReportResponseOutcome];
+
+
+export const ResolveReportResponseOutcome = {
+  resolved: 'resolved',
+} as const;
+
+export interface ResolveReportResponse {
+  outcome: ResolveReportResponseOutcome;
+  status: ReportStatus;
+}
+
+/**
+ * What a moderator is recording. `triaged` means picked up with no decision yet; the other three are decisions and each requires a note. There is no `open`, because nothing in this repository moves a report back to it.
+ */
+export type ReportResolution = typeof ReportResolution[keyof typeof ReportResolution];
+
+
+export const ReportResolution = {
+  triaged: 'triaged',
+  actioned: 'actioned',
+  dismissed: 'dismissed',
+  duplicate: 'duplicate',
+} as const;
+
+export interface ResolveReportRequest {
+  status: ReportResolution;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  resolutionNote?: string;
+  duplicateOfReportId?: string;
+}
+
+export type ModerationActionKind = typeof ModerationActionKind[keyof typeof ModerationActionKind];
+
+
+export const ModerationActionKind = {
+  none: 'none',
+  warn: 'warn',
+  hide: 'hide',
+  remove: 'remove',
+  restrict: 'restrict',
+  suspend: 'suspend',
+  reinstate: 'reinstate',
+  escalate: 'escalate',
+} as const;
+
+export interface ModerationActionRow {
+  id: string;
+  action: ModerationActionKind;
+  reason: string;
+  /** @nullable */
+  notes: string | null;
+  /** @nullable */
+  reportId: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  /** @nullable */
+  reversesActionId: string | null;
+  isOwnAction: boolean;
+  createdAt: string;
+}
+
+export interface ModerationActionsResponse {
+  items: ModerationActionRow[];
+}
+
+export interface ModerationListingRow {
+  id: string;
+  slug: string;
+  title: string;
+  status: ListingStatus | null;
+  listingTypeCode: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /** @nullable */
+  priceMinor: string | null;
+  isOwnListing: boolean;
+  /** @minimum 0 */
+  reportCount: number;
+  createdAt: string;
+}
+
+export interface ModerationListingQueueResponse {
+  items: ModerationListingRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface ModerationListingDetail {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  contentLanguage: string;
+  status: ListingStatus | null;
+  listingTypeCode: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /** @nullable */
+  priceMinor: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  sellerSlug: string | null;
+  /** @nullable */
+  sellerDisplayName: string | null;
+  isOwnListing: boolean;
+  canModerate: boolean;
+  /** @minimum 0 */
+  openReportCount: number;
+  createdAt: string;
+  /** @nullable */
+  approvedAt: string | null;
+}
+
+export interface ModerationListingDetailResponse {
+  listing: ModerationListingDetail;
+}
+
+export type ModerateListingResponseOutcome = typeof ModerateListingResponseOutcome[keyof typeof ModerateListingResponseOutcome];
+
+
+export const ModerateListingResponseOutcome = {
+  moderated: 'moderated',
+} as const;
+
+export interface ModerateListingResponse {
+  outcome: ModerateListingResponseOutcome;
+  status: ListingStatus | null;
+}
+
+/**
+ * What a moderator is doing to a listing. `request_changes` is the one action that moves no status; the other four each land on the status the writer’s own mapping names.
+ */
+export type ListingModerationAction = typeof ListingModerationAction[keyof typeof ListingModerationAction];
+
+
+export const ListingModerationAction = {
+  approve: 'approve',
+  reject: 'reject',
+  suspend: 'suspend',
+  reinstate: 'reinstate',
+  request_changes: 'request_changes',
+} as const;
+
+export interface ModerateListingRequest {
+  action: ListingModerationAction;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+  reportId?: string;
+}
+
+export interface ListingModerationRow {
+  id: string;
+  action: ListingModerationAction;
+  fromStatus: ListingStatus | null;
+  toStatus: ListingStatus | null;
+  reason: string;
+  /** @nullable */
+  reportId: string | null;
+  isOwnAction: boolean;
+  createdAt: string;
+}
+
+export interface ListingModerationHistoryResponse {
+  items: ListingModerationRow[];
+}
+
+export type AdminSellerRowStatus = typeof AdminSellerRowStatus[keyof typeof AdminSellerRowStatus];
+
+
+export const AdminSellerRowStatus = {
+  pending: 'pending',
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+export type AdminSellerRowVerificationStatus = typeof AdminSellerRowVerificationStatus[keyof typeof AdminSellerRowVerificationStatus];
+
+
+export const AdminSellerRowVerificationStatus = {
+  unverified: 'unverified',
+  pending: 'pending',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminSellerRow {
+  slug: string;
+  displayName: string;
+  status: AdminSellerRowStatus;
+  verificationStatus: AdminSellerRowVerificationStatus;
+  /** @nullable */
+  countryCode: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @minimum 0 */
+  listingCount: number;
+  /** @minimum 0 */
+  openReportCount: number;
+  createdAt: string;
+}
+
+export interface AdminSellerPageResponse {
+  items: AdminSellerRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export type AdminSellerDetailStatus = typeof AdminSellerDetailStatus[keyof typeof AdminSellerDetailStatus];
+
+
+export const AdminSellerDetailStatus = {
+  pending: 'pending',
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+export type AdminSellerDetailVerificationStatus = typeof AdminSellerDetailVerificationStatus[keyof typeof AdminSellerDetailVerificationStatus];
+
+
+export const AdminSellerDetailVerificationStatus = {
+  unverified: 'unverified',
+  pending: 'pending',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminSellerDetail {
+  slug: string;
+  displayName: string;
+  /** @nullable */
+  bio: string | null;
+  /** @nullable */
+  contentLanguage: string | null;
+  status: AdminSellerDetailStatus;
+  /** @nullable */
+  suspendedAt: string | null;
+  /** @nullable */
+  suspensionReason: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  verificationStatus: AdminSellerDetailVerificationStatus;
+  /** @nullable */
+  verifiedAt: string | null;
+  /** @nullable */
+  countryCode: string | null;
+  /** @nullable */
+  governorate: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @minimum 0 */
+  listingCount: number;
+  /** @minimum 0 */
+  liveListingCount: number;
+  /** @minimum 0 */
+  openReportCount: number;
+  isOwnStorefront: boolean;
+  canManage: boolean;
+  createdAt: string;
+}
+
+export interface AdminSellerDetailResponse {
+  seller: AdminSellerDetail;
+}
+
+export type SellerStatusChangeResponseOutcome = typeof SellerStatusChangeResponseOutcome[keyof typeof SellerStatusChangeResponseOutcome];
+
+
+export const SellerStatusChangeResponseOutcome = {
+  updated: 'updated',
+} as const;
+
+export type SellerStatusChangeResponseStatus = typeof SellerStatusChangeResponseStatus[keyof typeof SellerStatusChangeResponseStatus];
+
+
+export const SellerStatusChangeResponseStatus = {
+  pending: 'pending',
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+export interface SellerStatusChangeResponse {
+  outcome: SellerStatusChangeResponseOutcome;
+  status: SellerStatusChangeResponseStatus;
+}
+
+/**
+ * Where the storefront should end up. The legal transitions are decided in the database: `closed` is terminal, `active → pending` is refused, and `pending → active` belongs to the verification approval rather than to this operation.
+ */
+export type SellerStatusTarget = typeof SellerStatusTarget[keyof typeof SellerStatusTarget];
+
+
+export const SellerStatusTarget = {
+  pending: 'pending',
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+export interface SellerStatusChangeRequest {
+  status: SellerStatusTarget;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  reason?: string;
+}
+
+export type AccountStatus = typeof AccountStatus[keyof typeof AccountStatus];
+
+
+export const AccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+  deleted: 'deleted',
+} as const;
+
+export interface AdminUserRow {
+  id: string;
+  /** @nullable */
+  displayName: string | null;
+  status: AccountStatus;
+  /** @nullable */
+  localeCode: string | null;
+  hasVerifiedEmail: boolean;
+  hasVerifiedPhone: boolean;
+  isStaff: boolean;
+  isSeller: boolean;
+  isSelf: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserPageResponse {
+  items: AdminUserRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  /** @nullable */
+  displayName: string | null;
+  status: AccountStatus;
+  /** @nullable */
+  localeCode: string | null;
+  /** @nullable */
+  timezone: string | null;
+  hasVerifiedEmail: boolean;
+  hasVerifiedPhone: boolean;
+  isStaff: boolean;
+  isSeller: boolean;
+  /** @nullable */
+  sellerSlug: string | null;
+  isSelf: boolean;
+  /** @nullable */
+  lastSeenAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminUserDetailResponse {
+  user: AdminUserDetail;
+}
+
+export interface AdminUserRole {
+  roleKey: string;
+  nameEn: string;
+  nameAr: string;
+  requiresMfa: boolean;
+  isAdminConsole: boolean;
+  grantedAt: string;
+  /** @nullable */
+  expiresAt: string | null;
+  /** @nullable */
+  revokedAt: string | null;
+  isEffective: boolean;
+  /** @minimum 0 */
+  permissionCount: number;
+}
+
+export interface AdminUserRolesResponse {
+  items: AdminUserRole[];
+}
+
+/**
+ * @nullable
+ */
+export type AdminSecurityEventDetails = {[key: string]: unknown} | null;
+
+export interface AdminSecurityEvent {
+  id: string;
+  eventType: string;
+  /** @nullable */
+  details: AdminSecurityEventDetails;
+  occurredAt: string;
+}
+
+export interface AdminSecurityEventsResponse {
+  items: AdminSecurityEvent[];
+}
+
+export interface AdminRoleCatalogueEntry {
+  roleKey: string;
+  nameEn: string;
+  nameAr: string;
+  requiresMfa: boolean;
+  isAdminConsole: boolean;
+  isAssignable: boolean;
+  /** @minimum 0 */
+  permissionCount: number;
+  /** @minimum 0 */
+  holderCount: number;
+}
+
+export interface AdminRoleCatalogueResponse {
+  items: AdminRoleCatalogueEntry[];
+}
+
+/**
+ * Where a recovery request stands. `approved` is a value the table allows that no writer sets — an approval moves a request to `contact_verification`.
+ */
+export type RecoveryStatus = typeof RecoveryStatus[keyof typeof RecoveryStatus];
+
+
+export const RecoveryStatus = {
+  submitted: 'submitted',
+  under_review: 'under_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  contact_verification: 'contact_verification',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  expired: 'expired',
+} as const;
+
+export type RecoveryChannel = typeof RecoveryChannel[keyof typeof RecoveryChannel];
+
+
+export const RecoveryChannel = {
+  email: 'email',
+  phone: 'phone',
+} as const;
+
+export interface RecoveryQueueRow {
+  id: string;
+  status: RecoveryStatus;
+  claimedContactChannel: RecoveryChannel;
+  newContactChannel: RecoveryChannel & (string | null);
+  matchedAnAccount: boolean;
+  isOwnRequest: boolean;
+  isTheReviewer: boolean;
+  hasBeenReviewed: boolean;
+  contactVerified: boolean;
+  /** @minimum 0 */
+  evidenceCount: number;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface RecoveryQueueResponse {
+  items: RecoveryQueueRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface RecoveryRequestDetail {
+  id: string;
+  status: RecoveryStatus;
+  claimedContactChannel: RecoveryChannel;
+  newContactChannel: RecoveryChannel & (string | null);
+  matchedAnAccount: boolean;
+  isOwnRequest: boolean;
+  isTheReviewer: boolean;
+  reviewedByMe: boolean;
+  /** @nullable */
+  reviewNote: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  approvedAt: string | null;
+  /** @nullable */
+  rejectionReason: string | null;
+  /** @nullable */
+  contactVerifiedAt: string | null;
+  /** @nullable */
+  sessionsRevokedAt: string | null;
+  /** @nullable */
+  mfaResetAt: string | null;
+  /** @nullable */
+  holdUntil: string | null;
+  /** @nullable */
+  completedAt: string | null;
+  /** @nullable */
+  closedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface RecoveryRequestDetailResponse {
+  request: RecoveryRequestDetail;
+}
+
+export type RecoveryEvidenceType = typeof RecoveryEvidenceType[keyof typeof RecoveryEvidenceType];
+
+
+export const RecoveryEvidenceType = {
+  national_id: 'national_id',
+  passport: 'passport',
+  selfie: 'selfie',
+  proof_of_address: 'proof_of_address',
+  purchase_proof: 'purchase_proof',
+  other: 'other',
+} as const;
+
+export interface RecoveryEvidenceRow {
+  id: string;
+  evidenceType: RecoveryEvidenceType;
+  /** @nullable */
+  originalFilename: string | null;
+  /** @nullable */
+  contentType: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  byteSize: number | null;
+  uploadedAt: string;
+}
+
+export interface RecoveryEvidenceResponse {
+  items: RecoveryEvidenceRow[];
+}
+
+export type RecoveryReviewResponseOutcome = typeof RecoveryReviewResponseOutcome[keyof typeof RecoveryReviewResponseOutcome];
+
+
+export const RecoveryReviewResponseOutcome = {
+  reviewed: 'reviewed',
+} as const;
+
+export interface RecoveryReviewResponse {
+  outcome: RecoveryReviewResponseOutcome;
+  status: RecoveryStatus;
+}
+
+export interface RecoveryReviewRequest {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  note?: string;
+}
+
+export type RecoveryDecisionResponseOutcome = typeof RecoveryDecisionResponseOutcome[keyof typeof RecoveryDecisionResponseOutcome];
+
+
+export const RecoveryDecisionResponseOutcome = {
+  decided: 'decided',
+} as const;
+
+export interface RecoveryDecisionResponse {
+  outcome: RecoveryDecisionResponseOutcome;
+  status: RecoveryStatus;
+}
+
+export type RecoveryDecision = typeof RecoveryDecision[keyof typeof RecoveryDecision];
+
+
+export const RecoveryDecision = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface RecoveryDecisionRequest {
+  decision: RecoveryDecision;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  note?: string;
+}
+
+export type RecoveryCompletionResponseOutcome = typeof RecoveryCompletionResponseOutcome[keyof typeof RecoveryCompletionResponseOutcome];
+
+
+export const RecoveryCompletionResponseOutcome = {
+  completed: 'completed',
+} as const;
+
+export interface RecoveryCompletionResponse {
+  outcome: RecoveryCompletionResponseOutcome;
+  /** @nullable */
+  holdUntil: string | null;
+}
+
+export interface RecoveryCompletionRequest {
+  mfaWasReset?: boolean;
+}
+
+/**
+ * @nullable
+ */
+export type AuditActorType = typeof AuditActorType[keyof typeof AuditActorType] | null;
+
+
+export const AuditActorType = {
+  user: 'user',
+  system: 'system',
+  worker: 'worker',
+  anonymous: 'anonymous',
+} as const;
+
+export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
+
+
+export const AuditAction = {
+  insert: 'insert',
+  update: 'update',
+  delete: 'delete',
+  truncate: 'truncate',
+} as const;
+
+export interface AuditRow {
+  id: string;
+  occurredAt: string;
+  actorType: AuditActorType | null;
+  isOwnAction: boolean;
+  action: AuditAction;
+  /** @nullable */
+  tableSchema: string | null;
+  /** @nullable */
+  tableName: string | null;
+  /** @nullable */
+  recordId: string | null;
+  changedColumns: string[];
+  /** @nullable */
+  requestId: string | null;
+}
+
+export interface AuditPageResponse {
+  items: AuditRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * A review’s state, in the four values 0026 allows. All four are also decisions a moderator can record: the writer imposes no transition matrix, so any of them may follow any other, and re-recording the current one re-affirms it with a fresh reason.
+ */
+export type ReviewStatus = typeof ReviewStatus[keyof typeof ReviewStatus];
+
+
+export const ReviewStatus = {
+  published: 'published',
+  pending_moderation: 'pending_moderation',
+  hidden: 'hidden',
+  removed: 'removed',
+} as const;
+
+export interface ReviewQueueRow {
+  id: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /** @nullable */
+  title: string | null;
+  status: ReviewStatus;
+  hasBody: boolean;
+  /** @nullable */
+  autoHiddenReason: string | null;
+  isModerated: boolean;
+  moderatedByMe: boolean;
+  isParty: boolean;
+  sellerSlug: string;
+  sellerDisplayName: string;
+  hasReply: boolean;
+  replyStatus: ReviewStatus & (string | null);
+  createdAt: string;
+}
+
+export interface ReviewQueueResponse {
+  items: ReviewQueueRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * Why the automatic reassessment would hide this review — its order was refunded, or its payment is disputed. Reported so a moderator publishing one can see what they are overriding. A moderator’s decision is final: once recorded, the reassessment leaves that review alone.
+ * @nullable
+ */
+export type ReviewPublicationBlock = typeof ReviewPublicationBlock[keyof typeof ReviewPublicationBlock] | null;
+
+
+export const ReviewPublicationBlock = {
+  order_refunded: 'order_refunded',
+  payment_disputed: 'payment_disputed',
+} as const;
+
+export interface ReviewDetail {
+  id: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  body: string | null;
+  status: ReviewStatus;
+  /** @nullable */
+  autoHiddenReason: string | null;
+  /** @nullable */
+  moderationReason: string | null;
+  /** @nullable */
+  moderatedAt: string | null;
+  moderatedByMe: boolean;
+  isParty: boolean;
+  canModerate: boolean;
+  publicationBlock: ReviewPublicationBlock | null;
+  sellerSlug: string;
+  sellerDisplayName: string;
+  sellerStatus: string;
+  /** @nullable */
+  replyBody: string | null;
+  replyStatus: ReviewStatus & (string | null);
+  /** @nullable */
+  replyModerationReason: string | null;
+  /** @nullable */
+  replyCreatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewDetailResponse {
+  review: ReviewDetail;
+}
+
+export interface ReviewModerationAction {
+  id: string;
+  action: ModerationActionKind;
+  reason: string;
+  /** @nullable */
+  notes: string | null;
+  /** @nullable */
+  reportId: string | null;
+  isOwnAction: boolean;
+  createdAt: string;
+}
+
+export interface ReviewModerationActionsResponse {
+  items: ReviewModerationAction[];
+}
+
+export type ModerateReviewResponseOutcome = typeof ModerateReviewResponseOutcome[keyof typeof ModerateReviewResponseOutcome];
+
+
+export const ModerateReviewResponseOutcome = {
+  moderated: 'moderated',
+} as const;
+
+export interface ModerateReviewResponse {
+  outcome: ModerateReviewResponseOutcome;
+  status: ReviewStatus;
+}
+
+export interface ModerateReviewRequest {
+  status: ReviewStatus;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  reason: string;
+}
+
+/**
+ * A job run’s state, in the four values 0007 allows. `running` is exactly the rows with no finish time, which `job_runs_finished_when_done` guarantees.
+ */
+export type JobRunStatus = typeof JobRunStatus[keyof typeof JobRunStatus];
+
+
+export const JobRunStatus = {
+  running: 'running',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  skipped: 'skipped',
+} as const;
+
+export interface JobRunRow {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @pattern ^[a-z][a-z0-9_.]*$
+     */
+  jobName: string;
+  status: JobRunStatus;
+  /** @nullable */
+  scheduledFor: string | null;
+  startedAt: string;
+  /** @nullable */
+  finishedAt: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  durationMs: number | null;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @nullable
+     * @pattern ^[A-Za-z][A-Za-z0-9_]*$
+     */
+  errorType: string | null;
+  /** @nullable */
+  processedCount: number | null;
+  isContracted: boolean;
+}
+
+export interface JobRunPageResponse {
+  items: JobRunRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface JobRunDetail {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @pattern ^[a-z][a-z0-9_.]*$
+     */
+  jobName: string;
+  status: JobRunStatus;
+  /** @nullable */
+  scheduledFor: string | null;
+  startedAt: string;
+  /** @nullable */
+  finishedAt: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  durationMs: number | null;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @nullable
+     * @pattern ^[A-Za-z][A-Za-z0-9_]*$
+     */
+  errorType: string | null;
+  /**
+     * @nullable
+     * @pattern ^[0-9A-Z]{5}$
+     */
+  errorSqlstate: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @nullable
+     * @pattern ^[a-z][a-z0-9_.]*$
+     */
+  detailJobKey: string | null;
+  /** @nullable */
+  processedCount: number | null;
+  isContracted: boolean;
+  /** @nullable */
+  cronSchedule: string | null;
+  /** @nullable */
+  targetSignature: string | null;
+  /** @nullable */
+  purpose: string | null;
+}
+
+export interface JobRunDetailResponse {
+  run: JobRunDetail;
+}
+
+export interface ScheduledJob {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @pattern ^[a-z][a-z0-9_.]*$
+     */
+  jobKey: string;
+  cronSchedule: string;
+  targetSignature: string;
+  purpose: string;
+  /** @minimum 0 */
+  runCount: number;
+  /** @minimum 0 */
+  failureCount: number;
+  lastStatus: JobRunStatus & (string | null);
+  /** @nullable */
+  lastStartedAt: string | null;
+  /** @nullable */
+  lastFinishedAt: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  lastDurationMs: number | null;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @nullable
+     * @pattern ^[A-Za-z][A-Za-z0-9_]*$
+     */
+  lastErrorType: string | null;
+  /** @nullable */
+  lastProcessedCount: number | null;
+}
+
+export interface ScheduledJobCatalogueResponse {
+  items: ScheduledJob[];
+}
+
+export interface ScheduleProblem {
+  object: string;
+  problem: string;
+}
+
+export interface ScheduleProblemsResponse {
+  items: ScheduleProblem[];
+}
+
+export interface OutboxHealth {
+  /** @minimum 0 */
+  pendingCount: number;
+  /** @minimum 0 */
+  dueCount: number;
+  /** @minimum 0 */
+  inFlightCount: number;
+  /** @minimum 0 */
+  completedCount: number;
+  /** @minimum 0 */
+  deadLetteredCount: number;
+  /** @nullable */
+  oldestPendingAt: string | null;
+  /** @nullable */
+  oldestInFlightAt: string | null;
+  /** @nullable */
+  latestDeadLetteredAt: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  maxAttempts: number | null;
+}
+
+export interface OutboxDeadLetterGroup {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @pattern ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$
+     */
+  eventType: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     * @nullable
+     * @pattern ^[A-Za-z][A-Za-z0-9_]*$
+     */
+  lastErrorType: string | null;
+  /** @exclusiveMinimum 0 */
+  eventCount: number;
+  firstDeadLetteredAt: string;
+  lastDeadLetteredAt: string;
+  /** @minimum 0 */
+  maxAttempts: number;
+}
+
+export interface OutboxResponse {
+  health: OutboxHealth;
+  items: OutboxDeadLetterGroup[];
+}
+
+/**
+ * A dispute’s state, in the six values the schema allows. Only `open` and `resolved` are currently reachable: the writers that exist set those two, and no writer sets the other four. The remaining states are described here because a dispute could hold one if such a writer were added, and are deliberately not offered as filters.
+ */
+export type DisputeStatus = typeof DisputeStatus[keyof typeof DisputeStatus];
+
+
+export const DisputeStatus = {
+  open: 'open',
+  awaiting_seller: 'awaiting_seller',
+  awaiting_buyer: 'awaiting_buyer',
+  under_review: 'under_review',
+  resolved: 'resolved',
+  cancelled: 'cancelled',
+} as const;
+
+export type DisputeReasonCode = typeof DisputeReasonCode[keyof typeof DisputeReasonCode];
+
+
+export const DisputeReasonCode = {
+  not_received: 'not_received',
+  not_as_described: 'not_as_described',
+  damaged: 'damaged',
+  incomplete: 'incomplete',
+  late_delivery: 'late_delivery',
+  service_not_delivered: 'service_not_delivered',
+  unauthorised: 'unauthorised',
+  other: 'other',
+} as const;
+
+/**
+ * @minLength 3
+ * @maxLength 3
+ */
+export type DisputeCurrencyCode = string;
+
+/**
+ * @nullable
+ * @pattern ^[1-9][0-9]{0,18}$
+ */
+export type DisputeAmountMinor = string | null;
+
+export type DisputeOrderType = typeof DisputeOrderType[keyof typeof DisputeOrderType];
+
+
+export const DisputeOrderType = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+/**
+ * What a colleague decided. All four record a decision and none moves money: `refund_buyer` and `partial_refund` record that a refund is owed, and issuing it is a separate, later, financial operation with its own record and its own permission.
+ * @nullable
+ */
+export type DisputeResolution = typeof DisputeResolution[keyof typeof DisputeResolution] | null;
+
+
+export const DisputeResolution = {
+  refund_buyer: 'refund_buyer',
+  partial_refund: 'partial_refund',
+  release_seller: 'release_seller',
+  no_action: 'no_action',
+} as const;
+
+export interface DisputeQueueRow {
+  id: string;
+  status: DisputeStatus;
+  reasonCode: DisputeReasonCode;
+  currencyCode: DisputeCurrencyCode;
+  claimAmountMinor: DisputeAmountMinor | null;
+  /** @minLength 1 */
+  orderNumber: string;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  orderStatus: string;
+  orderType: DisputeOrderType;
+  /** @nullable */
+  sellerSlug: string | null;
+  /** @nullable */
+  sellerDisplayName: string | null;
+  isParty: boolean;
+  resolvedByMe: boolean;
+  resolution: DisputeResolution | null;
+  /** @minimum 0 */
+  messageCount: number;
+  hasDetails: boolean;
+  /** @nullable */
+  dueAt: string | null;
+  createdAt: string;
+}
+
+export interface DisputeQueueResponse {
+  items: DisputeQueueRow[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+/**
+ * @pattern ^(0|[1-9][0-9]*)$
+ */
+export type DisputeOrderTotalMinor = string;
+
+export type DisputePartyRole = typeof DisputePartyRole[keyof typeof DisputePartyRole];
+
+
+export const DisputePartyRole = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export interface DisputeDetail {
+  id: string;
+  status: DisputeStatus;
+  reasonCode: DisputeReasonCode;
+  /** @nullable */
+  details: string | null;
+  currencyCode: DisputeCurrencyCode;
+  claimAmountMinor: DisputeAmountMinor | null;
+  /** @minLength 1 */
+  orderNumber: string;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  orderStatus: string;
+  orderType: DisputeOrderType;
+  orderGrandTotalMinor: DisputeOrderTotalMinor;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  orderStatusBefore: string;
+  /** @nullable */
+  orderPlacedAt: string | null;
+  /** @nullable */
+  sellerSlug: string | null;
+  /** @nullable */
+  sellerDisplayName: string | null;
+  openedByRole: DisputePartyRole;
+  resolution: DisputeResolution | null;
+  resolutionAmountMinor: DisputeAmountMinor | null;
+  /** @nullable */
+  resolutionNote: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  resolvedByMe: boolean;
+  isParty: boolean;
+  canManage: boolean;
+  /** @nullable */
+  dueAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DisputeDetailResponse {
+  dispute: DisputeDetail;
+}
+
+export type DisputeAuthorRole = typeof DisputeAuthorRole[keyof typeof DisputeAuthorRole];
+
+
+export const DisputeAuthorRole = {
+  buyer: 'buyer',
+  seller: 'seller',
+  staff: 'staff',
+} as const;
+
+export interface DisputeMessage {
+  id: string;
+  authorRole: DisputeAuthorRole;
+  body: string;
+  isInternal: boolean;
+  isOwnMessage: boolean;
+  createdAt: string;
+}
+
+export interface DisputeMessagesResponse {
+  items: DisputeMessage[];
+}
+
+export type PostDisputeMessageResponseOutcome = typeof PostDisputeMessageResponseOutcome[keyof typeof PostDisputeMessageResponseOutcome];
+
+
+export const PostDisputeMessageResponseOutcome = {
+  posted: 'posted',
+} as const;
+
+export interface PostDisputeMessageResponse {
+  outcome: PostDisputeMessageResponseOutcome;
+  messageId: string;
+}
+
+export interface PostDisputeMessageRequest {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  body: string;
+  isInternal?: boolean;
+}
+
+export type ResolveDisputeResponseOutcome = typeof ResolveDisputeResponseOutcome[keyof typeof ResolveDisputeResponseOutcome];
+
+
+export const ResolveDisputeResponseOutcome = {
+  resolved: 'resolved',
+} as const;
+
+export type ResolveDisputeResponseStatus = typeof ResolveDisputeResponseStatus[keyof typeof ResolveDisputeResponseStatus];
+
+
+export const ResolveDisputeResponseStatus = {
+  resolved: 'resolved',
+} as const;
+
+export interface ResolveDisputeResponse {
+  outcome: ResolveDisputeResponseOutcome;
+  status: ResolveDisputeResponseStatus;
+  resolution: DisputeResolution | null;
+}
+
+export interface ResolveDisputeRequest {
+  resolution: DisputeResolution | null;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  resolutionNote: string;
+  resolutionAmountMinor?: DisputeAmountMinor | null;
+}
+
+export const RedirectStatusCode = {  NUMBER_301: 301,
+  NUMBER_302: 302,
+  NUMBER_307: 307,
+  NUMBER_308: 308,
+} as const
+export type RedirectStatusCode = typeof RedirectStatusCode[keyof typeof RedirectStatusCode];
+
+export type RedirectResolutionResponse = {
+  outcome: 'redirect';
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  toPath: string;
+  statusCode: RedirectStatusCode;
+} | {
+  outcome: 'none';
+};
+
+export interface SeoRedirect {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  fromPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  toPath: string;
+  statusCode: RedirectStatusCode;
+  isActive: boolean;
+  /** @nullable */
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeoRedirectsResponse {
+  items: SeoRedirect[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SeoRedirectDetail {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  fromPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  toPath: string;
+  statusCode: RedirectStatusCode;
+  isActive: boolean;
+  /** @nullable */
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  createdBy: string | null;
+  canManage: boolean;
+  /** @nullable */
+  resolvedToPath: string | null;
+  resolvedStatusCode: RedirectStatusCode;
+}
+
+export interface SeoRedirectDetailResponse {
+  redirect: SeoRedirectDetail;
+}
+
+export interface CreateSeoRedirectResponse {
+  id: string;
+}
+
+export interface CreateSeoRedirectRequest {
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  fromPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  toPath: string;
+  statusCode?: RedirectStatusCode;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  note?: string | null;
+  isActive?: boolean;
+}
+
+export interface SeoRedirectWriteResponse {
+  ok: true;
+}
+
+export interface UpdateSeoRedirectRequest {
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  fromPath?: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  toPath?: string;
+  statusCode?: RedirectStatusCode;
+  /** @maxLength 1000 */
+  note?: string;
+}
+
+export interface SeoRedirectStateRequest {
+  isActive: boolean;
+}
+
+export type GetV1CategoriesParams = {
+/**
+ * Names the language of the category names. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1CategoriesLocale;
+};
+
+export type GetV1CategoriesLocale = typeof GetV1CategoriesLocale[keyof typeof GetV1CategoriesLocale];
+
+
+export const GetV1CategoriesLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1CategoryBySlugParams = {
+/**
+ * Names the language of the category names and description.
+ */
+locale?: GetV1CategoryBySlugLocale;
+};
+
+export type GetV1CategoryBySlugLocale = typeof GetV1CategoryBySlugLocale[keyof typeof GetV1CategoryBySlugLocale];
+
+
+export const GetV1CategoryBySlugLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1ListingsParams = {
+/**
+ * Opaque cursor from a previous response. Send it back untouched.
+ */
+cursor?: string;
+/**
+ * Page size. Default 20, maximum 50.
+ */
+limit?: string;
+};
+
+export type GetV1ListingBySlugParams = {
+/**
+ * Names the language of the category, attribute and tag labels.
+ */
+locale?: GetV1ListingBySlugLocale;
+};
+
+export type GetV1ListingBySlugLocale = typeof GetV1ListingBySlugLocale[keyof typeof GetV1ListingBySlugLocale];
+
+
+export const GetV1ListingBySlugLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1ServicesParams = {
+/**
+ * Opaque cursor from a previous response. Send it back untouched.
+ */
+cursor?: string;
+/**
+ * Page size. Default 20, maximum 50.
+ */
+limit?: string;
+};
+
+export type GetV1ServiceBySlugParams = {
+/**
+ * Names the language of the category, attribute and tag labels.
+ */
+locale?: GetV1ServiceBySlugLocale;
+};
+
+export type GetV1ServiceBySlugLocale = typeof GetV1ServiceBySlugLocale[keyof typeof GetV1ServiceBySlugLocale];
+
+
+export const GetV1ServiceBySlugLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1CategoryListingsParams = {
+/**
+ * Names the language of the facet labels.
+ */
+locale?: GetV1CategoryListingsLocale;
+/**
+ * Opaque cursor from a previous response. Send it back untouched.
+ */
+cursor?: string;
+/**
+ * Page size. Default 20, maximum 50.
+ */
+limit?: string;
+/**
+ * Narrows to one surface. Absent means both, which is what a category holding both offers.
+ */
+type?: GetV1CategoryListingsType;
+/**
+ * A tag slug, repeatable. Two tags are alternatives: a listing carrying either matches, because they are one dimension. A slug naming no shown tag returns **no results** rather than being ignored — a filter must never widen what it was given.
+ */
+tag?: string | string[];
+/**
+ * An attribute’s chosen option values, repeatable, or `true`/`false` for a boolean attribute. Options of one attribute are alternatives; different attributes accumulate. An unknown or hidden attribute or option returns no results.
+ */
+'attr.{key}'?: string | string[];
+/**
+ * The inclusive lower end of a numeric attribute’s range.
+ */
+'attr.{key}.min'?: string;
+/**
+ * The inclusive upper end of a numeric attribute’s range.
+ */
+'attr.{key}.max'?: string;
+/**
+ * The currency a price bound is read in. **Required with a bound**: V1 has no FX and no rate table, so a bound narrows to the listings priced in that currency and never compares one currency’s number against another’s. The codes a category offers come back in its `currency` facet.
+ */
+'price.currency'?: string;
+/**
+ * The inclusive lower price bound, in whole minor units as a string (the money JSON rule).
+ */
+'price.min'?: string;
+/**
+ * The inclusive upper price bound, in whole minor units as a string.
+ */
+'price.max'?: string;
+};
+
+export type GetV1CategoryListingsLocale = typeof GetV1CategoryListingsLocale[keyof typeof GetV1CategoryListingsLocale];
+
+
+export const GetV1CategoryListingsLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1CategoryListingsType = typeof GetV1CategoryListingsType[keyof typeof GetV1CategoryListingsType];
+
+
+export const GetV1CategoryListingsType = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type GetV1SearchParams = {
+/**
+ * The search query. Required; at least 2 characters after trimming.
+ */
+q: string;
+/**
+ * Opaque cursor from a previous response. Send it back untouched.
+ */
+cursor?: string;
+/**
+ * Page size. Default 20, maximum 50.
+ */
+limit?: string;
+/**
+ * Narrows to one surface. Absent means both, which is what a category holding both offers.
+ */
+type?: GetV1SearchType;
+/**
+ * A tag slug, repeatable. Two tags are alternatives: a listing carrying either matches, because they are one dimension. A slug naming no shown tag returns **no results** rather than being ignored — a filter must never widen what it was given.
+ */
+tag?: string | string[];
+/**
+ * An attribute’s chosen option values, repeatable, or `true`/`false` for a boolean attribute. Options of one attribute are alternatives; different attributes accumulate. An unknown or hidden attribute or option returns no results.
+ */
+'attr.{key}'?: string | string[];
+/**
+ * The inclusive lower end of a numeric attribute’s range.
+ */
+'attr.{key}.min'?: string;
+/**
+ * The inclusive upper end of a numeric attribute’s range.
+ */
+'attr.{key}.max'?: string;
+/**
+ * The currency a price bound is read in. **Required with a bound**: V1 has no FX and no rate table, so a bound narrows to the listings priced in that currency and never compares one currency’s number against another’s. The codes a category offers come back in its `currency` facet.
+ */
+'price.currency'?: string;
+/**
+ * The inclusive lower price bound, in whole minor units as a string (the money JSON rule).
+ */
+'price.min'?: string;
+/**
+ * The inclusive upper price bound, in whole minor units as a string.
+ */
+'price.max'?: string;
+};
+
+export type GetV1SearchType = typeof GetV1SearchType[keyof typeof GetV1SearchType];
+
+
+export const GetV1SearchType = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type GetV1SellersMeListingsParams = {
+/**
+ * How many listings to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SellersMeServicesParams = {
+/**
+ * How many services to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SellersMeOrdersParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SellersMeReviewsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SellersMePromotionsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SellersMeAnalyticsParams = {
+/**
+ * How many days back to sum. Defaults to 30; a larger value is clamped to 365. It selects rows and decides nothing about them.
+ */
+days?: string;
+};
+
+export type GetV1MessagingConversationsParams = {
+/**
+ * How many conversations to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1MessagingConversationMessagesParams = {
+/**
+ * How many messages to return. Defaults to 50; a larger value is clamped to 100.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor, which continues into older messages.
+ */
+cursor?: string;
+};
+
+export type GetV1NotificationsParams = {
+/**
+ * Which list to read: inbox (the default) for notifications that have not been archived, or archived for those that have.
+ */
+view?: string;
+/**
+ * How many notifications to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1UsersMeFavoritesParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1UsersMeSavedSearchesParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminSellerVerificationsParams = {
+/**
+ * One of submitted, under_review, approved, rejected or expired. Omit for the two awaiting a decision. `draft` is not accepted.
+ */
+status?: string;
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1OffersMadeParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1OffersReceivedParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1ServiceRequestsMadeParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1ServiceRequestsReceivedParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminServiceRequestsParams = {
+/**
+ * One of the schema’s own request statuses, to narrow the queue. Omitted shows every Admin Only request.
+ */
+status?: string;
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SupportTicketsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1SupportTicketMessagesParams = {
+/**
+ * How many messages to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor, which names the page *before* the one returned: a conversation opens at its newest end and pages backwards.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminSupportQueueParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminSupportAssignedParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminSupportTicketMessagesParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminSupportTicketNotesParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1ReportsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminModerationReportsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows the queue to one of the reports table’s five statuses. An unknown value matches nothing rather than being refused.
+ */
+status?: string;
+};
+
+export type GetV1AdminModerationListingsParams = {
+/**
+ * As above.
+ */
+limit?: string;
+/**
+ * As above.
+ */
+cursor?: string;
+};
+
+export type GetV1AdminSellersParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows to one of the four seller account statuses. An unknown value matches nothing rather than being refused.
+ */
+status?: string;
+/**
+ * Narrows to one of the four verification statuses. Unknown values match nothing.
+ */
+verificationStatus?: string;
+};
+
+export type GetV1AdminUsersParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows to one of the three account statuses. Unknown values match nothing.
+ */
+status?: string;
+};
+
+export type GetV1AdminRecoveryRequestsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows to one of the recovery table’s eight statuses. `approved` is among them and matches nothing in practice: an approval moves a request to `contact_verification`.
+ */
+status?: string;
+};
+
+export type GetV1AdminAuditParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows to one schema. One of the two filters the audit indexes support.
+ */
+tableSchema?: string;
+/**
+ * Narrows to one table within that schema.
+ */
+tableName?: string;
+/**
+ * Narrows to one record within that table. Requires both tableSchema and tableName.
+ */
+recordId?: string;
+};
+
+export type GetV1AdminReviewsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows the queue to one of the four review statuses. An unknown value matches nothing rather than being refused.
+ */
+status?: string;
+};
+
+export type GetV1AdminPlatformJobRunsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows the list to one of the four run statuses. An unknown value matches nothing rather than being refused.
+ */
+status?: string;
+/**
+ * Narrows the list to one job name. An unknown name matches nothing rather than being refused.
+ */
+jobName?: string;
+};
+
+export type GetV1AdminDisputesParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows the queue to one dispute state. Only open and resolved are accepted, because they are the only two any writer in this platform can produce; anything else is refused.
+ */
+status?: string;
+};
+
+export type GetV1CmsPagesParams = {
+/**
+ * Names the language of the titles. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1CmsPagesLocale;
+};
+
+export type GetV1CmsPagesLocale = typeof GetV1CmsPagesLocale[keyof typeof GetV1CmsPagesLocale];
+
+
+export const GetV1CmsPagesLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1CmsPages200PagesItemTemplate = typeof GetV1CmsPages200PagesItemTemplate[keyof typeof GetV1CmsPages200PagesItemTemplate];
+
+
+export const GetV1CmsPages200PagesItemTemplate = {
+  standard: 'standard',
+  legal: 'legal',
+  help: 'help',
+  landing: 'landing',
+} as const;
+
+export type GetV1CmsPages200PagesItemResolvedLocale = typeof GetV1CmsPages200PagesItemResolvedLocale[keyof typeof GetV1CmsPages200PagesItemResolvedLocale];
+
+
+export const GetV1CmsPages200PagesItemResolvedLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1CmsPages200PagesItem = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  /** @nullable */
+  pageKey: string | null;
+  template: GetV1CmsPages200PagesItemTemplate;
+  isIndexable: boolean;
+  resolvedLocale: GetV1CmsPages200PagesItemResolvedLocale;
+  title: string;
+  updatedAt: string;
+};
+
+export type GetV1CmsPages200 = {
+  pages: GetV1CmsPages200PagesItem[];
+};
+
+export type GetV1CmsPageBySlugParams = {
+/**
+ * Names the language of the text. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1CmsPageBySlugLocale;
+};
+
+export type GetV1CmsPageBySlugLocale = typeof GetV1CmsPageBySlugLocale[keyof typeof GetV1CmsPageBySlugLocale];
+
+
+export const GetV1CmsPageBySlugLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1CmsPageBySlug200 = {
+  outcome: 'page';
+  page: {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  /** @nullable */
+  pageKey: string | null;
+  template: 'standard' | 'legal' | 'help' | 'landing';
+  isIndexable: boolean;
+  resolvedLocale: 'en' | 'ar';
+  title: string;
+  /** @nullable */
+  excerpt: string | null;
+  body: string;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  /** @nullable */
+  coverObjectPath: string | null;
+  publishedAt: string;
+  updatedAt: string;
+};
+} | {
+  outcome: 'moved';
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  movedTo: string;
+};
+
+export type GetV1AdminCmsPagesParams = {
+/**
+ * How many rows to return. Defaults to 25; a larger value is clamped to 100.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * Narrows the list to one of the four page states. An unknown value matches nothing.
+ */
+status?: string;
+};
+
+export type GetV1AdminCmsPages200ItemsItemStatus = typeof GetV1AdminCmsPages200ItemsItemStatus[keyof typeof GetV1AdminCmsPages200ItemsItemStatus];
+
+
+export const GetV1AdminCmsPages200ItemsItemStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type GetV1AdminCmsPages200ItemsItemTemplate = typeof GetV1AdminCmsPages200ItemsItemTemplate[keyof typeof GetV1AdminCmsPages200ItemsItemTemplate];
+
+
+export const GetV1AdminCmsPages200ItemsItemTemplate = {
+  standard: 'standard',
+  legal: 'legal',
+  help: 'help',
+  landing: 'landing',
+} as const;
+
+export type GetV1AdminCmsPages200ItemsItem = {
+  id: string;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  /** @nullable */
+  pageKey: string | null;
+  status: GetV1AdminCmsPages200ItemsItemStatus;
+  template: GetV1AdminCmsPages200ItemsItemTemplate;
+  isIndexable: boolean;
+  sortOrder: number;
+  /** @nullable */
+  scheduledFor: string | null;
+  /** @nullable */
+  publishedAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+  updatedAt: string;
+  translatedLocales: string[];
+  /** @nullable */
+  title: string | null;
+};
+
+export type GetV1AdminCmsPages200 = {
+  items: GetV1AdminCmsPages200ItemsItem[];
+  /** @nullable */
+  nextCursor: string | null;
+};
+
+export type PostV1AdminCmsPagesBodyTemplate = typeof PostV1AdminCmsPagesBodyTemplate[keyof typeof PostV1AdminCmsPagesBodyTemplate];
+
+
+export const PostV1AdminCmsPagesBodyTemplate = {
+  standard: 'standard',
+  legal: 'legal',
+  help: 'help',
+  landing: 'landing',
+} as const;
+
+export type PostV1AdminCmsPagesBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  /**
+     * @nullable
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  pageKey?: string | null;
+  template?: PostV1AdminCmsPagesBodyTemplate;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+  isIndexable?: boolean;
+};
+
+export type PostV1AdminCmsPages201 = {
+  id: string;
+};
+
+export type GetV1AdminCmsPage200PageStatus = typeof GetV1AdminCmsPage200PageStatus[keyof typeof GetV1AdminCmsPage200PageStatus];
+
+
+export const GetV1AdminCmsPage200PageStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type GetV1AdminCmsPage200PageTemplate = typeof GetV1AdminCmsPage200PageTemplate[keyof typeof GetV1AdminCmsPage200PageTemplate];
+
+
+export const GetV1AdminCmsPage200PageTemplate = {
+  standard: 'standard',
+  legal: 'legal',
+  help: 'help',
+  landing: 'landing',
+} as const;
+
+export type GetV1AdminCmsPage200PageTranslationsItem = {
+  localeCode: string;
+  title: string;
+  /** @nullable */
+  excerpt: string | null;
+  body: string;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  updatedAt: string;
+};
+
+export type GetV1AdminCmsPage200Page = {
+  id: string;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  /** @nullable */
+  pageKey: string | null;
+  status: GetV1AdminCmsPage200PageStatus;
+  template: GetV1AdminCmsPage200PageTemplate;
+  isIndexable: boolean;
+  sortOrder: number;
+  /** @nullable */
+  scheduledFor: string | null;
+  /** @nullable */
+  publishedAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  canManage: boolean;
+  /** @items.pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  previousSlugs: string[];
+  translations: GetV1AdminCmsPage200PageTranslationsItem[];
+};
+
+export type GetV1AdminCmsPage200 = {
+  page: GetV1AdminCmsPage200Page;
+};
+
+export type PatchV1AdminCmsPageBodyTemplate = typeof PatchV1AdminCmsPageBodyTemplate[keyof typeof PatchV1AdminCmsPageBodyTemplate];
+
+
+export const PatchV1AdminCmsPageBodyTemplate = {
+  standard: 'standard',
+  legal: 'legal',
+  help: 'help',
+  landing: 'landing',
+} as const;
+
+export type PatchV1AdminCmsPageBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug?: string;
+  pageKey?: string | '' | null;
+  template?: PatchV1AdminCmsPageBodyTemplate;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+  isIndexable?: boolean;
+};
+
+export type PatchV1AdminCmsPage200 = {
+  ok: true;
+};
+
+export type PutV1AdminCmsPageStatusBodyStatus = typeof PutV1AdminCmsPageStatusBodyStatus[keyof typeof PutV1AdminCmsPageStatusBodyStatus];
+
+
+export const PutV1AdminCmsPageStatusBodyStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type PutV1AdminCmsPageStatusBody = {
+  status: PutV1AdminCmsPageStatusBodyStatus;
+  /** @nullable */
+  scheduledFor?: string | null;
+};
+
+export type PutV1AdminCmsPageStatus200 = {
+  ok: true;
+};
+
+export type PutV1AdminCmsPageTranslationBody = {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+  /** @minLength 1 */
+  body: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  excerpt?: string | null;
+  /**
+     * @maxLength 70
+     * @nullable
+     */
+  metaTitle?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  metaDescription?: string | null;
+};
+
+export type PutV1AdminCmsPageTranslation200 = {
+  ok: true;
+};
+
+export type DeleteV1AdminCmsPageTranslation200 = {
+  ok: true;
+};
+
+export type GetV1SeoRedirectResolveParams = {
+/**
+ * The incoming path, relative and beginning with a single slash.
+ */
+path: string;
+};
+
+export type GetV1AdminSeoRedirectsParams = {
+/**
+ * How many rows to return. Defaults to 25; a larger value is clamped to 100.
+ */
+limit?: string;
+/**
+ * An opaque position from a previous page. Never constructed by a client.
+ */
+cursor?: string;
+/**
+ * A literal substring of either path, matched case-insensitively. Not a pattern.
+ */
+search?: string;
+/**
+ * `true` or `false` to filter by state. Absent means both.
+ */
+active?: string;
+};
+
+/**
+ * @nullable
+ */
+export type GetV1AdminCategories200CategoriesItemListingTypeCode = typeof GetV1AdminCategories200CategoriesItemListingTypeCode[keyof typeof GetV1AdminCategories200CategoriesItemListingTypeCode] | null;
+
+
+export const GetV1AdminCategories200CategoriesItemListingTypeCode = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type GetV1AdminCategories200CategoriesItemTranslatedLocalesItem = typeof GetV1AdminCategories200CategoriesItemTranslatedLocalesItem[keyof typeof GetV1AdminCategories200CategoriesItemTranslatedLocalesItem];
+
+
+export const GetV1AdminCategories200CategoriesItemTranslatedLocalesItem = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1AdminCategories200CategoriesItem = {
+  categoryId: string;
+  /** @nullable */
+  parentId: string | null;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$ */
+  slug: string;
+  /**
+     * @minimum 0
+     * @maximum 2
+     */
+  depth: number;
+  sortOrder: number;
+  /** @nullable */
+  listingTypeCode: GetV1AdminCategories200CategoriesItemListingTypeCode;
+  isActive: boolean;
+  isVisible: boolean;
+  /** @minimum 0 */
+  childCount: number;
+  /** @minimum 0 */
+  listingCount: number;
+  translatedLocales: GetV1AdminCategories200CategoriesItemTranslatedLocalesItem[];
+  /** @nullable */
+  name: string | null;
+  updatedAt: string;
+};
+
+export type GetV1AdminCategories200 = {
+  categories: GetV1AdminCategories200CategoriesItem[];
+};
+
+/**
+ * @nullable
+ */
+export type PostV1AdminCategoriesBodyListingTypeCode = typeof PostV1AdminCategoriesBodyListingTypeCode[keyof typeof PostV1AdminCategoriesBodyListingTypeCode] | null;
+
+
+export const PostV1AdminCategoriesBodyListingTypeCode = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type PostV1AdminCategoriesBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$ */
+  slug: string;
+  /** @nullable */
+  parentId?: string | null;
+  /** @nullable */
+  listingTypeCode?: PostV1AdminCategoriesBodyListingTypeCode;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder?: number;
+};
+
+export type PostV1AdminCategories201 = {
+  categoryId: string;
+};
+
+/**
+ * @nullable
+ */
+export type GetV1AdminCategory200CategoryListingTypeCode = typeof GetV1AdminCategory200CategoryListingTypeCode[keyof typeof GetV1AdminCategory200CategoryListingTypeCode] | null;
+
+
+export const GetV1AdminCategory200CategoryListingTypeCode = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type GetV1AdminCategory200CategoryTranslatedLocalesItem = typeof GetV1AdminCategory200CategoryTranslatedLocalesItem[keyof typeof GetV1AdminCategory200CategoryTranslatedLocalesItem];
+
+
+export const GetV1AdminCategory200CategoryTranslatedLocalesItem = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1AdminCategory200Category = {
+  categoryId: string;
+  /** @nullable */
+  parentId: string | null;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$ */
+  slug: string;
+  /**
+     * @minimum 0
+     * @maximum 2
+     */
+  depth: number;
+  sortOrder: number;
+  /** @nullable */
+  listingTypeCode: GetV1AdminCategory200CategoryListingTypeCode;
+  isActive: boolean;
+  isVisible: boolean;
+  /** @minimum 0 */
+  childCount: number;
+  /** @minimum 0 */
+  listingCount: number;
+  translatedLocales: GetV1AdminCategory200CategoryTranslatedLocalesItem[];
+  updatedAt: string;
+  /**
+     * @nullable
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$
+     */
+  parentSlug: string | null;
+  createdAt: string;
+  canManage: boolean;
+};
+
+export type GetV1AdminCategory200TranslationsItemLocaleCode = typeof GetV1AdminCategory200TranslationsItemLocaleCode[keyof typeof GetV1AdminCategory200TranslationsItemLocaleCode];
+
+
+export const GetV1AdminCategory200TranslationsItemLocaleCode = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1AdminCategory200TranslationsItem = {
+  localeCode: GetV1AdminCategory200TranslationsItemLocaleCode;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  updatedAt: string;
+};
+
+export type GetV1AdminCategory200 = {
+  category: GetV1AdminCategory200Category;
+  translations: GetV1AdminCategory200TranslationsItem[];
+};
+
+/**
+ * @nullable
+ */
+export type PatchV1AdminCategoryBodyListingTypeCode = typeof PatchV1AdminCategoryBodyListingTypeCode[keyof typeof PatchV1AdminCategoryBodyListingTypeCode] | null;
+
+
+export const PatchV1AdminCategoryBodyListingTypeCode = {
+  product: 'product',
+  service: 'service',
+} as const;
+
+export type PatchV1AdminCategoryBody = {
+  setParent: boolean;
+  /** @nullable */
+  parentId?: string | null;
+  /** @nullable */
+  listingTypeCode?: PatchV1AdminCategoryBodyListingTypeCode;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder?: number;
+};
+
+export type PatchV1AdminCategory200 = {
+  changed: boolean;
+};
+
+export type PutV1AdminCategoryStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminCategoryState200 = {
+  changed: boolean;
+};
+
+export type PutV1AdminCategoryTranslationBody = {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /** @maxLength 4000 */
+  description?: string;
+  /** @maxLength 70 */
+  metaTitle?: string;
+  /** @maxLength 320 */
+  metaDescription?: string;
+};
+
+export type PutV1AdminCategoryTranslation200 = {
+  changed: boolean;
+};
+
+export type DeleteV1AdminCategoryTranslation200 = {
+  changed: boolean;
+};
+
+export type GetV1AdminAttributes200AttributesItemDataType = typeof GetV1AdminAttributes200AttributesItemDataType[keyof typeof GetV1AdminAttributes200AttributesItemDataType];
+
+
+export const GetV1AdminAttributes200AttributesItemDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export type GetV1AdminAttributes200AttributesItem = {
+  definitionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  dataType: GetV1AdminAttributes200AttributesItemDataType;
+  /** @nullable */
+  unit: string | null;
+  nameEn: string;
+  nameAr: string;
+  isFilterable: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  /** @minimum 0 */
+  optionCount: number;
+  /** @minimum 0 */
+  categoryCount: number;
+  /** @minimum 0 */
+  answerCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetV1AdminAttributes200 = {
+  attributes: GetV1AdminAttributes200AttributesItem[];
+  canManage: boolean;
+};
+
+export type PostV1AdminAttributesBodyDataType = typeof PostV1AdminAttributesBodyDataType[keyof typeof PostV1AdminAttributesBodyDataType];
+
+
+export const PostV1AdminAttributesBodyDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export type PostV1AdminAttributesBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  dataType: PostV1AdminAttributesBodyDataType;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameAr: string;
+  /**
+     * @minLength 1
+     * @maxLength 16
+     */
+  unit?: string;
+  isFilterable?: boolean;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder?: number;
+};
+
+export type PostV1AdminAttributes201 = {
+  definitionId: string;
+};
+
+export type GetV1AdminAttribute200AttributeDataType = typeof GetV1AdminAttribute200AttributeDataType[keyof typeof GetV1AdminAttribute200AttributeDataType];
+
+
+export const GetV1AdminAttribute200AttributeDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export type GetV1AdminAttribute200Attribute = {
+  definitionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  dataType: GetV1AdminAttribute200AttributeDataType;
+  /** @nullable */
+  unit: string | null;
+  nameEn: string;
+  nameAr: string;
+  isFilterable: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  /** @minimum 0 */
+  optionCount: number;
+  /** @minimum 0 */
+  categoryCount: number;
+  /** @minimum 0 */
+  answerCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetV1AdminAttribute200OptionsItem = {
+  optionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  value: string;
+  labelEn: string;
+  labelAr: string;
+  sortOrder: number;
+  isActive: boolean;
+  /** @minimum 0 */
+  answerCount: number;
+};
+
+export type GetV1AdminAttribute200 = {
+  attribute: GetV1AdminAttribute200Attribute;
+  options: GetV1AdminAttribute200OptionsItem[];
+  canManage: boolean;
+};
+
+export type PatchV1AdminAttributeBody = {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameAr: string;
+  /** @maxLength 16 */
+  unit?: string;
+  isFilterable: boolean;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder: number;
+};
+
+export type PatchV1AdminAttribute200 = {
+  changed: boolean;
+};
+
+export type PutV1AdminAttributeStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminAttributeState200 = {
+  changed: boolean;
+};
+
+export type PostV1AdminAttributeOptionsBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  value: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelAr: string;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder?: number;
+};
+
+export type PostV1AdminAttributeOptions201 = {
+  optionId: string;
+};
+
+export type PatchV1AdminAttributeOptionBody = {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelAr: string;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder: number;
+};
+
+export type PatchV1AdminAttributeOption200 = {
+  changed: boolean;
+};
+
+export type PutV1AdminAttributeOptionStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminAttributeOptionState200 = {
+  changed: boolean;
+};
+
+export type GetV1AdminTags200TagsItem = {
+  tagId: string;
+  /**
+     * @minLength 1
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$
+     */
+  slug: string;
+  nameEn: string;
+  nameAr: string;
+  isActive: boolean;
+  /** @minimum 0 */
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetV1AdminTags200 = {
+  tags: GetV1AdminTags200TagsItem[];
+  canManage: boolean;
+};
+
+export type PostV1AdminTagsBody = {
+  /**
+     * @minLength 1
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$
+     */
+  slug: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameAr: string;
+};
+
+export type PostV1AdminTags201 = {
+  tagId: string;
+};
+
+export type PatchV1AdminTagBody = {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameAr: string;
+};
+
+export type PatchV1AdminTag200 = {
+  changed: boolean;
+};
+
+export type PutV1AdminTagStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminTagState200 = {
+  changed: boolean;
+};
+
+export type GetV1AdminCategoryAttributes200AttributesItemDataType = typeof GetV1AdminCategoryAttributes200AttributesItemDataType[keyof typeof GetV1AdminCategoryAttributes200AttributesItemDataType];
+
+
+export const GetV1AdminCategoryAttributes200AttributesItemDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export type GetV1AdminCategoryAttributes200AttributesItem = {
+  definitionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  dataType: GetV1AdminCategoryAttributes200AttributesItemDataType;
+  /** @nullable */
+  unit: string | null;
+  nameEn: string;
+  nameAr: string;
+  isRequired: boolean;
+  isFilterable: boolean;
+  sortOrder: number;
+  isActive: boolean;
+  /** @minimum 0 */
+  optionCount: number;
+};
+
+export type GetV1AdminCategoryAttributes200 = {
+  attributes: GetV1AdminCategoryAttributes200AttributesItem[];
+  canManage: boolean;
+};
+
+export type PutV1AdminCategoryAttributesBody = {
+  definitionId: string;
+  isRequired?: boolean;
+  isFilterable?: boolean;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  sortOrder?: number;
+};
+
+export type PutV1AdminCategoryAttributes200 = {
+  changed: boolean;
+};
+
+export type DeleteV1AdminCategoryAttribute200 = {
+  changed: boolean;
+};
+
+export type GetV1SellersMeListingAttributesParams = {
+/**
+ * Names the language of the labels. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1SellersMeListingAttributesLocale;
+};
+
+export type GetV1SellersMeListingAttributesLocale = typeof GetV1SellersMeListingAttributesLocale[keyof typeof GetV1SellersMeListingAttributesLocale];
+
+
+export const GetV1SellersMeListingAttributesLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1SellersMeListingAttributes200AttributesItemDataType = typeof GetV1SellersMeListingAttributes200AttributesItemDataType[keyof typeof GetV1SellersMeListingAttributes200AttributesItemDataType];
+
+
+export const GetV1SellersMeListingAttributes200AttributesItemDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export type GetV1SellersMeListingAttributes200AttributesItemChoicesItem = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  value: string;
+  label: string;
+};
+
+export type GetV1SellersMeListingAttributes200AttributesItem = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  label: string;
+  dataType: GetV1SellersMeListingAttributes200AttributesItemDataType;
+  /** @nullable */
+  unit: string | null;
+  isRequired: boolean;
+  sortOrder: number;
+  /** @nullable */
+  text: string | null;
+  /** @nullable */
+  number: number | null;
+  /** @nullable */
+  boolean: boolean | null;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 60
+     * @items.pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  options: string[];
+  choices: GetV1SellersMeListingAttributes200AttributesItemChoicesItem[];
+};
+
+export type GetV1SellersMeListingAttributes200 = {
+  attributes: GetV1SellersMeListingAttributes200AttributesItem[];
+  isEditable: boolean;
+};
+
+export type PostV1SellersMeListingAttributesBodyAnswersItem = {
+  kind: 'text';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  text: string;
+} | {
+  kind: 'number';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @minimum -1000000000000
+     * @maximum 1000000000000
+     */
+  number: number;
+} | {
+  kind: 'boolean';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  boolean: boolean;
+} | {
+  kind: 'single_select';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 60
+     * @items.pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  options: string[];
+} | {
+  kind: 'multi_select';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     * @items.minLength 1
+     * @items.maxLength 60
+     * @items.pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  options: string[];
+};
+
+export type PostV1SellersMeListingAttributesBody = {
+  /** @maxItems 50 */
+  answers: PostV1SellersMeListingAttributesBodyAnswersItem[];
+};
+
+export type PostV1SellersMeListingAttributes200 = {
+  slug: string;
+  saved: true;
+};
+
+export type GetV1SellersMeListingTagsParams = {
+/**
+ * Names the language of the tag names. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1SellersMeListingTagsLocale;
+};
+
+export type GetV1SellersMeListingTagsLocale = typeof GetV1SellersMeListingTagsLocale[keyof typeof GetV1SellersMeListingTagsLocale];
+
+
+export const GetV1SellersMeListingTagsLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1SellersMeListingTags200TagsItem = {
+  /**
+     * @minLength 1
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$
+     */
+  slug: string;
+  name: string;
+  isSelected: boolean;
+};
+
+export type GetV1SellersMeListingTags200 = {
+  tags: GetV1SellersMeListingTags200TagsItem[];
+  isEditable: boolean;
+};
+
+export type PostV1SellersMeListingTagsBody = {
+  /**
+     * @maxItems 25
+     * @items.minLength 1
+     * @items.pattern ^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$
+     */
+  tags: string[];
+};
+
+export type PostV1SellersMeListingTags200 = {
+  slug: string;
+  saved: true;
+};
+
+export type GetV1SellersMeServiceAttributesParams = {
+/**
+ * Names the language of the labels. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1SellersMeServiceAttributesLocale;
+};
+
+export type GetV1SellersMeServiceAttributesLocale = typeof GetV1SellersMeServiceAttributesLocale[keyof typeof GetV1SellersMeServiceAttributesLocale];
+
+
+export const GetV1SellersMeServiceAttributesLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1SellersMeServiceAttributes200AttributesItemDataType = typeof GetV1SellersMeServiceAttributes200AttributesItemDataType[keyof typeof GetV1SellersMeServiceAttributes200AttributesItemDataType];
+
+
+export const GetV1SellersMeServiceAttributes200AttributesItemDataType = {
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  single_select: 'single_select',
+  multi_select: 'multi_select',
+} as const;
+
+export type GetV1SellersMeServiceAttributes200AttributesItemChoicesItem = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  value: string;
+  label: string;
+};
+
+export type GetV1SellersMeServiceAttributes200AttributesItem = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  label: string;
+  dataType: GetV1SellersMeServiceAttributes200AttributesItemDataType;
+  /** @nullable */
+  unit: string | null;
+  isRequired: boolean;
+  sortOrder: number;
+  /** @nullable */
+  text: string | null;
+  /** @nullable */
+  number: number | null;
+  /** @nullable */
+  boolean: boolean | null;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 60
+     * @items.pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  options: string[];
+  choices: GetV1SellersMeServiceAttributes200AttributesItemChoicesItem[];
+};
+
+export type GetV1SellersMeServiceAttributes200 = {
+  attributes: GetV1SellersMeServiceAttributes200AttributesItem[];
+  isEditable: boolean;
+};
+
+export type PostV1SellersMeServiceAttributesBodyAnswersItem = {
+  kind: 'text';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  text: string;
+} | {
+  kind: 'number';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @minimum -1000000000000
+     * @maximum 1000000000000
+     */
+  number: number;
+} | {
+  kind: 'boolean';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  boolean: boolean;
+} | {
+  kind: 'single_select';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 60
+     * @items.pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  options: string[];
+} | {
+  kind: 'multi_select';
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  key: string;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     * @items.minLength 1
+     * @items.maxLength 60
+     * @items.pattern ^[a-z0-9][a-z0-9_-]*$
+     */
+  options: string[];
+};
+
+export type PostV1SellersMeServiceAttributesBody = {
+  /** @maxItems 50 */
+  answers: PostV1SellersMeServiceAttributesBodyAnswersItem[];
+};
+
+export type PostV1SellersMeServiceAttributes200 = {
+  slug: string;
+  saved: true;
+};
+
+export type GetV1SellersMeServiceTagsParams = {
+/**
+ * Names the language of the tag names. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1SellersMeServiceTagsLocale;
+};
+
+export type GetV1SellersMeServiceTagsLocale = typeof GetV1SellersMeServiceTagsLocale[keyof typeof GetV1SellersMeServiceTagsLocale];
+
+
+export const GetV1SellersMeServiceTagsLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1SellersMeServiceTags200TagsItem = {
+  /**
+     * @minLength 1
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$
+     */
+  slug: string;
+  name: string;
+  isSelected: boolean;
+};
+
+export type GetV1SellersMeServiceTags200 = {
+  tags: GetV1SellersMeServiceTags200TagsItem[];
+  isEditable: boolean;
+};
+
+export type PostV1SellersMeServiceTagsBody = {
+  /**
+     * @maxItems 25
+     * @items.minLength 1
+     * @items.pattern ^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$
+     */
+  tags: string[];
+};
+
+export type PostV1SellersMeServiceTags200 = {
+  slug: string;
+  saved: true;
+};
+
+/**
+ * @nullable
+ */
+export type GetV1SeoRobots200Locale = typeof GetV1SeoRobots200Locale[keyof typeof GetV1SeoRobots200Locale] | null;
+
+
+export const GetV1SeoRobots200Locale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1SeoRobots200 = {
+  /** @nullable */
+  locale: GetV1SeoRobots200Locale;
+  /**
+     * @maxLength 10000
+     * @nullable
+     */
+  body: string | null;
+};
+
+export type GetV1SeoSitemap200CountsItemType = typeof GetV1SeoSitemap200CountsItemType[keyof typeof GetV1SeoSitemap200CountsItemType];
+
+
+export const GetV1SeoSitemap200CountsItemType = {
+  page: 'page',
+  listing: 'listing',
+  service: 'service',
+  category: 'category',
+  seller: 'seller',
+} as const;
+
+export type GetV1SeoSitemap200CountsItem = {
+  type: GetV1SeoSitemap200CountsItemType;
+  /** @minimum 0 */
+  entries: number;
+};
+
+export type GetV1SeoSitemap200 = {
+  /**
+     * @minimum 1
+     * @maximum 50000
+     */
+  pageSize: number;
+  counts: GetV1SeoSitemap200CountsItem[];
+};
+
+export type GetV1SeoSitemapPage200Type = typeof GetV1SeoSitemapPage200Type[keyof typeof GetV1SeoSitemapPage200Type];
+
+
+export const GetV1SeoSitemapPage200Type = {
+  page: 'page',
+  listing: 'listing',
+  service: 'service',
+  category: 'category',
+  seller: 'seller',
+} as const;
+
+export type GetV1SeoSitemapPage200EntriesItemLocalesItem = typeof GetV1SeoSitemapPage200EntriesItemLocalesItem[keyof typeof GetV1SeoSitemapPage200EntriesItemLocalesItem];
+
+
+export const GetV1SeoSitemapPage200EntriesItemLocalesItem = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1SeoSitemapPage200EntriesItem = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  updatedAt: string;
+  /** @minItems 1 */
+  locales?: GetV1SeoSitemapPage200EntriesItemLocalesItem[];
+};
+
+export type GetV1SeoSitemapPage200 = {
+  type: GetV1SeoSitemapPage200Type;
+  /** @minimum 1 */
+  page: number;
+  /**
+     * @minimum 1
+     * @maximum 50000
+     */
+  pageSize: number;
+  entries: GetV1SeoSitemapPage200EntriesItem[];
+};
 
 export type getHealthResponse200 = {
   data: HealthResponse
@@ -222,6 +7354,15673 @@ export const getGetV1FoundationUrl = () => {
 export const getV1Foundation = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1FoundationResponse> => {
 
   return apiFetch<getV1FoundationResponse>(getGetV1FoundationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1CategoriesResponse200 = {
+  data: CategoriesResponse
+  status: 200
+}
+
+export type getV1CategoriesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1CategoriesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1CategoriesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1CategoriesResponseSuccess = (getV1CategoriesResponse200) & {
+  headers: Headers;
+};
+export type getV1CategoriesResponseError = (getV1CategoriesResponse403 | getV1CategoriesResponse500 | getV1CategoriesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1CategoriesResponse = (getV1CategoriesResponseSuccess | getV1CategoriesResponseError)
+
+export const getGetV1CategoriesUrl = (params?: GetV1CategoriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/categories?${stringifiedParams}` : `/v1/categories`
+}
+
+/**
+ * The published category tree for one locale, as nested nodes. Requires the internal BFF credential. Carries no user context: the same tree is served to a guest and to a signed-in person. There is no pagination, filter or sort, and the locale selects a representation rather than a subset.
+ * @summary The public category tree
+ */
+export const getV1Categories = async (params?: GetV1CategoriesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1CategoriesResponse> => {
+
+  return apiFetch<getV1CategoriesResponse>(getGetV1CategoriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1CategoryBySlugResponse200 = {
+  data: CategoryDetailResponse
+  status: 200
+}
+
+export type getV1CategoryBySlugResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1CategoryBySlugResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1CategoryBySlugResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1CategoryBySlugResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1CategoryBySlugResponseSuccess = (getV1CategoryBySlugResponse200) & {
+  headers: Headers;
+};
+export type getV1CategoryBySlugResponseError = (getV1CategoryBySlugResponse403 | getV1CategoryBySlugResponse404 | getV1CategoryBySlugResponse500 | getV1CategoryBySlugResponse503) & {
+  headers: Headers;
+};
+
+export type getV1CategoryBySlugResponse = (getV1CategoryBySlugResponseSuccess | getV1CategoryBySlugResponseError)
+
+export const getGetV1CategoryBySlugUrl = (slug: string,
+    params?: GetV1CategoryBySlugParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/categories/${slug}?${stringifiedParams}` : `/v1/categories/${slug}`
+}
+
+/**
+ * The category a slug names, with its parent and its direct children. Inactive categories, and categories under a deactivated ancestor, answer 404 — identically to a slug that names nothing, so the surface cannot be used to learn that a category exists but is switched off. There is no 301: categories keep no slug history.
+ * @summary One public category
+ */
+export const getV1CategoryBySlug = async (slug: string,
+    params?: GetV1CategoryBySlugParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1CategoryBySlugResponse> => {
+
+  return apiFetch<getV1CategoryBySlugResponse>(getGetV1CategoryBySlugUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1ListingsResponse200 = {
+  data: ListingsResponse
+  status: 200
+}
+
+export type getV1ListingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ListingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ListingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ListingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ListingsResponseSuccess = (getV1ListingsResponse200) & {
+  headers: Headers;
+};
+export type getV1ListingsResponseError = (getV1ListingsResponse400 | getV1ListingsResponse403 | getV1ListingsResponse500 | getV1ListingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ListingsResponse = (getV1ListingsResponseSuccess | getV1ListingsResponseError)
+
+export const getGetV1ListingsUrl = (params?: GetV1ListingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/listings?${stringifiedParams}` : `/v1/listings`
+}
+
+/**
+ * Purchasable listings of publicly visible sellers, newest first. Requires the internal BFF credential and carries no user context. Phase 4-B V1 has no filters, no search and no distance; the only inputs are an opaque cursor and a page size.
+ * @summary One page of the public browse list
+ */
+export const getV1Listings = async (params?: GetV1ListingsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ListingsResponse> => {
+
+  return apiFetch<getV1ListingsResponse>(getGetV1ListingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1ListingBySlugResponse200 = {
+  data: ListingDetailResponse
+  status: 200
+}
+
+export type getV1ListingBySlugResponse301 = {
+  data: void
+  status: 301
+}
+
+export type getV1ListingBySlugResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ListingBySlugResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1ListingBySlugResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ListingBySlugResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ListingBySlugResponseSuccess = (getV1ListingBySlugResponse200) & {
+  headers: Headers;
+};
+export type getV1ListingBySlugResponseError = (getV1ListingBySlugResponse301 | getV1ListingBySlugResponse403 | getV1ListingBySlugResponse404 | getV1ListingBySlugResponse500 | getV1ListingBySlugResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ListingBySlugResponse = (getV1ListingBySlugResponseSuccess | getV1ListingBySlugResponseError)
+
+export const getGetV1ListingBySlugUrl = (slug: string,
+    params?: GetV1ListingBySlugParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/listings/${slug}?${stringifiedParams}` : `/v1/listings/${slug}`
+}
+
+/**
+ * The listing a slug names. Sold, expired and archived listings answer 200 with availability `no_longer_available`; draft, pending, rejected, suspended and deleted ones, and listings of a suspended seller, answer 404. A previous slug answers 301 with `Location` set to the current one.
+ * @summary One public listing
+ */
+export const getV1ListingBySlug = async (slug: string,
+    params?: GetV1ListingBySlugParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ListingBySlugResponse> => {
+
+  return apiFetch<getV1ListingBySlugResponse>(getGetV1ListingBySlugUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1ServicesResponse200 = {
+  data: ServicesResponse
+  status: 200
+}
+
+export type getV1ServicesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ServicesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ServicesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ServicesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ServicesResponseSuccess = (getV1ServicesResponse200) & {
+  headers: Headers;
+};
+export type getV1ServicesResponseError = (getV1ServicesResponse400 | getV1ServicesResponse403 | getV1ServicesResponse500 | getV1ServicesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ServicesResponse = (getV1ServicesResponseSuccess | getV1ServicesResponseError)
+
+export const getGetV1ServicesUrl = (params?: GetV1ServicesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/services?${stringifiedParams}` : `/v1/services`
+}
+
+/**
+ * Purchasable service listings of publicly visible sellers, newest first. Requires the internal BFF credential and carries no user context. Services never appear on /v1/listings, and products never appear here. Phase 4-C V1 has no filters, no search and no distance; the only inputs are an opaque cursor and a page size.
+ * @summary One page of the public service list
+ */
+export const getV1Services = async (params?: GetV1ServicesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ServicesResponse> => {
+
+  return apiFetch<getV1ServicesResponse>(getGetV1ServicesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1ServiceBySlugResponse200 = {
+  data: ServiceDetailResponse
+  status: 200
+}
+
+export type getV1ServiceBySlugResponse301 = {
+  data: void
+  status: 301
+}
+
+export type getV1ServiceBySlugResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ServiceBySlugResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1ServiceBySlugResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ServiceBySlugResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ServiceBySlugResponseSuccess = (getV1ServiceBySlugResponse200) & {
+  headers: Headers;
+};
+export type getV1ServiceBySlugResponseError = (getV1ServiceBySlugResponse301 | getV1ServiceBySlugResponse403 | getV1ServiceBySlugResponse404 | getV1ServiceBySlugResponse500 | getV1ServiceBySlugResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ServiceBySlugResponse = (getV1ServiceBySlugResponseSuccess | getV1ServiceBySlugResponseError)
+
+export const getGetV1ServiceBySlugUrl = (slug: string,
+    params?: GetV1ServiceBySlugParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/services/${slug}?${stringifiedParams}` : `/v1/services/${slug}`
+}
+
+/**
+ * The service a slug names. Sold, expired and archived services answer 200 with availability `no_longer_available`; draft, pending, rejected, suspended and deleted ones, and services of a suspended seller, answer 404. A previous slug, or a slug that names a product, answers 301 with `Location` on the surface that owns it.
+ * @summary One public service
+ */
+export const getV1ServiceBySlug = async (slug: string,
+    params?: GetV1ServiceBySlugParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ServiceBySlugResponse> => {
+
+  return apiFetch<getV1ServiceBySlugResponse>(getGetV1ServiceBySlugUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1CategoryListingsResponse200 = {
+  data: CategoryFeedResponse
+  status: 200
+}
+
+export type getV1CategoryListingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1CategoryListingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1CategoryListingsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1CategoryListingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1CategoryListingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1CategoryListingsResponseSuccess = (getV1CategoryListingsResponse200) & {
+  headers: Headers;
+};
+export type getV1CategoryListingsResponseError = (getV1CategoryListingsResponse400 | getV1CategoryListingsResponse403 | getV1CategoryListingsResponse404 | getV1CategoryListingsResponse500 | getV1CategoryListingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1CategoryListingsResponse = (getV1CategoryListingsResponseSuccess | getV1CategoryListingsResponseError)
+
+export const getGetV1CategoryListingsUrl = (slug: string,
+    params?: GetV1CategoryListingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["tag","attr.{key}"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/categories/${slug}/listings?${stringifiedParams}` : `/v1/categories/${slug}/listings`
+}
+
+/**
+ * One page of the listings in a category **and every active category beneath it**, inside the three levels D8 allows (owner-approved rollup): a level-0 category reaches its grandchildren, a leaf reaches only itself, and a deactivated category takes its whole branch with it, so hiding one can never widen what a visitor sees. Purchasable products and services of publicly visible sellers only, in one mixed result set discriminated by `type` — a category may hold either surface or both. Narrowed by the shared catalogue filters, which can only ever narrow: every filter is applied on top of the same visibility rules the rest of the public surface resolves through. Ordering is newest-first with the id as tie-breaker — 0051’s provisional ordering, unchanged — and there is no ranking, no promotion and no distance. `facets` is the filter panel that produced this page: the values it offers ignore the active filters so a visitor can always undo their own choice, while every count is computed under exactly the filters in force. A category that does not exist, is inactive, or sits under a deactivated ancestor answers 404, identically to a slug that names nothing.
+ * @summary The listings in one public category
+ */
+export const getV1CategoryListings = async (slug: string,
+    params?: GetV1CategoryListingsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1CategoryListingsResponse> => {
+
+  return apiFetch<getV1CategoryListingsResponse>(getGetV1CategoryListingsUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SearchResponse200 = {
+  data: SearchResponse
+  status: 200
+}
+
+export type getV1SearchResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SearchResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SearchResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SearchResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SearchResponseSuccess = (getV1SearchResponse200) & {
+  headers: Headers;
+};
+export type getV1SearchResponseError = (getV1SearchResponse400 | getV1SearchResponse403 | getV1SearchResponse500 | getV1SearchResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SearchResponse = (getV1SearchResponseSuccess | getV1SearchResponseError)
+
+export const getGetV1SearchUrl = (params: GetV1SearchParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["tag","attr.{key}"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/search?${stringifiedParams}` : `/v1/search`
+}
+
+/**
+ * Full-text search over listing titles and descriptions, in English or Arabic. Returns purchasable products and services of publicly visible sellers in one mixed result set, discriminated by `type`. Takes the same filters as a category feed — listing type, tags, attribute answers and a price range in one currency — because one database function answers both. V1 ordering is newest-first and provisional: the ranking formula and promoted-result merging are a Phase 9 decision. There is no relevance ranking and no distance.
+ * @summary Public search
+ */
+export const getV1Search = async (params: GetV1SearchParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SearchResponse> => {
+
+  return apiFetch<getV1SearchResponse>(getGetV1SearchUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellerBySlugResponse200 = {
+  data: SellerProfileResponse
+  status: 200
+}
+
+export type getV1SellerBySlugResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellerBySlugResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellerBySlugResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellerBySlugResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellerBySlugResponseSuccess = (getV1SellerBySlugResponse200) & {
+  headers: Headers;
+};
+export type getV1SellerBySlugResponseError = (getV1SellerBySlugResponse403 | getV1SellerBySlugResponse404 | getV1SellerBySlugResponse500 | getV1SellerBySlugResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellerBySlugResponse = (getV1SellerBySlugResponseSuccess | getV1SellerBySlugResponseError)
+
+export const getGetV1SellerBySlugUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/sellers/${slug}`
+}
+
+/**
+ * The seller a slug names. An active seller answers 200 with availability `available`; a suspended seller answers 200 with availability `unavailable`, because the profile page still exists and says so. Pending, closed and unknown sellers answer 404 identically, so the surface cannot be used to learn that a seller exists but is not approved. There is no 301: sellers keep no slug history.
+ * @summary One public seller profile
+ */
+export const getV1SellerBySlug = async (slug: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellerBySlugResponse> => {
+
+  return apiFetch<getV1SellerBySlugResponse>(getGetV1SellerBySlugUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AuthLoginResponse200 = {
+  data: LoginResponse
+  status: 200
+}
+
+export type postV1AuthLoginResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthLoginResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthLoginResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthLoginResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthLoginResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthLoginResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthLoginResponseSuccess = (postV1AuthLoginResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthLoginResponseError = (postV1AuthLoginResponse400 | postV1AuthLoginResponse401 | postV1AuthLoginResponse403 | postV1AuthLoginResponse429 | postV1AuthLoginResponse500 | postV1AuthLoginResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthLoginResponse = (postV1AuthLoginResponseSuccess | postV1AuthLoginResponseError)
+
+export const getPostV1AuthLoginUrl = () => {
+
+
+
+
+  return `/v1/auth/login`
+}
+
+/**
+ * Requires the internal BFF credential. The browser never calls the authentication provider: the BFF calls this route, and the session is returned as cookies the BFF sets, never as a token in the body.
+ * @summary Password sign-in
+ */
+export const postV1AuthLogin = async (loginRequest: LoginRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthLoginResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthLoginResponse>(getPostV1AuthLoginUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(loginRequest)
+  }
+);}
+
+
+
+export type postV1AuthRegisterResponse200 = {
+  data: RegisterResponse
+  status: 200
+}
+
+export type postV1AuthRegisterResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthRegisterResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRegisterResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthRegisterResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRegisterResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRegisterResponseSuccess = (postV1AuthRegisterResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRegisterResponseError = (postV1AuthRegisterResponse400 | postV1AuthRegisterResponse403 | postV1AuthRegisterResponse429 | postV1AuthRegisterResponse500 | postV1AuthRegisterResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRegisterResponse = (postV1AuthRegisterResponseSuccess | postV1AuthRegisterResponseError)
+
+export const getPostV1AuthRegisterUrl = () => {
+
+
+
+
+  return `/v1/auth/register`
+}
+
+/**
+ * Requires the internal BFF credential. Creates an account with **no confirmed contact** and sends a one-time code to the phone given, over the same WhatsApp OTP path every other contact verification in this API uses. **The response is identical whether or not the email or phone already belongs to an account**: same status, same body shape, a challenge identifier either way, no destination and no reason — so registration cannot be used to discover who has an account. No session is created and no cookie is set: the approved decision is that a new account verifies its contact **before** it can sign in. The send limits and resend cooldowns are the ones the OTP lifecycle already enforces per destination and per IP; this operation defines none of its own.
+ * @summary Register an account
+ */
+export const postV1AuthRegister = async (registerRequest: RegisterRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRegisterResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthRegisterResponse>(getPostV1AuthRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerRequest)
+  }
+);}
+
+
+
+export type postV1AuthRegisterVerifyResponse200 = {
+  data: RegisterVerifyResponse
+  status: 200
+}
+
+export type postV1AuthRegisterVerifyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthRegisterVerifyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthRegisterVerifyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRegisterVerifyResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthRegisterVerifyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRegisterVerifyResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRegisterVerifyResponseSuccess = (postV1AuthRegisterVerifyResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRegisterVerifyResponseError = (postV1AuthRegisterVerifyResponse400 | postV1AuthRegisterVerifyResponse401 | postV1AuthRegisterVerifyResponse403 | postV1AuthRegisterVerifyResponse429 | postV1AuthRegisterVerifyResponse500 | postV1AuthRegisterVerifyResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRegisterVerifyResponse = (postV1AuthRegisterVerifyResponseSuccess | postV1AuthRegisterVerifyResponseError)
+
+export const getPostV1AuthRegisterVerifyUrl = () => {
+
+
+
+
+  return `/v1/auth/register/verify`
+}
+
+/**
+ * Requires the internal BFF credential. Confirms the account’s phone when the code matches, which is what allows it to sign in for the first time. **No session is created and no token is returned**: the person signs in afterwards through the existing login flow with the password they chose. A wrong code, an expired one, a spent one, a challenge issued for another purpose and a challenge that never existed are all refused identically, so nothing can be learned from the difference. A code may be sent again through the start operation, under the same cooldowns.
+ * @summary Verify a new account’s contact
+ */
+export const postV1AuthRegisterVerify = async (registerVerifyRequest: RegisterVerifyRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRegisterVerifyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthRegisterVerifyResponse>(getPostV1AuthRegisterVerifyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerVerifyRequest)
+  }
+);}
+
+
+
+export type postV1AuthRegisterResendResponse200 = {
+  data: RegisterResendResponse
+  status: 200
+}
+
+export type postV1AuthRegisterResendResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthRegisterResendResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthRegisterResendResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRegisterResendResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthRegisterResendResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRegisterResendResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRegisterResendResponseSuccess = (postV1AuthRegisterResendResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRegisterResendResponseError = (postV1AuthRegisterResendResponse400 | postV1AuthRegisterResendResponse401 | postV1AuthRegisterResendResponse403 | postV1AuthRegisterResendResponse429 | postV1AuthRegisterResendResponse500 | postV1AuthRegisterResendResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRegisterResendResponse = (postV1AuthRegisterResendResponseSuccess | postV1AuthRegisterResendResponseError)
+
+export const getPostV1AuthRegisterResendUrl = () => {
+
+
+
+
+  return `/v1/auth/register/resend`
+}
+
+/**
+ * Requires the internal BFF credential. Sends the verification code again for a registration that is still in progress — an account whose email and phone are both unconfirmed. **The destination is the account’s own number and there is no field in which to name another**, so this cannot be used to send a message anywhere of the caller’s choosing; an account that has already confirmed a contact cannot be reached through it at all. The challenge identifier comes from the BFF’s own `__Host-mp_register_challenge` cookie, never from the browser. The send limits and resend cooldowns are the ones the OTP lifecycle already enforces per destination and per IP; this operation defines none of its own, so asking too soon is the same 429 a first send earns. A challenge that resolves nothing is refused exactly as a wrong code is.
+ * @summary Send a new account’s verification code again
+ */
+export const postV1AuthRegisterResend = async (registerResendRequest: RegisterResendRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRegisterResendResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthRegisterResendResponse>(getPostV1AuthRegisterResendUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerResendRequest)
+  }
+);}
+
+
+
+export type postV1AuthRecoveryStartResponse200 = {
+  data: RecoveryStartResponse
+  status: 200
+}
+
+export type postV1AuthRecoveryStartResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthRecoveryStartResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRecoveryStartResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthRecoveryStartResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRecoveryStartResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRecoveryStartResponseSuccess = (postV1AuthRecoveryStartResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRecoveryStartResponseError = (postV1AuthRecoveryStartResponse400 | postV1AuthRecoveryStartResponse403 | postV1AuthRecoveryStartResponse429 | postV1AuthRecoveryStartResponse500 | postV1AuthRecoveryStartResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRecoveryStartResponse = (postV1AuthRecoveryStartResponseSuccess | postV1AuthRecoveryStartResponseError)
+
+export const getPostV1AuthRecoveryStartUrl = () => {
+
+
+
+
+  return `/v1/auth/recovery/start`
+}
+
+/**
+ * Requires the internal BFF credential. Sends a one-time code to the account’s verified contact when there is one. The response is identical whether or not the account exists: same status, same body shape, no destination and no reason.
+ * @summary Start a password reset
+ */
+export const postV1AuthRecoveryStart = async (recoveryStartRequest: RecoveryStartRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRecoveryStartResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthRecoveryStartResponse>(getPostV1AuthRecoveryStartUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recoveryStartRequest)
+  }
+);}
+
+
+
+export type postV1AuthRecoveryVerifyResponse200 = {
+  data: RecoveryVerifyResponse
+  status: 200
+}
+
+export type postV1AuthRecoveryVerifyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthRecoveryVerifyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthRecoveryVerifyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRecoveryVerifyResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthRecoveryVerifyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRecoveryVerifyResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRecoveryVerifyResponseSuccess = (postV1AuthRecoveryVerifyResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRecoveryVerifyResponseError = (postV1AuthRecoveryVerifyResponse400 | postV1AuthRecoveryVerifyResponse401 | postV1AuthRecoveryVerifyResponse403 | postV1AuthRecoveryVerifyResponse429 | postV1AuthRecoveryVerifyResponse500 | postV1AuthRecoveryVerifyResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRecoveryVerifyResponse = (postV1AuthRecoveryVerifyResponseSuccess | postV1AuthRecoveryVerifyResponseError)
+
+export const getPostV1AuthRecoveryVerifyUrl = () => {
+
+
+
+
+  return `/v1/auth/recovery/verify`
+}
+
+/**
+ * Requires the internal BFF credential. On success a single-use reset token is issued and returned to the BFF only, which stores it in the __Host-mp_reset cookie; no session is created and the browser-visible body carries no token.
+ * @summary Verify the recovery code
+ */
+export const postV1AuthRecoveryVerify = async (recoveryVerifyRequest: RecoveryVerifyRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRecoveryVerifyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthRecoveryVerifyResponse>(getPostV1AuthRecoveryVerifyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recoveryVerifyRequest)
+  }
+);}
+
+
+
+export type postV1AuthRecoveryResetResponse200 = {
+  data: RecoveryResetResponse
+  status: 200
+}
+
+export type postV1AuthRecoveryResetResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthRecoveryResetResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthRecoveryResetResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRecoveryResetResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1AuthRecoveryResetResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRecoveryResetResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRecoveryResetResponseSuccess = (postV1AuthRecoveryResetResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRecoveryResetResponseError = (postV1AuthRecoveryResetResponse400 | postV1AuthRecoveryResetResponse401 | postV1AuthRecoveryResetResponse403 | postV1AuthRecoveryResetResponse429 | postV1AuthRecoveryResetResponse500 | postV1AuthRecoveryResetResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRecoveryResetResponse = (postV1AuthRecoveryResetResponseSuccess | postV1AuthRecoveryResetResponseError)
+
+export const getPostV1AuthRecoveryResetUrl = () => {
+
+
+
+
+  return `/v1/auth/recovery/reset`
+}
+
+/**
+ * Requires the internal BFF credential and the reset token, which the BFF reads from the __Host-mp_reset cookie and presents in the x-reset-token header. The browser body carries only the new password. No session is created.
+ * @summary Complete a password reset
+ */
+export const postV1AuthRecoveryReset = async (recoveryResetRequest: RecoveryResetRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRecoveryResetResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthRecoveryResetResponse>(getPostV1AuthRecoveryResetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recoveryResetRequest)
+  }
+);}
+
+
+
+export type postV1AuthRefreshResponse200 = {
+  data: SessionRefreshResponse
+  status: 200
+}
+
+export type postV1AuthRefreshResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthRefreshResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthRefreshResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthRefreshResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthRefreshResponseSuccess = (postV1AuthRefreshResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthRefreshResponseError = (postV1AuthRefreshResponse401 | postV1AuthRefreshResponse403 | postV1AuthRefreshResponse500 | postV1AuthRefreshResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthRefreshResponse = (postV1AuthRefreshResponseSuccess | postV1AuthRefreshResponseError)
+
+export const getPostV1AuthRefreshUrl = () => {
+
+
+
+
+  return `/v1/auth/refresh`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s refresh token, which the BFF reads from the __Host-mp_refresh cookie and presents in the x-refresh-token header. A new access and refresh token are returned to the BFF only, which replaces both cookies; the browser-visible body carries no token. Login is unaffected: this renews a session, it never creates one.
+ * @summary Renew the session
+ */
+export const postV1AuthRefresh = async ( options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthRefreshResponse> => {
+
+  return apiFetch<postV1AuthRefreshResponse>(getPostV1AuthRefreshUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1AuthLogoutResponse200 = {
+  data: LogoutResponse
+  status: 200
+}
+
+export type postV1AuthLogoutResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthLogoutResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthLogoutResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthLogoutResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthLogoutResponseSuccess = (postV1AuthLogoutResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthLogoutResponseError = (postV1AuthLogoutResponse401 | postV1AuthLogoutResponse403 | postV1AuthLogoutResponse500 | postV1AuthLogoutResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthLogoutResponse = (postV1AuthLogoutResponseSuccess | postV1AuthLogoutResponseError)
+
+export const getPostV1AuthLogoutUrl = () => {
+
+
+
+
+  return `/v1/auth/logout`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Ends that one session and no other: the account’s other sessions are untouched, and no administrative revocation is performed. Idempotent — a token the provider no longer recognises is a successful logout, not a failure.
+ * @summary End the caller’s own session
+ */
+export const postV1AuthLogout = async ( options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthLogoutResponse> => {
+
+  return apiFetch<postV1AuthLogoutResponse>(getPostV1AuthLogoutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type getV1UsersMeResponse200 = {
+  data: CurrentUserResponse
+  status: 200
+}
+
+export type getV1UsersMeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeResponseSuccess = (getV1UsersMeResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeResponseError = (getV1UsersMeResponse401 | getV1UsersMeResponse403 | getV1UsersMeResponse500 | getV1UsersMeResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeResponse = (getV1UsersMeResponseSuccess | getV1UsersMeResponseError)
+
+export const getGetV1UsersMeUrl = () => {
+
+
+
+
+  return `/v1/users/me`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Returns the account id and display name and nothing else: no email, no phone, no role, no verification state. The account is the caller’s own — no identifier is accepted from the request.
+ * @summary The caller’s own identity
+ */
+export const getV1UsersMe = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeResponse> => {
+
+  return apiFetch<getV1UsersMeResponse>(getGetV1UsersMeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeResponse200 = {
+  data: SellerIdentityResponse
+  status: 200
+}
+
+export type getV1SellersMeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeResponseSuccess = (getV1SellersMeResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeResponseError = (getV1SellersMeResponse401 | getV1SellersMeResponse403 | getV1SellersMeResponse404 | getV1SellersMeResponse500 | getV1SellersMeResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeResponse = (getV1SellersMeResponseSuccess | getV1SellersMeResponseError)
+
+export const getGetV1SellersMeUrl = () => {
+
+
+
+
+  return `/v1/sellers/me`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The state of the caller’s own storefront: slug, display name, status, verification status, city and country. It takes no parameter — the account comes from the session, and no seller is resolved from a slug — and it carries no identifier, contact detail, suspension reason, object path or timestamp. Unlike the public profile it does report `pending`, `suspended` and `closed`, because this is the owner asking about their own account. An account that is not a seller answers 404, identically to any other not-found.
+ * @summary The caller’s own seller identity
+ */
+export const getV1SellersMe = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeResponse> => {
+
+  return apiFetch<getV1SellersMeResponse>(getGetV1SellersMeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeResponse201 = {
+  data: SellerOnboardingResponse
+  status: 201
+}
+
+export type postV1SellersMeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeResponseSuccess = (postV1SellersMeResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeResponseError = (postV1SellersMeResponse400 | postV1SellersMeResponse401 | postV1SellersMeResponse403 | postV1SellersMeResponse409 | postV1SellersMeResponse429 | postV1SellersMeResponse500 | postV1SellersMeResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeResponse = (postV1SellersMeResponseSuccess | postV1SellersMeResponseError)
+
+export const getPostV1SellersMeUrl = () => {
+
+
+
+
+  return `/v1/sellers/me`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Creates one seller profile for the authenticated account, always `pending` and `unverified`. The body carries only the onboarding fields — there is no `userId`, `status` or `verificationStatus` to send, and the schema is strict, so any of them is a validation failure rather than a value that is quietly ignored. The slug becomes the storefront’s permanent public address and cannot be changed afterwards. Assigns no role, creates no verification record and activates nothing. An account that already has a storefront answers 409 `SELLER_PROFILE_EXISTS`; a slug somebody else holds answers 409 `SELLER_SLUG_TAKEN`, which says only that the address is unavailable. The response is the same six-field projection `GET /v1/sellers/me` returns, read back from the row that committed.
+ * @summary Create the caller’s own seller profile
+ */
+export const postV1SellersMe = async (sellerOnboardingRequest: SellerOnboardingRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeResponse>(getPostV1SellersMeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerOnboardingRequest)
+  }
+);}
+
+
+
+export type patchV1SellersMeResponse200 = {
+  data: SellerProfileUpdateResponse
+  status: 200
+}
+
+export type patchV1SellersMeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1SellersMeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1SellersMeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1SellersMeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1SellersMeResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1SellersMeResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type patchV1SellersMeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1SellersMeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1SellersMeResponseSuccess = (patchV1SellersMeResponse200) & {
+  headers: Headers;
+};
+export type patchV1SellersMeResponseError = (patchV1SellersMeResponse400 | patchV1SellersMeResponse401 | patchV1SellersMeResponse403 | patchV1SellersMeResponse404 | patchV1SellersMeResponse409 | patchV1SellersMeResponse429 | patchV1SellersMeResponse500 | patchV1SellersMeResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1SellersMeResponse = (patchV1SellersMeResponseSuccess | patchV1SellersMeResponseError)
+
+export const getPatchV1SellersMeUrl = () => {
+
+
+
+
+  return `/v1/sellers/me`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Updates the authenticated account’s own storefront. Nine fields may be edited: display name, legal name, bio, content language, country, governorate, city, contact e-mail and contact phone. A field that is absent keeps its value; a field sent as `null` is cleared, for the seven the schema allows to be empty — display name and country can be changed but never emptied. The slug, the status, the verification status, the suspension and closure fields and every timestamp are absent from the schema entirely, so none of them can be sent, and the body is strict, so any of them is a validation failure rather than a value that is quietly ignored. Editing is allowed while the storefront is `pending` or `active`; a `suspended` or `closed` one answers 409 `SELLER_PROFILE_NOT_EDITABLE`, which says that and nothing about why. The response is the same six-field projection `GET /v1/sellers/me` returns, read back from the row that committed.
+ * @summary Edit the caller’s own seller profile
+ */
+export const patchV1SellersMe = async (sellerProfileUpdateRequest: SellerProfileUpdateRequest, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1SellersMeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1SellersMeResponse>(getPatchV1SellersMeUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerProfileUpdateRequest)
+  }
+);}
+
+
+
+export type postV1SellersMeMediaUploadsResponse201 = {
+  data: SellerMediaUploadResponse
+  status: 201
+}
+
+export type postV1SellersMeMediaUploadsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeMediaUploadsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeMediaUploadsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeMediaUploadsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeMediaUploadsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeMediaUploadsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeMediaUploadsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeMediaUploadsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeMediaUploadsResponseSuccess = (postV1SellersMeMediaUploadsResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeMediaUploadsResponseError = (postV1SellersMeMediaUploadsResponse400 | postV1SellersMeMediaUploadsResponse401 | postV1SellersMeMediaUploadsResponse403 | postV1SellersMeMediaUploadsResponse404 | postV1SellersMeMediaUploadsResponse409 | postV1SellersMeMediaUploadsResponse429 | postV1SellersMeMediaUploadsResponse500 | postV1SellersMeMediaUploadsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeMediaUploadsResponse = (postV1SellersMeMediaUploadsResponseSuccess | postV1SellersMeMediaUploadsResponseError)
+
+export const getPostV1SellersMeMediaUploadsUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/media/uploads`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Authorizes one upload of the caller’s own storefront logo or banner and returns a short-lived, single-object upload URL to PUT the bytes to. The request describes the file — kind, content type, size — and never its destination: there is no `objectPath`, `bucket`, `slug` or `fileName` to send, and the body is strict, so any of them is a validation failure. The path is derived in the database from the caller’s own storefront slug plus a fresh random name, so no request can choose a path, traverse out of its namespace, overwrite an earlier upload or reach another seller. The type and size limits are the bucket’s own. The response carries no storage credential and no project key. A `suspended` or `closed` storefront receives no authorization and answers 409. Nothing is written to the profile by this operation.
+ * @summary Authorize one seller media upload
+ */
+export const postV1SellersMeMediaUploads = async (sellerMediaUploadRequest: SellerMediaUploadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeMediaUploadsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeMediaUploadsResponse>(getPostV1SellersMeMediaUploadsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerMediaUploadRequest)
+  }
+);}
+
+
+
+export type postV1SellersMeMediaResponse200 = {
+  data: SellerMediaAttachResponse
+  status: 200
+}
+
+export type postV1SellersMeMediaResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeMediaResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeMediaResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeMediaResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeMediaResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeMediaResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeMediaResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeMediaResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeMediaResponseSuccess = (postV1SellersMeMediaResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeMediaResponseError = (postV1SellersMeMediaResponse400 | postV1SellersMeMediaResponse401 | postV1SellersMeMediaResponse403 | postV1SellersMeMediaResponse404 | postV1SellersMeMediaResponse409 | postV1SellersMeMediaResponse429 | postV1SellersMeMediaResponse500 | postV1SellersMeMediaResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeMediaResponse = (postV1SellersMeMediaResponseSuccess | postV1SellersMeMediaResponseError)
+
+export const getPostV1SellersMeMediaUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/media`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The confirmation step of the approved upload flow: records an object that was uploaded to an authorized path against the caller’s own storefront, setting only its logo or banner path. The path must lie in the caller’s own namespace and match the exact shape the authorization issues, so another seller’s object, a nested path and any traversal are all refused; and the object must actually exist in storage, so a confirmation cannot record a file that was never uploaded. Answers with whether each kind is now set — not with the paths. A `suspended` or `closed` storefront answers 409, and an object that is not there answers 404 `SELLER_MEDIA_OBJECT_MISSING`.
+ * @summary Confirm a seller media upload
+ */
+export const postV1SellersMeMedia = async (sellerMediaAttachRequest: SellerMediaAttachRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeMediaResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeMediaResponse>(getPostV1SellersMeMediaUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerMediaAttachRequest)
+  }
+);}
+
+
+
+export type getV1SellersMeListingsResponse200 = {
+  data: SellerListingsResponse
+  status: 200
+}
+
+export type getV1SellersMeListingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeListingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeListingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeListingsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeListingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeListingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeListingsResponseSuccess = (getV1SellersMeListingsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeListingsResponseError = (getV1SellersMeListingsResponse400 | getV1SellersMeListingsResponse401 | getV1SellersMeListingsResponse403 | getV1SellersMeListingsResponse404 | getV1SellersMeListingsResponse500 | getV1SellersMeListingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeListingsResponse = (getV1SellersMeListingsResponseSuccess | getV1SellersMeListingsResponseError)
+
+export const getGetV1SellersMeListingsUrl = (params?: GetV1SellersMeListingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/listings?${stringifiedParams}` : `/v1/sellers/me/listings`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the listings belonging to the caller’s own storefront, newest first. It takes no seller parameter — the storefront comes from the session — and it returns no identifier of any kind: a listing is named by its slug and its category by the category’s slug. No `approvedAt`, no `publishedAt`, no `deletedAt`, no view count, no moderation record, no rejection reason and no status history. Media are reported as a count, not as paths. A deleted listing is not listed at all. An account with no storefront answers 404, identically to any other not-found.
+ * @summary The caller’s own listings
+ */
+export const getV1SellersMeListings = async (params?: GetV1SellersMeListingsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeListingsResponse> => {
+
+  return apiFetch<getV1SellersMeListingsResponse>(getGetV1SellersMeListingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeListingsResponse201 = {
+  data: SellerListingMutationResponse
+  status: 201
+}
+
+export type postV1SellersMeListingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeListingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeListingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeListingsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeListingsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeListingsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeListingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeListingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeListingsResponseSuccess = (postV1SellersMeListingsResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeListingsResponseError = (postV1SellersMeListingsResponse400 | postV1SellersMeListingsResponse401 | postV1SellersMeListingsResponse403 | postV1SellersMeListingsResponse404 | postV1SellersMeListingsResponse409 | postV1SellersMeListingsResponse429 | postV1SellersMeListingsResponse500 | postV1SellersMeListingsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeListingsResponse = (postV1SellersMeListingsResponseSuccess | postV1SellersMeListingsResponseError)
+
+export const getPostV1SellersMeListingsUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/listings`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Creates one listing owned by the caller’s own storefront, always in `draft`. There is no `status` field to send — a draft is the only thing this operation can create, decided in the database by a literal — and no `sellerUserId`, `listingId` or timestamp either; the body is strict, so each of those is a validation failure rather than a value that is quietly ignored. The required fields are the listing table’s own not-null columns, which is why a draft needs **no media and no price**. The category is named by its slug and must be active and compatible with the listing type. A `suspended` or `closed` storefront receives no authorization and answers 409. An address already in use, now or historically, answers 409 `SELLER_LISTING_SLUG_TAKEN`, which says only that it is unavailable. The response is the address and the committed status.
+ * @summary Create a listing draft
+ */
+export const postV1SellersMeListings = async (sellerListingCreateRequest: SellerListingCreateRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeListingsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeListingsResponse>(getPostV1SellersMeListingsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerListingCreateRequest)
+  }
+);}
+
+
+
+export type patchV1SellersMeListingResponse200 = {
+  data: SellerListingMutationResponse
+  status: 200
+}
+
+export type patchV1SellersMeListingResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1SellersMeListingResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1SellersMeListingResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1SellersMeListingResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1SellersMeListingResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1SellersMeListingResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type patchV1SellersMeListingResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1SellersMeListingResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1SellersMeListingResponseSuccess = (patchV1SellersMeListingResponse200) & {
+  headers: Headers;
+};
+export type patchV1SellersMeListingResponseError = (patchV1SellersMeListingResponse400 | patchV1SellersMeListingResponse401 | patchV1SellersMeListingResponse403 | patchV1SellersMeListingResponse404 | patchV1SellersMeListingResponse409 | patchV1SellersMeListingResponse429 | patchV1SellersMeListingResponse500 | patchV1SellersMeListingResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1SellersMeListingResponse = (patchV1SellersMeListingResponseSuccess | patchV1SellersMeListingResponseError)
+
+export const getPatchV1SellersMeListingUrl = (slug: ListingSlug & unknown,) => {
+
+
+
+
+  return `/v1/sellers/me/listings/${slug}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Edits one of the caller’s own listings while it is a `draft`. Nine fields may be edited: title, description, price, negotiability, content language, currency, country, governorate and city. A field that is absent keeps its value; a field sent as `null` is cleared, for the three the schema allows to be empty. The slug, the listing type, the category, the owner, the status and every timestamp are absent from the schema entirely, so none of them can be sent. A listing that is not a draft — including one already submitted — answers 409 `SELLER_LISTING_NOT_EDITABLE`; one that is not the caller’s answers 404, identically to one that does not exist. The response is the address and the committed status.
+ * @summary Edit one of the caller’s own drafts
+ */
+export const patchV1SellersMeListing = async (slug: ListingSlug & unknown,
+    sellerListingUpdateRequest: SellerListingUpdateRequest, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1SellersMeListingResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1SellersMeListingResponse>(getPatchV1SellersMeListingUrl(slug),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerListingUpdateRequest)
+  }
+);}
+
+
+
+export type postV1SellersMeListingSubmissionResponse200 = {
+  data: SellerListingMutationResponse
+  status: 200
+}
+
+export type postV1SellersMeListingSubmissionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeListingSubmissionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeListingSubmissionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeListingSubmissionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeListingSubmissionResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeListingSubmissionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeListingSubmissionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeListingSubmissionResponseSuccess = (postV1SellersMeListingSubmissionResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeListingSubmissionResponseError = (postV1SellersMeListingSubmissionResponse401 | postV1SellersMeListingSubmissionResponse403 | postV1SellersMeListingSubmissionResponse404 | postV1SellersMeListingSubmissionResponse409 | postV1SellersMeListingSubmissionResponse429 | postV1SellersMeListingSubmissionResponse500 | postV1SellersMeListingSubmissionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeListingSubmissionResponse = (postV1SellersMeListingSubmissionResponseSuccess | postV1SellersMeListingSubmissionResponseError)
+
+export const getPostV1SellersMeListingSubmissionUrl = (slug: ListingSlug & unknown,) => {
+
+
+
+
+  return `/v1/sellers/me/listings/${slug}/submission`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Moves one of the caller’s own drafts to `pending_review` and records its submission time. Its own operation rather than a field on the edit, and it takes no body at all: a status the caller could send would be a status the caller could choose. Approves nothing, publishes nothing and touches no moderation state. It requires what approval will require — a product needs a price, a fixed-price service needs a price, a custom-priced service does not — and a listing that cannot yet meet that answers 409 `SELLER_LISTING_INCOMPLETE`. After it succeeds the listing is no longer editable as a draft, so a second submission and a later edit both answer 409 `SELLER_LISTING_NOT_EDITABLE`.
+ * @summary Submit one of the caller’s own drafts for review
+ */
+export const postV1SellersMeListingSubmission = async (slug: ListingSlug & unknown, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeListingSubmissionResponse> => {
+
+  return apiFetch<postV1SellersMeListingSubmissionResponse>(getPostV1SellersMeListingSubmissionUrl(slug),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeListingArchiveResponse200 = {
+  data: SellerListingMutationResponse
+  status: 200
+}
+
+export type postV1SellersMeListingArchiveResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeListingArchiveResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeListingArchiveResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeListingArchiveResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeListingArchiveResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeListingArchiveResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeListingArchiveResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeListingArchiveResponseSuccess = (postV1SellersMeListingArchiveResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeListingArchiveResponseError = (postV1SellersMeListingArchiveResponse401 | postV1SellersMeListingArchiveResponse403 | postV1SellersMeListingArchiveResponse404 | postV1SellersMeListingArchiveResponse409 | postV1SellersMeListingArchiveResponse429 | postV1SellersMeListingArchiveResponse500 | postV1SellersMeListingArchiveResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeListingArchiveResponse = (postV1SellersMeListingArchiveResponseSuccess | postV1SellersMeListingArchiveResponseError)
+
+export const getPostV1SellersMeListingArchiveUrl = (slug: ListingSlug & unknown,) => {
+
+
+
+
+  return `/v1/sellers/me/listings/${slug}/archive`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Withdraws one of the caller’s own live listings from sale, recording its archival time. It takes no body. **It deletes nothing**: there is no seller-side deletion anywhere in this API, and the listing’s public page remains reachable and reports that it is no longer available, which is the listing schema’s own behaviour for an archived listing. Only a live listing can be archived by this operation; a draft, a submission, a sold, expired, rejected, suspended or already archived listing answers 409 `SELLER_LISTING_NOT_EDITABLE`, and a seller cannot archive their way out of a moderation state. The response is the address and the committed status.
+ * @summary Archive one of the caller’s own live listings
+ */
+export const postV1SellersMeListingArchive = async (slug: ListingSlug & unknown, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeListingArchiveResponse> => {
+
+  return apiFetch<postV1SellersMeListingArchiveResponse>(getPostV1SellersMeListingArchiveUrl(slug),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeServicesResponse200 = {
+  data: SellerServicesResponse
+  status: 200
+}
+
+export type getV1SellersMeServicesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeServicesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeServicesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeServicesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeServicesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeServicesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeServicesResponseSuccess = (getV1SellersMeServicesResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeServicesResponseError = (getV1SellersMeServicesResponse400 | getV1SellersMeServicesResponse401 | getV1SellersMeServicesResponse403 | getV1SellersMeServicesResponse404 | getV1SellersMeServicesResponse500 | getV1SellersMeServicesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeServicesResponse = (getV1SellersMeServicesResponseSuccess | getV1SellersMeServicesResponseError)
+
+export const getGetV1SellersMeServicesUrl = (params?: GetV1SellersMeServicesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/services?${stringifiedParams}` : `/v1/sellers/me/services`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the service listings belonging to the caller’s own storefront, newest first, each with the five `listing_service_details` fields. It takes no seller parameter — the storefront comes from the session — and returns no identifier of any kind: a service is named by its slug and its category by the category’s slug. The five detail fields are nullable because the detail row is separate and optional: a service that has none has stated nothing about how the work is priced, which is not the same as having stated zero revisions. The currency’s own minor unit travels with the price so a client need not assume a divisor. No `approvedAt`, no `publishedAt`, no `deletedAt`, no view count, no moderation record and no rejection reason; media are a count, not paths; the caller’s products are not listed here, and a deleted service is not listed at all.
+ * @summary The caller’s own services
+ */
+export const getV1SellersMeServices = async (params?: GetV1SellersMeServicesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeServicesResponse> => {
+
+  return apiFetch<getV1SellersMeServicesResponse>(getGetV1SellersMeServicesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeServicesResponse201 = {
+  data: SellerListingMutationResponse
+  status: 201
+}
+
+export type postV1SellersMeServicesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeServicesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeServicesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeServicesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeServicesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeServicesResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeServicesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeServicesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeServicesResponseSuccess = (postV1SellersMeServicesResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeServicesResponseError = (postV1SellersMeServicesResponse400 | postV1SellersMeServicesResponse401 | postV1SellersMeServicesResponse403 | postV1SellersMeServicesResponse404 | postV1SellersMeServicesResponse409 | postV1SellersMeServicesResponse429 | postV1SellersMeServicesResponse500 | postV1SellersMeServicesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeServicesResponse = (postV1SellersMeServicesResponseSuccess | postV1SellersMeServicesResponseError)
+
+export const getPostV1SellersMeServicesUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/services`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Creates one service listing owned by the caller’s own storefront, always in `draft`, and its detail row when a pricing model is stated. There is no `listingTypeCode` field: this operation creates a service and nothing else. There is no `status` either, nor a `sellerUserId`, `listingId` or timestamp, and the body is strict, so each of those is a validation failure rather than a value quietly ignored. A draft needs no media, no price and no detail row. `pricingModel` decides whether a detail row exists at all; stating one of the other four detail fields without it is refused, because a revision count that belongs to no pricing model is not a fact about a service. A `fixed` model requires a delivery time, which is the detail table’s own rule. Every other refusal is the one the equivalent listing operation gives, because the listing half is that operation: a suspended or closed storefront answers 409, and an address already in use answers 409 `SELLER_LISTING_SLUG_TAKEN`.
+ * @summary Create a service draft
+ */
+export const postV1SellersMeServices = async (sellerServiceCreateRequest: SellerServiceCreateRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeServicesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeServicesResponse>(getPostV1SellersMeServicesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerServiceCreateRequest)
+  }
+);}
+
+
+
+export type patchV1SellersMeServiceResponse200 = {
+  data: SellerListingMutationResponse
+  status: 200
+}
+
+export type patchV1SellersMeServiceResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1SellersMeServiceResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1SellersMeServiceResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1SellersMeServiceResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1SellersMeServiceResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1SellersMeServiceResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type patchV1SellersMeServiceResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1SellersMeServiceResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1SellersMeServiceResponseSuccess = (patchV1SellersMeServiceResponse200) & {
+  headers: Headers;
+};
+export type patchV1SellersMeServiceResponseError = (patchV1SellersMeServiceResponse400 | patchV1SellersMeServiceResponse401 | patchV1SellersMeServiceResponse403 | patchV1SellersMeServiceResponse404 | patchV1SellersMeServiceResponse409 | patchV1SellersMeServiceResponse429 | patchV1SellersMeServiceResponse500 | patchV1SellersMeServiceResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1SellersMeServiceResponse = (patchV1SellersMeServiceResponseSuccess | patchV1SellersMeServiceResponseError)
+
+export const getPatchV1SellersMeServiceUrl = (slug: ListingSlug & unknown,) => {
+
+
+
+
+  return `/v1/sellers/me/services/${slug}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Edits one of the caller’s own services while it is a `draft`: the nine listing fields the equivalent listing operation edits, plus the five service detail fields. A field that is absent keeps its value; `null` clears the ones their tables allow to be empty. `pricingModel: null` withdraws the detail row entirely, because the other four hang off it, and a request that withdraws it while also stating one of them is refused rather than resolved. `revisionsIncluded` and `requiresBrief` are declared `not null` with defaults, so they can be changed but never emptied. The slug, the listing type, the category, the owner, the status and every timestamp are absent from the schema, so none can be sent. A service that is not a draft answers 409 `SELLER_LISTING_NOT_EDITABLE`; one that is not the caller’s, and one of theirs that is a product, both answer 404 identically to one that does not exist.
+ * @summary Edit one of the caller’s own service drafts
+ */
+export const patchV1SellersMeService = async (slug: ListingSlug & unknown,
+    sellerServiceUpdateRequest: SellerServiceUpdateRequest, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1SellersMeServiceResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1SellersMeServiceResponse>(getPatchV1SellersMeServiceUrl(slug),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerServiceUpdateRequest)
+  }
+);}
+
+
+
+export type getV1SellersMeVerificationResponse200 = {
+  data: SellerVerificationResponse
+  status: 200
+}
+
+export type getV1SellersMeVerificationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeVerificationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeVerificationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeVerificationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeVerificationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeVerificationResponseSuccess = (getV1SellersMeVerificationResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeVerificationResponseError = (getV1SellersMeVerificationResponse401 | getV1SellersMeVerificationResponse403 | getV1SellersMeVerificationResponse404 | getV1SellersMeVerificationResponse500 | getV1SellersMeVerificationResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeVerificationResponse = (getV1SellersMeVerificationResponseSuccess | getV1SellersMeVerificationResponseError)
+
+export const getGetV1SellersMeVerificationUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/verification`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The caller’s current verification attempt — the open one when there is one, otherwise the most recently decided one — with its documents, or `null` when they have never applied. It takes no seller parameter: the storefront comes from the session. What it deliberately does not return: the verification’s own id, the seller’s id, the reviewer, the review time, the decision reason, the expiry, and each document’s `objectPath`, which is a capability in a private bucket and is disclosed only by the upload authorization. The two contact facts come back as booleans rather than timestamps, because a client needs to know whether the condition approval will require is met and nothing more. A document’s own review status is returned — that is a fact about the caller’s own document — but its review note is not, and there is no field for one.
+ * @summary The caller’s own verification attempt
+ */
+export const getV1SellersMeVerification = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeVerificationResponse> => {
+
+  return apiFetch<getV1SellersMeVerificationResponse>(getGetV1SellersMeVerificationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeVerificationResponse201 = {
+  data: SellerVerificationStateResponse
+  status: 201
+}
+
+export type postV1SellersMeVerificationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeVerificationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeVerificationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeVerificationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeVerificationResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeVerificationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeVerificationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeVerificationResponseSuccess = (postV1SellersMeVerificationResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeVerificationResponseError = (postV1SellersMeVerificationResponse401 | postV1SellersMeVerificationResponse403 | postV1SellersMeVerificationResponse404 | postV1SellersMeVerificationResponse409 | postV1SellersMeVerificationResponse429 | postV1SellersMeVerificationResponse500 | postV1SellersMeVerificationResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeVerificationResponse = (postV1SellersMeVerificationResponseSuccess | postV1SellersMeVerificationResponseError)
+
+export const getPostV1SellersMeVerificationUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/verification`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Opens one verification attempt for the caller’s own storefront, always as a `draft`. It takes no body at all: there is no `status` to send, because a status the caller could send would be a status the caller could choose, and no `sellerUserId`, because the storefront comes from the session. It records no reviewer, no review time and no decision reason, and it applies no verification decision — the existing review mechanism remains the sole authority for that. A storefront that already has an open attempt answers 409 `SELLER_VERIFICATION_EXISTS` and nothing is created; the attempt it already has is readable from the same address. A storefront that is already verified answers 409 `SELLER_VERIFICATION_ALREADY_VERIFIED`, again creating nothing, and this API offers no way to verify again. A suspended or closed storefront answers 409 `SELLER_VERIFICATION_NOT_EDITABLE`.
+ * @summary Start a verification attempt
+ */
+export const postV1SellersMeVerification = async ( options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeVerificationResponse> => {
+
+  return apiFetch<postV1SellersMeVerificationResponse>(getPostV1SellersMeVerificationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeVerificationDocumentUploadsResponse201 = {
+  data: SellerVerificationUploadResponse
+  status: 201
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeVerificationDocumentUploadsResponseSuccess = (postV1SellersMeVerificationDocumentUploadsResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeVerificationDocumentUploadsResponseError = (postV1SellersMeVerificationDocumentUploadsResponse400 | postV1SellersMeVerificationDocumentUploadsResponse401 | postV1SellersMeVerificationDocumentUploadsResponse403 | postV1SellersMeVerificationDocumentUploadsResponse404 | postV1SellersMeVerificationDocumentUploadsResponse409 | postV1SellersMeVerificationDocumentUploadsResponse429 | postV1SellersMeVerificationDocumentUploadsResponse500 | postV1SellersMeVerificationDocumentUploadsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeVerificationDocumentUploadsResponse = (postV1SellersMeVerificationDocumentUploadsResponseSuccess | postV1SellersMeVerificationDocumentUploadsResponseError)
+
+export const getPostV1SellersMeVerificationDocumentUploadsUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/verification/documents/uploads`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Authorizes one upload into the private `verification-documents` bucket and answers with a short-lived URL and the path the server chose. **The client chooses no part of the path**: the bucket, the storefront’s own namespace, the document type and a fresh uuid are all the server’s, so another seller’s namespace, a nested path and any traversal are unrepresentable rather than merely refused. The path contains no identifier of any kind — not the account’s, not the attempt’s. The type and size limits are the bucket row’s own, read at the time of the call and restated in the response as `maxByteSize`; the enum and the 20971520-byte ceiling in the request schema exist only so a browser is refused before a round trip. This authorizes an upload and records nothing: the document exists once it is confirmed. A storefront with no open attempt answers 404, one whose attempt has reached the reviewer answers 404 as well because there is nothing open to add to, and a suspended or closed storefront answers 409.
+ * @summary Authorize one verification document upload
+ */
+export const postV1SellersMeVerificationDocumentUploads = async (sellerVerificationUploadRequest: SellerVerificationUploadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeVerificationDocumentUploadsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeVerificationDocumentUploadsResponse>(getPostV1SellersMeVerificationDocumentUploadsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerVerificationUploadRequest)
+  }
+);}
+
+
+
+export type postV1SellersMeVerificationDocumentsResponse201 = {
+  data: SellerVerificationDocumentCountResponse
+  status: 201
+}
+
+export type postV1SellersMeVerificationDocumentsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeVerificationDocumentsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeVerificationDocumentsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeVerificationDocumentsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeVerificationDocumentsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeVerificationDocumentsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeVerificationDocumentsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeVerificationDocumentsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeVerificationDocumentsResponseSuccess = (postV1SellersMeVerificationDocumentsResponse201) & {
+  headers: Headers;
+};
+export type postV1SellersMeVerificationDocumentsResponseError = (postV1SellersMeVerificationDocumentsResponse400 | postV1SellersMeVerificationDocumentsResponse401 | postV1SellersMeVerificationDocumentsResponse403 | postV1SellersMeVerificationDocumentsResponse404 | postV1SellersMeVerificationDocumentsResponse409 | postV1SellersMeVerificationDocumentsResponse429 | postV1SellersMeVerificationDocumentsResponse500 | postV1SellersMeVerificationDocumentsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeVerificationDocumentsResponse = (postV1SellersMeVerificationDocumentsResponseSuccess | postV1SellersMeVerificationDocumentsResponseError)
+
+export const getPostV1SellersMeVerificationDocumentsUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/verification/documents`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Records one document against the caller’s own open attempt, after the bytes have been uploaded to the path the previous operation authorized. The object must exist in storage, and the path must match the exact shape that operation issues, rebuilt from the caller’s own storefront and the document type they state: anything else — another seller’s namespace, another bucket, a nested path, a traversal, a name that is not a uuid, an extension the server never issues — is a validation failure, not a stored row. There is no `status` field: `pending` is the column’s default and the only value a submission can produce, and `reviewNote`, `reviewedAt` and `reviewedBy` appear in no column list, so a seller cannot write a reviewer’s field even by accident. Several documents are allowed, including several of one type, because the schema permits it and the reviewer decides what is enough. The response is the attempt’s document count — never a path. A document may be recorded while the attempt is `draft` or `submitted`, which is the verification schema’s own rule; an object already recorded answers 409 `SELLER_VERIFICATION_DOCUMENT_PATH_TAKEN`, and an object that is not in storage answers 404 `SELLER_MEDIA_OBJECT_MISSING`, which is 6-E’s own answer for confirming a file nobody uploaded.
+ * @summary Record an uploaded verification document
+ */
+export const postV1SellersMeVerificationDocuments = async (sellerVerificationDocumentRequest: SellerVerificationDocumentRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeVerificationDocumentsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeVerificationDocumentsResponse>(getPostV1SellersMeVerificationDocumentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerVerificationDocumentRequest)
+  }
+);}
+
+
+
+export type deleteV1SellersMeVerificationDocumentResponse200 = {
+  data: SellerVerificationDocumentCountResponse
+  status: 200
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1SellersMeVerificationDocumentResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1SellersMeVerificationDocumentResponseSuccess = (deleteV1SellersMeVerificationDocumentResponse200) & {
+  headers: Headers;
+};
+export type deleteV1SellersMeVerificationDocumentResponseError = (deleteV1SellersMeVerificationDocumentResponse400 | deleteV1SellersMeVerificationDocumentResponse401 | deleteV1SellersMeVerificationDocumentResponse403 | deleteV1SellersMeVerificationDocumentResponse404 | deleteV1SellersMeVerificationDocumentResponse409 | deleteV1SellersMeVerificationDocumentResponse429 | deleteV1SellersMeVerificationDocumentResponse500 | deleteV1SellersMeVerificationDocumentResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1SellersMeVerificationDocumentResponse = (deleteV1SellersMeVerificationDocumentResponseSuccess | deleteV1SellersMeVerificationDocumentResponseError)
+
+export const getDeleteV1SellersMeVerificationDocumentUrl = (documentId: string,) => {
+
+
+
+
+  return `/v1/sellers/me/verification/documents/${documentId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Removes one document the caller uploaded, but **only while their attempt is `draft` or `submitted`** (owner decision 3). Once the attempt is `under_review`, `approved`, `rejected` or `expired`, the evidence it was judged on stays put: the document is then indistinguishable from one that does not exist, and the restriction lives in the SECURITY DEFINER writer rather than in a browser-reachable policy, so it holds however the request arrives. A document that is not the caller’s answers 404 identically to one that does not exist, so asking cannot reveal that somebody else’s document is there. This is the only DELETE in the seller API: it removes a document, never an attempt — a seller withdraws no application and deletes no verification record, and the underlying table grants no such right.
+ * @summary Remove one of the caller’s own verification documents
+ */
+export const deleteV1SellersMeVerificationDocument = async (documentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1SellersMeVerificationDocumentResponse> => {
+
+  return apiFetch<deleteV1SellersMeVerificationDocumentResponse>(getDeleteV1SellersMeVerificationDocumentUrl(documentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeVerificationSubmissionResponse200 = {
+  data: SellerVerificationStateResponse
+  status: 200
+}
+
+export type postV1SellersMeVerificationSubmissionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeVerificationSubmissionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeVerificationSubmissionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeVerificationSubmissionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeVerificationSubmissionResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SellersMeVerificationSubmissionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeVerificationSubmissionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeVerificationSubmissionResponseSuccess = (postV1SellersMeVerificationSubmissionResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeVerificationSubmissionResponseError = (postV1SellersMeVerificationSubmissionResponse401 | postV1SellersMeVerificationSubmissionResponse403 | postV1SellersMeVerificationSubmissionResponse404 | postV1SellersMeVerificationSubmissionResponse409 | postV1SellersMeVerificationSubmissionResponse429 | postV1SellersMeVerificationSubmissionResponse500 | postV1SellersMeVerificationSubmissionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeVerificationSubmissionResponse = (postV1SellersMeVerificationSubmissionResponseSuccess | postV1SellersMeVerificationSubmissionResponseError)
+
+export const getPostV1SellersMeVerificationSubmissionUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/verification/submission`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Moves the caller’s own `draft` attempt to `submitted` and records its submission time. Its own operation rather than a field on anything else, and it takes no body: a status the caller could send would be a status the caller could choose. **It requires no document and no particular document type** (owner decision 1): the verification schema imposes no minimum, and whether the evidence is sufficient is the reviewer’s judgement, not this API’s. It assigns no reviewer, no review time and no decision reason, so `approved` and `rejected` are not merely refused but structurally unreachable from here — the existing review mechanism remains the sole authority for a verification decision. The account’s email and phone confirmation times are read from the authentication records rather than from the request, because approval will require them of a reviewer later; an account with neither still submits successfully. Submitting reflects the storefront’s verification state as pending through the schema’s own trigger; it verifies nothing and activates nothing. A second submission, and an attempt already with the reviewer, both answer 409 `SELLER_VERIFICATION_NOT_EDITABLE`.
+ * @summary Submit the caller’s own verification attempt for review
+ */
+export const postV1SellersMeVerificationSubmission = async ( options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeVerificationSubmissionResponse> => {
+
+  return apiFetch<postV1SellersMeVerificationSubmissionResponse>(getPostV1SellersMeVerificationSubmissionUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeOrdersResponse200 = {
+  data: SellerOrdersResponse
+  status: 200
+}
+
+export type getV1SellersMeOrdersResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeOrdersResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeOrdersResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeOrdersResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeOrdersResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeOrdersResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeOrdersResponseSuccess = (getV1SellersMeOrdersResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeOrdersResponseError = (getV1SellersMeOrdersResponse400 | getV1SellersMeOrdersResponse401 | getV1SellersMeOrdersResponse403 | getV1SellersMeOrdersResponse404 | getV1SellersMeOrdersResponse500 | getV1SellersMeOrdersResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeOrdersResponse = (getV1SellersMeOrdersResponseSuccess | getV1SellersMeOrdersResponseError)
+
+export const getGetV1SellersMeOrdersUrl = (params?: GetV1SellersMeOrdersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/orders?${stringifiedParams}` : `/v1/sellers/me/orders`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the orders placed with the caller’s own storefront, newest first, each with the items as they were at purchase. It takes no seller parameter — the storefront comes from the session — and returns no identifier of any kind: an order is named by its own `orderNumber`, and each item by the title and slug the order snapshotted, so nothing depends on a listing that has since been edited. **Nothing about the buyer is returned**: no id, no name, no address. No commission snapshot, no cancellation-policy snapshot and no checkout reference. Amounts are minor units as decimal strings beside the currency and its own decimal places; `commissionTotalMinor` is the platform fee on the caller’s own order and `sellerNetMinor` what remains. **Strictly read-only**: this operation creates, pays for, ships, cancels and refunds nothing, and there is no operation anywhere in this API that lets a seller change an order’s status.
+ * @summary The caller’s own orders
+ */
+export const getV1SellersMeOrders = async (params?: GetV1SellersMeOrdersParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeOrdersResponse> => {
+
+  return apiFetch<getV1SellersMeOrdersResponse>(getGetV1SellersMeOrdersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeReviewsResponse200 = {
+  data: SellerReviewsResponse
+  status: 200
+}
+
+export type getV1SellersMeReviewsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeReviewsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeReviewsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeReviewsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeReviewsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeReviewsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeReviewsResponseSuccess = (getV1SellersMeReviewsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeReviewsResponseError = (getV1SellersMeReviewsResponse400 | getV1SellersMeReviewsResponse401 | getV1SellersMeReviewsResponse403 | getV1SellersMeReviewsResponse404 | getV1SellersMeReviewsResponse500 | getV1SellersMeReviewsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeReviewsResponse = (getV1SellersMeReviewsResponseSuccess | getV1SellersMeReviewsResponseError)
+
+export const getGetV1SellersMeReviewsUrl = (params?: GetV1SellersMeReviewsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/reviews?${stringifiedParams}` : `/v1/sellers/me/reviews`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the reviews left on the caller’s own storefront, newest first, each with the caller’s own reply when they have written one — and the rating summary alongside, so a page needs one request rather than two. A seller reads their own reviews in **every** state, which is the reviews table’s own rule for the owner, but never *why* a state was reached: there is no moderation reason, moderator, moderation time or auto-hidden reason in this response, and no field for one. Nothing identifies whoever wrote a review. A review is named by its order’s `orderNumber`, which identifies it because reviews are unique per order. The summary is the `seller_ratings` aggregate exactly as that view defines it, average included — in basis points, because that is the unit the view produces — and it counts published reviews only, so it is `null` rather than a row of zeros when none is published. **Strictly read-only**: this operation publishes, hides, removes, replies to and moderates nothing.
+ * @summary The reviews on the caller’s own storefront
+ */
+export const getV1SellersMeReviews = async (params?: GetV1SellersMeReviewsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeReviewsResponse> => {
+
+  return apiFetch<getV1SellersMeReviewsResponse>(getGetV1SellersMeReviewsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeEarningsResponse200 = {
+  data: SellerEarningsResponse
+  status: 200
+}
+
+export type getV1SellersMeEarningsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeEarningsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeEarningsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeEarningsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeEarningsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeEarningsResponseSuccess = (getV1SellersMeEarningsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeEarningsResponseError = (getV1SellersMeEarningsResponse401 | getV1SellersMeEarningsResponse403 | getV1SellersMeEarningsResponse404 | getV1SellersMeEarningsResponse500 | getV1SellersMeEarningsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeEarningsResponse = (getV1SellersMeEarningsResponseSuccess | getV1SellersMeEarningsResponseError)
+
+export const getGetV1SellersMeEarningsUrl = () => {
+
+
+
+
+  return `/v1/sellers/me/earnings`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The caller’s own balance in each currency they have earned in: the pending, available and reserved minor amounts, as decimal strings, beside each currency and its own decimal places. There is no pagination, because the balances table holds one row per currency. **No total is computed**: what a seller is owed is a business statement no formula in this repository establishes, so the three the ledger keeps are shown as three. **Nothing from the ledger, a payout or a withdrawal is returned** — no journal, no entry, no ledger account, no provider reference, no payout destination and no bank detail — and there is no withdrawal, payout or transfer operation anywhere in this API: a balance here is a fact to read, not a button. An empty list means this storefront has earned nothing yet.
+ * @summary The caller’s own balances
+ */
+export const getV1SellersMeEarnings = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeEarningsResponse> => {
+
+  return apiFetch<getV1SellersMeEarningsResponse>(getGetV1SellersMeEarningsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMePromotionsResponse200 = {
+  data: SellerPromotionsResponse
+  status: 200
+}
+
+export type getV1SellersMePromotionsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMePromotionsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMePromotionsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMePromotionsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMePromotionsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMePromotionsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMePromotionsResponseSuccess = (getV1SellersMePromotionsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMePromotionsResponseError = (getV1SellersMePromotionsResponse400 | getV1SellersMePromotionsResponse401 | getV1SellersMePromotionsResponse403 | getV1SellersMePromotionsResponse404 | getV1SellersMePromotionsResponse500 | getV1SellersMePromotionsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMePromotionsResponse = (getV1SellersMePromotionsResponseSuccess | getV1SellersMePromotionsResponseError)
+
+export const getGetV1SellersMePromotionsUrl = (params?: GetV1SellersMePromotionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/promotions?${stringifiedParams}` : `/v1/sellers/me/promotions`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the caller’s own promotions, newest first, each named by the slug and title of the listing it promotes. Returns no promotion id, no package id, no package snapshot, no idempotency key, no payment method and no cancellation reason. Amounts are minor units as decimal strings beside the currency and its own decimal places. **Strictly read-only**: this operation creates, schedules, pays for, pauses, cancels and refunds nothing, and there is no promotion write operation anywhere in this API.
+ * @summary The caller’s own promotions
+ */
+export const getV1SellersMePromotions = async (params?: GetV1SellersMePromotionsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMePromotionsResponse> => {
+
+  return apiFetch<getV1SellersMePromotionsResponse>(getGetV1SellersMePromotionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeAnalyticsResponse200 = {
+  data: SellerAnalyticsResponse
+  status: 200
+}
+
+export type getV1SellersMeAnalyticsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeAnalyticsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeAnalyticsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeAnalyticsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeAnalyticsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeAnalyticsResponseSuccess = (getV1SellersMeAnalyticsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeAnalyticsResponseError = (getV1SellersMeAnalyticsResponse401 | getV1SellersMeAnalyticsResponse403 | getV1SellersMeAnalyticsResponse404 | getV1SellersMeAnalyticsResponse500 | getV1SellersMeAnalyticsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeAnalyticsResponse = (getV1SellersMeAnalyticsResponseSuccess | getV1SellersMeAnalyticsResponseError)
+
+export const getGetV1SellersMeAnalyticsUrl = (params?: GetV1SellersMeAnalyticsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/analytics?${stringifiedParams}` : `/v1/sellers/me/analytics`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. It is therefore the whole of the analytics available to a seller — **there is no listing-level analytics operation**, because no authoritative listing-level rollup exists in this schema, and counting raw listing events into "views per listing" would mean inventing what a view is and how to de-duplicate a session. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.
+ * @summary The caller’s own promotion performance
+ */
+export const getV1SellersMeAnalytics = async (params?: GetV1SellersMeAnalyticsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeAnalyticsResponse> => {
+
+  return apiFetch<getV1SellersMeAnalyticsResponse>(getGetV1SellersMeAnalyticsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1MessagingConversationsResponse200 = {
+  data: MessagingInboxResponse
+  status: 200
+}
+
+export type getV1MessagingConversationsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1MessagingConversationsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1MessagingConversationsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1MessagingConversationsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1MessagingConversationsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1MessagingConversationsResponseSuccess = (getV1MessagingConversationsResponse200) & {
+  headers: Headers;
+};
+export type getV1MessagingConversationsResponseError = (getV1MessagingConversationsResponse400 | getV1MessagingConversationsResponse401 | getV1MessagingConversationsResponse403 | getV1MessagingConversationsResponse500 | getV1MessagingConversationsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1MessagingConversationsResponse = (getV1MessagingConversationsResponseSuccess | getV1MessagingConversationsResponseError)
+
+export const getGetV1MessagingConversationsUrl = (params?: GetV1MessagingConversationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/messaging/conversations?${stringifiedParams}` : `/v1/messaging/conversations`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the conversations the caller is currently a participant of, newest activity first, each with their own unread count, mute and membership state. A conversation the caller has left is not listed; it remains readable by its id. The account is the caller’s own — no identifier is accepted from the request.
+ * @summary The caller’s inbox
+ */
+export const getV1MessagingConversations = async (params?: GetV1MessagingConversationsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1MessagingConversationsResponse> => {
+
+  return apiFetch<getV1MessagingConversationsResponse>(getGetV1MessagingConversationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1MessagingConversationsResponse200 = {
+  data: StartConversationResponse
+  status: 200
+}
+
+export type postV1MessagingConversationsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1MessagingConversationsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1MessagingConversationsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1MessagingConversationsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1MessagingConversationsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1MessagingConversationsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1MessagingConversationsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1MessagingConversationsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1MessagingConversationsResponseSuccess = (postV1MessagingConversationsResponse200) & {
+  headers: Headers;
+};
+export type postV1MessagingConversationsResponseError = (postV1MessagingConversationsResponse400 | postV1MessagingConversationsResponse401 | postV1MessagingConversationsResponse403 | postV1MessagingConversationsResponse404 | postV1MessagingConversationsResponse409 | postV1MessagingConversationsResponse429 | postV1MessagingConversationsResponse500 | postV1MessagingConversationsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1MessagingConversationsResponse = (postV1MessagingConversationsResponseSuccess | postV1MessagingConversationsResponseError)
+
+export const getPostV1MessagingConversationsUrl = () => {
+
+
+
+
+  return `/v1/messaging/conversations`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Starts a conversation about a listing or a direct one with a seller, or resolves to the open conversation that already exists — both are a success, and `outcome` says which. Refuses a seller who cannot be contacted, a blocked pair and a caller contacting themselves. The caller is the buyer: no identifier is accepted from the request.
+ * @summary Start a conversation
+ */
+export const postV1MessagingConversations = async (startConversationRequest: StartConversationRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1MessagingConversationsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1MessagingConversationsResponse>(getPostV1MessagingConversationsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(startConversationRequest)
+  }
+);}
+
+
+
+export type getV1MessagingConversationMessagesResponse200 = {
+  data: ConversationMessagesResponse
+  status: 200
+}
+
+export type getV1MessagingConversationMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1MessagingConversationMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1MessagingConversationMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1MessagingConversationMessagesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1MessagingConversationMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1MessagingConversationMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1MessagingConversationMessagesResponseSuccess = (getV1MessagingConversationMessagesResponse200) & {
+  headers: Headers;
+};
+export type getV1MessagingConversationMessagesResponseError = (getV1MessagingConversationMessagesResponse400 | getV1MessagingConversationMessagesResponse401 | getV1MessagingConversationMessagesResponse403 | getV1MessagingConversationMessagesResponse404 | getV1MessagingConversationMessagesResponse500 | getV1MessagingConversationMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1MessagingConversationMessagesResponse = (getV1MessagingConversationMessagesResponseSuccess | getV1MessagingConversationMessagesResponseError)
+
+export const getGetV1MessagingConversationMessagesUrl = (conversationId: string,
+    params?: GetV1MessagingConversationMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/messaging/conversations/${conversationId}/messages?${stringifiedParams}` : `/v1/messaging/conversations/${conversationId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of a conversation, oldest first so it renders in reading order, chosen backwards from the cursor because a chat opens at its end. A participant who has left may still read the history they were part of. A conversation the caller may not read and a conversation that does not exist produce the same refusal, so asking cannot reveal that one exists.
+ * @summary One conversation’s messages
+ */
+export const getV1MessagingConversationMessages = async (conversationId: string,
+    params?: GetV1MessagingConversationMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1MessagingConversationMessagesResponse> => {
+
+  return apiFetch<getV1MessagingConversationMessagesResponse>(getGetV1MessagingConversationMessagesUrl(conversationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1MessagingConversationMessagesResponse201 = {
+  data: SendMessageResponse
+  status: 201
+}
+
+export type postV1MessagingConversationMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1MessagingConversationMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1MessagingConversationMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1MessagingConversationMessagesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1MessagingConversationMessagesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1MessagingConversationMessagesResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1MessagingConversationMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1MessagingConversationMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1MessagingConversationMessagesResponseSuccess = (postV1MessagingConversationMessagesResponse201) & {
+  headers: Headers;
+};
+export type postV1MessagingConversationMessagesResponseError = (postV1MessagingConversationMessagesResponse400 | postV1MessagingConversationMessagesResponse401 | postV1MessagingConversationMessagesResponse403 | postV1MessagingConversationMessagesResponse404 | postV1MessagingConversationMessagesResponse409 | postV1MessagingConversationMessagesResponse429 | postV1MessagingConversationMessagesResponse500 | postV1MessagingConversationMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1MessagingConversationMessagesResponse = (postV1MessagingConversationMessagesResponseSuccess | postV1MessagingConversationMessagesResponseError)
+
+export const getPostV1MessagingConversationMessagesUrl = (conversationId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Sends one text message as the caller and returns it as stored, so a surface renders what committed rather than what it hoped for. Refuses a closed conversation, a blocked pair and a body outside 1..5000 characters. Only text: no caller can compose a system or reference message.
+ * @summary Send a message
+ */
+export const postV1MessagingConversationMessages = async (conversationId: string,
+    sendMessageRequest: SendMessageRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1MessagingConversationMessagesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1MessagingConversationMessagesResponse>(getPostV1MessagingConversationMessagesUrl(conversationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sendMessageRequest)
+  }
+);}
+
+
+
+export type getV1MessagingUnreadCountResponse200 = {
+  data: UnreadCountResponse
+  status: 200
+}
+
+export type getV1MessagingUnreadCountResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1MessagingUnreadCountResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1MessagingUnreadCountResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1MessagingUnreadCountResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1MessagingUnreadCountResponseSuccess = (getV1MessagingUnreadCountResponse200) & {
+  headers: Headers;
+};
+export type getV1MessagingUnreadCountResponseError = (getV1MessagingUnreadCountResponse401 | getV1MessagingUnreadCountResponse403 | getV1MessagingUnreadCountResponse500 | getV1MessagingUnreadCountResponse503) & {
+  headers: Headers;
+};
+
+export type getV1MessagingUnreadCountResponse = (getV1MessagingUnreadCountResponseSuccess | getV1MessagingUnreadCountResponseError)
+
+export const getGetV1MessagingUnreadCountUrl = () => {
+
+
+
+
+  return `/v1/messaging/unread-count`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. How many messages the caller has not read across the conversations their inbox lists. Their own messages never count; a muted conversation still does, because mute is a notification preference and not a read marker.
+ * @summary The caller’s total unread count
+ */
+export const getV1MessagingUnreadCount = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1MessagingUnreadCountResponse> => {
+
+  return apiFetch<getV1MessagingUnreadCountResponse>(getGetV1MessagingUnreadCountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1MessagingConversationReadResponse200 = {
+  data: MarkReadResponse
+  status: 200
+}
+
+export type putV1MessagingConversationReadResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1MessagingConversationReadResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1MessagingConversationReadResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1MessagingConversationReadResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1MessagingConversationReadResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1MessagingConversationReadResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1MessagingConversationReadResponseSuccess = (putV1MessagingConversationReadResponse200) & {
+  headers: Headers;
+};
+export type putV1MessagingConversationReadResponseError = (putV1MessagingConversationReadResponse400 | putV1MessagingConversationReadResponse401 | putV1MessagingConversationReadResponse403 | putV1MessagingConversationReadResponse404 | putV1MessagingConversationReadResponse500 | putV1MessagingConversationReadResponse503) & {
+  headers: Headers;
+};
+
+export type putV1MessagingConversationReadResponse = (putV1MessagingConversationReadResponseSuccess | putV1MessagingConversationReadResponseError)
+
+export const getPutV1MessagingConversationReadUrl = (conversationId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/read`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Moves the caller’s own read marker forward, clamped to the newest message and never backwards, so repeating a request changes nothing. Private to them: there are no read receipts, and no other participant’s state is touched.
+ * @summary Move the caller’s read marker
+ */
+export const putV1MessagingConversationRead = async (conversationId: string,
+    markReadRequest: MarkReadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1MessagingConversationReadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1MessagingConversationReadResponse>(getPutV1MessagingConversationReadUrl(conversationId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(markReadRequest)
+  }
+);}
+
+
+
+export type putV1MessagingConversationMutedResponse200 = {
+  data: SetMutedResponse
+  status: 200
+}
+
+export type putV1MessagingConversationMutedResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1MessagingConversationMutedResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1MessagingConversationMutedResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1MessagingConversationMutedResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1MessagingConversationMutedResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1MessagingConversationMutedResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1MessagingConversationMutedResponseSuccess = (putV1MessagingConversationMutedResponse200) & {
+  headers: Headers;
+};
+export type putV1MessagingConversationMutedResponseError = (putV1MessagingConversationMutedResponse400 | putV1MessagingConversationMutedResponse401 | putV1MessagingConversationMutedResponse403 | putV1MessagingConversationMutedResponse404 | putV1MessagingConversationMutedResponse500 | putV1MessagingConversationMutedResponse503) & {
+  headers: Headers;
+};
+
+export type putV1MessagingConversationMutedResponse = (putV1MessagingConversationMutedResponseSuccess | putV1MessagingConversationMutedResponseError)
+
+export const getPutV1MessagingConversationMutedUrl = (conversationId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/muted`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Sets the caller’s own mute flag. Private to them, and it changes no authorization, no message visibility and no unread count.
+ * @summary Mute or unmute
+ */
+export const putV1MessagingConversationMuted = async (conversationId: string,
+    setMutedRequest: SetMutedRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1MessagingConversationMutedResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1MessagingConversationMutedResponse>(getPutV1MessagingConversationMutedUrl(conversationId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setMutedRequest)
+  }
+);}
+
+
+
+export type deleteV1MessagingConversationMembershipResponse200 = {
+  data: LeaveConversationResponse
+  status: 200
+}
+
+export type deleteV1MessagingConversationMembershipResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1MessagingConversationMembershipResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1MessagingConversationMembershipResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1MessagingConversationMembershipResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1MessagingConversationMembershipResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1MessagingConversationMembershipResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1MessagingConversationMembershipResponseSuccess = (deleteV1MessagingConversationMembershipResponse200) & {
+  headers: Headers;
+};
+export type deleteV1MessagingConversationMembershipResponseError = (deleteV1MessagingConversationMembershipResponse400 | deleteV1MessagingConversationMembershipResponse401 | deleteV1MessagingConversationMembershipResponse403 | deleteV1MessagingConversationMembershipResponse404 | deleteV1MessagingConversationMembershipResponse500 | deleteV1MessagingConversationMembershipResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1MessagingConversationMembershipResponse = (deleteV1MessagingConversationMembershipResponseSuccess | deleteV1MessagingConversationMembershipResponseError)
+
+export const getDeleteV1MessagingConversationMembershipUrl = (conversationId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/membership`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The caller leaves their own membership and nobody else’s. History is kept and stays readable by them; they no longer appear in an active inbox and can no longer send. Idempotent, and there is no rejoin.
+ * @summary Leave a conversation
+ */
+export const deleteV1MessagingConversationMembership = async (conversationId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1MessagingConversationMembershipResponse> => {
+
+  return apiFetch<deleteV1MessagingConversationMembershipResponse>(getDeleteV1MessagingConversationMembershipUrl(conversationId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1MessagingConversationClosedResponse200 = {
+  data: CloseConversationResponse
+  status: 200
+}
+
+export type putV1MessagingConversationClosedResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1MessagingConversationClosedResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1MessagingConversationClosedResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1MessagingConversationClosedResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1MessagingConversationClosedResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1MessagingConversationClosedResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1MessagingConversationClosedResponseSuccess = (putV1MessagingConversationClosedResponse200) & {
+  headers: Headers;
+};
+export type putV1MessagingConversationClosedResponseError = (putV1MessagingConversationClosedResponse400 | putV1MessagingConversationClosedResponse401 | putV1MessagingConversationClosedResponse403 | putV1MessagingConversationClosedResponse404 | putV1MessagingConversationClosedResponse500 | putV1MessagingConversationClosedResponse503) & {
+  headers: Headers;
+};
+
+export type putV1MessagingConversationClosedResponse = (putV1MessagingConversationClosedResponseSuccess | putV1MessagingConversationClosedResponseError)
+
+export const getPutV1MessagingConversationClosedUrl = (conversationId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/closed`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Either active participant may close. Messages are kept and stay readable; no further message may be sent. Idempotent, and there is no reopen.
+ * @summary Close a conversation
+ */
+export const putV1MessagingConversationClosed = async (conversationId: string, options?: Parameters<typeof apiFetch>[1]): Promise<putV1MessagingConversationClosedResponse> => {
+
+  return apiFetch<putV1MessagingConversationClosedResponse>(getPutV1MessagingConversationClosedUrl(conversationId),
+  {
+    ...options,
+    method: 'PUT'
+
+
+  }
+);}
+
+
+
+export type postV1MessagingReportsResponse200 = {
+  data: FileMessagingReportResponse
+  status: 200
+}
+
+export type postV1MessagingReportsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1MessagingReportsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1MessagingReportsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1MessagingReportsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1MessagingReportsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1MessagingReportsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1MessagingReportsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1MessagingReportsResponseSuccess = (postV1MessagingReportsResponse200) & {
+  headers: Headers;
+};
+export type postV1MessagingReportsResponseError = (postV1MessagingReportsResponse400 | postV1MessagingReportsResponse401 | postV1MessagingReportsResponse403 | postV1MessagingReportsResponse404 | postV1MessagingReportsResponse429 | postV1MessagingReportsResponse500 | postV1MessagingReportsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1MessagingReportsResponse = (postV1MessagingReportsResponseSuccess | postV1MessagingReportsResponseError)
+
+export const getPostV1MessagingReportsUrl = () => {
+
+
+
+
+  return `/v1/messaging/reports`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Files a report about a message or a conversation the caller can actually read, through the platform’s existing reporting. A repeat lands on the report already open and answers with the same id, so submitting twice creates one report. It is a request for a look and nothing else: the message stays readable, the conversation stays open, and no membership, mute state, read marker or moderation action changes. The reporter is the caller: no identifier is accepted from the request.
+ * @summary Report a message or a conversation
+ */
+export const postV1MessagingReports = async (fileMessagingReportRequest: FileMessagingReportRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1MessagingReportsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1MessagingReportsResponse>(getPostV1MessagingReportsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fileMessagingReportRequest)
+  }
+);}
+
+
+
+export type getV1AuthTotpResponse200 = {
+  data: TotpStatusResponse
+  status: 200
+}
+
+export type getV1AuthTotpResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AuthTotpResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AuthTotpResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AuthTotpResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AuthTotpResponseSuccess = (getV1AuthTotpResponse200) & {
+  headers: Headers;
+};
+export type getV1AuthTotpResponseError = (getV1AuthTotpResponse401 | getV1AuthTotpResponse403 | getV1AuthTotpResponse500 | getV1AuthTotpResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AuthTotpResponse = (getV1AuthTotpResponseSuccess | getV1AuthTotpResponseError)
+
+export const getGetV1AuthTotpUrl = () => {
+
+
+
+
+  return `/v1/auth/totp`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Answers for the caller’s own account and no other: there is no user identifier in the request. Two values and no detail — not how many factors, not when one was created, not an identifier. A factor that was created but never verified reads as not_enrolled, because that is what it means to the person.
+ * @summary Whether the caller has an authenticator
+ */
+export const getV1AuthTotp = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AuthTotpResponse> => {
+
+  return apiFetch<getV1AuthTotpResponse>(getGetV1AuthTotpUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AuthTotpEnrolResponse200 = {
+  data: TotpEnrolmentResponse
+  status: 200
+}
+
+export type postV1AuthTotpEnrolResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthTotpEnrolResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthTotpEnrolResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AuthTotpEnrolResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthTotpEnrolResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthTotpEnrolResponseSuccess = (postV1AuthTotpEnrolResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthTotpEnrolResponseError = (postV1AuthTotpEnrolResponse401 | postV1AuthTotpEnrolResponse403 | postV1AuthTotpEnrolResponse409 | postV1AuthTotpEnrolResponse500 | postV1AuthTotpEnrolResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthTotpEnrolResponse = (postV1AuthTotpEnrolResponseSuccess | postV1AuthTotpEnrolResponseError)
+
+export const getPostV1AuthTotpEnrolUrl = () => {
+
+
+
+
+  return `/v1/auth/totp/enrol`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Creates a TOTP factor at the identity provider, which is where the secret lives — this API never stores one. **The response carries the shared secret, once.** It is returned only to the screen the person is reading, under no-store, and the surface offers no way to ask for it again; a caller who already has a verified authenticator is refused with TOTP_ALREADY_ENROLLED and reaches nothing. Enrolment is finished by the challenge and verify operations below. No session is created here and no assurance level changes.
+ * @summary Begin enrolling an authenticator
+ */
+export const postV1AuthTotpEnrol = async ( options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthTotpEnrolResponse> => {
+
+  return apiFetch<postV1AuthTotpEnrolResponse>(getPostV1AuthTotpEnrolUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1AuthTotpChallengeResponse200 = {
+  data: TotpChallengeResponse
+  status: 200
+}
+
+export type postV1AuthTotpChallengeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthTotpChallengeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthTotpChallengeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthTotpChallengeResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AuthTotpChallengeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthTotpChallengeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthTotpChallengeResponseSuccess = (postV1AuthTotpChallengeResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthTotpChallengeResponseError = (postV1AuthTotpChallengeResponse400 | postV1AuthTotpChallengeResponse401 | postV1AuthTotpChallengeResponse403 | postV1AuthTotpChallengeResponse409 | postV1AuthTotpChallengeResponse500 | postV1AuthTotpChallengeResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthTotpChallengeResponse = (postV1AuthTotpChallengeResponseSuccess | postV1AuthTotpChallengeResponseError)
+
+export const getPostV1AuthTotpChallengeUrl = () => {
+
+
+
+
+  return `/v1/auth/totp/challenge`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Raises a challenge against the caller’s own factor — a verified one when there is one, otherwise the enrolment in progress. **No factor identifier is accepted from the request**, and the factor and challenge identifiers travel only to the BFF, which holds them in an HttpOnly cookie and supplies them again on the next internal call: a page can neither choose which factor it answers for nor replay a challenge. An optional operation names the protected action a satisfied verification will authorise, and is recorded as a ten-minute single-use step-up grant at that point; omitting it raises the caller’s assurance level and grants nothing in particular. A caller with no factor at all is refused with TOTP_NOT_ENROLLED.
+ * @summary Raise a TOTP challenge
+ */
+export const postV1AuthTotpChallenge = async (totpChallengeRequest: TotpChallengeRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthTotpChallengeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthTotpChallengeResponse>(getPostV1AuthTotpChallengeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(totpChallengeRequest)
+  }
+);}
+
+
+
+export type postV1AuthTotpVerifyResponse200 = {
+  data: TotpVerifyResponse
+  status: 200
+}
+
+export type postV1AuthTotpVerifyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AuthTotpVerifyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AuthTotpVerifyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AuthTotpVerifyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AuthTotpVerifyResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AuthTotpVerifyResponseSuccess = (postV1AuthTotpVerifyResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthTotpVerifyResponseError = (postV1AuthTotpVerifyResponse400 | postV1AuthTotpVerifyResponse401 | postV1AuthTotpVerifyResponse403 | postV1AuthTotpVerifyResponse500 | postV1AuthTotpVerifyResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AuthTotpVerifyResponse = (postV1AuthTotpVerifyResponseSuccess | postV1AuthTotpVerifyResponseError)
+
+export const getPostV1AuthTotpVerifyUrl = () => {
+
+
+
+
+  return `/v1/auth/totp/verify`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The identity provider checks the code against the factor it holds and mints a new aal2 session; that session crosses one server-to-server hop to the BFF, which turns it into the staff cookies, and **the browser-visible body carries no session, no token and no account**. Verifying an unverified factor is what completes enrolment. When the challenge named an operation, a single-use ten-minute step-up grant is recorded for it. A wrong code, an expired challenge, one already spent and a factor belonging to somebody else are all refused identically.
+ * @summary Satisfy a TOTP challenge
+ */
+export const postV1AuthTotpVerify = async (totpVerifyRequest: TotpVerifyRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AuthTotpVerifyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AuthTotpVerifyResponse>(getPostV1AuthTotpVerifyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(totpVerifyRequest)
+  }
+);}
+
+
+
+export type getV1NotificationsResponse200 = {
+  data: NotificationsResponse
+  status: 200
+}
+
+export type getV1NotificationsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1NotificationsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1NotificationsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1NotificationsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1NotificationsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1NotificationsResponseSuccess = (getV1NotificationsResponse200) & {
+  headers: Headers;
+};
+export type getV1NotificationsResponseError = (getV1NotificationsResponse400 | getV1NotificationsResponse401 | getV1NotificationsResponse403 | getV1NotificationsResponse500 | getV1NotificationsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1NotificationsResponse = (getV1NotificationsResponseSuccess | getV1NotificationsResponseError)
+
+export const getGetV1NotificationsUrl = (params?: GetV1NotificationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/notifications?${stringifiedParams}` : `/v1/notifications`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the caller’s own notifications, newest first, ordered by creation time with the identifier as a tie-breaker so the page boundary is total and deterministic. **The account is the caller’s own — no identifier is accepted from the request**, and the reader is scoped to that account in the statement, so another person’s notification is absent from the result rather than refused from it. `view` selects the inbox (unarchived) or the archived list, which is the split the schema itself draws. Each item carries the metadata migration 0029 defines — category, event type, subject and relative action path — and never the template variables, the template key, the originating staff member or the email link.
+ * @summary The caller’s notifications
+ */
+export const getV1Notifications = async (params?: GetV1NotificationsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1NotificationsResponse> => {
+
+  return apiFetch<getV1NotificationsResponse>(getGetV1NotificationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1NotificationsUnreadCountResponse200 = {
+  data: NotificationsUnreadCountResponse
+  status: 200
+}
+
+export type getV1NotificationsUnreadCountResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1NotificationsUnreadCountResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1NotificationsUnreadCountResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1NotificationsUnreadCountResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1NotificationsUnreadCountResponseSuccess = (getV1NotificationsUnreadCountResponse200) & {
+  headers: Headers;
+};
+export type getV1NotificationsUnreadCountResponseError = (getV1NotificationsUnreadCountResponse401 | getV1NotificationsUnreadCountResponse403 | getV1NotificationsUnreadCountResponse500 | getV1NotificationsUnreadCountResponse503) & {
+  headers: Headers;
+};
+
+export type getV1NotificationsUnreadCountResponse = (getV1NotificationsUnreadCountResponseSuccess | getV1NotificationsUnreadCountResponseError)
+
+export const getGetV1NotificationsUnreadCountUrl = () => {
+
+
+
+
+  return `/v1/notifications/unread-count`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. How many of the caller’s notifications are unread **and** not archived — the same predicate as the schema’s own unread index, so the badge and the inbox never disagree. Archiving an unread notification therefore clears it from this count, which is how a person empties their inbox.
+ * @summary The caller’s unread notification count
+ */
+export const getV1NotificationsUnreadCount = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1NotificationsUnreadCountResponse> => {
+
+  return apiFetch<getV1NotificationsUnreadCountResponse>(getGetV1NotificationsUnreadCountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1NotificationsReadResponse200 = {
+  data: NotificationsMutationResponse
+  status: 200
+}
+
+export type postV1NotificationsReadResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1NotificationsReadResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1NotificationsReadResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1NotificationsReadResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1NotificationsReadResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1NotificationsReadResponseSuccess = (postV1NotificationsReadResponse200) & {
+  headers: Headers;
+};
+export type postV1NotificationsReadResponseError = (postV1NotificationsReadResponse400 | postV1NotificationsReadResponse401 | postV1NotificationsReadResponse403 | postV1NotificationsReadResponse500 | postV1NotificationsReadResponse503) & {
+  headers: Headers;
+};
+
+export type postV1NotificationsReadResponse = (postV1NotificationsReadResponseSuccess | postV1NotificationsReadResponseError)
+
+export const getPostV1NotificationsReadUrl = () => {
+
+
+
+
+  return `/v1/notifications/read`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Marks the named notifications read, or all of the caller’s unread ones when none are named. **Idempotent**: an already-read notification is not matched, so a repeat changes nothing and still succeeds, and `changed` reports how many actually moved. An identifier belonging to somebody else matches nothing — the operation is scoped to the caller in the statement — so nothing is disclosed about it either. An archived notification is not marked read, which is the behaviour the schema has had since it was created.
+ * @summary Mark notifications read
+ */
+export const postV1NotificationsRead = async (markNotificationsReadRequest: MarkNotificationsReadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1NotificationsReadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1NotificationsReadResponse>(getPostV1NotificationsReadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(markNotificationsReadRequest)
+  }
+);}
+
+
+
+export type postV1NotificationsArchiveResponse200 = {
+  data: NotificationsMutationResponse
+  status: 200
+}
+
+export type postV1NotificationsArchiveResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1NotificationsArchiveResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1NotificationsArchiveResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1NotificationsArchiveResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1NotificationsArchiveResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1NotificationsArchiveResponseSuccess = (postV1NotificationsArchiveResponse200) & {
+  headers: Headers;
+};
+export type postV1NotificationsArchiveResponseError = (postV1NotificationsArchiveResponse400 | postV1NotificationsArchiveResponse401 | postV1NotificationsArchiveResponse403 | postV1NotificationsArchiveResponse500 | postV1NotificationsArchiveResponse503) & {
+  headers: Headers;
+};
+
+export type postV1NotificationsArchiveResponse = (postV1NotificationsArchiveResponseSuccess | postV1NotificationsArchiveResponseError)
+
+export const getPostV1NotificationsArchiveUrl = () => {
+
+
+
+
+  return `/v1/notifications/archive`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Archives the named notifications, which removes them from the inbox and from the unread count while keeping them readable in the archived list. **Identifiers are required**: there is no form of this operation that archives an entire inbox. **Idempotent**: an already-archived notification is not matched, so a repeat reports zero changes, never moves the original timestamp, and still succeeds. An identifier belonging to somebody else matches nothing. Nothing is ever deleted.
+ * @summary Archive notifications
+ */
+export const postV1NotificationsArchive = async (archiveNotificationsRequest: ArchiveNotificationsRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1NotificationsArchiveResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1NotificationsArchiveResponse>(getPostV1NotificationsArchiveUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(archiveNotificationsRequest)
+  }
+);}
+
+
+
+export type postV1UsersMeContactPhoneStartResponse200 = {
+  data: ContactPhoneStartResponse
+  status: 200
+}
+
+export type postV1UsersMeContactPhoneStartResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1UsersMeContactPhoneStartResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1UsersMeContactPhoneStartResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1UsersMeContactPhoneStartResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1UsersMeContactPhoneStartResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1UsersMeContactPhoneStartResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1UsersMeContactPhoneStartResponseSuccess = (postV1UsersMeContactPhoneStartResponse200) & {
+  headers: Headers;
+};
+export type postV1UsersMeContactPhoneStartResponseError = (postV1UsersMeContactPhoneStartResponse400 | postV1UsersMeContactPhoneStartResponse401 | postV1UsersMeContactPhoneStartResponse403 | postV1UsersMeContactPhoneStartResponse429 | postV1UsersMeContactPhoneStartResponse500 | postV1UsersMeContactPhoneStartResponse503) & {
+  headers: Headers;
+};
+
+export type postV1UsersMeContactPhoneStartResponse = (postV1UsersMeContactPhoneStartResponseSuccess | postV1UsersMeContactPhoneStartResponseError)
+
+export const getPostV1UsersMeContactPhoneStartUrl = () => {
+
+
+
+
+  return `/v1/users/me/contact/phone/start`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Sends a one-time code to the new number over WhatsApp, under the approved OTP send limits. The account is the caller’s own: no user identifier is accepted from the request.
+ * @summary Start a phone change
+ */
+export const postV1UsersMeContactPhoneStart = async (contactPhoneStartRequest: ContactPhoneStartRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1UsersMeContactPhoneStartResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1UsersMeContactPhoneStartResponse>(getPostV1UsersMeContactPhoneStartUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(contactPhoneStartRequest)
+  }
+);}
+
+
+
+export type postV1UsersMeContactPhoneVerifyResponse200 = {
+  data: ContactPhoneVerifyResponse
+  status: 200
+}
+
+export type postV1UsersMeContactPhoneVerifyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1UsersMeContactPhoneVerifyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1UsersMeContactPhoneVerifyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1UsersMeContactPhoneVerifyResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1UsersMeContactPhoneVerifyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1UsersMeContactPhoneVerifyResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1UsersMeContactPhoneVerifyResponseSuccess = (postV1UsersMeContactPhoneVerifyResponse200) & {
+  headers: Headers;
+};
+export type postV1UsersMeContactPhoneVerifyResponseError = (postV1UsersMeContactPhoneVerifyResponse400 | postV1UsersMeContactPhoneVerifyResponse401 | postV1UsersMeContactPhoneVerifyResponse403 | postV1UsersMeContactPhoneVerifyResponse429 | postV1UsersMeContactPhoneVerifyResponse500 | postV1UsersMeContactPhoneVerifyResponse503) & {
+  headers: Headers;
+};
+
+export type postV1UsersMeContactPhoneVerifyResponse = (postV1UsersMeContactPhoneVerifyResponseSuccess | postV1UsersMeContactPhoneVerifyResponseError)
+
+export const getPostV1UsersMeContactPhoneVerifyUrl = () => {
+
+
+
+
+  return `/v1/users/me/contact/phone/verify`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. A correct code makes the new number the account’s confirmed phone through the server-side provider Admin API, records a security event and notifies the previous number. No session is created and none is revoked.
+ * @summary Complete a phone change
+ */
+export const postV1UsersMeContactPhoneVerify = async (contactPhoneVerifyRequest: ContactPhoneVerifyRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1UsersMeContactPhoneVerifyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1UsersMeContactPhoneVerifyResponse>(getPostV1UsersMeContactPhoneVerifyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(contactPhoneVerifyRequest)
+  }
+);}
+
+
+
+export type getV1UsersMeFavoritesResponse200 = {
+  data: FavoritesResponse
+  status: 200
+}
+
+export type getV1UsersMeFavoritesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1UsersMeFavoritesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeFavoritesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeFavoritesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeFavoritesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeFavoritesResponseSuccess = (getV1UsersMeFavoritesResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeFavoritesResponseError = (getV1UsersMeFavoritesResponse400 | getV1UsersMeFavoritesResponse401 | getV1UsersMeFavoritesResponse403 | getV1UsersMeFavoritesResponse500 | getV1UsersMeFavoritesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeFavoritesResponse = (getV1UsersMeFavoritesResponseSuccess | getV1UsersMeFavoritesResponseError)
+
+export const getGetV1UsersMeFavoritesUrl = (params?: GetV1UsersMeFavoritesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/users/me/favorites?${stringifiedParams}` : `/v1/users/me/favorites`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the listings the caller saved, newest first, keyed on the saved time with the listing identifier as a tie-breaker so the page boundary is total and deterministic. **A favorite whose listing is no longer publicly visible is still returned**, because it is the caller’s own saved row and hiding it would remove data from their own screen: such an item reports `isAvailable: false` and carries a `null` listing, so nothing about the hidden listing crosses. A visible one carries the ordinary marketplace card, money included, exactly as the browse list defines it.
+ * @summary The caller’s favorites
+ */
+export const getV1UsersMeFavorites = async (params?: GetV1UsersMeFavoritesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeFavoritesResponse> => {
+
+  return apiFetch<getV1UsersMeFavoritesResponse>(getGetV1UsersMeFavoritesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1UsersMeFavoritesResponse200 = {
+  data: FavoriteMutationResponse
+  status: 200
+}
+
+export type postV1UsersMeFavoritesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1UsersMeFavoritesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1UsersMeFavoritesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1UsersMeFavoritesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1UsersMeFavoritesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1UsersMeFavoritesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1UsersMeFavoritesResponseSuccess = (postV1UsersMeFavoritesResponse200) & {
+  headers: Headers;
+};
+export type postV1UsersMeFavoritesResponseError = (postV1UsersMeFavoritesResponse400 | postV1UsersMeFavoritesResponse401 | postV1UsersMeFavoritesResponse403 | postV1UsersMeFavoritesResponse404 | postV1UsersMeFavoritesResponse500 | postV1UsersMeFavoritesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1UsersMeFavoritesResponse = (postV1UsersMeFavoritesResponseSuccess | postV1UsersMeFavoritesResponseError)
+
+export const getPostV1UsersMeFavoritesUrl = () => {
+
+
+
+
+  return `/v1/users/me/favorites`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Saves one listing to the caller’s own favorites. **Idempotent**: a listing that is already saved is not saved again, `changed` reports false, the original saved date is kept and the request still succeeds. A listing that is not publicly visible — withdrawn, or from a storefront that is not active — answers 404, identically to one that does not exist; that is the same admission test the table’s own RLS check applies, so no path can save something a browser could not.
+ * @summary Save a listing
+ */
+export const postV1UsersMeFavorites = async (addFavoriteRequest: AddFavoriteRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1UsersMeFavoritesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1UsersMeFavoritesResponse>(getPostV1UsersMeFavoritesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addFavoriteRequest)
+  }
+);}
+
+
+
+export type deleteV1UsersMeFavoriteResponse200 = {
+  data: FavoriteMutationResponse
+  status: 200
+}
+
+export type deleteV1UsersMeFavoriteResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1UsersMeFavoriteResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1UsersMeFavoriteResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1UsersMeFavoriteResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1UsersMeFavoriteResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1UsersMeFavoriteResponseSuccess = (deleteV1UsersMeFavoriteResponse200) & {
+  headers: Headers;
+};
+export type deleteV1UsersMeFavoriteResponseError = (deleteV1UsersMeFavoriteResponse400 | deleteV1UsersMeFavoriteResponse401 | deleteV1UsersMeFavoriteResponse403 | deleteV1UsersMeFavoriteResponse500 | deleteV1UsersMeFavoriteResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1UsersMeFavoriteResponse = (deleteV1UsersMeFavoriteResponseSuccess | deleteV1UsersMeFavoriteResponseError)
+
+export const getDeleteV1UsersMeFavoriteUrl = (listingId: string,) => {
+
+
+
+
+  return `/v1/users/me/favorites/${listingId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Removes one listing from the caller’s own favorites. **Idempotent**: removing one that is not there removes nothing, reports `changed: false` and still succeeds. The operation is scoped to the caller in the statement, so another person’s favorite is never matched and nothing is disclosed about it.
+ * @summary Remove a saved listing
+ */
+export const deleteV1UsersMeFavorite = async (listingId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1UsersMeFavoriteResponse> => {
+
+  return apiFetch<deleteV1UsersMeFavoriteResponse>(getDeleteV1UsersMeFavoriteUrl(listingId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1UsersMeSavedSearchesResponse200 = {
+  data: SavedSearchesResponse
+  status: 200
+}
+
+export type getV1UsersMeSavedSearchesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1UsersMeSavedSearchesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeSavedSearchesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeSavedSearchesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeSavedSearchesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeSavedSearchesResponseSuccess = (getV1UsersMeSavedSearchesResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeSavedSearchesResponseError = (getV1UsersMeSavedSearchesResponse400 | getV1UsersMeSavedSearchesResponse401 | getV1UsersMeSavedSearchesResponse403 | getV1UsersMeSavedSearchesResponse500 | getV1UsersMeSavedSearchesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeSavedSearchesResponse = (getV1UsersMeSavedSearchesResponseSuccess | getV1UsersMeSavedSearchesResponseError)
+
+export const getGetV1UsersMeSavedSearchesUrl = (params?: GetV1UsersMeSavedSearchesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/users/me/saved-searches?${stringifiedParams}` : `/v1/users/me/saved-searches`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the caller’s own saved searches, newest first. Each carries its name, the stored query parameters, whether it is set to notify, and the two matching timestamps as read-only data. **There is no matching engine in this project**: nothing here runs a search, and `lastMatchedAt` and `lastNotifiedAt` are null on everything created today.
+ * @summary The caller’s saved searches
+ */
+export const getV1UsersMeSavedSearches = async (params?: GetV1UsersMeSavedSearchesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeSavedSearchesResponse> => {
+
+  return apiFetch<getV1UsersMeSavedSearchesResponse>(getGetV1UsersMeSavedSearchesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1UsersMeSavedSearchesResponse201 = {
+  data: SavedSearchCreatedResponse
+  status: 201
+}
+
+export type postV1UsersMeSavedSearchesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1UsersMeSavedSearchesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1UsersMeSavedSearchesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1UsersMeSavedSearchesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1UsersMeSavedSearchesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1UsersMeSavedSearchesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1UsersMeSavedSearchesResponseSuccess = (postV1UsersMeSavedSearchesResponse201) & {
+  headers: Headers;
+};
+export type postV1UsersMeSavedSearchesResponseError = (postV1UsersMeSavedSearchesResponse400 | postV1UsersMeSavedSearchesResponse401 | postV1UsersMeSavedSearchesResponse403 | postV1UsersMeSavedSearchesResponse409 | postV1UsersMeSavedSearchesResponse500 | postV1UsersMeSavedSearchesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1UsersMeSavedSearchesResponse = (postV1UsersMeSavedSearchesResponseSuccess | postV1UsersMeSavedSearchesResponseError)
+
+export const getPostV1UsersMeSavedSearchesUrl = () => {
+
+
+
+
+  return `/v1/users/me/saved-searches`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Stores one search under a name of the caller’s choosing. `notify` is a stored preference and nothing else — saving a search with it on schedules no work, sends no message and creates no notification, because no matching engine exists. A name the caller has already used answers 409 `SAVED_SEARCH_NAME_TAKEN`; the constraint is per account, so that says nothing about anybody else.
+ * @summary Save a search
+ */
+export const postV1UsersMeSavedSearches = async (savedSearchInput: SavedSearchInput, options?: Parameters<typeof apiFetch>[1]): Promise<postV1UsersMeSavedSearchesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1UsersMeSavedSearchesResponse>(getPostV1UsersMeSavedSearchesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(savedSearchInput)
+  }
+);}
+
+
+
+export type patchV1UsersMeSavedSearchResponse200 = {
+  data: SavedSearchMutationResponse
+  status: 200
+}
+
+export type patchV1UsersMeSavedSearchResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1UsersMeSavedSearchResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1UsersMeSavedSearchResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1UsersMeSavedSearchResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1UsersMeSavedSearchResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1UsersMeSavedSearchResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1UsersMeSavedSearchResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1UsersMeSavedSearchResponseSuccess = (patchV1UsersMeSavedSearchResponse200) & {
+  headers: Headers;
+};
+export type patchV1UsersMeSavedSearchResponseError = (patchV1UsersMeSavedSearchResponse400 | patchV1UsersMeSavedSearchResponse401 | patchV1UsersMeSavedSearchResponse403 | patchV1UsersMeSavedSearchResponse404 | patchV1UsersMeSavedSearchResponse409 | patchV1UsersMeSavedSearchResponse500 | patchV1UsersMeSavedSearchResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1UsersMeSavedSearchResponse = (patchV1UsersMeSavedSearchResponseSuccess | patchV1UsersMeSavedSearchResponseError)
+
+export const getPatchV1UsersMeSavedSearchUrl = (savedSearchId: string,) => {
+
+
+
+
+  return `/v1/users/me/saved-searches/${savedSearchId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Replaces the three fields a person owns on one of their own saved searches: its name, its query and whether it notifies. `lastMatchedAt` and `lastNotifiedAt` are absent from the schema entirely, so neither can be sent — they are a matching engine’s bookkeeping and no engine exists. A saved search that is not the caller’s answers 404, identically to one that does not exist.
+ * @summary Edit a saved search
+ */
+export const patchV1UsersMeSavedSearch = async (savedSearchId: string,
+    savedSearchInput: SavedSearchInput, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1UsersMeSavedSearchResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1UsersMeSavedSearchResponse>(getPatchV1UsersMeSavedSearchUrl(savedSearchId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(savedSearchInput)
+  }
+);}
+
+
+
+export type deleteV1UsersMeSavedSearchResponse200 = {
+  data: SavedSearchMutationResponse
+  status: 200
+}
+
+export type deleteV1UsersMeSavedSearchResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1UsersMeSavedSearchResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1UsersMeSavedSearchResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1UsersMeSavedSearchResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1UsersMeSavedSearchResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1UsersMeSavedSearchResponseSuccess = (deleteV1UsersMeSavedSearchResponse200) & {
+  headers: Headers;
+};
+export type deleteV1UsersMeSavedSearchResponseError = (deleteV1UsersMeSavedSearchResponse400 | deleteV1UsersMeSavedSearchResponse401 | deleteV1UsersMeSavedSearchResponse403 | deleteV1UsersMeSavedSearchResponse500 | deleteV1UsersMeSavedSearchResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1UsersMeSavedSearchResponse = (deleteV1UsersMeSavedSearchResponseSuccess | deleteV1UsersMeSavedSearchResponseError)
+
+export const getDeleteV1UsersMeSavedSearchUrl = (savedSearchId: string,) => {
+
+
+
+
+  return `/v1/users/me/saved-searches/${savedSearchId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Deletes one of the caller’s own saved searches. **Idempotent**: deleting one that is already gone deletes nothing, reports `changed: false` and still succeeds. Scoped to the caller in the statement, so another person’s saved search is never matched.
+ * @summary Delete a saved search
+ */
+export const deleteV1UsersMeSavedSearch = async (savedSearchId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1UsersMeSavedSearchResponse> => {
+
+  return apiFetch<deleteV1UsersMeSavedSearchResponse>(getDeleteV1UsersMeSavedSearchUrl(savedSearchId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1UsersMeAddressesResponse200 = {
+  data: AddressesResponse
+  status: 200
+}
+
+export type getV1UsersMeAddressesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeAddressesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeAddressesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeAddressesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeAddressesResponseSuccess = (getV1UsersMeAddressesResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeAddressesResponseError = (getV1UsersMeAddressesResponse401 | getV1UsersMeAddressesResponse403 | getV1UsersMeAddressesResponse500 | getV1UsersMeAddressesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeAddressesResponse = (getV1UsersMeAddressesResponseSuccess | getV1UsersMeAddressesResponseError)
+
+export const getGetV1UsersMeAddressesUrl = () => {
+
+
+
+
+  return `/v1/users/me/addresses`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Every address the caller has, defaults first. Unpaged, because an account holds a handful. Removed addresses are absent. The stored geography point is never returned — no approved surface captures or renders one. **Nothing here is connected to checkout or to an order**: shipping is Phase 8 and no operation on this surface reaches it.
+ * @summary The caller’s addresses
+ */
+export const getV1UsersMeAddresses = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeAddressesResponse> => {
+
+  return apiFetch<getV1UsersMeAddressesResponse>(getGetV1UsersMeAddressesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1UsersMeAddressesResponse201 = {
+  data: AddressCreatedResponse
+  status: 201
+}
+
+export type postV1UsersMeAddressesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1UsersMeAddressesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1UsersMeAddressesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1UsersMeAddressesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1UsersMeAddressesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1UsersMeAddressesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1UsersMeAddressesResponseSuccess = (postV1UsersMeAddressesResponse201) & {
+  headers: Headers;
+};
+export type postV1UsersMeAddressesResponseError = (postV1UsersMeAddressesResponse400 | postV1UsersMeAddressesResponse401 | postV1UsersMeAddressesResponse403 | postV1UsersMeAddressesResponse409 | postV1UsersMeAddressesResponse500 | postV1UsersMeAddressesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1UsersMeAddressesResponse = (postV1UsersMeAddressesResponseSuccess | postV1UsersMeAddressesResponseError)
+
+export const getPostV1UsersMeAddressesUrl = () => {
+
+
+
+
+  return `/v1/users/me/addresses`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Adds one address to the caller’s own account. Marking it as a default clears the previous default of that kind, because the schema’s unique partial indexes admit at most one of each. A shipping address in a country that is not marketplace-enabled answers 409 `ADDRESS_COUNTRY_NOT_SHIPPABLE` (D17); a country code that does not exist is an ordinary validation failure.
+ * @summary Add an address
+ */
+export const postV1UsersMeAddresses = async (addressInput: AddressInput, options?: Parameters<typeof apiFetch>[1]): Promise<postV1UsersMeAddressesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1UsersMeAddressesResponse>(getPostV1UsersMeAddressesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addressInput)
+  }
+);}
+
+
+
+export type patchV1UsersMeAddressResponse200 = {
+  data: AddressMutationResponse
+  status: 200
+}
+
+export type patchV1UsersMeAddressResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1UsersMeAddressResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1UsersMeAddressResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1UsersMeAddressResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1UsersMeAddressResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1UsersMeAddressResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1UsersMeAddressResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1UsersMeAddressResponseSuccess = (patchV1UsersMeAddressResponse200) & {
+  headers: Headers;
+};
+export type patchV1UsersMeAddressResponseError = (patchV1UsersMeAddressResponse400 | patchV1UsersMeAddressResponse401 | patchV1UsersMeAddressResponse403 | patchV1UsersMeAddressResponse404 | patchV1UsersMeAddressResponse409 | patchV1UsersMeAddressResponse500 | patchV1UsersMeAddressResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1UsersMeAddressResponse = (patchV1UsersMeAddressResponseSuccess | patchV1UsersMeAddressResponseError)
+
+export const getPatchV1UsersMeAddressUrl = (addressId: string,) => {
+
+
+
+
+  return `/v1/users/me/addresses/${addressId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Replaces one of the caller’s own addresses with the body supplied. The same rules apply as on create, D17 included. An address that is not the caller’s answers 404, identically to one that does not exist.
+ * @summary Edit an address
+ */
+export const patchV1UsersMeAddress = async (addressId: string,
+    addressInput: AddressInput, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1UsersMeAddressResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1UsersMeAddressResponse>(getPatchV1UsersMeAddressUrl(addressId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addressInput)
+  }
+);}
+
+
+
+export type deleteV1UsersMeAddressResponse200 = {
+  data: AddressMutationResponse
+  status: 200
+}
+
+export type deleteV1UsersMeAddressResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1UsersMeAddressResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1UsersMeAddressResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1UsersMeAddressResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1UsersMeAddressResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1UsersMeAddressResponseSuccess = (deleteV1UsersMeAddressResponse200) & {
+  headers: Headers;
+};
+export type deleteV1UsersMeAddressResponseError = (deleteV1UsersMeAddressResponse400 | deleteV1UsersMeAddressResponse401 | deleteV1UsersMeAddressResponse403 | deleteV1UsersMeAddressResponse500 | deleteV1UsersMeAddressResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1UsersMeAddressResponse = (deleteV1UsersMeAddressResponseSuccess | deleteV1UsersMeAddressResponseError)
+
+export const getDeleteV1UsersMeAddressUrl = (addressId: string,) => {
+
+
+
+
+  return `/v1/users/me/addresses/${addressId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Removes one of the caller’s own addresses and clears its default flags in the same statement. **Idempotent**: removing one that is already gone removes nothing, reports `changed: false` and still succeeds.
+ * @summary Remove an address
+ */
+export const deleteV1UsersMeAddress = async (addressId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1UsersMeAddressResponse> => {
+
+  return apiFetch<deleteV1UsersMeAddressResponse>(getDeleteV1UsersMeAddressUrl(addressId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1UsersMeProfileResponse200 = {
+  data: BuyerProfileResponse
+  status: 200
+}
+
+export type getV1UsersMeProfileResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeProfileResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeProfileResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1UsersMeProfileResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeProfileResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeProfileResponseSuccess = (getV1UsersMeProfileResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeProfileResponseError = (getV1UsersMeProfileResponse401 | getV1UsersMeProfileResponse403 | getV1UsersMeProfileResponse404 | getV1UsersMeProfileResponse500 | getV1UsersMeProfileResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeProfileResponse = (getV1UsersMeProfileResponseSuccess | getV1UsersMeProfileResponseError)
+
+export const getGetV1UsersMeProfileUrl = () => {
+
+
+
+
+  return `/v1/users/me/profile`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The caller’s own profile: the display and full name, the phone number and its verification state, the locale, the timezone and the account status. Wider than the identity read a signed-in shell uses, and still narrow — no avatar path, no role, no permission and no seller record. A deleted profile returns 404, which is how a deleted account stops being able to read itself with a live token.
+ * @summary The caller’s profile
+ */
+export const getV1UsersMeProfile = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeProfileResponse> => {
+
+  return apiFetch<getV1UsersMeProfileResponse>(getGetV1UsersMeProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1UsersMeProfileResponse200 = {
+  data: BuyerProfileMutationResponse
+  status: 200
+}
+
+export type patchV1UsersMeProfileResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1UsersMeProfileResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1UsersMeProfileResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1UsersMeProfileResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1UsersMeProfileResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1UsersMeProfileResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1UsersMeProfileResponseSuccess = (patchV1UsersMeProfileResponse200) & {
+  headers: Headers;
+};
+export type patchV1UsersMeProfileResponseError = (patchV1UsersMeProfileResponse400 | patchV1UsersMeProfileResponse401 | patchV1UsersMeProfileResponse403 | patchV1UsersMeProfileResponse404 | patchV1UsersMeProfileResponse500 | patchV1UsersMeProfileResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1UsersMeProfileResponse = (patchV1UsersMeProfileResponseSuccess | patchV1UsersMeProfileResponseError)
+
+export const getPatchV1UsersMeProfileUrl = () => {
+
+
+
+
+  return `/v1/users/me/profile`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Writes the four fields a person owns: display name, full name, locale and timezone. **The phone number, the verification timestamps, the account status and every role and permission are absent from the schema entirely**, so none of them can be sent and nothing on this surface can change what an account is allowed to do. A number is changed through the verified contact-change flow and nowhere else. An unknown locale or timezone is an ordinary validation failure.
+ * @summary Edit the caller’s profile
+ */
+export const patchV1UsersMeProfile = async (updateBuyerProfileRequest: UpdateBuyerProfileRequest, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1UsersMeProfileResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1UsersMeProfileResponse>(getPatchV1UsersMeProfileUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateBuyerProfileRequest)
+  }
+);}
+
+
+
+export type getV1UsersMeSettingsResponse200 = {
+  data: BuyerSettingsResponse
+  status: 200
+}
+
+export type getV1UsersMeSettingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeSettingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeSettingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeSettingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeSettingsResponseSuccess = (getV1UsersMeSettingsResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeSettingsResponseError = (getV1UsersMeSettingsResponse401 | getV1UsersMeSettingsResponse403 | getV1UsersMeSettingsResponse500 | getV1UsersMeSettingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeSettingsResponse = (getV1UsersMeSettingsResponseSuccess | getV1UsersMeSettingsResponseError)
+
+export const getGetV1UsersMeSettingsUrl = () => {
+
+
+
+
+  return `/v1/users/me/settings`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The five notification switches and the digit style, which is every setting the schema defines apart from the free-form preferences object this surface does not expose. The digit style is null when the account follows its locale (D15).
+ * @summary The caller’s settings
+ */
+export const getV1UsersMeSettings = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeSettingsResponse> => {
+
+  return apiFetch<getV1UsersMeSettingsResponse>(getGetV1UsersMeSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1UsersMeSettingsResponse200 = {
+  data: BuyerSettingsMutationResponse
+  status: 200
+}
+
+export type putV1UsersMeSettingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1UsersMeSettingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1UsersMeSettingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1UsersMeSettingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1UsersMeSettingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1UsersMeSettingsResponseSuccess = (putV1UsersMeSettingsResponse200) & {
+  headers: Headers;
+};
+export type putV1UsersMeSettingsResponseError = (putV1UsersMeSettingsResponse400 | putV1UsersMeSettingsResponse401 | putV1UsersMeSettingsResponse403 | putV1UsersMeSettingsResponse500 | putV1UsersMeSettingsResponse503) & {
+  headers: Headers;
+};
+
+export type putV1UsersMeSettingsResponse = (putV1UsersMeSettingsResponseSuccess | putV1UsersMeSettingsResponseError)
+
+export const getPutV1UsersMeSettingsUrl = () => {
+
+
+
+
+  return `/v1/users/me/settings`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. A whole-state write: every switch is required, so there is no merge rule and no second place the current state has to be known. **Idempotent** — writing the same values again is a success that changes nothing anybody can observe. These are the settings the notification writer already consults before it creates anything, so turning email off here is honoured by that writer and not by a rule invented on this surface.
+ * @summary Write the caller’s settings
+ */
+export const putV1UsersMeSettings = async (updateBuyerSettingsRequest: UpdateBuyerSettingsRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1UsersMeSettingsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1UsersMeSettingsResponse>(getPutV1UsersMeSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateBuyerSettingsRequest)
+  }
+);}
+
+
+
+export type getV1ReferenceCountriesResponse200 = {
+  data: CountriesResponse
+  status: 200
+}
+
+export type getV1ReferenceCountriesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1ReferenceCountriesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ReferenceCountriesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ReferenceCountriesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ReferenceCountriesResponseSuccess = (getV1ReferenceCountriesResponse200) & {
+  headers: Headers;
+};
+export type getV1ReferenceCountriesResponseError = (getV1ReferenceCountriesResponse401 | getV1ReferenceCountriesResponse403 | getV1ReferenceCountriesResponse500 | getV1ReferenceCountriesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ReferenceCountriesResponse = (getV1ReferenceCountriesResponseSuccess | getV1ReferenceCountriesResponseError)
+
+export const getGetV1ReferenceCountriesUrl = () => {
+
+
+
+
+  return `/v1/reference/countries`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The countries an address form offers, each with both names, the dialling code and whether it is marketplace-enabled. The list is not filtered by that flag: a billing address is not restricted by D17, so filtering here would remove a choice the schema allows. Public reference data — it takes no account and discloses nothing about anybody.
+ * @summary The country reference
+ */
+export const getV1ReferenceCountries = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1ReferenceCountriesResponse> => {
+
+  return apiFetch<getV1ReferenceCountriesResponse>(getGetV1ReferenceCountriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSessionResponse200 = {
+  data: AdminSessionResponse
+  status: 200
+}
+
+export type getV1AdminSessionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSessionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSessionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSessionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSessionResponseSuccess = (getV1AdminSessionResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSessionResponseError = (getV1AdminSessionResponse401 | getV1AdminSessionResponse403 | getV1AdminSessionResponse500 | getV1AdminSessionResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSessionResponse = (getV1AdminSessionResponseSuccess | getV1AdminSessionResponseError)
+
+export const getGetV1AdminSessionUrl = () => {
+
+
+
+
+  return `/v1/admin/session`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Answers the three questions the admin shell asks before rendering: who the caller is, whether their session has reached `aal2`, and which permissions they effectively hold. **The permissions are already filtered** — the assurance rule is applied in the database by the same predicate `public.has_permission` uses, so staff who have not completed a second factor receive an empty array rather than a full one beside a flag. `requiresStepUp` distinguishes staff who must complete the existing TOTP challenge from everybody else, and is never true for an account that is not staff. Nothing here is writable: no role, no grant and no assurance assertion is accepted from a request, and the operation takes no parameter at all.
+ * @summary The staff console session
+ */
+export const getV1AdminSession = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSessionResponse> => {
+
+  return apiFetch<getV1AdminSessionResponse>(getGetV1AdminSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSellerVerificationsResponse200 = {
+  data: VerificationQueueResponse
+  status: 200
+}
+
+export type getV1AdminSellerVerificationsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSellerVerificationsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSellerVerificationsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSellerVerificationsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSellerVerificationsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSellerVerificationsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSellerVerificationsResponseSuccess = (getV1AdminSellerVerificationsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSellerVerificationsResponseError = (getV1AdminSellerVerificationsResponse400 | getV1AdminSellerVerificationsResponse401 | getV1AdminSellerVerificationsResponse403 | getV1AdminSellerVerificationsResponse404 | getV1AdminSellerVerificationsResponse500 | getV1AdminSellerVerificationsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSellerVerificationsResponse = (getV1AdminSellerVerificationsResponseSuccess | getV1AdminSellerVerificationsResponseError)
+
+export const getGetV1AdminSellerVerificationsUrl = (params?: GetV1AdminSellerVerificationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/seller-verifications?${stringifiedParams}` : `/v1/admin/seller-verifications`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session, and is answered only for a caller who effectively holds `sellers.verification.review` — which, because every console role is `requires_mfa`, means a staff session that has reached `aal2`. Ordered by 0009’s own queue index (`status`, `submitted_at`), oldest submission first, with the identifier breaking ties into a total order. **No priority, score, SLA or ranking is computed.** Drafts are never returned: a draft is an application its owner has not submitted. Omitting `status` means the two states awaiting a decision, `submitted` and `under_review`. A caller who may not review receives 404, identically to a route that does not exist for them.
+ * @summary The seller verification review queue
+ */
+export const getV1AdminSellerVerifications = async (params?: GetV1AdminSellerVerificationsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSellerVerificationsResponse> => {
+
+  return apiFetch<getV1AdminSellerVerificationsResponse>(getGetV1AdminSellerVerificationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSellerVerificationResponse200 = {
+  data: VerificationReviewResponse
+  status: 200
+}
+
+export type getV1AdminSellerVerificationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSellerVerificationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSellerVerificationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSellerVerificationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSellerVerificationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSellerVerificationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSellerVerificationResponseSuccess = (getV1AdminSellerVerificationResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSellerVerificationResponseError = (getV1AdminSellerVerificationResponse400 | getV1AdminSellerVerificationResponse401 | getV1AdminSellerVerificationResponse403 | getV1AdminSellerVerificationResponse404 | getV1AdminSellerVerificationResponse500 | getV1AdminSellerVerificationResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSellerVerificationResponse = (getV1AdminSellerVerificationResponseSuccess | getV1AdminSellerVerificationResponseError)
+
+export const getGetV1AdminSellerVerificationUrl = (verificationId: string,) => {
+
+
+
+
+  return `/v1/admin/seller-verifications/${verificationId}`
+}
+
+/**
+ * Requires the internal BFF credential, the caller’s session and `sellers.verification.review`. Returns the application’s own state, the existing decision fields, the storefront identity the evidence has to agree with, and the documents’ metadata. **No storage object path is in the answer** and **no account identifier is** — neither the applicant’s nor the reviewer’s.
+ * @summary One seller verification submission
+ */
+export const getV1AdminSellerVerification = async (verificationId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSellerVerificationResponse> => {
+
+  return apiFetch<getV1AdminSellerVerificationResponse>(getGetV1AdminSellerVerificationUrl(verificationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSellerVerificationDecisionResponse200 = {
+  data: VerificationDecisionResponse
+  status: 200
+}
+
+export type postV1AdminSellerVerificationDecisionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSellerVerificationDecisionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSellerVerificationDecisionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSellerVerificationDecisionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSellerVerificationDecisionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSellerVerificationDecisionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSellerVerificationDecisionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSellerVerificationDecisionResponseSuccess = (postV1AdminSellerVerificationDecisionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminSellerVerificationDecisionResponseError = (postV1AdminSellerVerificationDecisionResponse400 | postV1AdminSellerVerificationDecisionResponse401 | postV1AdminSellerVerificationDecisionResponse403 | postV1AdminSellerVerificationDecisionResponse404 | postV1AdminSellerVerificationDecisionResponse409 | postV1AdminSellerVerificationDecisionResponse500 | postV1AdminSellerVerificationDecisionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSellerVerificationDecisionResponse = (postV1AdminSellerVerificationDecisionResponseSuccess | postV1AdminSellerVerificationDecisionResponseError)
+
+export const getPostV1AdminSellerVerificationDecisionUrl = (verificationId: string,) => {
+
+
+
+
+  return `/v1/admin/seller-verifications/${verificationId}/decision`
+}
+
+/**
+ * Requires the internal BFF credential, the caller’s session and `sellers.verification.review`. Performs 0009’s own reviewer UPDATE — `status`, `reviewed_at`, `reviewed_by`, `decision_reason` — and nothing else; the existing CHECK constraints, `app_private.tg_apply_verification_decision` and the existing audit trigger then do exactly what they already do, so the storefront’s verification state and the audit record are the existing machinery’s and are not written here. **The reviewer is taken from the caller’s own session and never from the request.** A reason is required for a rejection and optional on an approval. An application that has already been decided, or has expired, answers 409 and is not changed: the database locks the row, so two reviewers deciding at once cannot both win.
+ * @summary Approve or reject a seller verification
+ */
+export const postV1AdminSellerVerificationDecision = async (verificationId: string,
+    verificationDecisionRequest: VerificationDecisionRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSellerVerificationDecisionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminSellerVerificationDecisionResponse>(getPostV1AdminSellerVerificationDecisionUrl(verificationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(verificationDecisionRequest)
+  }
+);}
+
+
+
+export type postV1AdminSellerVerificationDocumentLinkResponse200 = {
+  data: VerificationDocumentLinkResponse
+  status: 200
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSellerVerificationDocumentLinkResponseSuccess = (postV1AdminSellerVerificationDocumentLinkResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminSellerVerificationDocumentLinkResponseError = (postV1AdminSellerVerificationDocumentLinkResponse400 | postV1AdminSellerVerificationDocumentLinkResponse401 | postV1AdminSellerVerificationDocumentLinkResponse403 | postV1AdminSellerVerificationDocumentLinkResponse404 | postV1AdminSellerVerificationDocumentLinkResponse500 | postV1AdminSellerVerificationDocumentLinkResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSellerVerificationDocumentLinkResponse = (postV1AdminSellerVerificationDocumentLinkResponseSuccess | postV1AdminSellerVerificationDocumentLinkResponseError)
+
+export const getPostV1AdminSellerVerificationDocumentLinkUrl = (verificationId: string,
+    documentId: string,) => {
+
+
+
+
+  return `/v1/admin/seller-verifications/${verificationId}/documents/${documentId}/link`
+}
+
+/**
+ * Requires the internal BFF credential, the caller’s session and `sellers.verification.review`. Issues a short-lived authorization to read **one** object in the private `verification-documents` bucket. **The caller names a document, never a path**: the bucket and object path are looked up from that row in the database — the same path the seller’s own submission flow composed — so there is no field through which an arbitrary object could be requested, and the document must belong to the submission named in the route. The bucket stays private and no provider credential is ever in the answer.
+ * @summary Authorize one look at a verification document
+ */
+export const postV1AdminSellerVerificationDocumentLink = async (verificationId: string,
+    documentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSellerVerificationDocumentLinkResponse> => {
+
+  return apiFetch<postV1AdminSellerVerificationDocumentLinkResponse>(getPostV1AdminSellerVerificationDocumentLinkUrl(verificationId,documentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type getV1OffersMadeResponse200 = {
+  data: OffersResponse
+  status: 200
+}
+
+export type getV1OffersMadeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1OffersMadeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1OffersMadeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1OffersMadeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1OffersMadeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1OffersMadeResponseSuccess = (getV1OffersMadeResponse200) & {
+  headers: Headers;
+};
+export type getV1OffersMadeResponseError = (getV1OffersMadeResponse400 | getV1OffersMadeResponse401 | getV1OffersMadeResponse403 | getV1OffersMadeResponse500 | getV1OffersMadeResponse503) & {
+  headers: Headers;
+};
+
+export type getV1OffersMadeResponse = (getV1OffersMadeResponseSuccess | getV1OffersMadeResponseError)
+
+export const getGetV1OffersMadeUrl = (params?: GetV1OffersMadeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/offers/made?${stringifiedParams}` : `/v1/offers/made`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the offers this account has made as a buyer, newest first. Scoped to the caller inside the statement, so another account’s offer is never matched. `isLapsed` is derived from the negotiation window and is not a status: the scheduled sweeper is what writes `expired`, and this is how a surface tells the truth in the minutes before it runs.
+ * @summary The offers the caller has made
+ */
+export const getV1OffersMade = async (params?: GetV1OffersMadeParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1OffersMadeResponse> => {
+
+  return apiFetch<getV1OffersMadeResponse>(getGetV1OffersMadeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1OffersReceivedResponse200 = {
+  data: SellerOffersResponse
+  status: 200
+}
+
+export type getV1OffersReceivedResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1OffersReceivedResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1OffersReceivedResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1OffersReceivedResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1OffersReceivedResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1OffersReceivedResponseSuccess = (getV1OffersReceivedResponse200) & {
+  headers: Headers;
+};
+export type getV1OffersReceivedResponseError = (getV1OffersReceivedResponse400 | getV1OffersReceivedResponse401 | getV1OffersReceivedResponse403 | getV1OffersReceivedResponse500 | getV1OffersReceivedResponse503) & {
+  headers: Headers;
+};
+
+export type getV1OffersReceivedResponse = (getV1OffersReceivedResponseSuccess | getV1OffersReceivedResponseError)
+
+export const getGetV1OffersReceivedUrl = (params?: GetV1OffersReceivedParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/offers/received?${stringifiedParams}` : `/v1/offers/received`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the offers made to this account’s storefront, newest first. A separate operation from the buyer’s list rather than the same one with a role parameter: each is scoped by a fixed predicate, so there is no argument a caller could supply that would show them the other side of a negotiation. The buyer is named by display name and by nothing else.
+ * @summary The offers made to the caller’s storefront
+ */
+export const getV1OffersReceived = async (params?: GetV1OffersReceivedParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1OffersReceivedResponse> => {
+
+  return apiFetch<getV1OffersReceivedResponse>(getGetV1OffersReceivedUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1OffersResponse201 = {
+  data: OfferMutationResponse
+  status: 201
+}
+
+export type postV1OffersResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1OffersResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1OffersResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1OffersResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1OffersResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1OffersResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1OffersResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1OffersResponseSuccess = (postV1OffersResponse201) & {
+  headers: Headers;
+};
+export type postV1OffersResponseError = (postV1OffersResponse400 | postV1OffersResponse401 | postV1OffersResponse403 | postV1OffersResponse404 | postV1OffersResponse409 | postV1OffersResponse500 | postV1OffersResponse503) & {
+  headers: Headers;
+};
+
+export type postV1OffersResponse = (postV1OffersResponseSuccess | postV1OffersResponseError)
+
+export const getPostV1OffersUrl = () => {
+
+
+
+
+  return `/v1/offers`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Opens one offer on a listing, as the buyer. **The request names a listing, an amount, a quantity and an optional note, and nothing else** — the seller and the currency come out of the listing row and the negotiation window from the admin-configured default, all inside the database, so none of the three can be supplied. Refuses a listing that cannot be bought, the caller’s own listing, a blocked pair, and a listing the caller already has a live offer on, each with its own code.
+ * @summary Make an offer
+ */
+export const postV1Offers = async (createOfferRequest: CreateOfferRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1OffersResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1OffersResponse>(getPostV1OffersUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createOfferRequest)
+  }
+);}
+
+
+
+export type postV1OfferCounterResponse201 = {
+  data: OfferMutationResponse
+  status: 201
+}
+
+export type postV1OfferCounterResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1OfferCounterResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1OfferCounterResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1OfferCounterResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1OfferCounterResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1OfferCounterResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1OfferCounterResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1OfferCounterResponseSuccess = (postV1OfferCounterResponse201) & {
+  headers: Headers;
+};
+export type postV1OfferCounterResponseError = (postV1OfferCounterResponse400 | postV1OfferCounterResponse401 | postV1OfferCounterResponse403 | postV1OfferCounterResponse404 | postV1OfferCounterResponse409 | postV1OfferCounterResponse500 | postV1OfferCounterResponse503) & {
+  headers: Headers;
+};
+
+export type postV1OfferCounterResponse = (postV1OfferCounterResponseSuccess | postV1OfferCounterResponseError)
+
+export const getPostV1OfferCounterUrl = (offerId: string,) => {
+
+
+
+
+  return `/v1/offers/${offerId}/counter`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The buyer replaces their own live offer: the offer named in the route moves to `countered` and the replacement is created with `parentOfferId` pointing at it, in one transaction. **The listing, the seller and the currency are copied from the offer being replaced**, and there is no field for any of them, so a counter cannot be pointed across listings, across sellers or at somebody else’s negotiation. Only the buyer of an offer may counter it; to a seller it answers 404.
+ * @summary Replace your own offer with a new one
+ */
+export const postV1OfferCounter = async (offerId: string,
+    counterOfferRequest: CounterOfferRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1OfferCounterResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1OfferCounterResponse>(getPostV1OfferCounterUrl(offerId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(counterOfferRequest)
+  }
+);}
+
+
+
+export type postV1OfferAcceptResponse200 = {
+  data: OfferDecisionResponse
+  status: 200
+}
+
+export type postV1OfferAcceptResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1OfferAcceptResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1OfferAcceptResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1OfferAcceptResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1OfferAcceptResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1OfferAcceptResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1OfferAcceptResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1OfferAcceptResponseSuccess = (postV1OfferAcceptResponse200) & {
+  headers: Headers;
+};
+export type postV1OfferAcceptResponseError = (postV1OfferAcceptResponse400 | postV1OfferAcceptResponse401 | postV1OfferAcceptResponse403 | postV1OfferAcceptResponse404 | postV1OfferAcceptResponse409 | postV1OfferAcceptResponse500 | postV1OfferAcceptResponse503) & {
+  headers: Headers;
+};
+
+export type postV1OfferAcceptResponse = (postV1OfferAcceptResponseSuccess | postV1OfferAcceptResponseError)
+
+export const getPostV1OfferAcceptUrl = (offerId: string,) => {
+
+
+
+
+  return `/v1/offers/${offerId}/accept`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The seller accepts one live offer made to their storefront, recording the obligation the schema defines — `status`, `respondedAt`, `acceptedAt`, the snapshotted terms and `paymentDueAt` — in a single statement from one transaction-consistent timestamp. **`paymentDueAt` is the acceptance time plus the admin-configured payment window (`finance.payment_due_hours`), derived in the database.** There is no field for it in any request, the negotiation window is not reused for it, and there is no fallback: a missing or unusable setting answers 503 `OFFER_PAYMENT_POLICY_MISSING` and changes nothing. **No order, checkout, reservation, payment, ledger entry or payout is created** — the accepted offer records the payable obligation and nothing else. Only the seller may accept; to the buyer it answers 404. The row is locked, so of two simultaneous decisions exactly one wins and the other gets 409.
+ * @summary Accept an offer
+ */
+export const postV1OfferAccept = async (offerId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1OfferAcceptResponse> => {
+
+  return apiFetch<postV1OfferAcceptResponse>(getPostV1OfferAcceptUrl(offerId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1OfferRejectResponse200 = {
+  data: OfferDecisionResponse
+  status: 200
+}
+
+export type postV1OfferRejectResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1OfferRejectResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1OfferRejectResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1OfferRejectResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1OfferRejectResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1OfferRejectResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1OfferRejectResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1OfferRejectResponseSuccess = (postV1OfferRejectResponse200) & {
+  headers: Headers;
+};
+export type postV1OfferRejectResponseError = (postV1OfferRejectResponse400 | postV1OfferRejectResponse401 | postV1OfferRejectResponse403 | postV1OfferRejectResponse404 | postV1OfferRejectResponse409 | postV1OfferRejectResponse500 | postV1OfferRejectResponse503) & {
+  headers: Headers;
+};
+
+export type postV1OfferRejectResponse = (postV1OfferRejectResponseSuccess | postV1OfferRejectResponseError)
+
+export const getPostV1OfferRejectUrl = (offerId: string,) => {
+
+
+
+
+  return `/v1/offers/${offerId}/reject`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The seller declines one live offer made to their storefront. Records the response and no obligation: no acceptance time, no snapshot and no payment deadline. Only the seller may reject; to the buyer it answers 404.
+ * @summary Reject an offer
+ */
+export const postV1OfferReject = async (offerId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1OfferRejectResponse> => {
+
+  return apiFetch<postV1OfferRejectResponse>(getPostV1OfferRejectUrl(offerId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1OfferWithdrawResponse200 = {
+  data: OfferDecisionResponse
+  status: 200
+}
+
+export type postV1OfferWithdrawResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1OfferWithdrawResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1OfferWithdrawResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1OfferWithdrawResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1OfferWithdrawResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1OfferWithdrawResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1OfferWithdrawResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1OfferWithdrawResponseSuccess = (postV1OfferWithdrawResponse200) & {
+  headers: Headers;
+};
+export type postV1OfferWithdrawResponseError = (postV1OfferWithdrawResponse400 | postV1OfferWithdrawResponse401 | postV1OfferWithdrawResponse403 | postV1OfferWithdrawResponse404 | postV1OfferWithdrawResponse409 | postV1OfferWithdrawResponse500 | postV1OfferWithdrawResponse503) & {
+  headers: Headers;
+};
+
+export type postV1OfferWithdrawResponse = (postV1OfferWithdrawResponseSuccess | postV1OfferWithdrawResponseError)
+
+export const getPostV1OfferWithdrawUrl = (offerId: string,) => {
+
+
+
+
+  return `/v1/offers/${offerId}/withdraw`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The buyer takes their own live offer back, which frees them to make another on the same listing. Only the buyer may withdraw; to the seller it answers 404.
+ * @summary Withdraw your own offer
+ */
+export const postV1OfferWithdraw = async (offerId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1OfferWithdrawResponse> => {
+
+  return apiFetch<postV1OfferWithdrawResponse>(getPostV1OfferWithdrawUrl(offerId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type getV1ServiceRequestsMadeResponse200 = {
+  data: ServiceRequestsResponse
+  status: 200
+}
+
+export type getV1ServiceRequestsMadeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ServiceRequestsMadeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1ServiceRequestsMadeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ServiceRequestsMadeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ServiceRequestsMadeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ServiceRequestsMadeResponseSuccess = (getV1ServiceRequestsMadeResponse200) & {
+  headers: Headers;
+};
+export type getV1ServiceRequestsMadeResponseError = (getV1ServiceRequestsMadeResponse400 | getV1ServiceRequestsMadeResponse401 | getV1ServiceRequestsMadeResponse403 | getV1ServiceRequestsMadeResponse500 | getV1ServiceRequestsMadeResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ServiceRequestsMadeResponse = (getV1ServiceRequestsMadeResponseSuccess | getV1ServiceRequestsMadeResponseError)
+
+export const getGetV1ServiceRequestsMadeUrl = (params?: GetV1ServiceRequestsMadeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/service-requests/made?${stringifiedParams}` : `/v1/service-requests/made`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the briefs this account has sent as a buyer, newest first. Scoped to the caller inside the statement, so another account’s request is never matched. `liveQuoteCount` counts only quotes that are still standing: the scheduled sweeper is what writes `expired`, and this is how a list tells the truth in the minutes before it runs.
+ * @summary The service requests the caller has sent
+ */
+export const getV1ServiceRequestsMade = async (params?: GetV1ServiceRequestsMadeParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ServiceRequestsMadeResponse> => {
+
+  return apiFetch<getV1ServiceRequestsMadeResponse>(getGetV1ServiceRequestsMadeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1ServiceRequestsReceivedResponse200 = {
+  data: ServiceRequestsResponse
+  status: 200
+}
+
+export type getV1ServiceRequestsReceivedResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ServiceRequestsReceivedResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1ServiceRequestsReceivedResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ServiceRequestsReceivedResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ServiceRequestsReceivedResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ServiceRequestsReceivedResponseSuccess = (getV1ServiceRequestsReceivedResponse200) & {
+  headers: Headers;
+};
+export type getV1ServiceRequestsReceivedResponseError = (getV1ServiceRequestsReceivedResponse400 | getV1ServiceRequestsReceivedResponse401 | getV1ServiceRequestsReceivedResponse403 | getV1ServiceRequestsReceivedResponse500 | getV1ServiceRequestsReceivedResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ServiceRequestsReceivedResponse = (getV1ServiceRequestsReceivedResponseSuccess | getV1ServiceRequestsReceivedResponseError)
+
+export const getGetV1ServiceRequestsReceivedUrl = (params?: GetV1ServiceRequestsReceivedParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/service-requests/received?${stringifiedParams}` : `/v1/service-requests/received`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The seller’s request inbox, newest first. A separate operation from the buyer’s list rather than the same one with a role parameter: each is scoped by a fixed predicate, so there is no argument a caller could supply that would show them the other side. The buyer is named by display name and by nothing else.
+ * @summary The service requests sent to the caller’s storefront
+ */
+export const getV1ServiceRequestsReceived = async (params?: GetV1ServiceRequestsReceivedParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ServiceRequestsReceivedResponse> => {
+
+  return apiFetch<getV1ServiceRequestsReceivedResponse>(getGetV1ServiceRequestsReceivedUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1ServiceRequestResponse200 = {
+  data: ServiceRequestDetailResponse
+  status: 200
+}
+
+export type getV1ServiceRequestResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ServiceRequestResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1ServiceRequestResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ServiceRequestResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1ServiceRequestResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ServiceRequestResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ServiceRequestResponseSuccess = (getV1ServiceRequestResponse200) & {
+  headers: Headers;
+};
+export type getV1ServiceRequestResponseError = (getV1ServiceRequestResponse400 | getV1ServiceRequestResponse401 | getV1ServiceRequestResponse403 | getV1ServiceRequestResponse404 | getV1ServiceRequestResponse500 | getV1ServiceRequestResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ServiceRequestResponse = (getV1ServiceRequestResponseSuccess | getV1ServiceRequestResponseError)
+
+export const getGetV1ServiceRequestUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Answered for either party and for nobody else. `isBuyer` and `isSeller` are **derived in the database** from the account the API established, so a surface knows which actions to offer without a browser ever claiming a side; they can never both be true. No account identifier is in the answer.
+ * @summary One service request and its quotes
+ */
+export const getV1ServiceRequest = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ServiceRequestResponse> => {
+
+  return apiFetch<getV1ServiceRequestResponse>(getGetV1ServiceRequestUrl(requestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1ServiceRequestsResponse201 = {
+  data: ServiceRequestMutationResponse
+  status: 201
+}
+
+export type postV1ServiceRequestsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceRequestsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceRequestsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceRequestsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceRequestsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceRequestsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceRequestsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceRequestsResponseSuccess = (postV1ServiceRequestsResponse201) & {
+  headers: Headers;
+};
+export type postV1ServiceRequestsResponseError = (postV1ServiceRequestsResponse400 | postV1ServiceRequestsResponse401 | postV1ServiceRequestsResponse403 | postV1ServiceRequestsResponse404 | postV1ServiceRequestsResponse409 | postV1ServiceRequestsResponse500 | postV1ServiceRequestsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceRequestsResponse = (postV1ServiceRequestsResponseSuccess | postV1ServiceRequestsResponseError)
+
+export const getPostV1ServiceRequestsUrl = () => {
+
+
+
+
+  return `/v1/service-requests`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Sends one brief to the seller of a **custom-priced** service, which is v5.2’s own division — a fixed-price service is bought through the cart and answers 409 `SERVICE_REQUEST_NOT_CUSTOM`. **The request names a listing, a title, a brief and optionally a budget and a date, and nothing else**: the seller and the currency come out of the listing row inside the database, so neither can be supplied. Refuses a service that cannot be bought, the caller’s own service and a blocked pair, each with its own code.
+ * @summary Send a service request
+ */
+export const postV1ServiceRequests = async (createServiceRequest: CreateServiceRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceRequestsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1ServiceRequestsResponse>(getPostV1ServiceRequestsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createServiceRequest)
+  }
+);}
+
+
+
+export type postV1ServiceRequestCancelResponse200 = {
+  data: ServiceRequestStatusResponse
+  status: 200
+}
+
+export type postV1ServiceRequestCancelResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceRequestCancelResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceRequestCancelResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceRequestCancelResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceRequestCancelResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceRequestCancelResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceRequestCancelResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceRequestCancelResponseSuccess = (postV1ServiceRequestCancelResponse200) & {
+  headers: Headers;
+};
+export type postV1ServiceRequestCancelResponseError = (postV1ServiceRequestCancelResponse400 | postV1ServiceRequestCancelResponse401 | postV1ServiceRequestCancelResponse403 | postV1ServiceRequestCancelResponse404 | postV1ServiceRequestCancelResponse409 | postV1ServiceRequestCancelResponse500 | postV1ServiceRequestCancelResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceRequestCancelResponse = (postV1ServiceRequestCancelResponseSuccess | postV1ServiceRequestCancelResponseError)
+
+export const getPostV1ServiceRequestCancelUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}/cancel`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The buyer withdraws their own brief while it is still open or quoted. Only the buyer may cancel; to the seller it answers 404.
+ * @summary Cancel your own service request
+ */
+export const postV1ServiceRequestCancel = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceRequestCancelResponse> => {
+
+  return apiFetch<postV1ServiceRequestCancelResponse>(getPostV1ServiceRequestCancelUrl(requestId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1ServiceRequestDeclineResponse200 = {
+  data: ServiceRequestStatusResponse
+  status: 200
+}
+
+export type postV1ServiceRequestDeclineResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceRequestDeclineResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceRequestDeclineResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceRequestDeclineResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceRequestDeclineResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceRequestDeclineResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceRequestDeclineResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceRequestDeclineResponseSuccess = (postV1ServiceRequestDeclineResponse200) & {
+  headers: Headers;
+};
+export type postV1ServiceRequestDeclineResponseError = (postV1ServiceRequestDeclineResponse400 | postV1ServiceRequestDeclineResponse401 | postV1ServiceRequestDeclineResponse403 | postV1ServiceRequestDeclineResponse404 | postV1ServiceRequestDeclineResponse409 | postV1ServiceRequestDeclineResponse500 | postV1ServiceRequestDeclineResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceRequestDeclineResponse = (postV1ServiceRequestDeclineResponseSuccess | postV1ServiceRequestDeclineResponseError)
+
+export const getPostV1ServiceRequestDeclineUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}/decline`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The seller declines a brief sent to their own storefront, from either of its live states. Only the seller may decline; to the buyer it answers 404.
+ * @summary Decline to quote on a service request
+ */
+export const postV1ServiceRequestDecline = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceRequestDeclineResponse> => {
+
+  return apiFetch<postV1ServiceRequestDeclineResponse>(getPostV1ServiceRequestDeclineUrl(requestId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1ServiceRequestQuotesResponse201 = {
+  data: ServiceQuoteMutationResponse
+  status: 201
+}
+
+export type postV1ServiceRequestQuotesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceRequestQuotesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceRequestQuotesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceRequestQuotesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceRequestQuotesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceRequestQuotesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceRequestQuotesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceRequestQuotesResponseSuccess = (postV1ServiceRequestQuotesResponse201) & {
+  headers: Headers;
+};
+export type postV1ServiceRequestQuotesResponseError = (postV1ServiceRequestQuotesResponse400 | postV1ServiceRequestQuotesResponse401 | postV1ServiceRequestQuotesResponse403 | postV1ServiceRequestQuotesResponse404 | postV1ServiceRequestQuotesResponse409 | postV1ServiceRequestQuotesResponse500 | postV1ServiceRequestQuotesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceRequestQuotesResponse = (postV1ServiceRequestQuotesResponseSuccess | postV1ServiceRequestQuotesResponseError)
+
+export const getPostV1ServiceRequestQuotesUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}/quotes`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The seller answers a brief sent to their own storefront. **The currency is copied from the request** — the schema’s composite foreign key means a quote can never disagree with the brief it answers — so there is no currency field. `validForDays` is how long the quote stands: the schema requires it because `service_quotes.expires_at` has no default, and its bound is the schema’s own 1–365. The existing database trigger is what moves the request from `open` to `quoted`; nothing in this operation does. Only the request’s own seller may quote; to anybody else it answers 404.
+ * @summary Quote on a service request
+ */
+export const postV1ServiceRequestQuotes = async (requestId: string,
+    createServiceQuote: CreateServiceQuote, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceRequestQuotesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1ServiceRequestQuotesResponse>(getPostV1ServiceRequestQuotesUrl(requestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createServiceQuote)
+  }
+);}
+
+
+
+export type postV1ServiceQuoteAcceptResponse200 = {
+  data: ServiceQuoteDecisionResponse
+  status: 200
+}
+
+export type postV1ServiceQuoteAcceptResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceQuoteAcceptResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceQuoteAcceptResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceQuoteAcceptResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceQuoteAcceptResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceQuoteAcceptResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceQuoteAcceptResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceQuoteAcceptResponseSuccess = (postV1ServiceQuoteAcceptResponse200) & {
+  headers: Headers;
+};
+export type postV1ServiceQuoteAcceptResponseError = (postV1ServiceQuoteAcceptResponse400 | postV1ServiceQuoteAcceptResponse401 | postV1ServiceQuoteAcceptResponse403 | postV1ServiceQuoteAcceptResponse404 | postV1ServiceQuoteAcceptResponse409 | postV1ServiceQuoteAcceptResponse500 | postV1ServiceQuoteAcceptResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceQuoteAcceptResponse = (postV1ServiceQuoteAcceptResponseSuccess | postV1ServiceQuoteAcceptResponseError)
+
+export const getPostV1ServiceQuoteAcceptUrl = (requestId: string,
+    quoteId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}/quotes/${quoteId}/accept`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The buyer accepts one live quote. In a single transaction the quote takes the obligation the schema defines — `status`, `respondedAt`, `acceptedAt`, the snapshotted terms and `paymentDueAt` — from one transaction-consistent timestamp, and the request is closed as `accepted`, which is the only way that status is ever reached. **`paymentDueAt` is the acceptance time plus the admin-configured payment window (`finance.payment_due_hours`), derived in the database** — the same key and the same value offers use. There is no field for it in any request, the quote’s own validity window is not reused for it, and there is no fallback: a missing or unusable setting answers 503 `SERVICE_QUOTE_PAYMENT_POLICY_MISSING` and changes nothing. **No order, checkout, delivery, payment, ledger entry or payout is created** — Phase 8 consumes the obligation later. The quote must belong to the request in the route, and both rows are locked, so of two simultaneous acceptances exactly one wins. Only the buyer may accept; to the seller it answers 404.
+ * @summary Accept a service quote
+ */
+export const postV1ServiceQuoteAccept = async (requestId: string,
+    quoteId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceQuoteAcceptResponse> => {
+
+  return apiFetch<postV1ServiceQuoteAcceptResponse>(getPostV1ServiceQuoteAcceptUrl(requestId,quoteId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1ServiceQuoteRejectResponse200 = {
+  data: ServiceQuoteDecisionResponse
+  status: 200
+}
+
+export type postV1ServiceQuoteRejectResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceQuoteRejectResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceQuoteRejectResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceQuoteRejectResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceQuoteRejectResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceQuoteRejectResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceQuoteRejectResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceQuoteRejectResponseSuccess = (postV1ServiceQuoteRejectResponse200) & {
+  headers: Headers;
+};
+export type postV1ServiceQuoteRejectResponseError = (postV1ServiceQuoteRejectResponse400 | postV1ServiceQuoteRejectResponse401 | postV1ServiceQuoteRejectResponse403 | postV1ServiceQuoteRejectResponse404 | postV1ServiceQuoteRejectResponse409 | postV1ServiceQuoteRejectResponse500 | postV1ServiceQuoteRejectResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceQuoteRejectResponse = (postV1ServiceQuoteRejectResponseSuccess | postV1ServiceQuoteRejectResponseError)
+
+export const getPostV1ServiceQuoteRejectUrl = (requestId: string,
+    quoteId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}/quotes/${quoteId}/reject`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The buyer declines one live quote. **The request deliberately stays open**, because the existing database trigger still admits further quotes while it is open or quoted. Records the response and no obligation. Only the buyer may reject; to the seller it answers 404.
+ * @summary Reject a service quote
+ */
+export const postV1ServiceQuoteReject = async (requestId: string,
+    quoteId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceQuoteRejectResponse> => {
+
+  return apiFetch<postV1ServiceQuoteRejectResponse>(getPostV1ServiceQuoteRejectUrl(requestId,quoteId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1ServiceQuoteWithdrawResponse200 = {
+  data: ServiceQuoteDecisionResponse
+  status: 200
+}
+
+export type postV1ServiceQuoteWithdrawResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ServiceQuoteWithdrawResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ServiceQuoteWithdrawResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ServiceQuoteWithdrawResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ServiceQuoteWithdrawResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ServiceQuoteWithdrawResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ServiceQuoteWithdrawResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ServiceQuoteWithdrawResponseSuccess = (postV1ServiceQuoteWithdrawResponse200) & {
+  headers: Headers;
+};
+export type postV1ServiceQuoteWithdrawResponseError = (postV1ServiceQuoteWithdrawResponse400 | postV1ServiceQuoteWithdrawResponse401 | postV1ServiceQuoteWithdrawResponse403 | postV1ServiceQuoteWithdrawResponse404 | postV1ServiceQuoteWithdrawResponse409 | postV1ServiceQuoteWithdrawResponse500 | postV1ServiceQuoteWithdrawResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ServiceQuoteWithdrawResponse = (postV1ServiceQuoteWithdrawResponseSuccess | postV1ServiceQuoteWithdrawResponseError)
+
+export const getPostV1ServiceQuoteWithdrawUrl = (requestId: string,
+    quoteId: string,) => {
+
+
+
+
+  return `/v1/service-requests/${requestId}/quotes/${quoteId}/withdraw`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The seller takes their own live quote back, which leaves the request open to another. Only the seller may withdraw; to the buyer it answers 404.
+ * @summary Withdraw your own service quote
+ */
+export const postV1ServiceQuoteWithdraw = async (requestId: string,
+    quoteId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ServiceQuoteWithdrawResponse> => {
+
+  return apiFetch<postV1ServiceQuoteWithdrawResponse>(getPostV1ServiceQuoteWithdrawUrl(requestId,quoteId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1AdminOnlyServiceRequestResponse201 = {
+  data: ServiceRequestMutationResponse
+  status: 201
+}
+
+export type postV1AdminOnlyServiceRequestResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminOnlyServiceRequestResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminOnlyServiceRequestResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminOnlyServiceRequestResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminOnlyServiceRequestResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminOnlyServiceRequestResponseSuccess = (postV1AdminOnlyServiceRequestResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminOnlyServiceRequestResponseError = (postV1AdminOnlyServiceRequestResponse400 | postV1AdminOnlyServiceRequestResponse401 | postV1AdminOnlyServiceRequestResponse403 | postV1AdminOnlyServiceRequestResponse500 | postV1AdminOnlyServiceRequestResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminOnlyServiceRequestResponse = (postV1AdminOnlyServiceRequestResponseSuccess | postV1AdminOnlyServiceRequestResponseError)
+
+export const getPostV1AdminOnlyServiceRequestUrl = () => {
+
+
+
+
+  return `/v1/service-requests/admin-only`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The buyer describes what they need and how they would prefer to pay; **no seller is named and none is assigned**, no quote is created and no notification is sent to anybody. The routing mode is written by the server, not chosen by the caller, and the currency comes from the platform’s own default currency — neither is a field in the body. The two payment fields are descriptive text: they reach no provider, and they are cleared ninety days after the request closes.
+ * @summary Send a service request for the platform to handle
+ */
+export const postV1AdminOnlyServiceRequest = async (createAdminOnlyServiceRequest?: CreateAdminOnlyServiceRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminOnlyServiceRequestResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminOnlyServiceRequestResponse>(getPostV1AdminOnlyServiceRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createAdminOnlyServiceRequest)
+  }
+);}
+
+
+
+export type getV1AdminServiceRequestsResponse200 = {
+  data: AdminServiceRequestsResponse
+  status: 200
+}
+
+export type getV1AdminServiceRequestsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminServiceRequestsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminServiceRequestsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminServiceRequestsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminServiceRequestsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminServiceRequestsResponseSuccess = (getV1AdminServiceRequestsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminServiceRequestsResponseError = (getV1AdminServiceRequestsResponse400 | getV1AdminServiceRequestsResponse401 | getV1AdminServiceRequestsResponse403 | getV1AdminServiceRequestsResponse500 | getV1AdminServiceRequestsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminServiceRequestsResponse = (getV1AdminServiceRequestsResponseSuccess | getV1AdminServiceRequestsResponseError)
+
+export const getGetV1AdminServiceRequestsUrl = (params?: GetV1AdminServiceRequestsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/service-requests?${stringifiedParams}` : `/v1/admin/service-requests`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `service_requests.request.read` in an aal2 session. One page of Admin Only requests, **oldest first**, over the partial index that exists for this order. Seller-routed requests are never in it. Neither payment field is in this document: `hasPaymentNotes` says only whether there is a note, and reading either value is a separate operation behind a separate permission.
+ * @summary The Admin Only service request queue
+ */
+export const getV1AdminServiceRequests = async (params?: GetV1AdminServiceRequestsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminServiceRequestsResponse> => {
+
+  return apiFetch<getV1AdminServiceRequestsResponse>(getGetV1AdminServiceRequestsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminServiceRequestResponse200 = {
+  data: AdminServiceRequestDetailResponse
+  status: 200
+}
+
+export type getV1AdminServiceRequestResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminServiceRequestResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminServiceRequestResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminServiceRequestResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminServiceRequestResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminServiceRequestResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminServiceRequestResponseSuccess = (getV1AdminServiceRequestResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminServiceRequestResponseError = (getV1AdminServiceRequestResponse400 | getV1AdminServiceRequestResponse401 | getV1AdminServiceRequestResponse403 | getV1AdminServiceRequestResponse404 | getV1AdminServiceRequestResponse500 | getV1AdminServiceRequestResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminServiceRequestResponse = (getV1AdminServiceRequestResponseSuccess | getV1AdminServiceRequestResponseError)
+
+export const getGetV1AdminServiceRequestUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/service-requests/${requestId}`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `service_requests.request.read` in an aal2 session. The brief in full, with the buyer’s display name and nothing else about them. **Neither payment field is in this document**, whatever the caller holds: they are returned only by the payment-information operation, which requires its own permission.
+ * @summary One Admin Only service request
+ */
+export const getV1AdminServiceRequest = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminServiceRequestResponse> => {
+
+  return apiFetch<getV1AdminServiceRequestResponse>(getGetV1AdminServiceRequestUrl(requestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminServiceRequestPaymentInformationResponse200 = {
+  data: ServiceRequestPaymentInformationResponse
+  status: 200
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminServiceRequestPaymentInformationResponseSuccess = (getV1AdminServiceRequestPaymentInformationResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminServiceRequestPaymentInformationResponseError = (getV1AdminServiceRequestPaymentInformationResponse400 | getV1AdminServiceRequestPaymentInformationResponse401 | getV1AdminServiceRequestPaymentInformationResponse403 | getV1AdminServiceRequestPaymentInformationResponse404 | getV1AdminServiceRequestPaymentInformationResponse500 | getV1AdminServiceRequestPaymentInformationResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminServiceRequestPaymentInformationResponse = (getV1AdminServiceRequestPaymentInformationResponseSuccess | getV1AdminServiceRequestPaymentInformationResponseError)
+
+export const getGetV1AdminServiceRequestPaymentInformationUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/service-requests/${requestId}/payment-information`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding **`service_requests.payment_info.read`** in an aal2 session — the request permission alone is not enough, and a caller holding only that receives 404 here while still being able to read the request itself. The two fields are free text a buyer typed; they reach no provider, and both are null once the retention job has cleared them, which leaves the request otherwise untouched.
+ * @summary The descriptive payment information of one Admin Only request
+ */
+export const getV1AdminServiceRequestPaymentInformation = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminServiceRequestPaymentInformationResponse> => {
+
+  return apiFetch<getV1AdminServiceRequestPaymentInformationResponse>(getGetV1AdminServiceRequestPaymentInformationUrl(requestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminServiceRequestDeclineResponse200 = {
+  data: AdminServiceRequestDecisionResponse
+  status: 200
+}
+
+export type postV1AdminServiceRequestDeclineResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminServiceRequestDeclineResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminServiceRequestDeclineResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminServiceRequestDeclineResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminServiceRequestDeclineResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminServiceRequestDeclineResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminServiceRequestDeclineResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminServiceRequestDeclineResponseSuccess = (postV1AdminServiceRequestDeclineResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminServiceRequestDeclineResponseError = (postV1AdminServiceRequestDeclineResponse400 | postV1AdminServiceRequestDeclineResponse401 | postV1AdminServiceRequestDeclineResponse403 | postV1AdminServiceRequestDeclineResponse404 | postV1AdminServiceRequestDeclineResponse409 | postV1AdminServiceRequestDeclineResponse500 | postV1AdminServiceRequestDeclineResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminServiceRequestDeclineResponse = (postV1AdminServiceRequestDeclineResponseSuccess | postV1AdminServiceRequestDeclineResponseError)
+
+export const getPostV1AdminServiceRequestDeclineUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/service-requests/${requestId}/decline`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding **`service_requests.request.manage`** in an aal2 session. The approved staff closure: `open → declined`, with the closing time recorded. On an Admin Only request `declined` means the platform closed it without fulfilment — which is a different fact from the same status on a seller-routed request, where it means the seller declined to quote, and the two are written by different functions that cannot reach each other’s rows. It creates no quote, no obligation, no payment deadline and no order, and sends no notification.
+ * @summary Close an Admin Only service request
+ */
+export const postV1AdminServiceRequestDecline = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminServiceRequestDeclineResponse> => {
+
+  return apiFetch<postV1AdminServiceRequestDeclineResponse>(getPostV1AdminServiceRequestDeclineUrl(requestId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type getV1SupportTicketsResponse200 = {
+  data: SupportTicketsResponse
+  status: 200
+}
+
+export type getV1SupportTicketsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SupportTicketsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SupportTicketsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SupportTicketsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SupportTicketsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SupportTicketsResponseSuccess = (getV1SupportTicketsResponse200) & {
+  headers: Headers;
+};
+export type getV1SupportTicketsResponseError = (getV1SupportTicketsResponse400 | getV1SupportTicketsResponse401 | getV1SupportTicketsResponse403 | getV1SupportTicketsResponse500 | getV1SupportTicketsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SupportTicketsResponse = (getV1SupportTicketsResponseSuccess | getV1SupportTicketsResponseError)
+
+export const getGetV1SupportTicketsUrl = (params?: GetV1SupportTicketsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/support/tickets?${stringifiedParams}` : `/v1/support/tickets`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of this account’s own tickets, newest first, scoped to the caller inside the statement so another account’s ticket is never matched. A row carries the reference to quote to an agent, the subject, the category, the status and the counts — and **no assigned agent, no assignment time, no priority and no first-response time**: those are the console’s and are not in the contract at all.
+ * @summary The support tickets the caller raised
+ */
+export const getV1SupportTickets = async (params?: GetV1SupportTicketsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SupportTicketsResponse> => {
+
+  return apiFetch<getV1SupportTicketsResponse>(getGetV1SupportTicketsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SupportTicketsResponse201 = {
+  data: OpenSupportTicketResponse
+  status: 201
+}
+
+export type postV1SupportTicketsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SupportTicketsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SupportTicketsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SupportTicketsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SupportTicketsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SupportTicketsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SupportTicketsResponseSuccess = (postV1SupportTicketsResponse201) & {
+  headers: Headers;
+};
+export type postV1SupportTicketsResponseError = (postV1SupportTicketsResponse400 | postV1SupportTicketsResponse401 | postV1SupportTicketsResponse403 | postV1SupportTicketsResponse429 | postV1SupportTicketsResponse500 | postV1SupportTicketsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SupportTicketsResponse = (postV1SupportTicketsResponseSuccess | postV1SupportTicketsResponseError)
+
+export const getPostV1SupportTicketsUrl = () => {
+
+
+
+
+  return `/v1/support/tickets`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. **The request names a subject, one of the eight existing categories and the first message, and nothing else**: there is no priority (the schema’s `normal` default stands), no status, no assignee and no related order in the body, and a strict schema refuses each of them. The ticket is created with its first message in one transaction, which is why the status returned is `pending_agent` rather than `open`. No notification is sent: the repository defines no support notification event.
+ * @summary Open a support ticket
+ */
+export const postV1SupportTickets = async (openSupportTicket: OpenSupportTicket, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SupportTicketsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SupportTicketsResponse>(getPostV1SupportTicketsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(openSupportTicket)
+  }
+);}
+
+
+
+export type getV1SupportTicketResponse200 = {
+  data: SupportTicketDetailResponse
+  status: 200
+}
+
+export type getV1SupportTicketResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SupportTicketResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SupportTicketResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SupportTicketResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SupportTicketResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SupportTicketResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SupportTicketResponseSuccess = (getV1SupportTicketResponse200) & {
+  headers: Headers;
+};
+export type getV1SupportTicketResponseError = (getV1SupportTicketResponse400 | getV1SupportTicketResponse401 | getV1SupportTicketResponse403 | getV1SupportTicketResponse404 | getV1SupportTicketResponse500 | getV1SupportTicketResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SupportTicketResponse = (getV1SupportTicketResponseSuccess | getV1SupportTicketResponseError)
+
+export const getGetV1SupportTicketUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/support/tickets/${ticketId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Answered for the account that raised the ticket and for nobody else; a ticket belonging to somebody else and one that does not exist are the same 404. Internal notes are a different table and are in no shape this operation can return.
+ * @summary One support ticket the caller raised
+ */
+export const getV1SupportTicket = async (ticketId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SupportTicketResponse> => {
+
+  return apiFetch<getV1SupportTicketResponse>(getGetV1SupportTicketUrl(ticketId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SupportTicketMessagesResponse200 = {
+  data: SupportMessagesResponse
+  status: 200
+}
+
+export type getV1SupportTicketMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SupportTicketMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SupportTicketMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SupportTicketMessagesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SupportTicketMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SupportTicketMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SupportTicketMessagesResponseSuccess = (getV1SupportTicketMessagesResponse200) & {
+  headers: Headers;
+};
+export type getV1SupportTicketMessagesResponseError = (getV1SupportTicketMessagesResponse400 | getV1SupportTicketMessagesResponse401 | getV1SupportTicketMessagesResponse403 | getV1SupportTicketMessagesResponse404 | getV1SupportTicketMessagesResponse500 | getV1SupportTicketMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SupportTicketMessagesResponse = (getV1SupportTicketMessagesResponseSuccess | getV1SupportTicketMessagesResponseError)
+
+export const getGetV1SupportTicketMessagesUrl = (ticketId: string,
+    params?: GetV1SupportTicketMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/support/tickets/${ticketId}/messages?${stringifiedParams}` : `/v1/support/tickets/${ticketId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the ticket’s messages, chosen newest-first from the cursor and returned **in reading order**, so a client renders what it receives without re-sorting. A message says which side wrote it and whether it is the caller’s own; it never carries an author’s account identifier. **Internal notes are never here** — they are a separate table with no requester read path. An attachment travels as its display fields and its identifier, never as a storage path.
+ * @summary One support ticket’s conversation
+ */
+export const getV1SupportTicketMessages = async (ticketId: string,
+    params?: GetV1SupportTicketMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SupportTicketMessagesResponse> => {
+
+  return apiFetch<getV1SupportTicketMessagesResponse>(getGetV1SupportTicketMessagesUrl(ticketId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SupportTicketMessagesResponse201 = {
+  data: SupportMessageMutationResponse
+  status: 201
+}
+
+export type postV1SupportTicketMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SupportTicketMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SupportTicketMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SupportTicketMessagesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SupportTicketMessagesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SupportTicketMessagesResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SupportTicketMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SupportTicketMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SupportTicketMessagesResponseSuccess = (postV1SupportTicketMessagesResponse201) & {
+  headers: Headers;
+};
+export type postV1SupportTicketMessagesResponseError = (postV1SupportTicketMessagesResponse400 | postV1SupportTicketMessagesResponse401 | postV1SupportTicketMessagesResponse403 | postV1SupportTicketMessagesResponse404 | postV1SupportTicketMessagesResponse409 | postV1SupportTicketMessagesResponse429 | postV1SupportTicketMessagesResponse500 | postV1SupportTicketMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SupportTicketMessagesResponse = (postV1SupportTicketMessagesResponseSuccess | postV1SupportTicketMessagesResponseError)
+
+export const getPostV1SupportTicketMessagesUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/support/tickets/${ticketId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The ticket is named in the route and the body is the message alone: there is no author field, and the author’s role is worked out from the ticket inside the database rather than trusted. A requester’s reply moves the ticket to `pending_agent`; on a `resolved` ticket it is accepted and the status is left where it is; on a closed ticket it is refused with 409.
+ * @summary Reply on one’s own support ticket
+ */
+export const postV1SupportTicketMessages = async (ticketId: string,
+    postSupportMessage: PostSupportMessage, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SupportTicketMessagesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SupportTicketMessagesResponse>(getPostV1SupportTicketMessagesUrl(ticketId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postSupportMessage)
+  }
+);}
+
+
+
+export type postV1SupportTicketCloseResponse200 = {
+  data: SupportTicketClosureResponse
+  status: 200
+}
+
+export type postV1SupportTicketCloseResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SupportTicketCloseResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SupportTicketCloseResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SupportTicketCloseResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SupportTicketCloseResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SupportTicketCloseResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SupportTicketCloseResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SupportTicketCloseResponseSuccess = (postV1SupportTicketCloseResponse200) & {
+  headers: Headers;
+};
+export type postV1SupportTicketCloseResponseError = (postV1SupportTicketCloseResponse400 | postV1SupportTicketCloseResponse401 | postV1SupportTicketCloseResponse403 | postV1SupportTicketCloseResponse404 | postV1SupportTicketCloseResponse409 | postV1SupportTicketCloseResponse500 | postV1SupportTicketCloseResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SupportTicketCloseResponse = (postV1SupportTicketCloseResponseSuccess | postV1SupportTicketCloseResponseError)
+
+export const getPostV1SupportTicketCloseUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/support/tickets/${ticketId}/close`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. **The operation names the transition and the body is empty**: there is no status field anywhere in this request, and the database passes the literal `closed` to the existing writer, so `resolved` — the agent’s outcome — cannot be recorded here. A closed ticket takes no further message, and nothing in the repository reopens one; somebody who needs more help opens another ticket. It sends no notification and creates no obligation of any kind.
+ * @summary Close one’s own support ticket
+ */
+export const postV1SupportTicketClose = async (ticketId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SupportTicketCloseResponse> => {
+
+  return apiFetch<postV1SupportTicketCloseResponse>(getPostV1SupportTicketCloseUrl(ticketId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1SupportAttachmentUploadResponse201 = {
+  data: SupportAttachmentUploadResponse
+  status: 201
+}
+
+export type postV1SupportAttachmentUploadResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SupportAttachmentUploadResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SupportAttachmentUploadResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SupportAttachmentUploadResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SupportAttachmentUploadResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SupportAttachmentUploadResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1SupportAttachmentUploadResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SupportAttachmentUploadResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SupportAttachmentUploadResponseSuccess = (postV1SupportAttachmentUploadResponse201) & {
+  headers: Headers;
+};
+export type postV1SupportAttachmentUploadResponseError = (postV1SupportAttachmentUploadResponse400 | postV1SupportAttachmentUploadResponse401 | postV1SupportAttachmentUploadResponse403 | postV1SupportAttachmentUploadResponse404 | postV1SupportAttachmentUploadResponse409 | postV1SupportAttachmentUploadResponse429 | postV1SupportAttachmentUploadResponse500 | postV1SupportAttachmentUploadResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SupportAttachmentUploadResponse = (postV1SupportAttachmentUploadResponseSuccess | postV1SupportAttachmentUploadResponseError)
+
+export const getPostV1SupportAttachmentUploadUrl = (ticketId: string,
+    messageId: string,) => {
+
+
+
+
+  return `/v1/support/tickets/${ticketId}/messages/${messageId}/attachments/uploads`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Authorizes a single upload into the **private** `support-attachments` bucket and returns the one object path it may go to. **The request carries no path**: the bucket, the ticket, the message and a fresh random file name are all composed in the database from rows the caller was found to own, so a traversal or another ticket’s namespace is unrepresentable rather than merely refused. The type and size ceilings are the bucket’s own, read at call time. A message that is not the caller’s own — including an agent’s message on the caller’s own ticket — is 404. Nothing is written.
+ * @summary Authorize one support attachment upload
+ */
+export const postV1SupportAttachmentUpload = async (ticketId: string,
+    messageId: string,
+    supportAttachmentUploadRequest: SupportAttachmentUploadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SupportAttachmentUploadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SupportAttachmentUploadResponse>(getPostV1SupportAttachmentUploadUrl(ticketId,messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportAttachmentUploadRequest)
+  }
+);}
+
+
+
+export type postV1SupportAttachmentsResponse201 = {
+  data: SupportAttachmentRecordResponse
+  status: 201
+}
+
+export type postV1SupportAttachmentsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SupportAttachmentsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SupportAttachmentsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SupportAttachmentsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SupportAttachmentsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SupportAttachmentsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SupportAttachmentsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SupportAttachmentsResponseSuccess = (postV1SupportAttachmentsResponse201) & {
+  headers: Headers;
+};
+export type postV1SupportAttachmentsResponseError = (postV1SupportAttachmentsResponse400 | postV1SupportAttachmentsResponse401 | postV1SupportAttachmentsResponse403 | postV1SupportAttachmentsResponse404 | postV1SupportAttachmentsResponse409 | postV1SupportAttachmentsResponse500 | postV1SupportAttachmentsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SupportAttachmentsResponse = (postV1SupportAttachmentsResponseSuccess | postV1SupportAttachmentsResponseError)
+
+export const getPostV1SupportAttachmentsUrl = (ticketId: string,
+    messageId: string,) => {
+
+
+
+
+  return `/v1/support/tickets/${ticketId}/messages/${messageId}/attachments`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Records the path the previous operation issued, after the API has confirmed with the storage provider that the object is actually there. The expected prefix is rebuilt in the database from the caller’s own ticket and message, and the remainder must be one plain file name of the shape the authorization issues, so a path for another ticket, another message, another bucket or with a traversal in it cannot be recorded. A path already recorded is refused rather than stored twice. No event and no notification is written.
+ * @summary Record a support attachment that was uploaded
+ */
+export const postV1SupportAttachments = async (ticketId: string,
+    messageId: string,
+    supportAttachmentRecord: SupportAttachmentRecord, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SupportAttachmentsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SupportAttachmentsResponse>(getPostV1SupportAttachmentsUrl(ticketId,messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportAttachmentRecord)
+  }
+);}
+
+
+
+export type getV1SupportAttachmentLinkResponse200 = {
+  data: SupportAttachmentLinkResponse
+  status: 200
+}
+
+export type getV1SupportAttachmentLinkResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SupportAttachmentLinkResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SupportAttachmentLinkResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SupportAttachmentLinkResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SupportAttachmentLinkResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SupportAttachmentLinkResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SupportAttachmentLinkResponseSuccess = (getV1SupportAttachmentLinkResponse200) & {
+  headers: Headers;
+};
+export type getV1SupportAttachmentLinkResponseError = (getV1SupportAttachmentLinkResponse400 | getV1SupportAttachmentLinkResponse401 | getV1SupportAttachmentLinkResponse403 | getV1SupportAttachmentLinkResponse404 | getV1SupportAttachmentLinkResponse500 | getV1SupportAttachmentLinkResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SupportAttachmentLinkResponse = (getV1SupportAttachmentLinkResponseSuccess | getV1SupportAttachmentLinkResponseError)
+
+export const getGetV1SupportAttachmentLinkUrl = (ticketId: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/v1/support/tickets/${ticketId}/attachments/${attachmentId}/link`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Returns a signed URL for exactly one object for a few minutes. **The caller names an attachment; the path comes from the row**: no operation on this surface accepts a storage path, and the database requires the attachment, its message’s ticket and the ticket in the route to agree, so an identifier cannot be spent against another ticket. The bucket stays private and the URL is the only authorization that ever reaches a browser.
+ * @summary A short-lived link to one support attachment
+ */
+export const getV1SupportAttachmentLink = async (ticketId: string,
+    attachmentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SupportAttachmentLinkResponse> => {
+
+  return apiFetch<getV1SupportAttachmentLinkResponse>(getGetV1SupportAttachmentLinkUrl(ticketId,attachmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSupportQueueResponse200 = {
+  data: SupportQueueResponse
+  status: 200
+}
+
+export type getV1AdminSupportQueueResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSupportQueueResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSupportQueueResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSupportQueueResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSupportQueueResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSupportQueueResponseSuccess = (getV1AdminSupportQueueResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSupportQueueResponseError = (getV1AdminSupportQueueResponse400 | getV1AdminSupportQueueResponse401 | getV1AdminSupportQueueResponse403 | getV1AdminSupportQueueResponse500 | getV1AdminSupportQueueResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSupportQueueResponse = (getV1AdminSupportQueueResponseSuccess | getV1AdminSupportQueueResponseError)
+
+export const getGetV1AdminSupportQueueUrl = (params?: GetV1AdminSupportQueueParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/support/queue?${stringifiedParams}` : `/v1/admin/support/queue`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `support.ticket.read` in an aal2 session. One page of the tickets **assigned to nobody**, in the two statuses migration 0028’s own queue index covers, **oldest first** — the priority column is returned as a fact and is deliberately not an ordering, because it is text and ordering it expresses no severity. Queue membership is the `assigned_to` column and nothing else: there is no routing rule, no team and no priority ranking. Empty for a caller who holds nothing, so the queue itself discloses no existence. It returns the requester’s display name and **no assignee, no agent identifier and no event trail**.
+ * @summary The shared support queue
+ */
+export const getV1AdminSupportQueue = async (params?: GetV1AdminSupportQueueParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSupportQueueResponse> => {
+
+  return apiFetch<getV1AdminSupportQueueResponse>(getGetV1AdminSupportQueueUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSupportAssignedResponse200 = {
+  data: SupportAssignedResponse
+  status: 200
+}
+
+export type getV1AdminSupportAssignedResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSupportAssignedResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSupportAssignedResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSupportAssignedResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSupportAssignedResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSupportAssignedResponseSuccess = (getV1AdminSupportAssignedResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSupportAssignedResponseError = (getV1AdminSupportAssignedResponse400 | getV1AdminSupportAssignedResponse401 | getV1AdminSupportAssignedResponse403 | getV1AdminSupportAssignedResponse500 | getV1AdminSupportAssignedResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSupportAssignedResponse = (getV1AdminSupportAssignedResponseSuccess | getV1AdminSupportAssignedResponseError)
+
+export const getGetV1AdminSupportAssignedUrl = (params?: GetV1AdminSupportAssignedParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/support/assigned?${stringifiedParams}` : `/v1/admin/support/assigned`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `support.ticket.read` in an aal2 session. One page of the tickets assigned to **the caller**, any status, newest first. A separate operation from the queue rather than a filter on it: each is scoped by a predicate fixed in the database, so there is no argument a caller could supply that would show them another agent’s work.
+ * @summary The tickets assigned to the calling agent
+ */
+export const getV1AdminSupportAssigned = async (params?: GetV1AdminSupportAssignedParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSupportAssignedResponse> => {
+
+  return apiFetch<getV1AdminSupportAssignedResponse>(getGetV1AdminSupportAssignedUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSupportTicketResponse200 = {
+  data: SupportConsoleTicketResponse
+  status: 200
+}
+
+export type getV1AdminSupportTicketResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSupportTicketResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSupportTicketResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSupportTicketResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSupportTicketResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSupportTicketResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSupportTicketResponseSuccess = (getV1AdminSupportTicketResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSupportTicketResponseError = (getV1AdminSupportTicketResponse400 | getV1AdminSupportTicketResponse401 | getV1AdminSupportTicketResponse403 | getV1AdminSupportTicketResponse404 | getV1AdminSupportTicketResponse500 | getV1AdminSupportTicketResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSupportTicketResponse = (getV1AdminSupportTicketResponseSuccess | getV1AdminSupportTicketResponseError)
+
+export const getGetV1AdminSupportTicketUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `support.ticket.read` in an aal2 session. Answered only for a ticket the caller may work on — theirs or nobody’s, which is 0028’s own agent policy predicate. `isMine` and `isAssigned` are derived in the database from the account the API established, so the console knows which controls to offer without ever learning who else holds a ticket; **`assignedTo` is in no response shape on this surface**.
+ * @summary One support ticket, for the agent working it
+ */
+export const getV1AdminSupportTicket = async (ticketId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSupportTicketResponse> => {
+
+  return apiFetch<getV1AdminSupportTicketResponse>(getGetV1AdminSupportTicketUrl(ticketId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSupportTicketMessagesResponse200 = {
+  data: SupportConsoleMessagesResponse
+  status: 200
+}
+
+export type getV1AdminSupportTicketMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSupportTicketMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSupportTicketMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSupportTicketMessagesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSupportTicketMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSupportTicketMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSupportTicketMessagesResponseSuccess = (getV1AdminSupportTicketMessagesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSupportTicketMessagesResponseError = (getV1AdminSupportTicketMessagesResponse400 | getV1AdminSupportTicketMessagesResponse401 | getV1AdminSupportTicketMessagesResponse403 | getV1AdminSupportTicketMessagesResponse404 | getV1AdminSupportTicketMessagesResponse500 | getV1AdminSupportTicketMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSupportTicketMessagesResponse = (getV1AdminSupportTicketMessagesResponseSuccess | getV1AdminSupportTicketMessagesResponseError)
+
+export const getGetV1AdminSupportTicketMessagesUrl = (ticketId: string,
+    params?: GetV1AdminSupportTicketMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/support/tickets/${ticketId}/messages?${stringifiedParams}` : `/v1/admin/support/tickets/${ticketId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `support.ticket.read` in an aal2 session. The same conversation the requester reads, from the other side: chosen newest-first from the cursor and returned **in reading order**. `isOwnMessage` is true for the agent’s own messages here. A message never carries an author identifier, and an attachment travels as its display fields and its identifier, never as a storage path.
+ * @summary One ticket’s conversation, for the agent working it
+ */
+export const getV1AdminSupportTicketMessages = async (ticketId: string,
+    params?: GetV1AdminSupportTicketMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSupportTicketMessagesResponse> => {
+
+  return apiFetch<getV1AdminSupportTicketMessagesResponse>(getGetV1AdminSupportTicketMessagesUrl(ticketId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSupportTicketMessagesResponse201 = {
+  data: SupportConsoleMessageMutationResponse
+  status: 201
+}
+
+export type postV1AdminSupportTicketMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSupportTicketMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSupportTicketMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSupportTicketMessagesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSupportTicketMessagesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSupportTicketMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSupportTicketMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSupportTicketMessagesResponseSuccess = (postV1AdminSupportTicketMessagesResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminSupportTicketMessagesResponseError = (postV1AdminSupportTicketMessagesResponse400 | postV1AdminSupportTicketMessagesResponse401 | postV1AdminSupportTicketMessagesResponse403 | postV1AdminSupportTicketMessagesResponse404 | postV1AdminSupportTicketMessagesResponse409 | postV1AdminSupportTicketMessagesResponse500 | postV1AdminSupportTicketMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSupportTicketMessagesResponse = (postV1AdminSupportTicketMessagesResponseSuccess | postV1AdminSupportTicketMessagesResponseError)
+
+export const getPostV1AdminSupportTicketMessagesUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding **`support.ticket.manage`** in an aal2 session, **and an actual assignment**: a ticket nobody has claimed is 404, because 0028’s `can_access_support_ticket` admits only the requester and the assigned agent — which is why claiming is its own operation. The body is the message alone; the author’s role is worked out from the ticket inside the database rather than trusted. A reply moves the ticket to `pending_requester` and stamps the first response the first time an agent answers; on a `resolved` ticket it is accepted and moves nothing. No notification is sent: the repository defines no support notification event.
+ * @summary Reply to the requester
+ */
+export const postV1AdminSupportTicketMessages = async (ticketId: string,
+    postSupportAgentMessage: PostSupportAgentMessage, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSupportTicketMessagesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminSupportTicketMessagesResponse>(getPostV1AdminSupportTicketMessagesUrl(ticketId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postSupportAgentMessage)
+  }
+);}
+
+
+
+export type getV1AdminSupportTicketNotesResponse200 = {
+  data: SupportInternalNotesResponse
+  status: 200
+}
+
+export type getV1AdminSupportTicketNotesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSupportTicketNotesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSupportTicketNotesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSupportTicketNotesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSupportTicketNotesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSupportTicketNotesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSupportTicketNotesResponseSuccess = (getV1AdminSupportTicketNotesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSupportTicketNotesResponseError = (getV1AdminSupportTicketNotesResponse400 | getV1AdminSupportTicketNotesResponse401 | getV1AdminSupportTicketNotesResponse403 | getV1AdminSupportTicketNotesResponse404 | getV1AdminSupportTicketNotesResponse500 | getV1AdminSupportTicketNotesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSupportTicketNotesResponse = (getV1AdminSupportTicketNotesResponseSuccess | getV1AdminSupportTicketNotesResponseError)
+
+export const getGetV1AdminSupportTicketNotesUrl = (ticketId: string,
+    params?: GetV1AdminSupportTicketNotesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/support/tickets/${ticketId}/notes?${stringifiedParams}` : `/v1/admin/support/tickets/${ticketId}/notes`
+}
+
+/**
+ * Requires the internal BFF credential and a staff session holding `support.ticket.read` in an aal2 session — which is the key 0028’s own `support_internal_notes_staff_read` policy names. **This is the only operation in the API that returns an internal note.** `support_internal_notes` has no requester read path anywhere in the repository, and no requester response schema can carry one. A note reports whether it is the caller’s own; it never carries an author identifier.
+ * @summary One ticket’s internal notes
+ */
+export const getV1AdminSupportTicketNotes = async (ticketId: string,
+    params?: GetV1AdminSupportTicketNotesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSupportTicketNotesResponse> => {
+
+  return apiFetch<getV1AdminSupportTicketNotesResponse>(getGetV1AdminSupportTicketNotesUrl(ticketId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSupportTicketNotesResponse201 = {
+  data: SupportInternalNoteMutationResponse
+  status: 201
+}
+
+export type postV1AdminSupportTicketNotesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSupportTicketNotesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSupportTicketNotesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSupportTicketNotesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSupportTicketNotesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSupportTicketNotesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSupportTicketNotesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSupportTicketNotesResponseSuccess = (postV1AdminSupportTicketNotesResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminSupportTicketNotesResponseError = (postV1AdminSupportTicketNotesResponse400 | postV1AdminSupportTicketNotesResponse401 | postV1AdminSupportTicketNotesResponse403 | postV1AdminSupportTicketNotesResponse404 | postV1AdminSupportTicketNotesResponse409 | postV1AdminSupportTicketNotesResponse500 | postV1AdminSupportTicketNotesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSupportTicketNotesResponse = (postV1AdminSupportTicketNotesResponseSuccess | postV1AdminSupportTicketNotesResponseError)
+
+export const getPostV1AdminSupportTicketNotesUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}/notes`
+}
+
+/**
+ * Requires the internal BFF credential, **`support.ticket.manage`** in an aal2 session and an actual assignment. The note lands in the staff-only table, which 0028 separated from the conversation precisely so that "the requester can never read this" is a table-level fact rather than a column flag. A closed ticket takes no further note. The `note_added` event is the existing writer’s; nothing is written twice.
+ * @summary Write an internal note
+ */
+export const postV1AdminSupportTicketNotes = async (ticketId: string,
+    addSupportInternalNote: AddSupportInternalNote, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSupportTicketNotesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminSupportTicketNotesResponse>(getPostV1AdminSupportTicketNotesUrl(ticketId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addSupportInternalNote)
+  }
+);}
+
+
+
+export type postV1AdminSupportTicketClaimResponse200 = {
+  data: SupportAssignmentResponse
+  status: 200
+}
+
+export type postV1AdminSupportTicketClaimResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSupportTicketClaimResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSupportTicketClaimResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSupportTicketClaimResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSupportTicketClaimResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSupportTicketClaimResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSupportTicketClaimResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSupportTicketClaimResponseSuccess = (postV1AdminSupportTicketClaimResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminSupportTicketClaimResponseError = (postV1AdminSupportTicketClaimResponse400 | postV1AdminSupportTicketClaimResponse401 | postV1AdminSupportTicketClaimResponse403 | postV1AdminSupportTicketClaimResponse404 | postV1AdminSupportTicketClaimResponse409 | postV1AdminSupportTicketClaimResponse500 | postV1AdminSupportTicketClaimResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSupportTicketClaimResponse = (postV1AdminSupportTicketClaimResponseSuccess | postV1AdminSupportTicketClaimResponseError)
+
+export const getPostV1AdminSupportTicketClaimUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}/claim`
+}
+
+/**
+ * Requires the internal BFF credential and **`support.ticket.manage`** in an aal2 session. Assigns **the calling agent** to a ticket that is theirs or nobody’s: there is no agent field in the request, so nobody can be assigned by anybody else, and a ticket already held by a colleague is 404 exactly as it is to every read. The body is empty. Claiming moves an `open` ticket to `pending_agent` and moves nothing otherwise; claiming again is the existing writer’s no-op rather than a second event. A closed ticket is 409.
+ * @summary Take a ticket from the queue
+ */
+export const postV1AdminSupportTicketClaim = async (ticketId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSupportTicketClaimResponse> => {
+
+  return apiFetch<postV1AdminSupportTicketClaimResponse>(getPostV1AdminSupportTicketClaimUrl(ticketId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSupportTicketReleaseResponse200 = {
+  data: SupportAssignmentResponse
+  status: 200
+}
+
+export type postV1AdminSupportTicketReleaseResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSupportTicketReleaseResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSupportTicketReleaseResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSupportTicketReleaseResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSupportTicketReleaseResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSupportTicketReleaseResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSupportTicketReleaseResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSupportTicketReleaseResponseSuccess = (postV1AdminSupportTicketReleaseResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminSupportTicketReleaseResponseError = (postV1AdminSupportTicketReleaseResponse400 | postV1AdminSupportTicketReleaseResponse401 | postV1AdminSupportTicketReleaseResponse403 | postV1AdminSupportTicketReleaseResponse404 | postV1AdminSupportTicketReleaseResponse409 | postV1AdminSupportTicketReleaseResponse500 | postV1AdminSupportTicketReleaseResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSupportTicketReleaseResponse = (postV1AdminSupportTicketReleaseResponseSuccess | postV1AdminSupportTicketReleaseResponseError)
+
+export const getPostV1AdminSupportTicketReleaseUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}/release`
+}
+
+/**
+ * Requires the internal BFF credential and **`support.ticket.manage`** in an aal2 session, and works only on a ticket the caller actually holds. It clears the assignee and its stamp and **changes no status**: the existing writer’s null branch moves the assignee, the Realtime membership version and the `unassigned` event, and nothing else. The body is empty.
+ * @summary Return a ticket to the queue
+ */
+export const postV1AdminSupportTicketRelease = async (ticketId: string, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSupportTicketReleaseResponse> => {
+
+  return apiFetch<postV1AdminSupportTicketReleaseResponse>(getPostV1AdminSupportTicketReleaseUrl(ticketId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSupportTicketDecisionResponse200 = {
+  data: SupportAgentDecisionResponse
+  status: 200
+}
+
+export type postV1AdminSupportTicketDecisionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSupportTicketDecisionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSupportTicketDecisionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSupportTicketDecisionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSupportTicketDecisionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSupportTicketDecisionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSupportTicketDecisionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSupportTicketDecisionResponseSuccess = (postV1AdminSupportTicketDecisionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminSupportTicketDecisionResponseError = (postV1AdminSupportTicketDecisionResponse400 | postV1AdminSupportTicketDecisionResponse401 | postV1AdminSupportTicketDecisionResponse403 | postV1AdminSupportTicketDecisionResponse404 | postV1AdminSupportTicketDecisionResponse409 | postV1AdminSupportTicketDecisionResponse500 | postV1AdminSupportTicketDecisionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSupportTicketDecisionResponse = (postV1AdminSupportTicketDecisionResponseSuccess | postV1AdminSupportTicketDecisionResponseError)
+
+export const getPostV1AdminSupportTicketDecisionUrl = (ticketId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}/decision`
+}
+
+/**
+ * Requires the internal BFF credential, **`support.ticket.manage`** in an aal2 session and an actual assignment. **The body admits `resolved` or `closed` and nothing else** — the two outcomes 0028’s own `close_support_ticket` defines — and the database checks the value against those literals before calling it. `resolved` stamps the resolution time and `closed` the closing time; a resolved ticket may then be closed, which is what the table’s own constraint contemplates. Resolving an already resolved ticket and acting on a closed one are both 409. There is no reopen operation anywhere, because nothing in the repository reopens a ticket. The requester’s own closure is a different function that takes no status and can only produce `closed`.
+ * @summary Resolve or close a ticket
+ */
+export const postV1AdminSupportTicketDecision = async (ticketId: string,
+    supportAgentDecisionRequest: SupportAgentDecisionRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSupportTicketDecisionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminSupportTicketDecisionResponse>(getPostV1AdminSupportTicketDecisionUrl(ticketId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportAgentDecisionRequest)
+  }
+);}
+
+
+
+export type getV1AdminSupportAttachmentLinkResponse200 = {
+  data: SupportConsoleAttachmentLinkResponse
+  status: 200
+}
+
+export type getV1AdminSupportAttachmentLinkResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSupportAttachmentLinkResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSupportAttachmentLinkResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSupportAttachmentLinkResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSupportAttachmentLinkResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSupportAttachmentLinkResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSupportAttachmentLinkResponseSuccess = (getV1AdminSupportAttachmentLinkResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSupportAttachmentLinkResponseError = (getV1AdminSupportAttachmentLinkResponse400 | getV1AdminSupportAttachmentLinkResponse401 | getV1AdminSupportAttachmentLinkResponse403 | getV1AdminSupportAttachmentLinkResponse404 | getV1AdminSupportAttachmentLinkResponse500 | getV1AdminSupportAttachmentLinkResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSupportAttachmentLinkResponse = (getV1AdminSupportAttachmentLinkResponseSuccess | getV1AdminSupportAttachmentLinkResponseError)
+
+export const getGetV1AdminSupportAttachmentLinkUrl = (ticketId: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/v1/admin/support/tickets/${ticketId}/attachments/${attachmentId}/link`
+}
+
+/**
+ * Requires the internal BFF credential and `support.ticket.read` in an aal2 session. Returns a signed URL for exactly one object for a few minutes, from the **private** `support-attachments` bucket. **The caller names an attachment; the path comes from the row**: no operation here accepts a storage path or a bucket, and the database requires the attachment, its message’s ticket and the ticket in the route to agree *and* the ticket to be one the caller may work on. The requester’s equivalent operation is scoped to `requester_user_id` and cannot serve staff at all, which is why this exists.
+ * @summary A short-lived link to one support attachment
+ */
+export const getV1AdminSupportAttachmentLink = async (ticketId: string,
+    attachmentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSupportAttachmentLinkResponse> => {
+
+  return apiFetch<getV1AdminSupportAttachmentLinkResponse>(getGetV1AdminSupportAttachmentLinkUrl(ticketId,attachmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1ReportsResponse201 = {
+  data: FileReportResponse
+  status: 201
+}
+
+export type postV1ReportsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ReportsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ReportsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ReportsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ReportsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ReportsResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1ReportsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ReportsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ReportsResponseSuccess = (postV1ReportsResponse201) & {
+  headers: Headers;
+};
+export type postV1ReportsResponseError = (postV1ReportsResponse400 | postV1ReportsResponse401 | postV1ReportsResponse403 | postV1ReportsResponse404 | postV1ReportsResponse409 | postV1ReportsResponse429 | postV1ReportsResponse500 | postV1ReportsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ReportsResponse = (postV1ReportsResponseSuccess | postV1ReportsResponseError)
+
+export const getPostV1ReportsUrl = () => {
+
+
+
+
+  return `/v1/reports`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Files a report about a listing or a seller the caller can actually see, through the platform’s existing reporting. **The subject is named by its public slug, never by an id**: a seller report’s subject is a user id, which the public seller projection exists to withhold, so no identifier is published and none is accepted back. A repeat lands on the report already open and answers with the same id, so submitting twice creates one report — that is the reports table’s own rule, enforced by a unique index. It is a request for a look and nothing else: the listing stays listed, the storefront stays open, and no moderation action is created. The reporter is the caller: no identifier is accepted from the request.
+ * @summary Report a listing or a seller
+ */
+export const postV1Reports = async (fileReportRequest: FileReportRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ReportsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1ReportsResponse>(getPostV1ReportsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fileReportRequest)
+  }
+);}
+
+
+
+export type getV1ReportsResponse200 = {
+  data: ReporterReportsResponse
+  status: 200
+}
+
+export type getV1ReportsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ReportsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1ReportsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ReportsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ReportsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ReportsResponseSuccess = (getV1ReportsResponse200) & {
+  headers: Headers;
+};
+export type getV1ReportsResponseError = (getV1ReportsResponse400 | getV1ReportsResponse401 | getV1ReportsResponse403 | getV1ReportsResponse500 | getV1ReportsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ReportsResponse = (getV1ReportsResponseSuccess | getV1ReportsResponseError)
+
+export const getGetV1ReportsUrl = (params?: GetV1ReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/reports?${stringifiedParams}` : `/v1/reports`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of this account’s own reports, newest first, scoped to the caller inside the statement so another reporter’s row is never matched. A row carries what the reporter wrote, the status in the reports table’s own vocabulary, and — only while the subject is still publicly visible — that subject’s slug and label. It carries **no subject id, no priority, no assignee, no assignment time, no resolution, no resolution note, no resolver and no duplicate-of**: those are moderation state and are not in the contract at all.
+ * @summary The reports the caller filed
+ */
+export const getV1Reports = async (params?: GetV1ReportsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ReportsResponse> => {
+
+  return apiFetch<getV1ReportsResponse>(getGetV1ReportsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminModerationReportsResponse200 = {
+  data: ModerationReportQueueResponse
+  status: 200
+}
+
+export type getV1AdminModerationReportsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminModerationReportsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminModerationReportsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminModerationReportsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminModerationReportsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminModerationReportsResponseSuccess = (getV1AdminModerationReportsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminModerationReportsResponseError = (getV1AdminModerationReportsResponse400 | getV1AdminModerationReportsResponse401 | getV1AdminModerationReportsResponse403 | getV1AdminModerationReportsResponse500 | getV1AdminModerationReportsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminModerationReportsResponse = (getV1AdminModerationReportsResponseSuccess | getV1AdminModerationReportsResponseError)
+
+export const getGetV1AdminModerationReportsUrl = (params?: GetV1AdminModerationReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/moderation/reports?${stringifiedParams}` : `/v1/admin/moderation/reports`
+}
+
+/**
+ * Requires the internal BFF credential and `moderation.report.read` in an aal2 session. One page of reports, **oldest first**, optionally narrowed to one of the five existing statuses. The priority is returned as a fact and is never ordered by: the column is text, so the schema’s own `priority desc` index orders it lexically and expresses no severity — ranking by it would present nonsense as meaning. A row carries the subject’s type and, for the two types this repository can resolve, its label; it carries **no reporter, no assignee and no resolution note**.
+ * @summary The report queue
+ */
+export const getV1AdminModerationReports = async (params?: GetV1AdminModerationReportsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminModerationReportsResponse> => {
+
+  return apiFetch<getV1AdminModerationReportsResponse>(getGetV1AdminModerationReportsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminModerationReportResponse200 = {
+  data: ModerationReportDetailResponse
+  status: 200
+}
+
+export type getV1AdminModerationReportResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminModerationReportResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminModerationReportResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminModerationReportResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminModerationReportResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminModerationReportResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminModerationReportResponseSuccess = (getV1AdminModerationReportResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminModerationReportResponseError = (getV1AdminModerationReportResponse400 | getV1AdminModerationReportResponse401 | getV1AdminModerationReportResponse403 | getV1AdminModerationReportResponse404 | getV1AdminModerationReportResponse500 | getV1AdminModerationReportResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminModerationReportResponse = (getV1AdminModerationReportResponseSuccess | getV1AdminModerationReportResponseError)
+
+export const getGetV1AdminModerationReportUrl = (reportId: string,) => {
+
+
+
+
+  return `/v1/admin/moderation/reports/${reportId}`
+}
+
+/**
+ * Requires the internal BFF credential and `moderation.report.read` in an aal2 session. What was reported, what the reporter wrote, the decision already recorded if there is one, and — for a reported listing — the subject’s **current status**, because acting on a report about a listing that is already suspended is the stale state this surface has to be able to see. `subjectIsResolvable` is false for the six subject types with no staff read path in this repository. It returns **no reporter account and no colleague’s identity**: the caller learns whether the report and the decision are their own.
+ * @summary One report
+ */
+export const getV1AdminModerationReport = async (reportId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminModerationReportResponse> => {
+
+  return apiFetch<getV1AdminModerationReportResponse>(getGetV1AdminModerationReportUrl(reportId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminModerationReportResolutionResponse200 = {
+  data: ResolveReportResponse
+  status: 200
+}
+
+export type postV1AdminModerationReportResolutionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminModerationReportResolutionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminModerationReportResolutionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminModerationReportResolutionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminModerationReportResolutionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminModerationReportResolutionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminModerationReportResolutionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminModerationReportResolutionResponseSuccess = (postV1AdminModerationReportResolutionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminModerationReportResolutionResponseError = (postV1AdminModerationReportResolutionResponse400 | postV1AdminModerationReportResolutionResponse401 | postV1AdminModerationReportResolutionResponse403 | postV1AdminModerationReportResolutionResponse404 | postV1AdminModerationReportResolutionResponse409 | postV1AdminModerationReportResolutionResponse500 | postV1AdminModerationReportResolutionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminModerationReportResolutionResponse = (postV1AdminModerationReportResolutionResponseSuccess | postV1AdminModerationReportResolutionResponseError)
+
+export const getPostV1AdminModerationReportResolutionUrl = (reportId: string,) => {
+
+
+
+
+  return `/v1/admin/moderation/reports/${reportId}/resolution`
+}
+
+/**
+ * Requires the internal BFF credential and `moderation.report.manage` in an aal2 session. Records one of the four statuses the existing writer accepts — `triaged`, `actioned`, `dismissed`, `duplicate` — and **not `open`**, which that writer refuses: there is no un-triage and no reopen in this repository. Every status but `triaged` requires a note, and `duplicate` requires the report it duplicates. The moderator is the caller: no identifier is accepted from the request. The row is locked by the writer, so two colleagues resolving at once are ordered rather than raced, and the second is told the report is already final.
+ * @summary Record a decision on a report
+ */
+export const postV1AdminModerationReportResolution = async (reportId: string,
+    resolveReportRequest: ResolveReportRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminModerationReportResolutionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminModerationReportResolutionResponse>(getPostV1AdminModerationReportResolutionUrl(reportId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resolveReportRequest)
+  }
+);}
+
+
+
+export type getV1AdminModerationReportActionsResponse200 = {
+  data: ModerationActionsResponse
+  status: 200
+}
+
+export type getV1AdminModerationReportActionsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminModerationReportActionsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminModerationReportActionsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminModerationReportActionsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminModerationReportActionsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminModerationReportActionsResponseSuccess = (getV1AdminModerationReportActionsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminModerationReportActionsResponseError = (getV1AdminModerationReportActionsResponse400 | getV1AdminModerationReportActionsResponse401 | getV1AdminModerationReportActionsResponse403 | getV1AdminModerationReportActionsResponse500 | getV1AdminModerationReportActionsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminModerationReportActionsResponse = (getV1AdminModerationReportActionsResponseSuccess | getV1AdminModerationReportActionsResponseError)
+
+export const getGetV1AdminModerationReportActionsUrl = (reportId: string,) => {
+
+
+
+
+  return `/v1/admin/moderation/reports/${reportId}/actions`
+}
+
+/**
+ * Requires the internal BFF credential and `moderation.action.read` in an aal2 session — the key the existing policy gates this table on, which is **not** the report read key. Newest first. Every field is one that policy admits, except the moderator: the caller learns whether an action was their own and never which colleague recorded another.
+ * @summary The moderation actions citing one report
+ */
+export const getV1AdminModerationReportActions = async (reportId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminModerationReportActionsResponse> => {
+
+  return apiFetch<getV1AdminModerationReportActionsResponse>(getGetV1AdminModerationReportActionsUrl(reportId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminModerationListingsResponse200 = {
+  data: ModerationListingQueueResponse
+  status: 200
+}
+
+export type getV1AdminModerationListingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminModerationListingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminModerationListingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminModerationListingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminModerationListingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminModerationListingsResponseSuccess = (getV1AdminModerationListingsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminModerationListingsResponseError = (getV1AdminModerationListingsResponse400 | getV1AdminModerationListingsResponse401 | getV1AdminModerationListingsResponse403 | getV1AdminModerationListingsResponse500 | getV1AdminModerationListingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminModerationListingsResponse = (getV1AdminModerationListingsResponseSuccess | getV1AdminModerationListingsResponseError)
+
+export const getGetV1AdminModerationListingsUrl = (params?: GetV1AdminModerationListingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/moderation/listings?${stringifiedParams}` : `/v1/admin/moderation/listings`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.listing.read` in an aal2 session. A work queue: listings in `pending_review`, **oldest first**. A row carries what a moderator needs to recognise the listing, whether it is their own — which the writer would refuse — and how many reports are still open against it. It names **no seller account**. Moderating one of them needs the other key, checked on the action rather than on the reading.
+ * @summary The listings awaiting review
+ */
+export const getV1AdminModerationListings = async (params?: GetV1AdminModerationListingsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminModerationListingsResponse> => {
+
+  return apiFetch<getV1AdminModerationListingsResponse>(getGetV1AdminModerationListingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminModerationListingResponse200 = {
+  data: ModerationListingDetailResponse
+  status: 200
+}
+
+export type getV1AdminModerationListingResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminModerationListingResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminModerationListingResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminModerationListingResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminModerationListingResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminModerationListingResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminModerationListingResponseSuccess = (getV1AdminModerationListingResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminModerationListingResponseError = (getV1AdminModerationListingResponse400 | getV1AdminModerationListingResponse401 | getV1AdminModerationListingResponse403 | getV1AdminModerationListingResponse404 | getV1AdminModerationListingResponse500 | getV1AdminModerationListingResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminModerationListingResponse = (getV1AdminModerationListingResponseSuccess | getV1AdminModerationListingResponseError)
+
+export const getGetV1AdminModerationListingUrl = (listingId: string,) => {
+
+
+
+
+  return `/v1/admin/moderation/listings/${listingId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.listing.read` in an aal2 session. The listing’s content, its current status, its storefront’s public name and slug, whether it is the caller’s own, whether they hold the moderate key, and how many reports are still open. It returns **no seller account and no storage path**: moderating a listing touches no storage at all.
+ * @summary One listing, for a moderation decision
+ */
+export const getV1AdminModerationListing = async (listingId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminModerationListingResponse> => {
+
+  return apiFetch<getV1AdminModerationListingResponse>(getGetV1AdminModerationListingUrl(listingId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminModerationListingActionResponse200 = {
+  data: ModerateListingResponse
+  status: 200
+}
+
+export type postV1AdminModerationListingActionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminModerationListingActionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminModerationListingActionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminModerationListingActionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminModerationListingActionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminModerationListingActionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminModerationListingActionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminModerationListingActionResponseSuccess = (postV1AdminModerationListingActionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminModerationListingActionResponseError = (postV1AdminModerationListingActionResponse400 | postV1AdminModerationListingActionResponse401 | postV1AdminModerationListingActionResponse403 | postV1AdminModerationListingActionResponse404 | postV1AdminModerationListingActionResponse409 | postV1AdminModerationListingActionResponse500 | postV1AdminModerationListingActionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminModerationListingActionResponse = (postV1AdminModerationListingActionResponseSuccess | postV1AdminModerationListingActionResponseError)
+
+export const getPostV1AdminModerationListingActionUrl = (listingId: string,) => {
+
+
+
+
+  return `/v1/admin/moderation/listings/${listingId}/actions`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.listing.moderate` in an aal2 session — the same key the existing write policy requires. Records one of the five actions the existing writer defines: `approve`, `reject`, `suspend`, `reinstate` and `request_changes`, which is the one that moves no status. A reason is required, because both writers require one. The writer moves the status, writes **both** moderation trails and enqueues its own event in one transaction; nothing is written a second time anywhere above it. It is not a reversal API: reinstatement is one of the five, and no operation here sets `reverses_action_id`.
+ * @summary Moderate a listing
+ */
+export const postV1AdminModerationListingAction = async (listingId: string,
+    moderateListingRequest: ModerateListingRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminModerationListingActionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminModerationListingActionResponse>(getPostV1AdminModerationListingActionUrl(listingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moderateListingRequest)
+  }
+);}
+
+
+
+export type getV1AdminModerationListingHistoryResponse200 = {
+  data: ListingModerationHistoryResponse
+  status: 200
+}
+
+export type getV1AdminModerationListingHistoryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminModerationListingHistoryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminModerationListingHistoryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminModerationListingHistoryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminModerationListingHistoryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminModerationListingHistoryResponseSuccess = (getV1AdminModerationListingHistoryResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminModerationListingHistoryResponseError = (getV1AdminModerationListingHistoryResponse400 | getV1AdminModerationListingHistoryResponse401 | getV1AdminModerationListingHistoryResponse403 | getV1AdminModerationListingHistoryResponse500 | getV1AdminModerationListingHistoryResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminModerationListingHistoryResponse = (getV1AdminModerationListingHistoryResponseSuccess | getV1AdminModerationListingHistoryResponseError)
+
+export const getGetV1AdminModerationListingHistoryUrl = (listingId: string,) => {
+
+
+
+
+  return `/v1/admin/moderation/listings/${listingId}/history`
+}
+
+/**
+ * Requires the internal BFF credential and `moderation.action.read` in an aal2 session. Newest first, carrying the status move each decision made — which is what this table records and the generic trail does not. It names no moderator.
+ * @summary One listing’s moderation trail
+ */
+export const getV1AdminModerationListingHistory = async (listingId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminModerationListingHistoryResponse> => {
+
+  return apiFetch<getV1AdminModerationListingHistoryResponse>(getGetV1AdminModerationListingHistoryUrl(listingId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSellersResponse200 = {
+  data: AdminSellerPageResponse
+  status: 200
+}
+
+export type getV1AdminSellersResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSellersResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSellersResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSellersResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSellersResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSellersResponseSuccess = (getV1AdminSellersResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSellersResponseError = (getV1AdminSellersResponse400 | getV1AdminSellersResponse401 | getV1AdminSellersResponse403 | getV1AdminSellersResponse500 | getV1AdminSellersResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSellersResponse = (getV1AdminSellersResponseSuccess | getV1AdminSellersResponseError)
+
+export const getGetV1AdminSellersUrl = (params?: GetV1AdminSellersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/sellers?${stringifiedParams}` : `/v1/admin/sellers`
+}
+
+/**
+ * Requires the internal BFF credential and `sellers.profile.read` in an aal2 session. One page of storefronts, newest first, optionally narrowed by account status or verification status. A storefront is named by its **slug**: the account behind it is not returned, and no operation on this surface accepts one. It carries no legal name and no contact details. **Read-only** — there is no operation anywhere in this API that changes a seller’s account status, because no writer for it exists in the database.
+ * @summary The storefronts
+ */
+export const getV1AdminSellers = async (params?: GetV1AdminSellersParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSellersResponse> => {
+
+  return apiFetch<getV1AdminSellersResponse>(getGetV1AdminSellersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSellerResponse200 = {
+  data: AdminSellerDetailResponse
+  status: 200
+}
+
+export type getV1AdminSellerResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSellerResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSellerResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSellerResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSellerResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSellerResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSellerResponseSuccess = (getV1AdminSellerResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSellerResponseError = (getV1AdminSellerResponse400 | getV1AdminSellerResponse401 | getV1AdminSellerResponse403 | getV1AdminSellerResponse404 | getV1AdminSellerResponse500 | getV1AdminSellerResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSellerResponse = (getV1AdminSellerResponseSuccess | getV1AdminSellerResponseError)
+
+export const getGetV1AdminSellerUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/admin/sellers/${slug}`
+}
+
+/**
+ * Requires the internal BFF credential and `sellers.profile.read` in an aal2 session. The storefront’s standing — status, any suspension and its reason, verification status, listing and open-report counts. It returns none of the owner’s personal or contact details, no verification document and no storage path: 7-G owns the verification review and this is not it. The caller learns whether the storefront is their own.
+ * @summary One storefront
+ */
+export const getV1AdminSeller = async (slug: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSellerResponse> => {
+
+  return apiFetch<getV1AdminSellerResponse>(getGetV1AdminSellerUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSellerStatusResponse200 = {
+  data: SellerStatusChangeResponse
+  status: 200
+}
+
+export type postV1AdminSellerStatusResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSellerStatusResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSellerStatusResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSellerStatusResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSellerStatusResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSellerStatusResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSellerStatusResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSellerStatusResponseSuccess = (postV1AdminSellerStatusResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminSellerStatusResponseError = (postV1AdminSellerStatusResponse400 | postV1AdminSellerStatusResponse401 | postV1AdminSellerStatusResponse403 | postV1AdminSellerStatusResponse404 | postV1AdminSellerStatusResponse409 | postV1AdminSellerStatusResponse500 | postV1AdminSellerStatusResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSellerStatusResponse = (postV1AdminSellerStatusResponseSuccess | postV1AdminSellerStatusResponseError)
+
+export const getPostV1AdminSellerStatusUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/admin/sellers/${slug}/status`
+}
+
+/**
+ * Requires the internal BFF credential and `sellers.profile.manage` in an aal2 session — a key the role catalogue gives to administrators alone, and **not** the seller read key: a moderator reads storefronts and cannot move one. The body carries a target status and, for a suspension, its reason; the legal transitions are decided in the database, which locks the row first. The seven legal pairs are `pending → suspended`, `active → suspended`, `suspended → active`, `suspended → pending`, and `closed` from any of the three. **`closed` is terminal** — nothing reopens a closed storefront — `active → pending` is refused, and **`pending → active` belongs to the verification approval**, not to this operation. Reinstatement goes to `active` when the storefront is verified and to `pending` when it is not. It sets the timestamps the schema’s own constraints require, clears the suspension and its reason on reinstatement, and touches **neither verification column**. It **cascades into nothing**: no listing, service, offer, service request, order, balance or payout is read or written, because public visibility already follows seller status through the catalogue’s own visibility rule. The change is recorded by the storefront table’s existing audit trigger; this operation writes no audit row, no security event and no notification of its own.
+ * @summary Change one storefront’s account status
+ */
+export const postV1AdminSellerStatus = async (slug: string,
+    sellerStatusChangeRequest?: SellerStatusChangeRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSellerStatusResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminSellerStatusResponse>(getPostV1AdminSellerStatusUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerStatusChangeRequest)
+  }
+);}
+
+
+
+export type getV1AdminUsersResponse200 = {
+  data: AdminUserPageResponse
+  status: 200
+}
+
+export type getV1AdminUsersResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminUsersResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminUsersResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminUsersResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminUsersResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminUsersResponseSuccess = (getV1AdminUsersResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminUsersResponseError = (getV1AdminUsersResponse400 | getV1AdminUsersResponse401 | getV1AdminUsersResponse403 | getV1AdminUsersResponse500 | getV1AdminUsersResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminUsersResponse = (getV1AdminUsersResponseSuccess | getV1AdminUsersResponseError)
+
+export const getGetV1AdminUsersUrl = (params?: GetV1AdminUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/users?${stringifiedParams}` : `/v1/admin/users`
+}
+
+/**
+ * Requires the internal BFF credential and `users.profile.read` in an aal2 session. One page of accounts, newest first. Whether each contact channel was verified is reported as a **boolean**, never as the contact: there is no legal name, no phone number, no email address and no avatar path in this response. Deleted accounts are not listed. This is the one admin surface addressed by account id, because the account is the subject being administered and this key is precisely the permission to read it.
+ * @summary The accounts
+ */
+export const getV1AdminUsers = async (params?: GetV1AdminUsersParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminUsersResponse> => {
+
+  return apiFetch<getV1AdminUsersResponse>(getGetV1AdminUsersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminUserResponse200 = {
+  data: AdminUserDetailResponse
+  status: 200
+}
+
+export type getV1AdminUserResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminUserResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminUserResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminUserResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminUserResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminUserResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminUserResponseSuccess = (getV1AdminUserResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminUserResponseError = (getV1AdminUserResponse400 | getV1AdminUserResponse401 | getV1AdminUserResponse403 | getV1AdminUserResponse404 | getV1AdminUserResponse500 | getV1AdminUserResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminUserResponse = (getV1AdminUserResponseSuccess | getV1AdminUserResponseError)
+
+export const getGetV1AdminUserUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}`
+}
+
+/**
+ * Requires the internal BFF credential and `users.profile.read` in an aal2 session. The same narrow projection as the list, with the timezone, the last-seen time and — when the account has a storefront — that storefront’s **slug**, so the two surfaces link without an account identifier crossing in the other direction. A deleted account answers 404, identically to one that never existed.
+ * @summary One account
+ */
+export const getV1AdminUser = async (userId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminUserResponse> => {
+
+  return apiFetch<getV1AdminUserResponse>(getGetV1AdminUserUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminUserRolesResponse200 = {
+  data: AdminUserRolesResponse
+  status: 200
+}
+
+export type getV1AdminUserRolesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminUserRolesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminUserRolesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminUserRolesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminUserRolesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminUserRolesResponseSuccess = (getV1AdminUserRolesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminUserRolesResponseError = (getV1AdminUserRolesResponse400 | getV1AdminUserRolesResponse401 | getV1AdminUserRolesResponse403 | getV1AdminUserRolesResponse500 | getV1AdminUserRolesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminUserRolesResponse = (getV1AdminUserRolesResponseSuccess | getV1AdminUserRolesResponseError)
+
+export const getGetV1AdminUserRolesUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}/roles`
+}
+
+/**
+ * Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it. **Strictly read-only**: there is no operation in this API that creates, changes or removes a role assignment, because no authoritative writer for `user_roles` exists in this repository and the rules for one are not defined. That gap is reported rather than filled.
+ * @summary The roles one account holds
+ */
+export const getV1AdminUserRoles = async (userId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminUserRolesResponse> => {
+
+  return apiFetch<getV1AdminUserRolesResponse>(getGetV1AdminUserRolesUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminUserSecurityEventsResponse200 = {
+  data: AdminSecurityEventsResponse
+  status: 200
+}
+
+export type getV1AdminUserSecurityEventsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminUserSecurityEventsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminUserSecurityEventsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminUserSecurityEventsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminUserSecurityEventsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminUserSecurityEventsResponseSuccess = (getV1AdminUserSecurityEventsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminUserSecurityEventsResponseError = (getV1AdminUserSecurityEventsResponse400 | getV1AdminUserSecurityEventsResponse401 | getV1AdminUserSecurityEventsResponse403 | getV1AdminUserSecurityEventsResponse500 | getV1AdminUserSecurityEventsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminUserSecurityEventsResponse = (getV1AdminUserSecurityEventsResponseSuccess | getV1AdminUserSecurityEventsResponseError)
+
+export const getGetV1AdminUserSecurityEventsUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}/security-events`
+}
+
+/**
+ * Requires the internal BFF credential and `users.security.read` in an aal2 session — a **third key**, which the role catalogue withholds from both moderators and support agents by decision, so holding the account read is not holding this. Newest first. `details` carries identifiers only, never credentials or message bodies, and the request address and device are not returned. It writes nothing.
+ * @summary One account’s security timeline
+ */
+export const getV1AdminUserSecurityEvents = async (userId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminUserSecurityEventsResponse> => {
+
+  return apiFetch<getV1AdminUserSecurityEventsResponse>(getGetV1AdminUserSecurityEventsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminRolesResponse200 = {
+  data: AdminRoleCatalogueResponse
+  status: 200
+}
+
+export type getV1AdminRolesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminRolesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminRolesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminRolesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminRolesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminRolesResponseSuccess = (getV1AdminRolesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminRolesResponseError = (getV1AdminRolesResponse400 | getV1AdminRolesResponse401 | getV1AdminRolesResponse403 | getV1AdminRolesResponse500 | getV1AdminRolesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminRolesResponse = (getV1AdminRolesResponseSuccess | getV1AdminRolesResponseError)
+
+export const getGetV1AdminRolesUrl = () => {
+
+
+
+
+  return `/v1/admin/roles`
+}
+
+/**
+ * Requires the internal BFF credential and `users.role.read` in an aal2 session. Reference data: each role, whether it requires MFA, whether it opens the console, whether it is assignable, how many permissions it carries and how many accounts currently hold it. It names no holder. Nothing in this API changes a role, its permissions or its MFA requirement.
+ * @summary The role catalogue
+ */
+export const getV1AdminRoles = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminRolesResponse> => {
+
+  return apiFetch<getV1AdminRolesResponse>(getGetV1AdminRolesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminRecoveryRequestsResponse200 = {
+  data: RecoveryQueueResponse
+  status: 200
+}
+
+export type getV1AdminRecoveryRequestsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminRecoveryRequestsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminRecoveryRequestsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminRecoveryRequestsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminRecoveryRequestsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminRecoveryRequestsResponseSuccess = (getV1AdminRecoveryRequestsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminRecoveryRequestsResponseError = (getV1AdminRecoveryRequestsResponse400 | getV1AdminRecoveryRequestsResponse401 | getV1AdminRecoveryRequestsResponse403 | getV1AdminRecoveryRequestsResponse500 | getV1AdminRecoveryRequestsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminRecoveryRequestsResponse = (getV1AdminRecoveryRequestsResponseSuccess | getV1AdminRecoveryRequestsResponseError)
+
+export const getGetV1AdminRecoveryRequestsUrl = (params?: GetV1AdminRecoveryRequestsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/recovery/requests?${stringifiedParams}` : `/v1/admin/recovery/requests`
+}
+
+/**
+ * Requires the internal BFF credential and `security.recovery.review` in an aal2 session — a key a support agent holds and a moderator does not. **Oldest first**: these are people locked out of their accounts. A row reports the contact **channel** and never a contact, because the claimed and new contacts are stored as digests. `isOwnRequest` and `isTheReviewer` are returned because the writer refuses the account holder at every step and refuses the reviewer as the second approver, so a console that could not see them would offer a control the database is going to reject. No account identifier, no colleague’s identity and no request address.
+ * @summary The account recovery queue
+ */
+export const getV1AdminRecoveryRequests = async (params?: GetV1AdminRecoveryRequestsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminRecoveryRequestsResponse> => {
+
+  return apiFetch<getV1AdminRecoveryRequestsResponse>(getGetV1AdminRecoveryRequestsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminRecoveryRequestResponse200 = {
+  data: RecoveryRequestDetailResponse
+  status: 200
+}
+
+export type getV1AdminRecoveryRequestResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminRecoveryRequestResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminRecoveryRequestResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminRecoveryRequestResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminRecoveryRequestResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminRecoveryRequestResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminRecoveryRequestResponseSuccess = (getV1AdminRecoveryRequestResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminRecoveryRequestResponseError = (getV1AdminRecoveryRequestResponse400 | getV1AdminRecoveryRequestResponse401 | getV1AdminRecoveryRequestResponse403 | getV1AdminRecoveryRequestResponse404 | getV1AdminRecoveryRequestResponse500 | getV1AdminRecoveryRequestResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminRecoveryRequestResponse = (getV1AdminRecoveryRequestResponseSuccess | getV1AdminRecoveryRequestResponseError)
+
+export const getGetV1AdminRecoveryRequestUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/recovery/requests/${requestId}`
+}
+
+/**
+ * Requires the internal BFF credential and `security.recovery.review` in an aal2 session. The state, the review note, the rejection reason, and the effects completing a recovery recorded — sessions revoked, any MFA reset, and the hold it started on withdrawals and payout changes. Those three are **read back and never sent**: the hold is computed by the database from a site setting and no field in this API can shorten, skip or clear it. It returns no contact, no account identifier, no colleague’s identity and no OTP challenge.
+ * @summary One recovery request
+ */
+export const getV1AdminRecoveryRequest = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminRecoveryRequestResponse> => {
+
+  return apiFetch<getV1AdminRecoveryRequestResponse>(getGetV1AdminRecoveryRequestUrl(requestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminRecoveryEvidenceResponse200 = {
+  data: RecoveryEvidenceResponse
+  status: 200
+}
+
+export type getV1AdminRecoveryEvidenceResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminRecoveryEvidenceResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminRecoveryEvidenceResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminRecoveryEvidenceResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminRecoveryEvidenceResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminRecoveryEvidenceResponseSuccess = (getV1AdminRecoveryEvidenceResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminRecoveryEvidenceResponseError = (getV1AdminRecoveryEvidenceResponse400 | getV1AdminRecoveryEvidenceResponse401 | getV1AdminRecoveryEvidenceResponse403 | getV1AdminRecoveryEvidenceResponse500 | getV1AdminRecoveryEvidenceResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminRecoveryEvidenceResponse = (getV1AdminRecoveryEvidenceResponseSuccess | getV1AdminRecoveryEvidenceResponseError)
+
+export const getGetV1AdminRecoveryEvidenceUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/recovery/requests/${requestId}/evidence`
+}
+
+/**
+ * Requires the internal BFF credential and `security.recovery.review` in an aal2 session. The kind of each document, its file name, type and size, so a reviewer knows whether there is enough to judge. It returns **no object path**: the bucket is private and this operation is not a way to read the file, which would need a signing step this increment does not add.
+ * @summary What a recovery request supplied
+ */
+export const getV1AdminRecoveryEvidence = async (requestId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminRecoveryEvidenceResponse> => {
+
+  return apiFetch<getV1AdminRecoveryEvidenceResponse>(getGetV1AdminRecoveryEvidenceUrl(requestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminRecoveryReviewResponse200 = {
+  data: RecoveryReviewResponse
+  status: 200
+}
+
+export type postV1AdminRecoveryReviewResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminRecoveryReviewResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminRecoveryReviewResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminRecoveryReviewResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminRecoveryReviewResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminRecoveryReviewResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminRecoveryReviewResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminRecoveryReviewResponseSuccess = (postV1AdminRecoveryReviewResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminRecoveryReviewResponseError = (postV1AdminRecoveryReviewResponse400 | postV1AdminRecoveryReviewResponse401 | postV1AdminRecoveryReviewResponse403 | postV1AdminRecoveryReviewResponse404 | postV1AdminRecoveryReviewResponse409 | postV1AdminRecoveryReviewResponse500 | postV1AdminRecoveryReviewResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminRecoveryReviewResponse = (postV1AdminRecoveryReviewResponseSuccess | postV1AdminRecoveryReviewResponseError)
+
+export const getPostV1AdminRecoveryReviewUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/recovery/requests/${requestId}/review`
+}
+
+/**
+ * Requires the internal BFF credential and `security.recovery.review` in an aal2 session. Delegates to the existing recovery writer, which locks the row and **fixes the caller as the reviewer** — the identity the second approver is later checked against. The reviewer is the caller: no identifier is accepted from the request. A request already past review answers 409 `RECOVERY_NOT_REVIEWABLE`, and the caller’s own account answers 409 `RECOVERY_IS_OWN`.
+ * @summary Record the identity review
+ */
+export const postV1AdminRecoveryReview = async (requestId: string,
+    recoveryReviewRequest?: RecoveryReviewRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminRecoveryReviewResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminRecoveryReviewResponse>(getPostV1AdminRecoveryReviewUrl(requestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recoveryReviewRequest)
+  }
+);}
+
+
+
+export type postV1AdminRecoveryDecisionResponse200 = {
+  data: RecoveryDecisionResponse
+  status: 200
+}
+
+export type postV1AdminRecoveryDecisionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminRecoveryDecisionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminRecoveryDecisionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminRecoveryDecisionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminRecoveryDecisionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminRecoveryDecisionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminRecoveryDecisionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminRecoveryDecisionResponseSuccess = (postV1AdminRecoveryDecisionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminRecoveryDecisionResponseError = (postV1AdminRecoveryDecisionResponse400 | postV1AdminRecoveryDecisionResponse401 | postV1AdminRecoveryDecisionResponse403 | postV1AdminRecoveryDecisionResponse404 | postV1AdminRecoveryDecisionResponse409 | postV1AdminRecoveryDecisionResponse500 | postV1AdminRecoveryDecisionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminRecoveryDecisionResponse = (postV1AdminRecoveryDecisionResponseSuccess | postV1AdminRecoveryDecisionResponseError)
+
+export const getPostV1AdminRecoveryDecisionUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/recovery/requests/${requestId}/decision`
+}
+
+/**
+ * Requires the internal BFF credential and `security.recovery.review` in an aal2 session. Carries the existing writer’s **two decisions and no third** — `approved` or `rejected` — and a rejection is always recorded with its reason. **An approval moves the request to `contact_verification`, not to `approved`**: that status exists in the table and no writer in this repository sets it. The writer refuses the reviewer and the account holder, both of which answer 409 `RECOVERY_NEEDS_ANOTHER_PERSON`: somebody else has to decide it. A request nobody has reviewed answers 409 `RECOVERY_NOT_DECIDABLE`, which is also what the second of two colleagues deciding at once receives. No approver identifier is accepted from the request.
+ * @summary The second approver’s decision
+ */
+export const postV1AdminRecoveryDecision = async (requestId: string,
+    recoveryDecisionRequest?: RecoveryDecisionRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminRecoveryDecisionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminRecoveryDecisionResponse>(getPostV1AdminRecoveryDecisionUrl(requestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recoveryDecisionRequest)
+  }
+);}
+
+
+
+export type postV1AdminRecoveryCompletionResponse200 = {
+  data: RecoveryCompletionResponse
+  status: 200
+}
+
+export type postV1AdminRecoveryCompletionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminRecoveryCompletionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminRecoveryCompletionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminRecoveryCompletionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminRecoveryCompletionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminRecoveryCompletionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminRecoveryCompletionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminRecoveryCompletionResponseSuccess = (postV1AdminRecoveryCompletionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminRecoveryCompletionResponseError = (postV1AdminRecoveryCompletionResponse400 | postV1AdminRecoveryCompletionResponse401 | postV1AdminRecoveryCompletionResponse403 | postV1AdminRecoveryCompletionResponse404 | postV1AdminRecoveryCompletionResponse409 | postV1AdminRecoveryCompletionResponse500 | postV1AdminRecoveryCompletionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminRecoveryCompletionResponse = (postV1AdminRecoveryCompletionResponseSuccess | postV1AdminRecoveryCompletionResponseError)
+
+export const getPostV1AdminRecoveryCompletionUrl = (requestId: string,) => {
+
+
+
+
+  return `/v1/admin/recovery/requests/${requestId}/completion`
+}
+
+/**
+ * Requires the internal BFF credential and `security.recovery.review` in an aal2 session. Delegates to the existing writer, which revokes the account’s sessions, records any MFA reset, starts the configured hold and writes both the security event and the outbox event — none of which this API duplicates. `mfaWasReset` records what the colleague did out of band and changes nothing about whether the recovery may complete. **The hold is returned, never sent**, and no field here can shorten it or skip the one-time-code verification of the new contact that completion depends on — that step is the requester’s, and there is no operation in this API for it. A request that is not approved, whose contact was not verified, or that matched no account answers 409 `RECOVERY_NOT_COMPLETABLE`.
+ * @summary Finish a recovery
+ */
+export const postV1AdminRecoveryCompletion = async (requestId: string,
+    recoveryCompletionRequest?: RecoveryCompletionRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminRecoveryCompletionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminRecoveryCompletionResponse>(getPostV1AdminRecoveryCompletionUrl(requestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recoveryCompletionRequest)
+  }
+);}
+
+
+
+export type getV1AdminAuditResponse200 = {
+  data: AuditPageResponse
+  status: 200
+}
+
+export type getV1AdminAuditResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminAuditResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminAuditResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminAuditResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminAuditResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminAuditResponseSuccess = (getV1AdminAuditResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminAuditResponseError = (getV1AdminAuditResponse400 | getV1AdminAuditResponse401 | getV1AdminAuditResponse403 | getV1AdminAuditResponse500 | getV1AdminAuditResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminAuditResponse = (getV1AdminAuditResponseSuccess | getV1AdminAuditResponseError)
+
+export const getGetV1AdminAuditUrl = (params?: GetV1AdminAuditParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/audit?${stringifiedParams}` : `/v1/admin/audit`
+}
+
+/**
+ * Requires the internal BFF credential and `audit.read` in an aal2 session — a key only an administrator holds. Newest first, over the index the audit table is built on, optionally narrowed to one table or one record within it: those are the two filters those indexes support, and there is deliberately no actor filter, because assembling one colleague’s activity is not what an audit read is for. A row reports **which columns changed and never their values**: the old and new rows are whole-row JSON redacted per calling trigger, so a projection carrying them would expose every unredacted column of every audited table to anybody holding this key. No actor identifier and no request address. **Strictly read-only**: reading the audit trail writes nothing to it, and there is no audit writer anywhere in this API.
+ * @summary The audit trail
+ */
+export const getV1AdminAudit = async (params?: GetV1AdminAuditParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminAuditResponse> => {
+
+  return apiFetch<getV1AdminAuditResponse>(getGetV1AdminAuditUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminReviewsResponse200 = {
+  data: ReviewQueueResponse
+  status: 200
+}
+
+export type getV1AdminReviewsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminReviewsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminReviewsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminReviewsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminReviewsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminReviewsResponseSuccess = (getV1AdminReviewsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminReviewsResponseError = (getV1AdminReviewsResponse400 | getV1AdminReviewsResponse401 | getV1AdminReviewsResponse403 | getV1AdminReviewsResponse500 | getV1AdminReviewsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminReviewsResponse = (getV1AdminReviewsResponseSuccess | getV1AdminReviewsResponseError)
+
+export const getGetV1AdminReviewsUrl = (params?: GetV1AdminReviewsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/reviews?${stringifiedParams}` : `/v1/admin/reviews`
+}
+
+/**
+ * Requires the internal BFF credential and `reviews.review.read` in an aal2 session. One page of reviews, **newest first**, optionally narrowed to one of the four statuses. Newest first rather than oldest: a review is published immediately and `pending_moderation` is a state a moderator puts one into, not one a review arrives in, so there is no work queue to drain here — and no score, no priority and no ranking, because the schema defines none. A row carries the rating, the title, whether there is prose to read, and whether a reply exists; it carries **no buyer, no seller account, no colleague moderator and no order** — the storefront is named by its slug. `isParty` says whether the caller is the review’s buyer or seller, because the writer refuses those and a console should say so before a colleague tries.
+ * @summary The review queue
+ */
+export const getV1AdminReviews = async (params?: GetV1AdminReviewsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminReviewsResponse> => {
+
+  return apiFetch<getV1AdminReviewsResponse>(getGetV1AdminReviewsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminReviewResponse200 = {
+  data: ReviewDetailResponse
+  status: 200
+}
+
+export type getV1AdminReviewResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminReviewResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminReviewResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminReviewResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminReviewResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminReviewResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminReviewResponseSuccess = (getV1AdminReviewResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminReviewResponseError = (getV1AdminReviewResponse400 | getV1AdminReviewResponse401 | getV1AdminReviewResponse403 | getV1AdminReviewResponse404 | getV1AdminReviewResponse500 | getV1AdminReviewResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminReviewResponse = (getV1AdminReviewResponseSuccess | getV1AdminReviewResponseError)
+
+export const getGetV1AdminReviewUrl = (reviewId: string,) => {
+
+
+
+
+  return `/v1/admin/reviews/${reviewId}`
+}
+
+/**
+ * Requires the internal BFF credential and `reviews.review.read` in an aal2 session. What was written, the state, the reason automation hid it if it did, any decision already recorded, and the seller’s reply beside it. `publicationBlock` is why the automatic reassessment would hide this review — its order was refunded, or its payment is disputed — reported so a moderator publishing one can see what they are overriding; **the order itself is not returned**. `canModerate` says whether this same session may record a decision, because the read and the write are two different keys. The reply is **read-only**: no operation in this API changes a reply’s status, because no writer for one exists.
+ * @summary One review, with its reply
+ */
+export const getV1AdminReview = async (reviewId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminReviewResponse> => {
+
+  return apiFetch<getV1AdminReviewResponse>(getGetV1AdminReviewUrl(reviewId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminReviewActionsResponse200 = {
+  data: ReviewModerationActionsResponse
+  status: 200
+}
+
+export type getV1AdminReviewActionsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminReviewActionsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminReviewActionsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminReviewActionsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminReviewActionsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminReviewActionsResponseSuccess = (getV1AdminReviewActionsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminReviewActionsResponseError = (getV1AdminReviewActionsResponse400 | getV1AdminReviewActionsResponse401 | getV1AdminReviewActionsResponse403 | getV1AdminReviewActionsResponse500 | getV1AdminReviewActionsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminReviewActionsResponse = (getV1AdminReviewActionsResponseSuccess | getV1AdminReviewActionsResponseError)
+
+export const getGetV1AdminReviewActionsUrl = (reviewId: string,) => {
+
+
+
+
+  return `/v1/admin/reviews/${reviewId}/actions`
+}
+
+/**
+ * Requires the internal BFF credential and `moderation.action.read` in an aal2 session — the key the existing policy gates that table on, which is **not** the review read key. Newest first. It reuses the platform’s generic moderation trail rather than creating a second history, and names no moderator: the caller learns whether an action was their own.
+ * @summary The moderation actions recorded against one review
+ */
+export const getV1AdminReviewActions = async (reviewId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminReviewActionsResponse> => {
+
+  return apiFetch<getV1AdminReviewActionsResponse>(getGetV1AdminReviewActionsUrl(reviewId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminReviewModerationResponse200 = {
+  data: ModerateReviewResponse
+  status: 200
+}
+
+export type postV1AdminReviewModerationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminReviewModerationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminReviewModerationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminReviewModerationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminReviewModerationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminReviewModerationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminReviewModerationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminReviewModerationResponseSuccess = (postV1AdminReviewModerationResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminReviewModerationResponseError = (postV1AdminReviewModerationResponse400 | postV1AdminReviewModerationResponse401 | postV1AdminReviewModerationResponse403 | postV1AdminReviewModerationResponse404 | postV1AdminReviewModerationResponse409 | postV1AdminReviewModerationResponse500 | postV1AdminReviewModerationResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminReviewModerationResponse = (postV1AdminReviewModerationResponseSuccess | postV1AdminReviewModerationResponseError)
+
+export const getPostV1AdminReviewModerationUrl = (reviewId: string,) => {
+
+
+
+
+  return `/v1/admin/reviews/${reviewId}/moderation`
+}
+
+/**
+ * Requires the internal BFF credential and `reviews.review.moderate` in an aal2 session — a **different key** from the one that reads the review. The body carries one of the four statuses and a reason, which is required for **every** decision and not only the ones that hide something. **There is no transition matrix**: the writer accepts any of the four from any of them, and re-recording the status a review already holds re-affirms it with a fresh reason. The writer locks the row, records who ruled and when, clears the automatic hiding reason, moves the publication time only when publishing, and enqueues its own event — none of which this API duplicates. It refuses a caller who is the review’s buyer or seller (409 `REVIEW_IS_PARTY`). Once a decision is recorded, the automatic reassessment that hides reviews on refunded or disputed orders leaves that review alone. It moderates the review and **never its reply**: no writer for a reply exists.
+ * @summary Record a decision on one review
+ */
+export const postV1AdminReviewModeration = async (reviewId: string,
+    moderateReviewRequest?: ModerateReviewRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminReviewModerationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminReviewModerationResponse>(getPostV1AdminReviewModerationUrl(reviewId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moderateReviewRequest)
+  }
+);}
+
+
+
+export type getV1AdminPlatformJobRunsResponse200 = {
+  data: JobRunPageResponse
+  status: 200
+}
+
+export type getV1AdminPlatformJobRunsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminPlatformJobRunsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminPlatformJobRunsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminPlatformJobRunsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminPlatformJobRunsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminPlatformJobRunsResponseSuccess = (getV1AdminPlatformJobRunsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminPlatformJobRunsResponseError = (getV1AdminPlatformJobRunsResponse400 | getV1AdminPlatformJobRunsResponse401 | getV1AdminPlatformJobRunsResponse403 | getV1AdminPlatformJobRunsResponse500 | getV1AdminPlatformJobRunsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminPlatformJobRunsResponse = (getV1AdminPlatformJobRunsResponseSuccess | getV1AdminPlatformJobRunsResponseError)
+
+export const getGetV1AdminPlatformJobRunsUrl = (params?: GetV1AdminPlatformJobRunsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/platform/job-runs?${stringifiedParams}` : `/v1/admin/platform/job-runs`
+}
+
+/**
+ * Requires the internal BFF credential and `platform.job.read` in an aal2 session — a key only Admin and Super Admin hold. One page of recorded job runs, newest first, optionally narrowed to one of the four statuses or to one job name. `durationMs` is computed from the run’s own timestamps and is null exactly while a run is still going. `processedCount` is null when a run recorded no count, which is a different fact from a run that processed zero. `isContracted` says whether the schedule still names this job key; a run of a key the contract has dropped stays readable and is labelled rather than hidden. **The run’s `details` object is not returned** — one of its keys is a raw PostgreSQL error message, which embeds row data — so a failure is reported by its error class here and by its error class and SQLSTATE on the detail.
+ * @summary Job runs, newest first
+ */
+export const getV1AdminPlatformJobRuns = async (params?: GetV1AdminPlatformJobRunsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminPlatformJobRunsResponse> => {
+
+  return apiFetch<getV1AdminPlatformJobRunsResponse>(getGetV1AdminPlatformJobRunsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminPlatformJobRunResponse200 = {
+  data: JobRunDetailResponse
+  status: 200
+}
+
+export type getV1AdminPlatformJobRunResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminPlatformJobRunResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminPlatformJobRunResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminPlatformJobRunResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminPlatformJobRunResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminPlatformJobRunResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminPlatformJobRunResponseSuccess = (getV1AdminPlatformJobRunResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminPlatformJobRunResponseError = (getV1AdminPlatformJobRunResponse400 | getV1AdminPlatformJobRunResponse401 | getV1AdminPlatformJobRunResponse403 | getV1AdminPlatformJobRunResponse404 | getV1AdminPlatformJobRunResponse500 | getV1AdminPlatformJobRunResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminPlatformJobRunResponse = (getV1AdminPlatformJobRunResponseSuccess | getV1AdminPlatformJobRunResponseError)
+
+export const getGetV1AdminPlatformJobRunUrl = (runId: string,) => {
+
+
+
+
+  return `/v1/admin/platform/job-runs/${runId}`
+}
+
+/**
+ * Requires the internal BFF credential and `platform.job.read` in an aal2 session. One run, with the contract row it belongs to when the schedule still names its key: the cron expression, the function the job calls, and the purpose recorded for it — so a failure can be traced without opening a migration. A failure reports its error class and the five-character SQLSTATE. **The raw error message is deliberately absent**: the job runner stores it in a free-form details object, and a PostgreSQL error message quotes the row that caused it, so reading the text is a database operation rather than a console one.
+ * @summary One job run
+ */
+export const getV1AdminPlatformJobRun = async (runId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminPlatformJobRunResponse> => {
+
+  return apiFetch<getV1AdminPlatformJobRunResponse>(getGetV1AdminPlatformJobRunUrl(runId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminPlatformScheduledJobsResponse200 = {
+  data: ScheduledJobCatalogueResponse
+  status: 200
+}
+
+export type getV1AdminPlatformScheduledJobsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminPlatformScheduledJobsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminPlatformScheduledJobsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminPlatformScheduledJobsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminPlatformScheduledJobsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminPlatformScheduledJobsResponseSuccess = (getV1AdminPlatformScheduledJobsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminPlatformScheduledJobsResponseError = (getV1AdminPlatformScheduledJobsResponse400 | getV1AdminPlatformScheduledJobsResponse401 | getV1AdminPlatformScheduledJobsResponse403 | getV1AdminPlatformScheduledJobsResponse500 | getV1AdminPlatformScheduledJobsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminPlatformScheduledJobsResponse = (getV1AdminPlatformScheduledJobsResponseSuccess | getV1AdminPlatformScheduledJobsResponseError)
+
+export const getGetV1AdminPlatformScheduledJobsUrl = () => {
+
+
+
+
+  return `/v1/admin/platform/scheduled-jobs`
+}
+
+/**
+ * Requires the internal BFF credential and `platform.job.read` in an aal2 session. Every job the database schedules — its cron expression, the function it calls and its stated purpose — with the facts of its most recent run beside it. A contracted job that has never run reports nulls rather than zeros, because nothing having run is a different fact from something running and processing nothing. **This list contains only database-scheduled jobs.** The worker’s repeatable jobs record no run and the contract names none, so none appears here; that is a reported capability gap rather than an empty section.
+ * @summary The scheduled-job contract, with each job’s last run
+ */
+export const getV1AdminPlatformScheduledJobs = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminPlatformScheduledJobsResponse> => {
+
+  return apiFetch<getV1AdminPlatformScheduledJobsResponse>(getGetV1AdminPlatformScheduledJobsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminPlatformScheduleProblemsResponse200 = {
+  data: ScheduleProblemsResponse
+  status: 200
+}
+
+export type getV1AdminPlatformScheduleProblemsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminPlatformScheduleProblemsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminPlatformScheduleProblemsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminPlatformScheduleProblemsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminPlatformScheduleProblemsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminPlatformScheduleProblemsResponseSuccess = (getV1AdminPlatformScheduleProblemsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminPlatformScheduleProblemsResponseError = (getV1AdminPlatformScheduleProblemsResponse400 | getV1AdminPlatformScheduleProblemsResponse401 | getV1AdminPlatformScheduleProblemsResponse403 | getV1AdminPlatformScheduleProblemsResponse500 | getV1AdminPlatformScheduleProblemsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminPlatformScheduleProblemsResponse = (getV1AdminPlatformScheduleProblemsResponseSuccess | getV1AdminPlatformScheduleProblemsResponseError)
+
+export const getGetV1AdminPlatformScheduleProblemsUrl = () => {
+
+
+
+
+  return `/v1/admin/platform/schedule-problems`
+}
+
+/**
+ * Requires the internal BFF credential and `platform.job.read` in an aal2 session. The platform’s own scheduled-job guard, projected whole and unaltered: a contracted job that is missing, misscheduled, pointed somewhere else or switched off, anything scheduled that the contract does not describe, and scheduler-privilege hygiene. An empty list means the schedule matches the contract, which is the only good answer. The wider security contract is deliberately **not** exposed here: the whole posture of policies, grants and roles is a different concern from the job schedule and has no permission of its own.
+ * @summary Where the schedule and the contract disagree
+ */
+export const getV1AdminPlatformScheduleProblems = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminPlatformScheduleProblemsResponse> => {
+
+  return apiFetch<getV1AdminPlatformScheduleProblemsResponse>(getGetV1AdminPlatformScheduleProblemsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminPlatformOutboxResponse200 = {
+  data: OutboxResponse
+  status: 200
+}
+
+export type getV1AdminPlatformOutboxResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminPlatformOutboxResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminPlatformOutboxResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminPlatformOutboxResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminPlatformOutboxResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminPlatformOutboxResponseSuccess = (getV1AdminPlatformOutboxResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminPlatformOutboxResponseError = (getV1AdminPlatformOutboxResponse400 | getV1AdminPlatformOutboxResponse401 | getV1AdminPlatformOutboxResponse403 | getV1AdminPlatformOutboxResponse500 | getV1AdminPlatformOutboxResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminPlatformOutboxResponse = (getV1AdminPlatformOutboxResponseSuccess | getV1AdminPlatformOutboxResponseError)
+
+export const getGetV1AdminPlatformOutboxUrl = () => {
+
+
+
+
+  return `/v1/admin/platform/outbox`
+}
+
+/**
+ * Requires the internal BFF credential and `platform.job.read` in an aal2 session. The outbox as **counts and ages only**, in the four states the schema itself defines — pending (of which the due ones are those the relay would claim now), in flight, completed and dead-lettered — together with dead-letters grouped by event type and error class. **No event identifier, no aggregate identifier or type, no payload and no author crosses**: nothing on this surface acts on an event, so an identifier would enable nothing and would only widen what a console can disclose. **No threshold is applied and no verdict is reached**: the sweeper takes its staleness from its caller, so the oldest age in each state is reported as a fact for a person to judge.
+ * @summary Transactional outbox health, and what is dead-lettered
+ */
+export const getV1AdminPlatformOutbox = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminPlatformOutboxResponse> => {
+
+  return apiFetch<getV1AdminPlatformOutboxResponse>(getGetV1AdminPlatformOutboxUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminDisputesResponse200 = {
+  data: DisputeQueueResponse
+  status: 200
+}
+
+export type getV1AdminDisputesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminDisputesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminDisputesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminDisputesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminDisputesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminDisputesResponseSuccess = (getV1AdminDisputesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminDisputesResponseError = (getV1AdminDisputesResponse400 | getV1AdminDisputesResponse401 | getV1AdminDisputesResponse403 | getV1AdminDisputesResponse500 | getV1AdminDisputesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminDisputesResponse = (getV1AdminDisputesResponseSuccess | getV1AdminDisputesResponseError)
+
+export const getGetV1AdminDisputesUrl = (params?: GetV1AdminDisputesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/disputes?${stringifiedParams}` : `/v1/admin/disputes`
+}
+
+/**
+ * Requires the internal BFF credential and `disputes.dispute.read` in an aal2 session — a key only Admin and Super Admin hold, and which a Moderator is deliberately not granted. One page of disputes, **oldest first**, because somebody is out of pocket while a dispute waits. A row carries the reason, the claimed amount with its currency, the order it is about and the storefront’s own handle; it carries **no buyer, no seller account, no opener and no colleague resolver** — the caller learns only whether they are a party and whether a decision was their own. Amounts are decimal strings in minor units, never JSON numbers. The status filter accepts only the two states a writer can produce.
+ * @summary The dispute queue
+ */
+export const getV1AdminDisputes = async (params?: GetV1AdminDisputesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminDisputesResponse> => {
+
+  return apiFetch<getV1AdminDisputesResponse>(getGetV1AdminDisputesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminDisputeResponse200 = {
+  data: DisputeDetailResponse
+  status: 200
+}
+
+export type getV1AdminDisputeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminDisputeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminDisputeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminDisputeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminDisputeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminDisputeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminDisputeResponseSuccess = (getV1AdminDisputeResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminDisputeResponseError = (getV1AdminDisputeResponse400 | getV1AdminDisputeResponse401 | getV1AdminDisputeResponse403 | getV1AdminDisputeResponse404 | getV1AdminDisputeResponse500 | getV1AdminDisputeResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminDisputeResponse = (getV1AdminDisputeResponseSuccess | getV1AdminDisputeResponseError)
+
+export const getGetV1AdminDisputeUrl = (disputeId: string,) => {
+
+
+
+
+  return `/v1/admin/disputes/${disputeId}`
+}
+
+/**
+ * Requires the internal BFF credential and `disputes.dispute.read` in an aal2 session. What is claimed and why, which order it is about and where that order stands, the status the dispute snapshotted when it opened, and any decision already recorded. The order’s total crosses so the claim can be judged against it, as a decimal string beside the one currency the dispute and the order share. Which side opened it is reported as a **side** rather than an account. `canManage` says whether this same session may post a message or record a decision, because reading and acting are two different keys. **No evidence is returned**: nothing in this platform attaches evidence to a dispute yet, so a count would imply a feature that does not exist.
+ * @summary One dispute, with the order it is about
+ */
+export const getV1AdminDispute = async (disputeId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminDisputeResponse> => {
+
+  return apiFetch<getV1AdminDisputeResponse>(getGetV1AdminDisputeUrl(disputeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminDisputeMessagesResponse200 = {
+  data: DisputeMessagesResponse
+  status: 200
+}
+
+export type getV1AdminDisputeMessagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminDisputeMessagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminDisputeMessagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminDisputeMessagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminDisputeMessagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminDisputeMessagesResponseSuccess = (getV1AdminDisputeMessagesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminDisputeMessagesResponseError = (getV1AdminDisputeMessagesResponse400 | getV1AdminDisputeMessagesResponse401 | getV1AdminDisputeMessagesResponse403 | getV1AdminDisputeMessagesResponse500 | getV1AdminDisputeMessagesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminDisputeMessagesResponse = (getV1AdminDisputeMessagesResponseSuccess | getV1AdminDisputeMessagesResponseError)
+
+export const getGetV1AdminDisputeMessagesUrl = (disputeId: string,) => {
+
+
+
+
+  return `/v1/admin/disputes/${disputeId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and `disputes.dispute.read` in an aal2 session. Every message, oldest first, **including the internal staff notes** a party cannot see — the same key gates the whole thread for staff, and it is the party’s own policy that hides those notes from them. A message names its author’s **role** and never the author; the caller learns only which messages are their own.
+ * @summary The thread on one dispute
+ */
+export const getV1AdminDisputeMessages = async (disputeId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminDisputeMessagesResponse> => {
+
+  return apiFetch<getV1AdminDisputeMessagesResponse>(getGetV1AdminDisputeMessagesUrl(disputeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminDisputeMessageResponse200 = {
+  data: PostDisputeMessageResponse
+  status: 200
+}
+
+export type postV1AdminDisputeMessageResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminDisputeMessageResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminDisputeMessageResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminDisputeMessageResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminDisputeMessageResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminDisputeMessageResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminDisputeMessageResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminDisputeMessageResponseSuccess = (postV1AdminDisputeMessageResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminDisputeMessageResponseError = (postV1AdminDisputeMessageResponse400 | postV1AdminDisputeMessageResponse401 | postV1AdminDisputeMessageResponse403 | postV1AdminDisputeMessageResponse404 | postV1AdminDisputeMessageResponse409 | postV1AdminDisputeMessageResponse500 | postV1AdminDisputeMessageResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminDisputeMessageResponse = (postV1AdminDisputeMessageResponseSuccess | postV1AdminDisputeMessageResponseError)
+
+export const getPostV1AdminDisputeMessageUrl = (disputeId: string,) => {
+
+
+
+
+  return `/v1/admin/disputes/${disputeId}/messages`
+}
+
+/**
+ * Requires the internal BFF credential and `disputes.dispute.manage` in an aal2 session — a **different key** from the one that reads the dispute. The body carries the text and whether it is internal, and nothing else: the writer works the author’s role out of the dispute itself rather than trusting an argument, and records when. An internal note is visible to staff only; an ordinary message is visible to both parties, which is why `isInternal` defaults to false. The writer refuses a closed thread and refuses an internal note from a colleague who is a party to the dispute.
+ * @summary Add a staff message or an internal note
+ */
+export const postV1AdminDisputeMessage = async (disputeId: string,
+    postDisputeMessageRequest?: PostDisputeMessageRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminDisputeMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminDisputeMessageResponse>(getPostV1AdminDisputeMessageUrl(disputeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postDisputeMessageRequest)
+  }
+);}
+
+
+
+export type postV1AdminDisputeResolutionResponse200 = {
+  data: ResolveDisputeResponse
+  status: 200
+}
+
+export type postV1AdminDisputeResolutionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminDisputeResolutionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminDisputeResolutionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminDisputeResolutionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminDisputeResolutionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminDisputeResolutionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminDisputeResolutionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminDisputeResolutionResponseSuccess = (postV1AdminDisputeResolutionResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminDisputeResolutionResponseError = (postV1AdminDisputeResolutionResponse400 | postV1AdminDisputeResolutionResponse401 | postV1AdminDisputeResolutionResponse403 | postV1AdminDisputeResolutionResponse404 | postV1AdminDisputeResolutionResponse409 | postV1AdminDisputeResolutionResponse500 | postV1AdminDisputeResolutionResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminDisputeResolutionResponse = (postV1AdminDisputeResolutionResponseSuccess | postV1AdminDisputeResolutionResponseError)
+
+export const getPostV1AdminDisputeResolutionUrl = (disputeId: string,) => {
+
+
+
+
+  return `/v1/admin/disputes/${disputeId}/resolution`
+}
+
+/**
+ * Requires the internal BFF credential and `disputes.dispute.manage` in an aal2 session. The body carries one of the four resolutions, a reason — required for **every** decision — and, for a refund resolution only, the decided amount as a decimal string in minor units.
+ *
+ * **THIS RECORDS A DECISION AND MOVES NO MONEY.** `refund_buyer` and `partial_refund` record that a refund is owed; **no refund is created, no payment is reversed, no ledger entry is posted, no balance changes, no payout is affected and no provider is called.** Issuing the refund is a separate, later financial operation with its own record and its own permission, and no writer for one exists in this platform yet. The response carries no refund identifier or payment reference, because none was created.
+ *
+ * The writer locks the dispute, records who ruled and when, restores the order to the status the dispute snapshotted when it opened, and refuses a caller who is the dispute’s buyer or seller. The decided amount carries no upper bound: a claim is checked against the order when a dispute is opened, and a decision is not.
+ * @summary Record a decision on one dispute
+ */
+export const postV1AdminDisputeResolution = async (disputeId: string,
+    resolveDisputeRequest?: ResolveDisputeRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminDisputeResolutionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminDisputeResolutionResponse>(getPostV1AdminDisputeResolutionUrl(disputeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resolveDisputeRequest)
+  }
+);}
+
+
+
+export type getV1CmsPagesResponse200 = {
+  data: GetV1CmsPages200
+  status: 200
+}
+
+export type getV1CmsPagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1CmsPagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1CmsPagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1CmsPagesResponseSuccess = (getV1CmsPagesResponse200) & {
+  headers: Headers;
+};
+export type getV1CmsPagesResponseError = (getV1CmsPagesResponse403 | getV1CmsPagesResponse500 | getV1CmsPagesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1CmsPagesResponse = (getV1CmsPagesResponseSuccess | getV1CmsPagesResponseError)
+
+export const getGetV1CmsPagesUrl = (params?: GetV1CmsPagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/cms/pages?${stringifiedParams}` : `/v1/cms/pages`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same list. Ordered by the administrator’s own sort order, with the slug breaking ties. A page appears only once it is published and its publication moment has passed, and only if it has been written in at least one locale — a published page with no text at all is absent, because there would be nothing to name it with. `locale` selects a representation: an untranslated page is titled in the default locale and `resolvedLocale` says so.
+ * @summary Every page the public may see
+ */
+export const getV1CmsPages = async (params?: GetV1CmsPagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1CmsPagesResponse> => {
+
+  return apiFetch<getV1CmsPagesResponse>(getGetV1CmsPagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1CmsPageBySlugResponse200 = {
+  data: GetV1CmsPageBySlug200
+  status: 200
+}
+
+export type getV1CmsPageBySlugResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1CmsPageBySlugResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1CmsPageBySlugResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1CmsPageBySlugResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1CmsPageBySlugResponseSuccess = (getV1CmsPageBySlugResponse200) & {
+  headers: Headers;
+};
+export type getV1CmsPageBySlugResponseError = (getV1CmsPageBySlugResponse403 | getV1CmsPageBySlugResponse404 | getV1CmsPageBySlugResponse500 | getV1CmsPageBySlugResponse503) & {
+  headers: Headers;
+};
+
+export type getV1CmsPageBySlugResponse = (getV1CmsPageBySlugResponseSuccess | getV1CmsPageBySlugResponseError)
+
+export const getGetV1CmsPageBySlugUrl = (slug: string,
+    params?: GetV1CmsPageBySlugParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/cms/pages/${slug}?${stringifiedParams}` : `/v1/cms/pages/${slug}`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context. **The 200 body is a union discriminated on `outcome`.** `page` is a published page with its text in the requested locale, or in the default locale when that one is untranslated — `resolvedLocale` says which came back, which is what lets a renderer set the right language and direction on the content. `moved` means the slug is a previous address of a page that has since been renamed, and carries the current slug so the caller can issue its own redirect; the body has no content fields at all, so a renderer cannot show an empty page by forgetting to branch. The distinction is in the body rather than in the status line deliberately: a 301 here would be followed transparently by `fetch`, and the caller would receive the renamed page with a 200 and never learn to redirect the browser.
+ * @summary One public page, or the slug it moved to
+ */
+export const getV1CmsPageBySlug = async (slug: string,
+    params?: GetV1CmsPageBySlugParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1CmsPageBySlugResponse> => {
+
+  return apiFetch<getV1CmsPageBySlugResponse>(getGetV1CmsPageBySlugUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminCmsPagesResponse200 = {
+  data: GetV1AdminCmsPages200
+  status: 200
+}
+
+export type getV1AdminCmsPagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminCmsPagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCmsPagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCmsPagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCmsPagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCmsPagesResponseSuccess = (getV1AdminCmsPagesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCmsPagesResponseError = (getV1AdminCmsPagesResponse400 | getV1AdminCmsPagesResponse401 | getV1AdminCmsPagesResponse403 | getV1AdminCmsPagesResponse500 | getV1AdminCmsPagesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCmsPagesResponse = (getV1AdminCmsPagesResponseSuccess | getV1AdminCmsPagesResponseError)
+
+export const getGetV1AdminCmsPagesUrl = (params?: GetV1AdminCmsPagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/cms/pages?${stringifiedParams}` : `/v1/admin/cms/pages`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Newest edit first, because this is an authoring list rather than a queue: somebody opening it is most often looking for what they touched last. `translatedLocales` is empty for a page nobody has written, which is also the state that cannot be published. The status filter compares a value, so an unknown status returns an empty page rather than a refusal.
+ * @summary Authored pages, newest edit first
+ */
+export const getV1AdminCmsPages = async (params?: GetV1AdminCmsPagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCmsPagesResponse> => {
+
+  return apiFetch<getV1AdminCmsPagesResponse>(getGetV1AdminCmsPagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminCmsPagesResponse201 = {
+  data: PostV1AdminCmsPages201
+  status: 201
+}
+
+export type postV1AdminCmsPagesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminCmsPagesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminCmsPagesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminCmsPagesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminCmsPagesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminCmsPagesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminCmsPagesResponseSuccess = (postV1AdminCmsPagesResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminCmsPagesResponseError = (postV1AdminCmsPagesResponse400 | postV1AdminCmsPagesResponse401 | postV1AdminCmsPagesResponse403 | postV1AdminCmsPagesResponse409 | postV1AdminCmsPagesResponse500 | postV1AdminCmsPagesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminCmsPagesResponse = (postV1AdminCmsPagesResponseSuccess | postV1AdminCmsPagesResponseError)
+
+export const getPostV1AdminCmsPagesUrl = () => {
+
+
+
+
+  return `/v1/admin/cms/pages`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.manage` in an aal2 session. **The page is always created as a draft**, and there is no status in the request: publishing is its own call, so a page cannot go live before anybody has written it. A slug that is a previous address of another page is refused — a historical slug belongs to the page that gave it up, permanently.
+ * @summary Create a page
+ */
+export const postV1AdminCmsPages = async (postV1AdminCmsPagesBody?: PostV1AdminCmsPagesBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminCmsPagesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminCmsPagesResponse>(getPostV1AdminCmsPagesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminCmsPagesBody)
+  }
+);}
+
+
+
+export type getV1AdminCmsPageResponse200 = {
+  data: GetV1AdminCmsPage200
+  status: 200
+}
+
+export type getV1AdminCmsPageResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminCmsPageResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCmsPageResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCmsPageResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCmsPageResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCmsPageResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCmsPageResponseSuccess = (getV1AdminCmsPageResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCmsPageResponseError = (getV1AdminCmsPageResponse400 | getV1AdminCmsPageResponse401 | getV1AdminCmsPageResponse403 | getV1AdminCmsPageResponse404 | getV1AdminCmsPageResponse500 | getV1AdminCmsPageResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCmsPageResponse = (getV1AdminCmsPageResponseSuccess | getV1AdminCmsPageResponseError)
+
+export const getGetV1AdminCmsPageUrl = (pageId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/pages/${pageId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.read` in an aal2 session. `canManage` reports whether this caller also holds `cms.page.manage`, which is a separate seeded key: a console renders its controls from that answer rather than inferring it from a role name. `previousSlugs` lists every address the page has had, newest first; each one permanently redirects to the current slug and can never be taken by another page.
+ * @summary One authored page, with every locale it has
+ */
+export const getV1AdminCmsPage = async (pageId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCmsPageResponse> => {
+
+  return apiFetch<getV1AdminCmsPageResponse>(getGetV1AdminCmsPageUrl(pageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminCmsPageResponse200 = {
+  data: PatchV1AdminCmsPage200
+  status: 200
+}
+
+export type patchV1AdminCmsPageResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminCmsPageResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminCmsPageResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminCmsPageResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminCmsPageResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminCmsPageResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminCmsPageResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminCmsPageResponseSuccess = (patchV1AdminCmsPageResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminCmsPageResponseError = (patchV1AdminCmsPageResponse400 | patchV1AdminCmsPageResponse401 | patchV1AdminCmsPageResponse403 | patchV1AdminCmsPageResponse404 | patchV1AdminCmsPageResponse409 | patchV1AdminCmsPageResponse500 | patchV1AdminCmsPageResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminCmsPageResponse = (patchV1AdminCmsPageResponseSuccess | patchV1AdminCmsPageResponseError)
+
+export const getPatchV1AdminCmsPageUrl = (pageId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/pages/${pageId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.manage` in an aal2 session. Every field is optional and an absent field changes nothing; `pageKey` as an empty string clears the key. **The status is deliberately not changeable here** — renaming a page or changing its template can never publish or archive it. Changing the slug keeps the old one as a permanent redirect.
+ * @summary Change a page’s address or presentation
+ */
+export const patchV1AdminCmsPage = async (pageId: string,
+    patchV1AdminCmsPageBody?: PatchV1AdminCmsPageBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminCmsPageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminCmsPageResponse>(getPatchV1AdminCmsPageUrl(pageId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminCmsPageBody)
+  }
+);}
+
+
+
+export type putV1AdminCmsPageStatusResponse200 = {
+  data: PutV1AdminCmsPageStatus200
+  status: 200
+}
+
+export type putV1AdminCmsPageStatusResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCmsPageStatusResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCmsPageStatusResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCmsPageStatusResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCmsPageStatusResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminCmsPageStatusResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCmsPageStatusResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCmsPageStatusResponseSuccess = (putV1AdminCmsPageStatusResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCmsPageStatusResponseError = (putV1AdminCmsPageStatusResponse400 | putV1AdminCmsPageStatusResponse401 | putV1AdminCmsPageStatusResponse403 | putV1AdminCmsPageStatusResponse404 | putV1AdminCmsPageStatusResponse409 | putV1AdminCmsPageStatusResponse500 | putV1AdminCmsPageStatusResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCmsPageStatusResponse = (putV1AdminCmsPageStatusResponseSuccess | putV1AdminCmsPageStatusResponseError)
+
+export const getPutV1AdminCmsPageStatusUrl = (pageId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/pages/${pageId}/status`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.manage` in an aal2 session. The legal transitions are the database’s: a page may go between draft, scheduled, published and archived along defined edges, and an edge that does not exist is refused. Publishing or scheduling a page that has not been written in any locale is refused too, because it would put a live address in front of the public with nothing to render. `scheduledFor` is required for `scheduled` and not allowed otherwise.
+ * @summary Move a page through its lifecycle
+ */
+export const putV1AdminCmsPageStatus = async (pageId: string,
+    putV1AdminCmsPageStatusBody?: PutV1AdminCmsPageStatusBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCmsPageStatusResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCmsPageStatusResponse>(getPutV1AdminCmsPageStatusUrl(pageId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminCmsPageStatusBody)
+  }
+);}
+
+
+
+export type putV1AdminCmsPageTranslationResponse200 = {
+  data: PutV1AdminCmsPageTranslation200
+  status: 200
+}
+
+export type putV1AdminCmsPageTranslationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCmsPageTranslationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCmsPageTranslationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCmsPageTranslationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCmsPageTranslationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCmsPageTranslationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCmsPageTranslationResponseSuccess = (putV1AdminCmsPageTranslationResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCmsPageTranslationResponseError = (putV1AdminCmsPageTranslationResponse400 | putV1AdminCmsPageTranslationResponse401 | putV1AdminCmsPageTranslationResponse403 | putV1AdminCmsPageTranslationResponse404 | putV1AdminCmsPageTranslationResponse500 | putV1AdminCmsPageTranslationResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCmsPageTranslationResponse = (putV1AdminCmsPageTranslationResponseSuccess | putV1AdminCmsPageTranslationResponseError)
+
+export const getPutV1AdminCmsPageTranslationUrl = (pageId: string,
+    localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/cms/pages/${pageId}/translations/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.manage` in an aal2 session. Creating and replacing are the same request. A blank excerpt, meta title or meta description is stored as absent rather than as an empty string, so a page never carries a blank meta tag. Nothing is machine translated: a locale exists because somebody wrote it.
+ * @summary Write one locale of a page
+ */
+export const putV1AdminCmsPageTranslation = async (pageId: string,
+    localeCode: string,
+    putV1AdminCmsPageTranslationBody?: PutV1AdminCmsPageTranslationBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCmsPageTranslationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCmsPageTranslationResponse>(getPutV1AdminCmsPageTranslationUrl(pageId,localeCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminCmsPageTranslationBody)
+  }
+);}
+
+
+
+export type deleteV1AdminCmsPageTranslationResponse200 = {
+  data: DeleteV1AdminCmsPageTranslation200
+  status: 200
+}
+
+export type deleteV1AdminCmsPageTranslationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminCmsPageTranslationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminCmsPageTranslationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminCmsPageTranslationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminCmsPageTranslationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type deleteV1AdminCmsPageTranslationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminCmsPageTranslationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminCmsPageTranslationResponseSuccess = (deleteV1AdminCmsPageTranslationResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminCmsPageTranslationResponseError = (deleteV1AdminCmsPageTranslationResponse400 | deleteV1AdminCmsPageTranslationResponse401 | deleteV1AdminCmsPageTranslationResponse403 | deleteV1AdminCmsPageTranslationResponse404 | deleteV1AdminCmsPageTranslationResponse409 | deleteV1AdminCmsPageTranslationResponse500 | deleteV1AdminCmsPageTranslationResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminCmsPageTranslationResponse = (deleteV1AdminCmsPageTranslationResponseSuccess | deleteV1AdminCmsPageTranslationResponseError)
+
+export const getDeleteV1AdminCmsPageTranslationUrl = (pageId: string,
+    localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/cms/pages/${pageId}/translations/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.manage` in an aal2 session. Removing the last locale of a published or scheduled page is refused — the mirror of the rule that a page cannot be published before it has been written — because the page’s address would start answering 404 while the page was still live and still in the public index. A draft may be emptied completely. Removing a locale that is not there is a 404 rather than an error.
+ * @summary Remove one locale of a page
+ */
+export const deleteV1AdminCmsPageTranslation = async (pageId: string,
+    localeCode: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminCmsPageTranslationResponse> => {
+
+  return apiFetch<deleteV1AdminCmsPageTranslationResponse>(getDeleteV1AdminCmsPageTranslationUrl(pageId,localeCode),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1SeoRedirectResolveResponse200 = {
+  data: RedirectResolutionResponse
+  status: 200
+}
+
+export type getV1SeoRedirectResolveResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SeoRedirectResolveResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SeoRedirectResolveResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SeoRedirectResolveResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SeoRedirectResolveResponseSuccess = (getV1SeoRedirectResolveResponse200) & {
+  headers: Headers;
+};
+export type getV1SeoRedirectResolveResponseError = (getV1SeoRedirectResolveResponse400 | getV1SeoRedirectResolveResponse403 | getV1SeoRedirectResolveResponse500 | getV1SeoRedirectResolveResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SeoRedirectResolveResponse = (getV1SeoRedirectResolveResponseSuccess | getV1SeoRedirectResolveResponseError)
+
+export const getGetV1SeoRedirectResolveUrl = (params: GetV1SeoRedirectResolveParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/seo/redirects/resolve?${stringifiedParams}` : `/v1/seo/redirects/resolve`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: the map is the same for everybody, and nothing about the caller changes the answer. **This is asked only about a path the public site has already decided answers 404.** The approved precedence is LIVE PAGE WINS: a path that resolves to a live page or catalogue destination is rendered and this route is never consulted for it, so an active entry can never shadow a live URL. The answer is a union rather than a 404 because "the map names no redirect for this path" is the common answer and must be distinguishable from the service being unreachable. `toPath` is the end of the chain rather than the next step, `statusCode` is the code stored on the last entry followed, an inactive entry redirects nobody, the walk stops after five hops, and a chain that comes back to the path that was asked for answers `none`.
+ * @summary Where the admin redirect map sends one path
+ */
+export const getV1SeoRedirectResolve = async (params: GetV1SeoRedirectResolveParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SeoRedirectResolveResponse> => {
+
+  return apiFetch<getV1SeoRedirectResolveResponse>(getGetV1SeoRedirectResolveUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSeoRedirectsResponse200 = {
+  data: SeoRedirectsResponse
+  status: 200
+}
+
+export type getV1AdminSeoRedirectsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSeoRedirectsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSeoRedirectsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSeoRedirectsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSeoRedirectsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSeoRedirectsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSeoRedirectsResponseSuccess = (getV1AdminSeoRedirectsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSeoRedirectsResponseError = (getV1AdminSeoRedirectsResponse400 | getV1AdminSeoRedirectsResponse401 | getV1AdminSeoRedirectsResponse403 | getV1AdminSeoRedirectsResponse404 | getV1AdminSeoRedirectsResponse500 | getV1AdminSeoRedirectsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSeoRedirectsResponse = (getV1AdminSeoRedirectsResponseSuccess | getV1AdminSeoRedirectsResponseError)
+
+export const getGetV1AdminSeoRedirectsUrl = (params?: GetV1AdminSeoRedirectsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/seo/redirects?${stringifiedParams}` : `/v1/admin/seo/redirects`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.redirect.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Newest edit first, because this is a maintenance list rather than a queue. `search` is a literal substring of either path, **not a pattern**: a percent sign or an underscore matches that character and nothing else, because this map supports no wildcard and no regular expression. `active` filters by state and its absence means both.
+ * @summary The redirect map, newest edit first
+ */
+export const getV1AdminSeoRedirects = async (params?: GetV1AdminSeoRedirectsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSeoRedirectsResponse> => {
+
+  return apiFetch<getV1AdminSeoRedirectsResponse>(getGetV1AdminSeoRedirectsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminSeoRedirectsResponse201 = {
+  data: CreateSeoRedirectResponse
+  status: 201
+}
+
+export type postV1AdminSeoRedirectsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminSeoRedirectsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminSeoRedirectsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminSeoRedirectsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminSeoRedirectsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminSeoRedirectsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminSeoRedirectsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminSeoRedirectsResponseSuccess = (postV1AdminSeoRedirectsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminSeoRedirectsResponseError = (postV1AdminSeoRedirectsResponse400 | postV1AdminSeoRedirectsResponse401 | postV1AdminSeoRedirectsResponse403 | postV1AdminSeoRedirectsResponse404 | postV1AdminSeoRedirectsResponse409 | postV1AdminSeoRedirectsResponse500 | postV1AdminSeoRedirectsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminSeoRedirectsResponse = (postV1AdminSeoRedirectsResponseSuccess | postV1AdminSeoRedirectsResponseError)
+
+export const getPostV1AdminSeoRedirectsUrl = () => {
+
+
+
+
+  return `/v1/admin/seo/redirects`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.redirect.manage` in an aal2 session. `statusCode` defaults to 301 and `isActive` to true, both of them the column defaults; `isActive: false` is how an entry is staged and switched on separately. Both paths must be relative and neither may be protocol-relative or external — this map cannot send anybody off the site. A `from_path` another entry already holds is refused: one address names one redirect.
+ * @summary Add an entry to the redirect map
+ */
+export const postV1AdminSeoRedirects = async (createSeoRedirectRequest?: CreateSeoRedirectRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminSeoRedirectsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminSeoRedirectsResponse>(getPostV1AdminSeoRedirectsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createSeoRedirectRequest)
+  }
+);}
+
+
+
+export type getV1AdminSeoRedirectResponse200 = {
+  data: SeoRedirectDetailResponse
+  status: 200
+}
+
+export type getV1AdminSeoRedirectResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSeoRedirectResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSeoRedirectResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSeoRedirectResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSeoRedirectResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSeoRedirectResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSeoRedirectResponseSuccess = (getV1AdminSeoRedirectResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSeoRedirectResponseError = (getV1AdminSeoRedirectResponse400 | getV1AdminSeoRedirectResponse401 | getV1AdminSeoRedirectResponse403 | getV1AdminSeoRedirectResponse404 | getV1AdminSeoRedirectResponse500 | getV1AdminSeoRedirectResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSeoRedirectResponse = (getV1AdminSeoRedirectResponseSuccess | getV1AdminSeoRedirectResponseError)
+
+export const getGetV1AdminSeoRedirectUrl = (redirectId: string,) => {
+
+
+
+
+  return `/v1/admin/seo/redirects/${redirectId}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.redirect.read` in an aal2 session. `canManage` reports whether this caller also holds `seo.redirect.manage`, which is a separate seeded key: a console renders its controls from that answer rather than inferring it from a role name. `resolvedToPath` and `resolvedStatusCode` are where this entry’s chain actually ends, so an operator can see whether the destination is itself redirected onwards; both are null when the map would not redirect this path at all, which is what an entry that is switched off, or one sitting in a cycle, looks like from the outside.
+ * @summary One entry, with where its chain ends
+ */
+export const getV1AdminSeoRedirect = async (redirectId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSeoRedirectResponse> => {
+
+  return apiFetch<getV1AdminSeoRedirectResponse>(getGetV1AdminSeoRedirectUrl(redirectId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminSeoRedirectResponse200 = {
+  data: SeoRedirectWriteResponse
+  status: 200
+}
+
+export type patchV1AdminSeoRedirectResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminSeoRedirectResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminSeoRedirectResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminSeoRedirectResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminSeoRedirectResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminSeoRedirectResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminSeoRedirectResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminSeoRedirectResponseSuccess = (patchV1AdminSeoRedirectResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminSeoRedirectResponseError = (patchV1AdminSeoRedirectResponse400 | patchV1AdminSeoRedirectResponse401 | patchV1AdminSeoRedirectResponse403 | patchV1AdminSeoRedirectResponse404 | patchV1AdminSeoRedirectResponse409 | patchV1AdminSeoRedirectResponse500 | patchV1AdminSeoRedirectResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminSeoRedirectResponse = (patchV1AdminSeoRedirectResponseSuccess | patchV1AdminSeoRedirectResponseError)
+
+export const getPatchV1AdminSeoRedirectUrl = (redirectId: string,) => {
+
+
+
+
+  return `/v1/admin/seo/redirects/${redirectId}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.redirect.manage` in an aal2 session. Every field is optional and an absent field changes nothing; `note` as an empty string clears it. **Whether the entry is active is deliberately not changeable here** — that has its own route, so correcting a destination can never switch a redirect on, and turning one off is one unambiguous action in the audit trail.
+ * @summary Change an entry’s paths, status code or note
+ */
+export const patchV1AdminSeoRedirect = async (redirectId: string,
+    updateSeoRedirectRequest?: UpdateSeoRedirectRequest, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminSeoRedirectResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminSeoRedirectResponse>(getPatchV1AdminSeoRedirectUrl(redirectId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateSeoRedirectRequest)
+  }
+);}
+
+
+
+export type deleteV1AdminSeoRedirectResponse200 = {
+  data: SeoRedirectWriteResponse
+  status: 200
+}
+
+export type deleteV1AdminSeoRedirectResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminSeoRedirectResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminSeoRedirectResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminSeoRedirectResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminSeoRedirectResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminSeoRedirectResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminSeoRedirectResponseSuccess = (deleteV1AdminSeoRedirectResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminSeoRedirectResponseError = (deleteV1AdminSeoRedirectResponse400 | deleteV1AdminSeoRedirectResponse401 | deleteV1AdminSeoRedirectResponse403 | deleteV1AdminSeoRedirectResponse404 | deleteV1AdminSeoRedirectResponse500 | deleteV1AdminSeoRedirectResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminSeoRedirectResponse = (deleteV1AdminSeoRedirectResponseSuccess | deleteV1AdminSeoRedirectResponseError)
+
+export const getDeleteV1AdminSeoRedirectUrl = (redirectId: string,) => {
+
+
+
+
+  return `/v1/admin/seo/redirects/${redirectId}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.redirect.manage` in an aal2 session. Removal is real here, where an authored page is archived instead: a page is content with a public address and a history, while a map entry is an instruction about an address, and an instruction nobody wants any more has no archived form. The audit trail records the removed row, so what the instruction said survives it. Switching the entry off is the reversible alternative.
+ * @summary Remove an entry from the redirect map
+ */
+export const deleteV1AdminSeoRedirect = async (redirectId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminSeoRedirectResponse> => {
+
+  return apiFetch<deleteV1AdminSeoRedirectResponse>(getDeleteV1AdminSeoRedirectUrl(redirectId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1AdminSeoRedirectStateResponse200 = {
+  data: SeoRedirectWriteResponse
+  status: 200
+}
+
+export type putV1AdminSeoRedirectStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminSeoRedirectStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminSeoRedirectStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminSeoRedirectStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminSeoRedirectStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminSeoRedirectStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminSeoRedirectStateResponseSuccess = (putV1AdminSeoRedirectStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminSeoRedirectStateResponseError = (putV1AdminSeoRedirectStateResponse400 | putV1AdminSeoRedirectStateResponse401 | putV1AdminSeoRedirectStateResponse403 | putV1AdminSeoRedirectStateResponse404 | putV1AdminSeoRedirectStateResponse500 | putV1AdminSeoRedirectStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminSeoRedirectStateResponse = (putV1AdminSeoRedirectStateResponseSuccess | putV1AdminSeoRedirectStateResponseError)
+
+export const getPutV1AdminSeoRedirectStateUrl = (redirectId: string,) => {
+
+
+
+
+  return `/v1/admin/seo/redirects/${redirectId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.redirect.manage` in an aal2 session. The only route that changes whether an entry redirects anybody, so switching one off is one deliberate action and one audit row. An inactive entry is still stored and still readable; the public resolver simply does not see it.
+ * @summary Switch an entry on or off
+ */
+export const putV1AdminSeoRedirectState = async (redirectId: string,
+    seoRedirectStateRequest?: SeoRedirectStateRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminSeoRedirectStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminSeoRedirectStateResponse>(getPutV1AdminSeoRedirectStateUrl(redirectId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(seoRedirectStateRequest)
+  }
+);}
+
+
+
+export type getV1AdminCategoriesResponse200 = {
+  data: GetV1AdminCategories200
+  status: 200
+}
+
+export type getV1AdminCategoriesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCategoriesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCategoriesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCategoriesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCategoriesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCategoriesResponseSuccess = (getV1AdminCategoriesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCategoriesResponseError = (getV1AdminCategoriesResponse401 | getV1AdminCategoriesResponse403 | getV1AdminCategoriesResponse404 | getV1AdminCategoriesResponse500 | getV1AdminCategoriesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCategoriesResponse = (getV1AdminCategoriesResponseSuccess | getV1AdminCategoriesResponseError)
+
+export const getGetV1AdminCategoriesUrl = () => {
+
+
+
+
+  return `/v1/admin/categories`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. The **whole** tree, including inactive categories: a console that showed only the active ones could not be used to bring one back. Ordered by depth, then sibling order, then slug, so it can be indented directly. `isVisible` is the public answer and differs from `isActive` exactly when an active category sits under a hidden ancestor. `translatedLocales` is the locale coverage, and `childCount` and `listingCount` say what hangs off each node.
+ * @summary The whole category tree
+ */
+export const getV1AdminCategories = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCategoriesResponse> => {
+
+  return apiFetch<getV1AdminCategoriesResponse>(getGetV1AdminCategoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminCategoriesResponse201 = {
+  data: PostV1AdminCategories201
+  status: 201
+}
+
+export type postV1AdminCategoriesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminCategoriesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminCategoriesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminCategoriesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminCategoriesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminCategoriesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminCategoriesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminCategoriesResponseSuccess = (postV1AdminCategoriesResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminCategoriesResponseError = (postV1AdminCategoriesResponse400 | postV1AdminCategoriesResponse401 | postV1AdminCategoriesResponse403 | postV1AdminCategoriesResponse404 | postV1AdminCategoriesResponse409 | postV1AdminCategoriesResponse500 | postV1AdminCategoriesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminCategoriesResponse = (postV1AdminCategoriesResponseSuccess | postV1AdminCategoriesResponseError)
+
+export const getPostV1AdminCategoriesUrl = () => {
+
+
+
+
+  return `/v1/admin/categories`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2. The slug is given here and can never be changed afterwards: it is the category’s public address, there is no category slug history and the public reader has no redirect answer. A new category is always created **hidden**, whatever the caller asks, because the public tree falls back to the slug when no translation exists and an unnamed category would otherwise appear labelled by it. `depth` is not accepted: the tree trigger derives it from the parent and refuses a fourth level.
+ * @summary Create one category
+ */
+export const postV1AdminCategories = async (postV1AdminCategoriesBody: PostV1AdminCategoriesBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminCategoriesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminCategoriesResponse>(getPostV1AdminCategoriesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminCategoriesBody)
+  }
+);}
+
+
+
+export type getV1AdminCategoryResponse200 = {
+  data: GetV1AdminCategory200
+  status: 200
+}
+
+export type getV1AdminCategoryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCategoryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCategoryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCategoryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCategoryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCategoryResponseSuccess = (getV1AdminCategoryResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCategoryResponseError = (getV1AdminCategoryResponse401 | getV1AdminCategoryResponse403 | getV1AdminCategoryResponse404 | getV1AdminCategoryResponse500 | getV1AdminCategoryResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCategoryResponse = (getV1AdminCategoryResponseSuccess | getV1AdminCategoryResponseError)
+
+export const getGetV1AdminCategoryUrl = (categoryId: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.read` at aal2. `canManage` says whether this caller also holds `catalog.category.manage`, and is what a console renders its controls from: deciding that from a role name would be a second, weaker copy of a rule the database already applies. `parentSlug` travels with the row so a screen needs no second read.
+ * @summary One category, with every locale it has been written in
+ */
+export const getV1AdminCategory = async (categoryId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCategoryResponse> => {
+
+  return apiFetch<getV1AdminCategoryResponse>(getGetV1AdminCategoryUrl(categoryId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminCategoryResponse200 = {
+  data: PatchV1AdminCategory200
+  status: 200
+}
+
+export type patchV1AdminCategoryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminCategoryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminCategoryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminCategoryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminCategoryResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminCategoryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminCategoryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminCategoryResponseSuccess = (patchV1AdminCategoryResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminCategoryResponseError = (patchV1AdminCategoryResponse400 | patchV1AdminCategoryResponse401 | patchV1AdminCategoryResponse403 | patchV1AdminCategoryResponse404 | patchV1AdminCategoryResponse409 | patchV1AdminCategoryResponse500 | patchV1AdminCategoryResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminCategoryResponse = (patchV1AdminCategoryResponseSuccess | patchV1AdminCategoryResponseError)
+
+export const getPatchV1AdminCategoryUrl = (categoryId: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2. `slug` and `isActive` are **not** part of this request and the body is strict, so sending either is a validation failure rather than a value quietly dropped: the slug can never change, and showing or hiding a category has its own request so that a visibility change is never a side effect of an edit. `setParent` exists because `null` is a real parent — it means a root — so without the flag "move to the root" and "leave the parent alone" would be the same request.
+ * @summary Change a category’s parent, surface or ordering
+ */
+export const patchV1AdminCategory = async (categoryId: string,
+    patchV1AdminCategoryBody: PatchV1AdminCategoryBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminCategoryResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminCategoryResponse>(getPatchV1AdminCategoryUrl(categoryId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminCategoryBody)
+  }
+);}
+
+
+
+export type putV1AdminCategoryStateResponse200 = {
+  data: PutV1AdminCategoryState200
+  status: 200
+}
+
+export type putV1AdminCategoryStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCategoryStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCategoryStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCategoryStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCategoryStateResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminCategoryStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCategoryStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCategoryStateResponseSuccess = (putV1AdminCategoryStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCategoryStateResponseError = (putV1AdminCategoryStateResponse400 | putV1AdminCategoryStateResponse401 | putV1AdminCategoryStateResponse403 | putV1AdminCategoryStateResponse404 | putV1AdminCategoryStateResponse409 | putV1AdminCategoryStateResponse500 | putV1AdminCategoryStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCategoryStateResponse = (putV1AdminCategoryStateResponseSuccess | putV1AdminCategoryStateResponseError)
+
+export const getPutV1AdminCategoryStateUrl = (categoryId: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2. Showing a category that has been written in no locale is refused, because the public tree would label it by its slug. Hiding one needs no cascade: every public reader resolves through the ancestor rule, so a hidden category takes its whole branch out of the tree, the landing pages, the search facet and the sitemap at once, while the children keep their own state and the branch can be restored exactly as it was.
+ * @summary Show or hide one category
+ */
+export const putV1AdminCategoryState = async (categoryId: string,
+    putV1AdminCategoryStateBody: PutV1AdminCategoryStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCategoryStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCategoryStateResponse>(getPutV1AdminCategoryStateUrl(categoryId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminCategoryStateBody)
+  }
+);}
+
+
+
+export type putV1AdminCategoryTranslationResponse200 = {
+  data: PutV1AdminCategoryTranslation200
+  status: 200
+}
+
+export type putV1AdminCategoryTranslationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCategoryTranslationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCategoryTranslationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCategoryTranslationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCategoryTranslationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminCategoryTranslationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCategoryTranslationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCategoryTranslationResponseSuccess = (putV1AdminCategoryTranslationResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCategoryTranslationResponseError = (putV1AdminCategoryTranslationResponse400 | putV1AdminCategoryTranslationResponse401 | putV1AdminCategoryTranslationResponse403 | putV1AdminCategoryTranslationResponse404 | putV1AdminCategoryTranslationResponse409 | putV1AdminCategoryTranslationResponse500 | putV1AdminCategoryTranslationResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCategoryTranslationResponse = (putV1AdminCategoryTranslationResponseSuccess | putV1AdminCategoryTranslationResponseError)
+
+export const getPutV1AdminCategoryTranslationUrl = (categoryId: string,
+    localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}/translations/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2. An upsert, so writing a locale for the first time and correcting it later are the same call. `name` is required because the column is not null; the optional fields accept an empty string, which clears them, and a blank is stored as null so an empty meta title never renders as an empty tag. The category’s own `updatedAt` moves, because an author means a translation as an edit to the category.
+ * @summary Write one locale of one category
+ */
+export const putV1AdminCategoryTranslation = async (categoryId: string,
+    localeCode: string,
+    putV1AdminCategoryTranslationBody: PutV1AdminCategoryTranslationBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCategoryTranslationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCategoryTranslationResponse>(getPutV1AdminCategoryTranslationUrl(categoryId,localeCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminCategoryTranslationBody)
+  }
+);}
+
+
+
+export type deleteV1AdminCategoryTranslationResponse200 = {
+  data: DeleteV1AdminCategoryTranslation200
+  status: 200
+}
+
+export type deleteV1AdminCategoryTranslationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminCategoryTranslationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminCategoryTranslationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminCategoryTranslationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminCategoryTranslationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type deleteV1AdminCategoryTranslationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminCategoryTranslationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminCategoryTranslationResponseSuccess = (deleteV1AdminCategoryTranslationResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminCategoryTranslationResponseError = (deleteV1AdminCategoryTranslationResponse400 | deleteV1AdminCategoryTranslationResponse401 | deleteV1AdminCategoryTranslationResponse403 | deleteV1AdminCategoryTranslationResponse404 | deleteV1AdminCategoryTranslationResponse409 | deleteV1AdminCategoryTranslationResponse500 | deleteV1AdminCategoryTranslationResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminCategoryTranslationResponse = (deleteV1AdminCategoryTranslationResponseSuccess | deleteV1AdminCategoryTranslationResponseError)
+
+export const getDeleteV1AdminCategoryTranslationUrl = (categoryId: string,
+    localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}/translations/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2. A locale that is not there answers that nothing changed, rather than reporting a rule violation about something absent. The last locale of a category that is shown is refused, for the same reason it could not have been shown without one.
+ * @summary Remove one locale of one category
+ */
+export const deleteV1AdminCategoryTranslation = async (categoryId: string,
+    localeCode: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminCategoryTranslationResponse> => {
+
+  return apiFetch<deleteV1AdminCategoryTranslationResponse>(getDeleteV1AdminCategoryTranslationUrl(categoryId,localeCode),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1AdminAttributesResponse200 = {
+  data: GetV1AdminAttributes200
+  status: 200
+}
+
+export type getV1AdminAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminAttributesResponseSuccess = (getV1AdminAttributesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminAttributesResponseError = (getV1AdminAttributesResponse401 | getV1AdminAttributesResponse403 | getV1AdminAttributesResponse404 | getV1AdminAttributesResponse500 | getV1AdminAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminAttributesResponse = (getV1AdminAttributesResponseSuccess | getV1AdminAttributesResponseError)
+
+export const getGetV1AdminAttributesUrl = () => {
+
+
+
+
+  return `/v1/admin/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` in an aal2 session. There is no separate read key for this surface and none was invented: the manage key is what the table’s own RLS policy names, so the vocabulary is visible to the people who maintain it. The **whole** vocabulary, including hidden definitions, because a console that showed only the visible ones could not bring one back. Each row carries three counts that decide what a console may offer: how many options it has, how many categories ask for it, and how many sellers have already answered it.
+ * @summary The whole attribute vocabulary
+ */
+export const getV1AdminAttributes = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminAttributesResponse> => {
+
+  return apiFetch<getV1AdminAttributesResponse>(getGetV1AdminAttributesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminAttributesResponse201 = {
+  data: PostV1AdminAttributes201
+  status: 201
+}
+
+export type postV1AdminAttributesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminAttributesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminAttributesResponseSuccess = (postV1AdminAttributesResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminAttributesResponseError = (postV1AdminAttributesResponse400 | postV1AdminAttributesResponse401 | postV1AdminAttributesResponse403 | postV1AdminAttributesResponse404 | postV1AdminAttributesResponse409 | postV1AdminAttributesResponse500 | postV1AdminAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminAttributesResponse = (postV1AdminAttributesResponseSuccess | postV1AdminAttributesResponseError)
+
+export const getPostV1AdminAttributesUrl = () => {
+
+
+
+
+  return `/v1/admin/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. The key and the data type are given here and can never be changed: the key is the identity every public listing projection carries, and the data type is what every answer already stored was validated against, so changing either would silently reinterpret live data. A unit belongs to a number and to nothing else. A new definition is always created **hidden**, whatever the caller asks, because a select attribute has no options yet and would appear on sellers’ forms as a field nobody can answer.
+ * @summary Define one attribute
+ */
+export const postV1AdminAttributes = async (postV1AdminAttributesBody: PostV1AdminAttributesBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminAttributesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminAttributesResponse>(getPostV1AdminAttributesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminAttributesBody)
+  }
+);}
+
+
+
+export type getV1AdminAttributeResponse200 = {
+  data: GetV1AdminAttribute200
+  status: 200
+}
+
+export type getV1AdminAttributeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminAttributeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminAttributeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminAttributeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminAttributeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminAttributeResponseSuccess = (getV1AdminAttributeResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminAttributeResponseError = (getV1AdminAttributeResponse401 | getV1AdminAttributeResponse403 | getV1AdminAttributeResponse404 | getV1AdminAttributeResponse500 | getV1AdminAttributeResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminAttributeResponse = (getV1AdminAttributeResponseSuccess | getV1AdminAttributeResponseError)
+
+export const getGetV1AdminAttributeUrl = (definitionId: string,) => {
+
+
+
+
+  return `/v1/admin/attributes/${definitionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. `options` is empty for a text, number or boolean attribute, which has none and can take none. Each option reports how many listings have chosen it, which is what makes hiding one an informed decision rather than a guess.
+ * @summary One attribute definition, with its options
+ */
+export const getV1AdminAttribute = async (definitionId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminAttributeResponse> => {
+
+  return apiFetch<getV1AdminAttributeResponse>(getGetV1AdminAttributeUrl(definitionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminAttributeResponse200 = {
+  data: PatchV1AdminAttribute200
+  status: 200
+}
+
+export type patchV1AdminAttributeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminAttributeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminAttributeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminAttributeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminAttributeResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminAttributeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminAttributeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminAttributeResponseSuccess = (patchV1AdminAttributeResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminAttributeResponseError = (patchV1AdminAttributeResponse400 | patchV1AdminAttributeResponse401 | patchV1AdminAttributeResponse403 | patchV1AdminAttributeResponse404 | patchV1AdminAttributeResponse409 | patchV1AdminAttributeResponse500 | patchV1AdminAttributeResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminAttributeResponse = (patchV1AdminAttributeResponseSuccess | patchV1AdminAttributeResponseError)
+
+export const getPatchV1AdminAttributeUrl = (definitionId: string,) => {
+
+
+
+
+  return `/v1/admin/attributes/${definitionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. `key`, `dataType` and `isActive` are **not** part of this request and the body is strict, so sending any of them is a validation failure rather than a value quietly dropped. A unit on an attribute that is not a number cannot be caught by the schema — the request does not carry the data type and would have to be believed about it — so the column refuses it and the answer is 409 `ATTRIBUTE_VALUE_NOT_ALLOWED`. `isFilterable` is recorded and nothing filters by it in this increment.
+ * @summary Edit one attribute’s labels, unit, filterability and order
+ */
+export const patchV1AdminAttribute = async (definitionId: string,
+    patchV1AdminAttributeBody: PatchV1AdminAttributeBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminAttributeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminAttributeResponse>(getPatchV1AdminAttributeUrl(definitionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminAttributeBody)
+  }
+);}
+
+
+
+export type putV1AdminAttributeStateResponse200 = {
+  data: PutV1AdminAttributeState200
+  status: 200
+}
+
+export type putV1AdminAttributeStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminAttributeStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminAttributeStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminAttributeStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminAttributeStateResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminAttributeStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminAttributeStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminAttributeStateResponseSuccess = (putV1AdminAttributeStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminAttributeStateResponseError = (putV1AdminAttributeStateResponse400 | putV1AdminAttributeStateResponse401 | putV1AdminAttributeStateResponse403 | putV1AdminAttributeStateResponse404 | putV1AdminAttributeStateResponse409 | putV1AdminAttributeStateResponse500 | putV1AdminAttributeStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminAttributeStateResponse = (putV1AdminAttributeStateResponseSuccess | putV1AdminAttributeStateResponseError)
+
+export const getPutV1AdminAttributeStateUrl = (definitionId: string,) => {
+
+
+
+
+  return `/v1/admin/attributes/${definitionId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. Its own request, because this is the one edit a seller and a visitor both see. Showing a select attribute that has no active option is refused with 409 `ATTRIBUTE_NOT_ANSWERABLE`: it would put a field nobody can answer on every seller’s form. Hiding one needs no cascade and destroys nothing — the public readers of 0047 already filter on the definition’s state, so the attribute leaves every listing page at once while the answers stay exactly as the sellers left them, and showing it again restores them.
+ * @summary Show or hide one attribute
+ */
+export const putV1AdminAttributeState = async (definitionId: string,
+    putV1AdminAttributeStateBody: PutV1AdminAttributeStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminAttributeStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminAttributeStateResponse>(getPutV1AdminAttributeStateUrl(definitionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminAttributeStateBody)
+  }
+);}
+
+
+
+export type postV1AdminAttributeOptionsResponse201 = {
+  data: PostV1AdminAttributeOptions201
+  status: 201
+}
+
+export type postV1AdminAttributeOptionsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminAttributeOptionsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminAttributeOptionsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminAttributeOptionsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminAttributeOptionsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminAttributeOptionsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminAttributeOptionsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminAttributeOptionsResponseSuccess = (postV1AdminAttributeOptionsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminAttributeOptionsResponseError = (postV1AdminAttributeOptionsResponse400 | postV1AdminAttributeOptionsResponse401 | postV1AdminAttributeOptionsResponse403 | postV1AdminAttributeOptionsResponse404 | postV1AdminAttributeOptionsResponse409 | postV1AdminAttributeOptionsResponse500 | postV1AdminAttributeOptionsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminAttributeOptionsResponse = (postV1AdminAttributeOptionsResponseSuccess | postV1AdminAttributeOptionsResponseError)
+
+export const getPostV1AdminAttributeOptionsUrl = (definitionId: string,) => {
+
+
+
+
+  return `/v1/admin/attributes/${definitionId}/options`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. Refused with 409 `ATTRIBUTE_NOT_ANSWERABLE` for a text, number or boolean attribute, which cannot carry an option. The value is the option’s machine identity and is unique within the attribute; it can never be changed, because it is what every stored answer refers to. Created active: an option exists in order to be chosen.
+ * @summary Add one option to a select attribute
+ */
+export const postV1AdminAttributeOptions = async (definitionId: string,
+    postV1AdminAttributeOptionsBody: PostV1AdminAttributeOptionsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminAttributeOptionsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminAttributeOptionsResponse>(getPostV1AdminAttributeOptionsUrl(definitionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminAttributeOptionsBody)
+  }
+);}
+
+
+
+export type patchV1AdminAttributeOptionResponse200 = {
+  data: PatchV1AdminAttributeOption200
+  status: 200
+}
+
+export type patchV1AdminAttributeOptionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminAttributeOptionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminAttributeOptionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminAttributeOptionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminAttributeOptionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminAttributeOptionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminAttributeOptionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminAttributeOptionResponseSuccess = (patchV1AdminAttributeOptionResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminAttributeOptionResponseError = (patchV1AdminAttributeOptionResponse400 | patchV1AdminAttributeOptionResponse401 | patchV1AdminAttributeOptionResponse403 | patchV1AdminAttributeOptionResponse404 | patchV1AdminAttributeOptionResponse409 | patchV1AdminAttributeOptionResponse500 | patchV1AdminAttributeOptionResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminAttributeOptionResponse = (patchV1AdminAttributeOptionResponseSuccess | patchV1AdminAttributeOptionResponseError)
+
+export const getPatchV1AdminAttributeOptionUrl = (definitionId: string,
+    optionId: string,) => {
+
+
+
+
+  return `/v1/admin/attributes/${definitionId}/options/${optionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. `value` is absent from the request entirely, because it is the identity stored in every answer that has chosen this option; what an administrator edits is what the option is called.
+ * @summary Edit one option’s labels and order
+ */
+export const patchV1AdminAttributeOption = async (definitionId: string,
+    optionId: string,
+    patchV1AdminAttributeOptionBody: PatchV1AdminAttributeOptionBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminAttributeOptionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminAttributeOptionResponse>(getPatchV1AdminAttributeOptionUrl(definitionId,optionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminAttributeOptionBody)
+  }
+);}
+
+
+
+export type putV1AdminAttributeOptionStateResponse200 = {
+  data: PutV1AdminAttributeOptionState200
+  status: 200
+}
+
+export type putV1AdminAttributeOptionStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminAttributeOptionStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminAttributeOptionStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminAttributeOptionStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminAttributeOptionStateResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminAttributeOptionStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminAttributeOptionStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminAttributeOptionStateResponseSuccess = (putV1AdminAttributeOptionStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminAttributeOptionStateResponseError = (putV1AdminAttributeOptionStateResponse400 | putV1AdminAttributeOptionStateResponse401 | putV1AdminAttributeOptionStateResponse403 | putV1AdminAttributeOptionStateResponse404 | putV1AdminAttributeOptionStateResponse409 | putV1AdminAttributeOptionStateResponse500 | putV1AdminAttributeOptionStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminAttributeOptionStateResponse = (putV1AdminAttributeOptionStateResponseSuccess | putV1AdminAttributeOptionStateResponseError)
+
+export const getPutV1AdminAttributeOptionStateUrl = (definitionId: string,
+    optionId: string,) => {
+
+
+
+
+  return `/v1/admin/attributes/${definitionId}/options/${optionId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.attribute.manage` at aal2. A hidden option can no longer be chosen and no longer appears on a public listing, while the listings that already chose it keep it: the answer is preserved and comes back if the option is shown again. Deletion is not offered on this surface at all.
+ * @summary Show or hide one option
+ */
+export const putV1AdminAttributeOptionState = async (definitionId: string,
+    optionId: string,
+    putV1AdminAttributeOptionStateBody: PutV1AdminAttributeOptionStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminAttributeOptionStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminAttributeOptionStateResponse>(getPutV1AdminAttributeOptionStateUrl(definitionId,optionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminAttributeOptionStateBody)
+  }
+);}
+
+
+
+export type getV1AdminTagsResponse200 = {
+  data: GetV1AdminTags200
+  status: 200
+}
+
+export type getV1AdminTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminTagsResponseSuccess = (getV1AdminTagsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminTagsResponseError = (getV1AdminTagsResponse401 | getV1AdminTagsResponse403 | getV1AdminTagsResponse404 | getV1AdminTagsResponse500 | getV1AdminTagsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminTagsResponse = (getV1AdminTagsResponseSuccess | getV1AdminTagsResponseError)
+
+export const getGetV1AdminTagsUrl = () => {
+
+
+
+
+  return `/v1/admin/tags`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.tag.manage` in an aal2 session. A separate key from the attribute vocabulary, and holding one grants nothing on the other. Hidden tags are included, for the same reason hidden attributes are. `usageCount` is the number 0011’s own trigger maintains as listings are tagged and untagged, reported rather than counted again here.
+ * @summary The whole tag vocabulary
+ */
+export const getV1AdminTags = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminTagsResponse> => {
+
+  return apiFetch<getV1AdminTagsResponse>(getGetV1AdminTagsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminTagsResponse201 = {
+  data: PostV1AdminTags201
+  status: 201
+}
+
+export type postV1AdminTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminTagsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminTagsResponseSuccess = (postV1AdminTagsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminTagsResponseError = (postV1AdminTagsResponse400 | postV1AdminTagsResponse401 | postV1AdminTagsResponse403 | postV1AdminTagsResponse404 | postV1AdminTagsResponse409 | postV1AdminTagsResponse500 | postV1AdminTagsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminTagsResponse = (postV1AdminTagsResponseSuccess | postV1AdminTagsResponseError)
+
+export const getPostV1AdminTagsUrl = () => {
+
+
+
+
+  return `/v1/admin/tags`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.tag.manage` at aal2. The slug is the tag’s public identity, given here and never changed. Created **active**, unlike an attribute definition: there is nothing to fill in first, so a tag is usable the moment it exists.
+ * @summary Create one tag
+ */
+export const postV1AdminTags = async (postV1AdminTagsBody: PostV1AdminTagsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminTagsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminTagsResponse>(getPostV1AdminTagsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminTagsBody)
+  }
+);}
+
+
+
+export type patchV1AdminTagResponse200 = {
+  data: PatchV1AdminTag200
+  status: 200
+}
+
+export type patchV1AdminTagResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminTagResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminTagResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminTagResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminTagResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminTagResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminTagResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminTagResponseSuccess = (patchV1AdminTagResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminTagResponseError = (patchV1AdminTagResponse400 | patchV1AdminTagResponse401 | patchV1AdminTagResponse403 | patchV1AdminTagResponse404 | patchV1AdminTagResponse409 | patchV1AdminTagResponse500 | patchV1AdminTagResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminTagResponse = (patchV1AdminTagResponseSuccess | patchV1AdminTagResponseError)
+
+export const getPatchV1AdminTagUrl = (tagId: string,) => {
+
+
+
+
+  return `/v1/admin/tags/${tagId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.tag.manage` at aal2. `slug` is absent from the request: it is the tag’s public identity and there is no tag slug history to redirect from.
+ * @summary Rename one tag
+ */
+export const patchV1AdminTag = async (tagId: string,
+    patchV1AdminTagBody: PatchV1AdminTagBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminTagResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminTagResponse>(getPatchV1AdminTagUrl(tagId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminTagBody)
+  }
+);}
+
+
+
+export type putV1AdminTagStateResponse200 = {
+  data: PutV1AdminTagState200
+  status: 200
+}
+
+export type putV1AdminTagStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminTagStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminTagStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminTagStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminTagStateResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminTagStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminTagStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminTagStateResponseSuccess = (putV1AdminTagStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminTagStateResponseError = (putV1AdminTagStateResponse400 | putV1AdminTagStateResponse401 | putV1AdminTagStateResponse403 | putV1AdminTagStateResponse404 | putV1AdminTagStateResponse409 | putV1AdminTagStateResponse500 | putV1AdminTagStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminTagStateResponse = (putV1AdminTagStateResponseSuccess | putV1AdminTagStateResponseError)
+
+export const getPutV1AdminTagStateUrl = (tagId: string,) => {
+
+
+
+
+  return `/v1/admin/tags/${tagId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.tag.manage` at aal2. A hidden tag cannot be chosen by a seller and does not appear on a public listing, while the listings already carrying it keep it. Deletion is not offered: `listing_tags` holds a restricting foreign key, so hiding is the operation that exists.
+ * @summary Show or hide one tag
+ */
+export const putV1AdminTagState = async (tagId: string,
+    putV1AdminTagStateBody: PutV1AdminTagStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminTagStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminTagStateResponse>(getPutV1AdminTagStateUrl(tagId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminTagStateBody)
+  }
+);}
+
+
+
+export type getV1AdminCategoryAttributesResponse200 = {
+  data: GetV1AdminCategoryAttributes200
+  status: 200
+}
+
+export type getV1AdminCategoryAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCategoryAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCategoryAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCategoryAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCategoryAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCategoryAttributesResponseSuccess = (getV1AdminCategoryAttributesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCategoryAttributesResponseError = (getV1AdminCategoryAttributesResponse401 | getV1AdminCategoryAttributesResponse403 | getV1AdminCategoryAttributesResponse404 | getV1AdminCategoryAttributesResponse500 | getV1AdminCategoryAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCategoryAttributesResponse = (getV1AdminCategoryAttributesResponseSuccess | getV1AdminCategoryAttributesResponseError)
+
+export const getGetV1AdminCategoryAttributesUrl = (categoryId: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.read` at aal2 — the **category** key, not the attribute key, because this is a property of the category. Each row carries the definition’s own `isActive`, so a console can show that an attached attribute which is hidden is asked of nobody. `isRequired` is **advisory in this increment**: a seller’s form marks the field and says so, and no writer refuses a listing for want of an answer.
+ * @summary Which attributes one category asks its sellers about
+ */
+export const getV1AdminCategoryAttributes = async (categoryId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCategoryAttributesResponse> => {
+
+  return apiFetch<getV1AdminCategoryAttributesResponse>(getGetV1AdminCategoryAttributesUrl(categoryId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1AdminCategoryAttributesResponse200 = {
+  data: PutV1AdminCategoryAttributes200
+  status: 200
+}
+
+export type putV1AdminCategoryAttributesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCategoryAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCategoryAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCategoryAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCategoryAttributesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminCategoryAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCategoryAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCategoryAttributesResponseSuccess = (putV1AdminCategoryAttributesResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCategoryAttributesResponseError = (putV1AdminCategoryAttributesResponse400 | putV1AdminCategoryAttributesResponse401 | putV1AdminCategoryAttributesResponse403 | putV1AdminCategoryAttributesResponse404 | putV1AdminCategoryAttributesResponse409 | putV1AdminCategoryAttributesResponse500 | putV1AdminCategoryAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCategoryAttributesResponse = (putV1AdminCategoryAttributesResponseSuccess | putV1AdminCategoryAttributesResponseError)
+
+export const getPutV1AdminCategoryAttributesUrl = (categoryId: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2, which is what `category_attributes`’ own write policy names: holding `catalog.attribute.manage` lets somebody define an attribute and does **not** let them decide which categories ask for it. One operation for attaching and for editing, because attaching something already attached is an edit of how it is asked rather than an error. Existing answers are never touched.
+ * @summary Ask a category for one attribute, or change how it asks
+ */
+export const putV1AdminCategoryAttributes = async (categoryId: string,
+    putV1AdminCategoryAttributesBody: PutV1AdminCategoryAttributesBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCategoryAttributesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCategoryAttributesResponse>(getPutV1AdminCategoryAttributesUrl(categoryId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminCategoryAttributesBody)
+  }
+);}
+
+
+
+export type deleteV1AdminCategoryAttributeResponse200 = {
+  data: DeleteV1AdminCategoryAttribute200
+  status: 200
+}
+
+export type deleteV1AdminCategoryAttributeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminCategoryAttributeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminCategoryAttributeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminCategoryAttributeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminCategoryAttributeResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type deleteV1AdminCategoryAttributeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminCategoryAttributeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminCategoryAttributeResponseSuccess = (deleteV1AdminCategoryAttributeResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminCategoryAttributeResponseError = (deleteV1AdminCategoryAttributeResponse400 | deleteV1AdminCategoryAttributeResponse401 | deleteV1AdminCategoryAttributeResponse403 | deleteV1AdminCategoryAttributeResponse404 | deleteV1AdminCategoryAttributeResponse409 | deleteV1AdminCategoryAttributeResponse500 | deleteV1AdminCategoryAttributeResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminCategoryAttributeResponse = (deleteV1AdminCategoryAttributeResponseSuccess | deleteV1AdminCategoryAttributeResponseError)
+
+export const getDeleteV1AdminCategoryAttributeUrl = (categoryId: string,
+    definitionId: string,) => {
+
+
+
+
+  return `/v1/admin/categories/${categoryId}/attributes/${definitionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `catalog.category.manage` at aal2. The attribute is no longer asked of new listings and no longer editable on existing ones, and **the answers already given are left exactly where they are**: detaching is a decision about a form, not about data, and re-attaching the attribute brings every answer back. An attribute the category does not ask for answers that nothing changed.
+ * @summary Stop a category asking for one attribute
+ */
+export const deleteV1AdminCategoryAttribute = async (categoryId: string,
+    definitionId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminCategoryAttributeResponse> => {
+
+  return apiFetch<deleteV1AdminCategoryAttributeResponse>(getDeleteV1AdminCategoryAttributeUrl(categoryId,definitionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeListingAttributesResponse200 = {
+  data: GetV1SellersMeListingAttributes200
+  status: 200
+}
+
+export type getV1SellersMeListingAttributesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeListingAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeListingAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeListingAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeListingAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeListingAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeListingAttributesResponseSuccess = (getV1SellersMeListingAttributesResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeListingAttributesResponseError = (getV1SellersMeListingAttributesResponse400 | getV1SellersMeListingAttributesResponse401 | getV1SellersMeListingAttributesResponse403 | getV1SellersMeListingAttributesResponse404 | getV1SellersMeListingAttributesResponse500 | getV1SellersMeListingAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeListingAttributesResponse = (getV1SellersMeListingAttributesResponseSuccess | getV1SellersMeListingAttributesResponseError)
+
+export const getGetV1SellersMeListingAttributesUrl = (slug: string,
+    params?: GetV1SellersMeListingAttributesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/listings/${slug}/attributes?${stringifiedParams}` : `/v1/sellers/me/listings/${slug}/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Which questions exist is the listing’s category’s answer, not the seller’s, so this is what a form is built from: each row carries the question, its data type, whether it is marked required, the options it offers where it has any, and whatever this listing already answers. Options travel as values; option identifiers are internal and never leave the API. `isEditable` is 0061’s own rule reported rather than restated by a screen — it is false once the listing is no longer a draft.
+ * @summary The attributes one of the caller’s own listings is asked about
+ */
+export const getV1SellersMeListingAttributes = async (slug: string,
+    params?: GetV1SellersMeListingAttributesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeListingAttributesResponse> => {
+
+  return apiFetch<getV1SellersMeListingAttributesResponse>(getGetV1SellersMeListingAttributesUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeListingAttributesResponse200 = {
+  data: PostV1SellersMeListingAttributes200
+  status: 200
+}
+
+export type postV1SellersMeListingAttributesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeListingAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeListingAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeListingAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeListingAttributesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeListingAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeListingAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeListingAttributesResponseSuccess = (postV1SellersMeListingAttributesResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeListingAttributesResponseError = (postV1SellersMeListingAttributesResponse400 | postV1SellersMeListingAttributesResponse401 | postV1SellersMeListingAttributesResponse403 | postV1SellersMeListingAttributesResponse404 | postV1SellersMeListingAttributesResponse409 | postV1SellersMeListingAttributesResponse500 | postV1SellersMeListingAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeListingAttributesResponse = (postV1SellersMeListingAttributesResponseSuccess | postV1SellersMeListingAttributesResponseError)
+
+export const getPostV1SellersMeListingAttributesUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/sellers/me/listings/${slug}/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Replaces the **whole** set of answers, which is how a seller clears one: the answer is left out. Each answer is shaped by its attribute’s data type, and a shape that could carry two kinds of value at once would be a shape the database refuses, so the request is a discriminated union rather than four optional fields. Draft only, and the caller’s own. **An unanswered required attribute is accepted**: `is_required` is advisory in this increment, the seller is told which fields are required and nothing refuses the save or the later submission for want of one.
+ * @summary Answer the attributes on one of the caller’s own draft listings
+ */
+export const postV1SellersMeListingAttributes = async (slug: string,
+    postV1SellersMeListingAttributesBody: PostV1SellersMeListingAttributesBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeListingAttributesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeListingAttributesResponse>(getPostV1SellersMeListingAttributesUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1SellersMeListingAttributesBody)
+  }
+);}
+
+
+
+export type getV1SellersMeListingTagsResponse200 = {
+  data: GetV1SellersMeListingTags200
+  status: 200
+}
+
+export type getV1SellersMeListingTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeListingTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeListingTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeListingTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeListingTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeListingTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeListingTagsResponseSuccess = (getV1SellersMeListingTagsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeListingTagsResponseError = (getV1SellersMeListingTagsResponse400 | getV1SellersMeListingTagsResponse401 | getV1SellersMeListingTagsResponse403 | getV1SellersMeListingTagsResponse404 | getV1SellersMeListingTagsResponse500 | getV1SellersMeListingTagsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeListingTagsResponse = (getV1SellersMeListingTagsResponseSuccess | getV1SellersMeListingTagsResponseError)
+
+export const getGetV1SellersMeListingTagsUrl = (slug: string,
+    params?: GetV1SellersMeListingTagsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/listings/${slug}/tags?${stringifiedParams}` : `/v1/sellers/me/listings/${slug}/tags`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Every active tag, each marked with whether this listing carries it, so a form is one read rather than two and a seller never sees a tag they cannot choose. A hidden tag is absent even if this listing still carries it, because it can no longer be chosen and no longer appears publicly.
+ * @summary The tags one of the caller’s own listings may carry
+ */
+export const getV1SellersMeListingTags = async (slug: string,
+    params?: GetV1SellersMeListingTagsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeListingTagsResponse> => {
+
+  return apiFetch<getV1SellersMeListingTagsResponse>(getGetV1SellersMeListingTagsUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeListingTagsResponse200 = {
+  data: PostV1SellersMeListingTags200
+  status: 200
+}
+
+export type postV1SellersMeListingTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeListingTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeListingTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeListingTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeListingTagsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeListingTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeListingTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeListingTagsResponseSuccess = (postV1SellersMeListingTagsResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeListingTagsResponseError = (postV1SellersMeListingTagsResponse400 | postV1SellersMeListingTagsResponse401 | postV1SellersMeListingTagsResponse403 | postV1SellersMeListingTagsResponse404 | postV1SellersMeListingTagsResponse409 | postV1SellersMeListingTagsResponse500 | postV1SellersMeListingTagsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeListingTagsResponse = (postV1SellersMeListingTagsResponseSuccess | postV1SellersMeListingTagsResponseError)
+
+export const getPostV1SellersMeListingTagsUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/sellers/me/listings/${slug}/tags`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Replaces the whole selection, by slug; an empty array removes every tag. An unknown or hidden tag makes the **whole** selection invalid rather than being quietly dropped, so a seller is never told their tags were saved when one of them was not. Draft only, and the caller’s own. `tags.usage_count` is maintained by 0011’s own trigger on both sides of the change.
+ * @summary Choose the tags on one of the caller’s own draft listings
+ */
+export const postV1SellersMeListingTags = async (slug: string,
+    postV1SellersMeListingTagsBody: PostV1SellersMeListingTagsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeListingTagsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeListingTagsResponse>(getPostV1SellersMeListingTagsUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1SellersMeListingTagsBody)
+  }
+);}
+
+
+
+export type getV1SellersMeServiceAttributesResponse200 = {
+  data: GetV1SellersMeServiceAttributes200
+  status: 200
+}
+
+export type getV1SellersMeServiceAttributesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeServiceAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeServiceAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeServiceAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeServiceAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeServiceAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeServiceAttributesResponseSuccess = (getV1SellersMeServiceAttributesResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeServiceAttributesResponseError = (getV1SellersMeServiceAttributesResponse400 | getV1SellersMeServiceAttributesResponse401 | getV1SellersMeServiceAttributesResponse403 | getV1SellersMeServiceAttributesResponse404 | getV1SellersMeServiceAttributesResponse500 | getV1SellersMeServiceAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeServiceAttributesResponse = (getV1SellersMeServiceAttributesResponseSuccess | getV1SellersMeServiceAttributesResponseError)
+
+export const getGetV1SellersMeServiceAttributesUrl = (slug: string,
+    params?: GetV1SellersMeServiceAttributesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/services/${slug}/attributes?${stringifiedParams}` : `/v1/sellers/me/services/${slug}/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Which questions exist is the service’s category’s answer, not the seller’s, so this is what a form is built from: each row carries the question, its data type, whether it is marked required, the options it offers where it has any, and whatever this service already answers. Options travel as values; option identifiers are internal and never leave the API. `isEditable` is 0061’s own rule reported rather than restated by a screen — it is false once the service is no longer a draft.
+ * @summary The attributes one of the caller’s own services is asked about
+ */
+export const getV1SellersMeServiceAttributes = async (slug: string,
+    params?: GetV1SellersMeServiceAttributesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeServiceAttributesResponse> => {
+
+  return apiFetch<getV1SellersMeServiceAttributesResponse>(getGetV1SellersMeServiceAttributesUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeServiceAttributesResponse200 = {
+  data: PostV1SellersMeServiceAttributes200
+  status: 200
+}
+
+export type postV1SellersMeServiceAttributesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeServiceAttributesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeServiceAttributesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeServiceAttributesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeServiceAttributesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeServiceAttributesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeServiceAttributesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeServiceAttributesResponseSuccess = (postV1SellersMeServiceAttributesResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeServiceAttributesResponseError = (postV1SellersMeServiceAttributesResponse400 | postV1SellersMeServiceAttributesResponse401 | postV1SellersMeServiceAttributesResponse403 | postV1SellersMeServiceAttributesResponse404 | postV1SellersMeServiceAttributesResponse409 | postV1SellersMeServiceAttributesResponse500 | postV1SellersMeServiceAttributesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeServiceAttributesResponse = (postV1SellersMeServiceAttributesResponseSuccess | postV1SellersMeServiceAttributesResponseError)
+
+export const getPostV1SellersMeServiceAttributesUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/sellers/me/services/${slug}/attributes`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Replaces the **whole** set of answers, which is how a seller clears one: the answer is left out. Each answer is shaped by its attribute’s data type, and a shape that could carry two kinds of value at once would be a shape the database refuses, so the request is a discriminated union rather than four optional fields. Draft only, and the caller’s own. **An unanswered required attribute is accepted**: `is_required` is advisory in this increment, the seller is told which fields are required and nothing refuses the save or the later submission for want of one.
+ * @summary Answer the attributes on one of the caller’s own draft services
+ */
+export const postV1SellersMeServiceAttributes = async (slug: string,
+    postV1SellersMeServiceAttributesBody: PostV1SellersMeServiceAttributesBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeServiceAttributesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeServiceAttributesResponse>(getPostV1SellersMeServiceAttributesUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1SellersMeServiceAttributesBody)
+  }
+);}
+
+
+
+export type getV1SellersMeServiceTagsResponse200 = {
+  data: GetV1SellersMeServiceTags200
+  status: 200
+}
+
+export type getV1SellersMeServiceTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SellersMeServiceTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeServiceTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeServiceTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeServiceTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeServiceTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeServiceTagsResponseSuccess = (getV1SellersMeServiceTagsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeServiceTagsResponseError = (getV1SellersMeServiceTagsResponse400 | getV1SellersMeServiceTagsResponse401 | getV1SellersMeServiceTagsResponse403 | getV1SellersMeServiceTagsResponse404 | getV1SellersMeServiceTagsResponse500 | getV1SellersMeServiceTagsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeServiceTagsResponse = (getV1SellersMeServiceTagsResponseSuccess | getV1SellersMeServiceTagsResponseError)
+
+export const getGetV1SellersMeServiceTagsUrl = (slug: string,
+    params?: GetV1SellersMeServiceTagsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/services/${slug}/tags?${stringifiedParams}` : `/v1/sellers/me/services/${slug}/tags`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Every active tag, each marked with whether this service carries it, so a form is one read rather than two and a seller never sees a tag they cannot choose. A hidden tag is absent even if this service still carries it, because it can no longer be chosen and no longer appears publicly.
+ * @summary The tags one of the caller’s own services may carry
+ */
+export const getV1SellersMeServiceTags = async (slug: string,
+    params?: GetV1SellersMeServiceTagsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeServiceTagsResponse> => {
+
+  return apiFetch<getV1SellersMeServiceTagsResponse>(getGetV1SellersMeServiceTagsUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1SellersMeServiceTagsResponse200 = {
+  data: PostV1SellersMeServiceTags200
+  status: 200
+}
+
+export type postV1SellersMeServiceTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1SellersMeServiceTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1SellersMeServiceTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1SellersMeServiceTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1SellersMeServiceTagsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1SellersMeServiceTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1SellersMeServiceTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1SellersMeServiceTagsResponseSuccess = (postV1SellersMeServiceTagsResponse200) & {
+  headers: Headers;
+};
+export type postV1SellersMeServiceTagsResponseError = (postV1SellersMeServiceTagsResponse400 | postV1SellersMeServiceTagsResponse401 | postV1SellersMeServiceTagsResponse403 | postV1SellersMeServiceTagsResponse404 | postV1SellersMeServiceTagsResponse409 | postV1SellersMeServiceTagsResponse500 | postV1SellersMeServiceTagsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1SellersMeServiceTagsResponse = (postV1SellersMeServiceTagsResponseSuccess | postV1SellersMeServiceTagsResponseError)
+
+export const getPostV1SellersMeServiceTagsUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/sellers/me/services/${slug}/tags`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Replaces the whole selection, by slug; an empty array removes every tag. An unknown or hidden tag makes the **whole** selection invalid rather than being quietly dropped, so a seller is never told their tags were saved when one of them was not. Draft only, and the caller’s own. `tags.usage_count` is maintained by 0011’s own trigger on both sides of the change.
+ * @summary Choose the tags on one of the caller’s own draft services
+ */
+export const postV1SellersMeServiceTags = async (slug: string,
+    postV1SellersMeServiceTagsBody: PostV1SellersMeServiceTagsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1SellersMeServiceTagsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1SellersMeServiceTagsResponse>(getPostV1SellersMeServiceTagsUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1SellersMeServiceTagsBody)
+  }
+);}
+
+
+
+export type getV1SeoRobotsResponse200 = {
+  data: GetV1SeoRobots200
+  status: 200
+}
+
+export type getV1SeoRobotsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SeoRobotsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SeoRobotsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SeoRobotsResponseSuccess = (getV1SeoRobotsResponse200) & {
+  headers: Headers;
+};
+export type getV1SeoRobotsResponseError = (getV1SeoRobotsResponse403 | getV1SeoRobotsResponse500 | getV1SeoRobotsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SeoRobotsResponse = (getV1SeoRobotsResponseSuccess | getV1SeoRobotsResponseError)
+
+export const getGetV1SeoRobotsUrl = () => {
+
+
+
+
+  return `/v1/seo/robots`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: a crawler-facing document is the same for everyone. `body` is null when nobody has authored one, which is a state and not a failure — `seo_settings` ships with no rows, so the public web then serves a minimal correct document rather than inventing directives. `locale` says which locale answered, which is the site’s default: robots.txt is one document at the root of an origin while the setting is stored per locale. The body is served verbatim and is never parsed here.
+ * @summary The authored robots.txt body
+ */
+export const getV1SeoRobots = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1SeoRobotsResponse> => {
+
+  return apiFetch<getV1SeoRobotsResponse>(getGetV1SeoRobotsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SeoSitemapResponse200 = {
+  data: GetV1SeoSitemap200
+  status: 200
+}
+
+export type getV1SeoSitemapResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SeoSitemapResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SeoSitemapResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SeoSitemapResponseSuccess = (getV1SeoSitemapResponse200) & {
+  headers: Headers;
+};
+export type getV1SeoSitemapResponseError = (getV1SeoSitemapResponse403 | getV1SeoSitemapResponse500 | getV1SeoSitemapResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SeoSitemapResponse = (getV1SeoSitemapResponseSuccess | getV1SeoSitemapResponseError)
+
+export const getGetV1SeoSitemapUrl = () => {
+
+
+
+
+  return `/v1/seo/sitemap`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context. What a sitemap index needs: one row per kind of address with the number of entries it would produce, so the index can name exactly the child sitemaps that exist. A kind with nothing in it reports zero rather than being absent. Entries are counted under the same rules the enumerations apply: a listing or service is counted only while it is purchasable and its seller is publicly visible, so sold, expired and archived ones are excluded even though their pages stay public; a category needs every ancestor active; a page must be published, indexable and written in at least one locale. The fixed landing routes are not counted here — they exist in the web app’s own code rather than in a table.
+ * @summary How many sitemap entries each kind of address has
+ */
+export const getV1SeoSitemap = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1SeoSitemapResponse> => {
+
+  return apiFetch<getV1SeoSitemapResponse>(getGetV1SeoSitemapUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SeoSitemapPageResponse200 = {
+  data: GetV1SeoSitemapPage200
+  status: 200
+}
+
+export type getV1SeoSitemapPageResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SeoSitemapPageResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SeoSitemapPageResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SeoSitemapPageResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SeoSitemapPageResponseSuccess = (getV1SeoSitemapPageResponse200) & {
+  headers: Headers;
+};
+export type getV1SeoSitemapPageResponseError = (getV1SeoSitemapPageResponse400 | getV1SeoSitemapPageResponse403 | getV1SeoSitemapPageResponse500 | getV1SeoSitemapPageResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SeoSitemapPageResponse = (getV1SeoSitemapPageResponseSuccess | getV1SeoSitemapPageResponseError)
+
+export const getGetV1SeoSitemapPageUrl = (type: 'page' | 'listing' | 'service' | 'category' | 'seller',
+    page: string,) => {
+
+
+
+
+  return `/v1/seo/sitemap/${type}/${page}`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context. Entries are ordered by slug, which is unique on every one of these surfaces, so a numbered page is stable: an entry cannot be served twice or skipped while the page size holds. Numbered rather than cursored because a sitemap index addresses its children by number. A page past the end is an empty array rather than a 404 — the set may have shrunk since the index was read. `locales` is present only for pages, where an address can be absent in one language: every other surface resolves in both locales whatever language its content is in. An unknown type or a page number below one is a 400.
+ * @summary One page of sitemap entries
+ */
+export const getV1SeoSitemapPage = async (type: 'page' | 'listing' | 'service' | 'category' | 'seller',
+    page: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SeoSitemapPageResponse> => {
+
+  return apiFetch<getV1SeoSitemapPageResponse>(getGetV1SeoSitemapPageUrl(type,page),
   {
     ...options,
     method: 'GET'

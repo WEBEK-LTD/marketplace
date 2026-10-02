@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -321,4 +321,39 @@ test('the B10-hosted decision register records decisions and unverified runtime 
   // Nothing may claim a runtime fact before a hosted run establishes it.
   const facts = Object.fromEntries(register.runtimeFacts.map((f) => [f.id, f.status]));
   assert.deepEqual(facts, { 'authenticated-connection': 'unverified', createrole: 'unverified', 'server-version': 'unverified', 'o-3-plan': 'open' });
+});
+
+test('audit attribution: no application code names the channel or its setter (Phase 8-B)', () => {
+  // The attribution channel is set inside `app_private` SECURITY DEFINER writers, from a parameter the
+  // API already derived from the provider's own answer. `set_audit_actor` is executable by no role, so
+  // `app_system` cannot call it — but `app_system` can run arbitrary SQL, and a future service that
+  // issued `set_config('app.audit_actor_id', …)` of its own would be choosing an actor rather than
+  // carrying one. The database guard (`audit_attribution_problems`) polices the schema side; this
+  // polices the repository side, so the two together leave no way in.
+  const roots = ['apps/api/src', 'apps/worker/src', 'apps/web/src', 'apps/admin/src', 'packages'];
+  const forbidden = ['app.audit_actor_id', 'set_audit_actor', 'audit_actor('];
+  const offenders = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = readdirSync(join(REPO_ROOT, dir), { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.next') continue;
+      const rel = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(rel);
+        continue;
+      }
+      if (!/\.(ts|tsx|mjs|js)$/.test(entry.name)) continue;
+      const text = readFileSync(join(REPO_ROOT, rel), 'utf8');
+      for (const term of forbidden) {
+        if (text.includes(term)) offenders.push(`${rel}: ${term}`);
+      }
+    }
+  };
+  for (const root of roots) walk(root);
+  assert.deepEqual(offenders, [], 'application code must never set or read the audit attribution channel');
 });

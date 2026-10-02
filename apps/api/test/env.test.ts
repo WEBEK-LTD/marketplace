@@ -7,10 +7,16 @@ const valid = {
   API_HOST: '0.0.0.0',
   API_PORT: '8080',
   APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
+  DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
   OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
+  PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
   WAABEK_BASE_URL: 'https://waabek.invalid',
   WAABEK_API_KEY: 'test-waabek-key-not-a-real-secret',
   INTERNAL_BFF_CREDENTIAL: 'test-current-credential-value-not-a-real-se',
+  SUPABASE_URL: 'https://project.supabase.invalid',
+  SUPABASE_SECRET_KEY: 'test-supabase-secret-not-a-real-key',
+  REDIS_URL: 'redis://127.0.0.1:6379',
+  WEB_PUBLIC_ORIGIN: 'https://web.invalid',
 };
 
 function errorOf(source: Record<string, string | undefined>): EnvValidationError {
@@ -33,10 +39,16 @@ describe('environment validation', () => {
       logLevel: 'info',
       appSystemDatabaseUrl: 'postgresql://app_system@db.invalid:5432/marketplace',
       appSystemDatabaseMaxConnections: 10,
+      deviceIdentityKey: 'test-device-identity-key-not-a-real-secret-0123',
       otpPepper: 'test-otp-pepper-value-not-a-real-secret-0123456789',
+      pseudonymousUserIdKey: 'test-pseudonymous-user-id-key-not-a-real-secret',
       waabekBaseUrl: 'https://waabek.invalid',
       waabekApiKey: 'test-waabek-key-not-a-real-secret',
       internalBffCredentials: ['test-current-credential-value-not-a-real-se'],
+      supabaseUrl: 'https://project.supabase.invalid',
+      supabaseSecretKey: 'test-supabase-secret-not-a-real-key',
+      redisUrl: 'redis://127.0.0.1:6379',
+      webPublicOrigin: 'https://web.invalid',
     });
     expect(Object.isFrozen(env)).toBe(true);
     expect(loadEnv({ ...valid, LOG_LEVEL: 'debug' }).logLevel).toBe('debug');
@@ -47,11 +59,17 @@ describe('environment validation', () => {
       'API_HOST',
       'API_PORT',
       'APP_SYSTEM_DATABASE_URL',
+      'DEVICE_IDENTITY_KEY',
       'INTERNAL_BFF_CREDENTIAL',
       'NODE_ENV',
       'OTP_PEPPER',
+      'PSEUDONYMOUS_USER_ID_KEY',
+      'REDIS_URL',
+      'SUPABASE_SECRET_KEY',
+      'SUPABASE_URL',
       'WAABEK_API_KEY',
       'WAABEK_BASE_URL',
+      'WEB_PUBLIC_ORIGIN',
     ]);
   });
 
@@ -118,6 +136,6 @@ describe('environment validation', () => {
   });
 
   it('describes the loaded configuration without values or names', () => {
-    expect(apiConfigLoadedEvent()).toEqual({ event: 'config_loaded', component: 'api', variablesValidated: 10 });
+    expect(apiConfigLoadedEvent()).toEqual({ event: 'config_loaded', component: 'api', variablesValidated: 16 });
   });
 });

@@ -80,6 +80,39 @@ export const httpUrlWithoutCredentials: FieldValidator<string> = {
 };
 
 /**
+ * An http(s) **origin**: scheme and host only.
+ *
+ * Stricter than {@link httpUrlWithoutCredentials}, and deliberately so. This value is concatenated with
+ * site-relative paths to build the absolute URLs the sitemap protocol requires, so a trailing slash, a path,
+ * a query or a fragment would each produce malformed URLs in a document crawlers read. Rather than trimming
+ * the value and guessing what was meant, the comparison against `URL.origin` refuses anything that is not
+ * already exactly an origin, and says so by name at start-up.
+ *
+ * A default port is normalised away by `URL.origin` (`https://host.example:443` becomes
+ * `https://host.example`), which would make the check fail on a value that is arguably correct. Both forms
+ * name the same origin, so the normalised form is the one to configure, and the error names the variable.
+ */
+export const httpOrigin: FieldValidator<string> = {
+  safeParse(value: unknown) {
+    if (typeof value !== 'string') return { success: false };
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      return { success: false };
+    }
+    const ok =
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      url.hostname !== '' &&
+      url.username === '' &&
+      url.password === '' &&
+      // No path, query or fragment, and no trailing slash: the value must already be an origin.
+      value === url.origin;
+    return ok ? { success: true, data: value } : { success: false };
+  },
+};
+
+/**
  * Exactly one internal BFF credential: 32 random bytes as base64url, which is 43 unpadded characters
  * (owner decision C-2d).
  *
@@ -97,10 +130,27 @@ export const internalBffCredential: FieldValidator<string> = {
   },
 };
 
-/** Fields of the Next.js server runtime (web and admin). */
+/** Fields the two Next.js server runtimes share. */
 export const NEXT_SERVER_FIELDS = Object.freeze({
   API_BASE_URL: httpUrlWithoutCredentials,
   INTERNAL_BFF_CREDENTIAL: internalBffCredential,
+});
+
+/**
+ * Fields of the public web server runtime.
+ *
+ * The admin console has no public origin and no sitemap — it is never indexed — so `PUBLIC_WEB_ORIGIN`
+ * belongs to one app rather than both. `readEnv` checks the field map against the inventory for the app it
+ * is given, so this split is what keeps the admin console from being asked for a variable it has no use for.
+ *
+ * `PUBLIC_WEB_ORIGIN` is **optional** while the production domain is undecided, and the validator is the strict
+ * one all the same. The two are separate questions: whether a value must be present, which the inventory
+ * answers, and whether a present value is acceptable, which the validator answers. So an unset variable is
+ * simply absent, and a set-but-malformed one is still a named start-up failure.
+ */
+export const WEB_SERVER_FIELDS = Object.freeze({
+  ...NEXT_SERVER_FIELDS,
+  PUBLIC_WEB_ORIGIN: httpOrigin,
 });
 
 export interface NextServerConfig {
@@ -109,9 +159,35 @@ export interface NextServerConfig {
   readonly internalBffCredential: string;
 }
 
-export function readNextServerConfig(app: 'web' | 'admin', source: Readonly<Record<string, string | undefined>>): NextServerConfig {
+export interface WebServerConfig extends NextServerConfig {
+  /**
+   * Scheme and host only, with no trailing slash — the one authorized source of absolute public URLs — or
+   * `null` while no production domain is configured.
+   *
+   * `null` means deferred, never "work it out from somewhere else". Nothing derives an origin from the request
+   * `Host` header, `X-Forwarded-Host`, or a guess at localhost: a client controls those, so a poisoned one
+   * would publish a sitemap advertising somebody else's origin. The documents that cannot be built without an
+   * absolute URL stay unavailable instead.
+   */
+  readonly publicWebOrigin: string | null;
+}
+
+export function readNextServerConfig(app: 'admin', source: Readonly<Record<string, string | undefined>>): NextServerConfig {
   const values = readEnv(app, NEXT_SERVER_FIELDS, source);
   return Object.freeze({ apiBaseUrl: values.API_BASE_URL, internalBffCredential: values.INTERNAL_BFF_CREDENTIAL });
+}
+
+export function readWebServerConfig(source: Readonly<Record<string, string | undefined>>): WebServerConfig {
+  const values = readEnv('web', WEB_SERVER_FIELDS, source);
+  // `readEnv` leaves out an optional variable that is unset and has no default, so the value map's type is
+  // optimistic for that one entry. Widened here deliberately rather than asserted away, because the whole point
+  // of this field is that its absence is an ordinary state the app has to carry.
+  const origin: string | undefined = values.PUBLIC_WEB_ORIGIN;
+  return Object.freeze({
+    apiBaseUrl: values.API_BASE_URL,
+    internalBffCredential: values.INTERNAL_BFF_CREDENTIAL,
+    publicWebOrigin: origin ?? null,
+  });
 }
 
 /**

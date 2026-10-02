@@ -12,7 +12,13 @@ const config: NextConfig = {
   outputFileTracingRoot: repoRoot,
   turbopack: { root: repoRoot },
   async headers() {
-    return [{ source: '/:path*', headers: [...staticSecurityHeaders('web')] }];
+    return [
+      { source: '/:path*', headers: [...staticSecurityHeaders('web')] },
+      // Build assets are the one path the middleware does not run on, so they would otherwise lose the
+      // `noindex` they have always had. Every other route gets its robots header from the middleware,
+      // which is the only place that can tell a catalogue page from a dashboard one.
+      { source: '/_next/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex' }] },
+    ];
   },
 };
 
