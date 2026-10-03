@@ -161,6 +161,18 @@ export const CmsPageDetailSchema = z.object({
   canManage: z.boolean(),
   /** Every slug this page has had, newest first. Each one permanently 301s to the current slug. */
   previousSlugs: z.array(CmsPageSlugSchema),
+  /**
+   * The cover image attached to this page, or nulls throughout when there is none (0099).
+   *
+   * **A stored object path, never a URL.** The `cms-media` bucket is private and has no read policy, so
+   * there is nothing to link to and nothing here is signed. The path and the alt text are what an editor
+   * needs to recognise which entry is attached; the naming is flat and matches what `BlogPostDetail` has
+   * carried since 0092 rather than introducing a second shape for the same thing.
+   */
+  coverMediaId: z.string().uuid().nullable(),
+  coverObjectPath: z.string().nullable(),
+  coverAltTextEn: z.string().nullable(),
+  coverAltTextAr: z.string().nullable(),
   translations: z.array(CmsPageTranslationSchema),
 });
 export type CmsPageDetail = z.infer<typeof CmsPageDetailSchema>;
@@ -218,6 +230,24 @@ export const CmsPageStatusRequestSchema = z
     { message: 'scheduledFor is required for scheduled and not allowed otherwise' },
   );
 export type CmsPageStatusRequest = z.infer<typeof CmsPageStatusRequestSchema>;
+
+/**
+ * Attaching, or removing, a page's cover image (0099).
+ *
+ * **`mediaId` is required and nullable, and the two cases are the two operations**: a uuid attaches that
+ * library entry, and an explicit `null` removes whatever is attached. Leaving a cover alone is not a
+ * request at all — it is not sending one — so there is no third value here, while the database writer
+ * underneath keeps all three behaviours because a nullable reference needs them.
+ *
+ * There is no object path here and no upload: the entry must already exist in the library, and 0030's own
+ * foreign key is what decides whether the id names one.
+ */
+export const CmsPageCoverRequestSchema = z
+  .object({
+    mediaId: z.string().uuid().nullable(),
+  })
+  .strict();
+export type CmsPageCoverRequest = z.infer<typeof CmsPageCoverRequestSchema>;
 
 /** Writing one locale of a page. Creating and replacing are the same request. */
 export const SaveCmsPageTranslationRequestSchema = z.object({

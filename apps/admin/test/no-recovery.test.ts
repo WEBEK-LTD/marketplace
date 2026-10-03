@@ -70,13 +70,28 @@ describe('the admin origin, password reset and contact change', () => {
     expect(text).not.toContain('x-session-token');
   });
 
+  /**
+   * The `settings` ban is about **account** settings — the shape a self-service contact or password change would
+   * take on this origin — and not about the word.
+   *
+   * 0096 added `/seo/settings`, which is the marketplace's own site-wide SEO defaults behind `seo.settings.manage`:
+   * a site name, a crawl policy and metadata defaults. Nothing in it touches an account, a password, a contact
+   * detail or a session, and its own suite asserts as much. So the ban is narrowed to the paths that would actually
+   * be an account surface, and the SEO tree is exempted by name rather than the guard being dropped.
+   */
+  const ACCOUNT_SETTINGS_PATHS = ['app/account', 'app/settings', 'app/profile', 'app/me'];
+
   it('has no reset or contact-change route or page', () => {
     const paths = sources(join(SRC, 'app')).map((file) => file.slice(SRC.length));
     for (const path of paths) {
       expect(path).not.toContain('forgot-password');
       expect(path).not.toContain('reset-password');
       expect(path).not.toContain('contact');
-      expect(path).not.toContain('settings');
+      // Still banned everywhere except the SEO tree, which is the marketplace's settings and not an account's.
+      if (!path.includes('seo/settings')) expect(path).not.toContain('settings');
+      for (const banned of ACCOUNT_SETTINGS_PATHS) {
+        expect(path, banned).not.toContain(banned);
+      }
     }
   });
 

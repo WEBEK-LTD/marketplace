@@ -13,7 +13,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(79);
+select plan(82);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Shape
@@ -26,13 +26,16 @@ select has_function('app_private', 'public_sitemap_services', array['integer', '
 select has_function('app_private', 'public_sitemap_categories', array['integer', 'integer'], 'the categories reader exists');
 select has_function('app_private', 'public_sitemap_sellers', array['integer', 'integer'], 'the sellers reader exists');
 
+-- Eight since 0097, which added `public_sitemap_blog_posts` and gave the counts function its sixth kind. These
+-- three assertions and the three privilege loops below are written over the whole family rather than over a list of
+-- names, so a reader added later is held to the same contract without anybody having to remember to add it.
 select is(
   (select count(*)::int
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and (p.proname = 'public_robots_body' or p.proname like 'public_sitemap%')
       and p.prosecdef),
-  7, 'all seven are security definer');
+  8, 'all eight are security definer');
 
 select is(
   (select count(*)::int
@@ -40,7 +43,7 @@ select is(
     where n.nspname = 'app_private'
       and (p.proname = 'public_robots_body' or p.proname like 'public_sitemap%')
       and p.proconfig @> array['search_path=pg_catalog, public']),
-  7, 'all seven pin search_path to pg_catalog, public');
+  8, 'all eight pin search_path to pg_catalog, public');
 
 -- Read-only: nothing here may write, so every one is declared stable rather than volatile.
 select is(
@@ -49,7 +52,7 @@ select is(
     where n.nspname = 'app_private'
       and (p.proname = 'public_robots_body' or p.proname like 'public_sitemap%')
       and p.provolatile = 's'),
-  7, 'all seven are stable, so none of them can write');
+  8, 'all eight are stable, so none of them can write');
 
 -- ---------------------------------------------------------------------------------------------------
 -- Privileges
@@ -340,9 +343,11 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- The counts agree with the rows
 -- ---------------------------------------------------------------------------------------------------
+-- `blog_post` joined the list in 0097, by owner decision; the five 0086 declared are unchanged and that suite
+-- asserts each still answers what it answered.
 select set_eq(
   'select entry_type from app_private.public_sitemap_counts()',
-  array['page', 'listing', 'service', 'category', 'seller'],
+  array['page', 'blog_post', 'listing', 'service', 'category', 'seller'],
   'the counts name every kind of address, and no others');
 
 select is(

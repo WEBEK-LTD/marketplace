@@ -2,12 +2,14 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query
 import {
   CMS_PAGES_DEFAULT_LIMIT,
   CMS_PAGES_MAX_LIMIT,
+  CmsPageCoverRequestSchema,
   CmsPageStatusRequestSchema,
   CreateCmsPageRequestSchema,
   SESSION_TOKEN_HEADER,
   SaveCmsPageTranslationRequestSchema,
   UpdateCmsPageRequestSchema,
   type CmsPageDetailResponse,
+  type CmsPageCoverRequest,
   type CmsPagePageResponse,
   type CmsPageStatusRequest,
   type CmsPageWriteResponse,
@@ -135,6 +137,27 @@ export class CmsPagesAdminController {
       template: body.template ?? null,
       sortOrder: body.sortOrder ?? null,
       isIndexable: body.isIndexable ?? null,
+    });
+    return { ok: true };
+  }
+
+  /**
+   * Attaches or removes a page's cover image (0099).
+   *
+   * A route of its own rather than a field on the patch above, for the same reason the status has one: a change
+   * to a page's address must not be able to change what it looks like, and the reverse. `mediaId: null` removes
+   * the cover; a uuid attaches that library entry. Needs `cms.page.manage`, never `cms.media.manage`.
+   */
+  @Put(':pageId/cover')
+  async setCover(
+    @Req() request: CmsRequestContext,
+    @Param('pageId') pageId: string,
+    @Body(new ZodValidationPipe(CmsPageCoverRequestSchema)) body: CmsPageCoverRequest,
+  ): Promise<CmsPageWriteResponse> {
+    await this.pages.setCover({
+      accessToken: this.token(request),
+      pageId: this.identifier(pageId, 'pageId'),
+      mediaId: body.mediaId === null ? null : this.identifier(body.mediaId, 'mediaId'),
     });
     return { ok: true };
   }

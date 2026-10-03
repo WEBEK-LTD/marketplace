@@ -35,6 +35,8 @@ const SERVED_EXACT: ReadonlySet<string> = new Set([
   '/about',
   '/accessibility',
   '/become-a-seller',
+  // 0092: the blog index. Its posts are under the one-segment prefix below.
+  '/blog',
   '/buyer-terms',
   '/cancellation-policy',
   '/categories',
@@ -101,6 +103,9 @@ const SERVED_EXACT: ReadonlySet<string> = new Set([
  * tree, which is what makes "not in these two sets" a complete answer.
  */
 const SERVED_ONE_SEGMENT: readonly string[] = Object.freeze([
+  // 0092: `/blog/<slug>`. The proxy resolves the post and answers a retired slug with its own 301, so this prefix
+  // only declares that the route tree serves the address at all.
+  '/blog/',
   '/category/',
   '/dashboard/messages/',
   '/dashboard/seller/listings/',

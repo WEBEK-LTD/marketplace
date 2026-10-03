@@ -59,6 +59,32 @@ describe('the sitemap vocabulary', () => {
     expect([...SITEMAP_ENTRY_TYPES].filter((type) => type !== 'route')).toEqual([...SITEMAP_API_ENTRY_TYPES]);
   });
 
+  it('carries the blog, and exactly one kind for it (0097)', () => {
+    // 0092 shipped the blog with no sitemap entry and recorded that as deliberate; 0097 added one, by owner
+    // decision. Owner decision 6 keeps a blog category and a blog tag as filters on the index rather than
+    // addresses of their own, so there is one blog kind and not three.
+    expect(SITEMAP_ENTRY_TYPES).toContain('blog_post');
+    expect(SITEMAP_API_ENTRY_TYPES).toContain('blog_post');
+    expect([...SITEMAP_ENTRY_TYPES].filter((type) => type.includes('blog'))).toEqual(['blog_post']);
+    for (const absent of ['blog_category', 'blog_tag', 'blog']) {
+      expect([...SITEMAP_ENTRY_TYPES], absent).not.toContain(absent);
+    }
+  });
+
+  it('keeps the six kinds the sitemap index names, and no others', () => {
+    // A closed inventory: a kind added here produces child documents a crawler will fetch, so it is not a list to
+    // extend quietly.
+    expect([...SITEMAP_ENTRY_TYPES]).toEqual([
+      'route',
+      'page',
+      'blog_post',
+      'listing',
+      'service',
+      'category',
+      'seller',
+    ]);
+  });
+
   it('keeps the page size inside the limit the protocol sets', () => {
     expect(SITEMAP_PROTOCOL_MAX_ENTRIES).toBe(50_000);
     expect(SITEMAP_PAGE_SIZE).toBeLessThanOrEqual(SITEMAP_PROTOCOL_MAX_ENTRIES);

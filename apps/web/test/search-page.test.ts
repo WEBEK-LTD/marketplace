@@ -83,6 +83,16 @@ beforeEach(() => {
   apiServesSearch();
 });
 
+/**
+ * The reads this page performed of its own.
+ *
+ * 0094 gives every public surface a composed header and footer, which is one read on every page here and is not a
+ * search. Filtered out rather than counted, so each assertion below still says exactly what it means.
+ */
+function searches(): readonly { readonly url: string; readonly credential: string | null; readonly cookie: string | null }[] {
+  return api.seen.filter((entry) => !entry.url.startsWith('/v1/navigation'));
+}
+
 interface Page {
   readonly status: number;
   readonly robotsHeader: string | null;
@@ -129,7 +139,7 @@ describe('the search page itself', () => {
     api.seen.length = 0;
     const page = await load('/search');
     expect(page.status).toBe(200);
-    expect(api.seen).toHaveLength(0);
+    expect(searches()).toHaveLength(0);
     expect(page.html).not.toContain('No results found.');
   });
 });
@@ -144,7 +154,7 @@ describe('a query that is too short', () => {
       const page = await load(path);
       expect(page.status, path).toBe(200);
       expect(page.html, path).toContain(message);
-      expect(api.seen, path).toHaveLength(0);
+      expect(searches(), path).toHaveLength(0);
     }
   });
 
@@ -152,17 +162,17 @@ describe('a query that is too short', () => {
     api.seen.length = 0;
     const page = await load(`/search?q=${encodeURIComponent('   ')}`);
     expect(page.html).toContain('Enter at least 2 characters to search.');
-    expect(api.seen).toHaveLength(0);
+    expect(searches()).toHaveLength(0);
   });
 
   it('counts Unicode characters, so one emoji is too short and two are enough', async () => {
     api.seen.length = 0;
     await load(`/search?q=${encodeURIComponent('😀')}`);
-    expect(api.seen).toHaveLength(0);
+    expect(searches()).toHaveLength(0);
 
     api.seen.length = 0;
     await load(`/search?q=${encodeURIComponent('😀😀')}`);
-    expect(api.seen).toHaveLength(1);
+    expect(searches()).toHaveLength(1);
   });
 });
 
@@ -189,7 +199,7 @@ describe('results', () => {
   it('trims the query before asking the API', async () => {
     api.seen.length = 0;
     await load(`/search?q=${encodeURIComponent('  walnut  ')}`);
-    expect(api.seen[0]?.url).toContain('q=walnut&');
+    expect(searches()[0]?.url).toContain('q=walnut&');
   });
 
   it('offers a next page as a link that carries the query and the cursor', async () => {
@@ -266,7 +276,7 @@ describe('the internal boundary', () => {
   it('reaches the API with the internal credential and no browser cookie', async () => {
     api.seen.length = 0;
     await load('/ar/search?q=walnut');
-    const first = api.seen[0];
+    const first = searches()[0];
     expect(first?.url).toContain('/v1/search?q=walnut&locale=ar');
     expect(first?.credential).toBe(CANARY_CREDENTIAL);
     expect(first?.cookie).toBeNull();

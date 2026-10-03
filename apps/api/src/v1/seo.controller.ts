@@ -2,14 +2,18 @@ import { BadRequestException, Controller, Get, Param, Query } from '@nestjs/comm
 import {
   REDIRECT_FROM_PATH_PATTERN,
   REDIRECT_PATH_MAX,
+  SEO_PATH_MAX,
+  SEO_ROUTE_PATH_PATTERN,
   SITEMAP_API_ENTRY_TYPES,
+  publicLocaleOf,
+  type PublicSeoMetadataResponse,
   type RedirectResolutionResponse,
   type RobotsSettingsResponse,
   type SitemapApiEntryType,
   type SitemapCountsResponse,
   type SitemapPageResponse,
 } from '@repo/contracts';
-import { SeoService } from '../seo/seo.service.js';
+import { PUBLIC_METADATA_ENTITY_KINDS, SeoService, type PublicMetadataEntityKind } from '../seo/seo.service.js';
 
 /**
  * `GET /v1/seo/robots`, `GET /v1/seo/sitemap` and `GET /v1/seo/sitemap/:type/:page` — what the public web
@@ -33,6 +37,32 @@ import { SeoService } from '../seo/seo.service.js';
 @Controller('v1/seo')
 export class SeoController {
   constructor(private readonly seo: SeoService) {}
+
+  /**
+   * One surface's metadata override, or that nothing is stored for it.
+   *
+   * **Addressed by slug or by route path, never by an identifier.** Two public contracts carry no id, and widening
+   * them to save a lookup would put an internal identifier into a browser; resolving the slug is the database's job
+   * anyway.
+   *
+   * Nothing stored is `null` with a 200, not a 404: most surfaces have no override, and a page that could not tell
+   * "nothing stored" from "the service is down" would have to choose between swallowing an outage and refusing to
+   * render.
+   *
+   * Both owner decisions are already applied by the time this answers — a canonical is withheld for a listing, a
+   * category and a seller, and only restrictive directives come back — because they are applied in the reader.
+   */
+  @Get('metadata')
+  async metadata(
+    @Query('entityType') entityType?: string,
+    @Query('slug') slug?: string,
+    @Query('routePath') routePath?: string,
+    @Query('locale') locale?: string,
+  ): Promise<PublicSeoMetadataResponse> {
+    const target = metadataTargetOf(entityType, slug, routePath);
+    const override = await this.seo.resolveMetadata({ ...target, locale: publicLocaleOf(locale) });
+    return { override };
+  }
 
   /**
    * Where the admin redirect map sends one path, or that it names no redirect for it.
@@ -78,6 +108,37 @@ export class SeoController {
       })),
     };
   }
+}
+
+/**
+ * Which surface is being asked about, or a 400.
+ *
+ * Exactly one of the two ways: a kind and a slug, or a route path. A `route` kind with a slug, a kind with no slug,
+ * both at once, or neither are all malformed rather than questions with the answer "nothing" — and the three blog
+ * kinds are refused for the same reason, because no blog page exists to read an override.
+ */
+function metadataTargetOf(
+  entityType: string | undefined,
+  slug: string | undefined,
+  routePath: string | undefined,
+): { entityType?: PublicMetadataEntityKind; slug?: string; routePath?: string } {
+  const hasRoute = typeof routePath === 'string' && routePath !== '';
+  const hasEntity = typeof entityType === 'string' && entityType !== '';
+
+  if (hasRoute) {
+    if (hasEntity || (typeof slug === 'string' && slug !== '')) throw new BadRequestException();
+    if (routePath.length > SEO_PATH_MAX || !SEO_ROUTE_PATH_PATTERN.test(routePath)) {
+      throw new BadRequestException();
+    }
+    return { routePath };
+  }
+
+  if (!hasEntity || typeof slug !== 'string' || slug === '' || slug.length > 160) {
+    throw new BadRequestException();
+  }
+  const kind = PUBLIC_METADATA_ENTITY_KINDS.find((candidate) => candidate === entityType);
+  if (kind === undefined) throw new BadRequestException();
+  return { entityType: kind, slug };
 }
 
 /**

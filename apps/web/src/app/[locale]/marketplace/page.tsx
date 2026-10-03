@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { ListingGrid, ListingGridSkeleton, ListingMessage } from '../../../components/listing-views';
 import { ServiceGrid, ServiceGridSkeleton } from '../../../components/service-views';
 import { readListings, readServices } from '../../../server/bff';
+import { metadataWithOverride } from '../../../server/public-metadata';
 
 /**
  * `/marketplace` and `/ar/marketplace` — the public discovery hub.
@@ -35,17 +36,20 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Marketplace' });
 
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: {
+  // A landing address, so its override is a `route` entry and its stored canonical is served (8-F).
+  return await metadataWithOverride(
+    { routePath: '/marketplace', locale },
+    {
+      title: t('title'),
+      description: t('description'),
       canonical: `${prefix(locale)}/marketplace`,
       languages: { en: '/marketplace', ar: '/ar/marketplace' },
+      // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
+      // the root down, so a page that says nothing about robots inherits that refusal.
+      index: true,
+      follow: true,
     },
-    // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
-    // the root down, so a page that says nothing about robots inherits that refusal.
-    robots: { index: true, follow: true },
-  };
+  );
 }
 
 /** A section's "see the whole surface" link. The hub shows a page; the surface owns the pagination. */

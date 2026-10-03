@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import type { ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { cmsPageSlugs } from '@repo/config';
@@ -41,7 +41,9 @@ const PAGE = {
   body: 'First paragraph.\n\nSecond paragraph.',
   metaTitle: 'Terms — Marketplace',
   metaDescription: 'The terms you agree to.',
-  coverObjectPath: null,
+  // 0099 made this column writable for the first time, so a real path now arrives here. Nothing renders it,
+  // which is what the block at the end of this file pins.
+  coverObjectPath: 'cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png',
   publishedAt: '2026-05-01T09:00:00.000Z',
   updatedAt: '2026-05-02T09:00:00.000Z',
 } as const;
@@ -334,7 +336,9 @@ describe('an address that is not a static page', () => {
   });
 
   it('leaves the addresses the specification reserves for unbuilt surfaces unrouted', async () => {
-    for (const path of ['/featured', '/new', '/popular', '/deals', '/blog']) {
+    // `/blog` left this list when 0092 built it. The four that remain are still in the specification's route map
+    // with no increment behind them, which is what this assertion is for.
+    for (const path of ['/featured', '/new', '/popular', '/deals']) {
       const page = await load(path);
       expect(page.status, path).toBe(404);
       expect(page.robotsHeader, path).toBe('noindex');
@@ -353,5 +357,60 @@ describe('an address that is not a static page', () => {
     // Its own content, not a CMS page's.
     expect(page.html).not.toContain('Terms of Service');
     expect(api.seen.filter((entry) => entry.url.startsWith('/v1/cms/pages'))).toHaveLength(0);
+  });
+});
+
+describe('a cover image reaches this app and is rendered by nothing (0099)', () => {
+  /**
+   * 0085 has always put `cover_object_path` on the public page reader, and until 0099 the column behind it
+   * could not be written, so the value was always null and nothing had to be decided. 0099 makes it writable.
+   *
+   * The approved scope says no public rendering, so these assertions are the proof rather than the intention:
+   * the path arrives in the payload, no markup references it, and no source file in this app mentions it. The
+   * second half is what makes the first durable — a future change that starts rendering a cover has to delete
+   * an assertion that says it must not.
+   */
+  it('serves the page without an image, a URL or the path itself', async () => {
+    const page = await load('/terms');
+    expect(page.status).toBe(200);
+    expect(page.html).toContain('First paragraph.');
+    // The path is in the upstream payload and in none of the markup.
+    expect(page.html).not.toContain('cms-media');
+    expect(page.html).not.toContain('<img');
+    expect(page.html).not.toContain('og:image');
+    expect(page.html).not.toContain('twitter:');
+    expect(page.html).not.toContain('application/ld+json');
+    expect(page.html).not.toContain('/storage/v1/');
+    expect(page.html).not.toContain('token=');
+  });
+
+  it('is the same in Arabic', async () => {
+    const page = await load('/ar/terms');
+    expect(page.status).toBe(200);
+    expect(page.html).not.toContain('cms-media');
+    expect(page.html).not.toContain('<img');
+  });
+
+  it('has no source file in this app that so much as names a cover or the bucket', () => {
+    const root = join(import.meta.dirname, '..', 'src');
+    const offenders: string[] = [];
+
+    const walk = (dir: string): void => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+          walk(full);
+          continue;
+        }
+        if (!/\.(ts|tsx)$/.test(entry)) continue;
+        const source = readFileSync(full, 'utf8');
+        for (const needle of ['coverObjectPath', 'coverMediaId', 'cms-media', 'cmsMedia']) {
+          if (source.includes(needle)) offenders.push(`${full}: ${needle}`);
+        }
+      }
+    };
+
+    walk(root);
+    expect(offenders).toEqual([]);
   });
 });

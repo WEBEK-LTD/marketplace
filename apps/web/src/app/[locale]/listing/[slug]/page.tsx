@@ -12,6 +12,7 @@ import { reportCopy } from '../../../../components/report-copy';
 import { startConversationLabels } from '../../../../components/start-conversation-labels';
 import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
 import { readListing, type ListingLookup } from '../../../../server/bff';
+import { metadataWithOverride } from '../../../../server/public-metadata';
 
 /**
  * `/listing/[slug]` and `/ar/listing/[slug]` — one public listing.
@@ -76,20 +77,26 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   const { listing } = found;
   const unavailable = listing.availability === 'no_longer_available';
 
-  return {
-    title: listing.title,
-    description: listing.description.slice(0, 160),
-    alternates: {
+  // The administrator's override is merged in by one shared resolver (8-F). The canonical below is the only one this
+  // page can have: the reader withholds a stored canonical for a listing, so the self-referencing address stands
+  // whatever anybody wrote. The robots decision below is the floor, and a stored directive may only narrow it — so a
+  // listing that is no longer available stays `noindex` however the override is written.
+  return await metadataWithOverride(
+    { entityType: 'listing', slug: listing.slug, locale },
+    {
+      title: listing.title,
+      description: listing.description.slice(0, 160),
       canonical: listingPath(locale, listing.slug),
       languages: {
         en: `/listing/${encodeURIComponent(listing.slug)}`,
         ar: `/ar/listing/${encodeURIComponent(listing.slug)}`,
       },
+      // Stated on every branch: the root layout's default is `noindex, nofollow`, and metadata is merged
+      // from the root down, so a page that says nothing about robots inherits that refusal.
+      index: !unavailable,
+      follow: true,
     },
-    // Stated on every branch: the root layout's default is `noindex, nofollow`, and metadata is merged
-    // from the root down, so a page that says nothing about robots inherits that refusal.
-    robots: unavailable ? { index: false, follow: true } : { index: true, follow: true },
-  };
+  );
 }
 
 export default async function ListingPage({ params }: PageParams) {

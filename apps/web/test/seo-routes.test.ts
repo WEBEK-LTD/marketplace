@@ -66,6 +66,7 @@ const DEFAULT_COUNTS = {
   pageSize: 5000,
   counts: [
     { type: 'page', entries: 2 },
+    { type: 'blog_post', entries: 2 },
     { type: 'listing', entries: 1 },
     { type: 'service', entries: 0 },
     { type: 'category', entries: 1 },
@@ -85,7 +86,9 @@ function apiServes(serve: Serve = {}): void {
     if (path === '/v1/seo/sitemap') {
       return json(response, serve.counts ?? DEFAULT_COUNTS);
     }
-    const child = /^\/v1\/seo\/sitemap\/([a-z]+)\/([0-9]+)$/.exec(path);
+    // `[a-z_]+` because a kind may carry an underscore (`blog_post`). The real API validates the kind against the
+    // contract's own list rather than a character class, so a narrower pattern here would only hide a working path.
+    const child = /^\/v1\/seo\/sitemap\/([a-z_]+)\/([0-9]+)$/.exec(path);
     if (child !== null) {
       const type = child[1] ?? '';
       const page = Number(child[2] ?? '1');
@@ -213,9 +216,63 @@ describe('a child sitemap', () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain('<loc>https://seo.test/listings</loc>');
     expect(response.text).toContain('<loc>https://seo.test/ar/services</loc>');
-    // The home page keeps its blanket noindex, so it is advertised nowhere.
-    expect(response.text).not.toContain('<loc>https://seo.test/</loc>');
     expect(api.seen.filter((entry) => entry.url.startsWith('/v1/seo/sitemap/'))).toHaveLength(0);
+  });
+
+  it('advertises the home page and the blog index among the fixed routes (0097)', async () => {
+    // Owner decisions 2 and 3. The home page is the one entry whose Arabic address is the locale prefix itself, so
+    // it is asserted exactly: `/ar`, which is what the page's own canonical says, and never `/ar/`.
+    apiServes();
+    const response = await get('/sitemaps/route/1');
+    expect(response.text).toContain('<loc>https://seo.test/</loc>');
+    expect(response.text).toContain('<loc>https://seo.test/ar</loc>');
+    expect(response.text).not.toContain('<loc>https://seo.test/ar/</loc>');
+    expect(response.text).toContain('<loc>https://seo.test/blog</loc>');
+    expect(response.text).toContain('<loc>https://seo.test/ar/blog</loc>');
+  });
+
+  it('serves a blog child sitemap, with each post only in the languages it answers in (0097)', async () => {
+    apiServes({
+      entries: {
+        blog_post: [
+          { slug: 'both-languages', updatedAt: '2026-05-02T09:00:00.000Z', locales: ['en', 'ar'] },
+          { slug: 'arabic-only', updatedAt: '2026-05-03T09:00:00.000Z', locales: ['ar'] },
+        ],
+      },
+    });
+    const response = await get('/sitemaps/blog_post/1');
+    expect(response.status).toBe(200);
+    expect(response.text).toContain('<loc>https://seo.test/blog/both-languages</loc>');
+    expect(response.text).toContain('<loc>https://seo.test/ar/blog/both-languages</loc>');
+    // Owner decision 5: the English address of an Arabic-only post answers 404, so it is never advertised.
+    expect(response.text).toContain('<loc>https://seo.test/ar/blog/arabic-only</loc>');
+    expect(response.text).not.toContain('<loc>https://seo.test/blog/arabic-only</loc>');
+    expect(response.text).toContain('<lastmod>2026-05-03T09:00:00.000Z</lastmod>');
+  });
+
+  it('names the blog child in the index when there are posts, and not when there are none (0097)', async () => {
+    expect((await get('/sitemap.xml')).text).toContain('https://seo.test/sitemaps/blog_post/1');
+    apiServes({
+      counts: {
+        pageSize: 5000,
+        counts: [
+          { type: 'page', entries: 1 },
+          { type: 'blog_post', entries: 0 },
+          { type: 'listing', entries: 0 },
+          { type: 'service', entries: 0 },
+          { type: 'category', entries: 0 },
+          { type: 'seller', entries: 0 },
+        ],
+      },
+    });
+    expect((await get('/sitemap.xml')).text).not.toContain('/sitemaps/blog_post/');
+  });
+
+  it('offers no taxonomy sitemap, because a category and a tag are filters on the index (0097)', async () => {
+    // Owner decision 6.
+    for (const path of ['/sitemaps/blog_category/1', '/sitemaps/blog_tag/1', '/sitemaps/blog/1']) {
+      expect((await get(path)).status, path).toBe(404);
+    }
   });
 
   it('answers an empty urlset for a page past the end', async () => {

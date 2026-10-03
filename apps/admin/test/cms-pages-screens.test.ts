@@ -63,7 +63,15 @@ type Who =
   | { kind: 'buyer' }
   | { kind: 'unauthenticated' };
 
-type Data = 'default' | 'unwritten' | 'unavailable' | 'readerDetail' | 'offListSlug';
+type Data =
+  | 'default'
+  | 'unwritten'
+  | 'unavailable'
+  | 'readerDetail'
+  | 'offListSlug'
+  /** 0099: a page with a cover attached, and one whose attached entry has no alt text. */
+  | 'withCover'
+  | 'withUnlabelledCover';
 
 interface Serve {
   readonly who: Who;
@@ -106,6 +114,10 @@ const DETAIL = {
   createdAt: '2026-04-01T09:00:00.000Z',
   canManage: true,
   previousSlugs: ['terms-old'],
+  coverMediaId: null,
+  coverObjectPath: null,
+  coverAltTextEn: null,
+  coverAltTextAr: null,
   translations: [
     {
       localeCode: 'en',
@@ -117,6 +129,22 @@ const DETAIL = {
       updatedAt: '2026-05-02T09:00:00.000Z',
     },
   ],
+};
+
+/** An attached cover, as the API reports one: a stored path and the alt text somebody wrote. Never a URL. */
+const COVER = {
+  coverMediaId: 'fe000000-0000-4000-8000-0000000000a1',
+  coverObjectPath: 'cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png',
+  coverAltTextEn: 'A harbour at dawn',
+  coverAltTextAr: 'ميناء عند الفجر',
+};
+
+/** Alt text is optional in the library, so the console has to render an attachment that has none. */
+const UNLABELLED_COVER = {
+  coverMediaId: 'fe000000-0000-4000-8000-0000000000a2',
+  coverObjectPath: 'cms-media/2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e.webp',
+  coverAltTextEn: null,
+  coverAltTextAr: null,
 };
 
 function json(response: ServerResponse, body: unknown): void {
@@ -179,6 +207,8 @@ function apiServes(serve: Serve): void {
         page: {
           ...DETAIL,
           ...(data === 'offListSlug' ? { slug: 'seasonal-campaign' } : {}),
+          ...(data === 'withCover' ? COVER : {}),
+          ...(data === 'withUnlabelledCover' ? UNLABELLED_COVER : {}),
           canManage: data === 'readerDetail' ? false : held(MANAGE),
         },
       });
@@ -310,6 +340,85 @@ describe('what the screens say about a page', () => {
     apiServes({ who: { kind: 'staff', permissions: ADMIN } });
     const { html } = await get('/cms/pages/fe000000-0000-4000-8000-0000000000ff');
     expect(html).toContain(EN.Cms.notFoundBody);
+  });
+});
+
+describe('the cover image on the screen (0099)', () => {
+  it('says there is no cover, and offers the field to attach one', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN } });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    expect(html).toContain(EN.Cms.coverHeading);
+    expect(html).toContain(EN.Cms.coverNoneBody);
+    expect(html).toContain(EN.Cms.coverMediaIdLabel);
+    expect(html).toContain(EN.Cms.coverSubmit);
+  });
+
+  it('does not ship the remove control, or its words, when there is nothing to remove', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN } });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    // A client component's whole props object is serialised into the payload, so this is about the payload
+    // and not only about the rendered markup: the label must not be in the response at all.
+    expect(html).not.toContain(EN.Cms.coverRemove);
+  });
+
+  it('shows the stored path and both alt texts for an attached cover, and offers removal', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN }, data: 'withCover' });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    expect(html).toContain('cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png');
+    expect(html).toContain('A harbour at dawn');
+    expect(html).toContain(EN.Cms.coverPathLabel);
+    expect(html).toContain(EN.Cms.coverAltEnLabel);
+    expect(html).toContain(EN.Cms.coverAltArLabel);
+    expect(html).toContain(EN.Cms.coverRemove);
+    expect(html).not.toContain(EN.Cms.coverNoneBody);
+  });
+
+  it('renders no image and no URL for an attached cover, because the bucket is private', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN }, data: 'withCover' });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    // The path is text. Nothing on this screen fetches the object or mints a credential for it.
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('background-image');
+    expect(html).not.toContain('token=');
+    expect(html).not.toContain('/storage/v1/');
+    expect(html).not.toContain('https://cms-media');
+  });
+
+  it('says the alt text is not written rather than leaving the row blank', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN }, data: 'withUnlabelledCover' });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    expect(html).toContain('cms-media/2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e.webp');
+    expect(html).toContain(EN.Cms.coverAltNone);
+  });
+
+  it('tells an operator that attaching a cover changes nothing a visitor sees', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN }, data: 'withCover' });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    expect(html).toContain(EN.Cms.coverNotShownTitle);
+    expect(html).toContain(EN.Cms.coverNotShownBody);
+  });
+
+  it('gives a reader no cover control at all, not a disabled one', async () => {
+    apiServes({ who: { kind: 'staff', permissions: PAGE_READER }, data: 'readerDetail' });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    for (const absent of [
+      EN.Cms.coverHeading,
+      EN.Cms.coverMediaIdLabel,
+      EN.Cms.coverSubmit,
+      EN.Cms.coverRemove,
+      EN.Cms.coverMediaIdHint,
+    ]) {
+      expect(html, absent).not.toContain(absent);
+    }
+  });
+
+  it('is in Arabic for an Arabic console', async () => {
+    apiServes({ who: { kind: 'staff', permissions: ADMIN, locale: 'ar' }, data: 'withCover' });
+    const { html } = await get(`/cms/pages/${PAGE}`);
+    expect(html).toContain(AR.Cms.coverHeading);
+    expect(html).toContain(AR.Cms.coverPathLabel);
+    // The stored path is not a translated thing.
+    expect(html).toContain('cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png');
   });
 });
 

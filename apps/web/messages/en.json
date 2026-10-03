@@ -61,6 +61,21 @@
     "signedOut": "Your session ended. Sign in again.",
     "notShippable": "We do not deliver to that country. Choose another, or keep this address for billing only."
   },
+  "Blog": {
+    "backToIndex": "Back to the blog",
+    "empty": "There are no posts yet.",
+    "errorTitle": "Blog unavailable",
+    "featured": "Featured",
+    "filterAll": "All posts",
+    "filtersLabel": "Filter the blog",
+    "indexDescription": "News, guides and advice from the marketplace.",
+    "indexTitle": "Blog",
+    "nextPage": "Older posts",
+    "noMatches": "No posts match that filter yet.",
+    "notFoundBody": "There is no post at this address. It may have been removed, or the address may be wrong.",
+    "notFoundTitle": "Post not found",
+    "unavailable": "The blog could not be loaded just now. Please try again shortly."
+  },
   "CatalogFilters": {
     "apply": "Apply the filters",
     "clear": "Clear the filters",
@@ -110,6 +125,9 @@
     "title": "Something went wrong",
     "retry": "Try again"
   },
+  "Faq": {
+    "heading": "Common questions"
+  },
   "Favorites": {
     "title": "Favorites",
     "intro": "Listings you saved. Removing one here does not affect the listing itself.",
@@ -134,6 +152,15 @@
   "Header": {
     "languageLink": "العربية",
     "languageLinkLabel": "Switch to Arabic"
+  },
+  "Homepage": {
+    "allPosts": "Read more on the blog",
+    "browseCategories": "All categories",
+    "browseListings": "Browse listings",
+    "browseServices": "Find a service",
+    "fallbackIntro": "Browse what people are selling, find a service, or look through the categories.",
+    "metaDescription": "Buy and sell products and services across Egypt.",
+    "unavailable": "Some of the homepage could not be loaded just now. Everything above still works."
   },
   "Listings": {
     "title": "Listings",

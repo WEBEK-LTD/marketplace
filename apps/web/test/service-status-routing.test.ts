@@ -276,7 +276,9 @@ describe('a service the public may not see', () => {
     expect(
       api.seen.map((s) => s.url).filter((url) => url.startsWith('/v1/seo/redirects/resolve')),
     ).toHaveLength(1);
-    expect(api.seen).toHaveLength(2);
+    // And nothing else of this page's own: 0094's composed chrome is one further read on every public surface,
+    // which is counted out here rather than left to make this inventory look open.
+    expect(api.seen.filter((entry) => !entry.url.startsWith('/v1/navigation'))).toHaveLength(2);
   });
 });
 

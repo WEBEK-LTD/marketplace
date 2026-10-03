@@ -186,9 +186,17 @@ describe('the two sections', () => {
     api.seen.length = 0;
     await load('/marketplace');
     const paths = api.seen.map((s) => s.url.split('?')[0]).sort();
-    expect(paths).toEqual(['/v1/listings', '/v1/services']);
+    // The two content surfaces, each exactly once, plus the landing address's own metadata override (8-F) and the
+    // composed chrome every public surface carries since 0094. A closed inventory on purpose: anything else
+    // appearing here would be a read this hub was not supposed to make.
+    expect(paths).toEqual(['/v1/listings', '/v1/navigation', '/v1/seo/metadata', '/v1/services']);
     // No aggregation endpoint was invented.
     expect(api.seen.some((s) => s.url.includes('/v1/marketplace'))).toBe(false);
+    // The override is asked for by route path, because a landing address has no row behind it.
+    const metadata = api.seen.filter((s) => s.url.startsWith('/v1/seo/metadata'));
+    expect(metadata).toHaveLength(1);
+    expect(metadata[0]?.url).toContain(`routePath=${encodeURIComponent('/marketplace')}`);
+    expect(metadata[0]?.url).not.toContain('entityType=');
     // The default limit is the surfaces' own; the hub does not ask for a different one.
     expect(api.seen.every((s) => !s.url.includes('limit='))).toBe(true);
   });
@@ -270,10 +278,13 @@ describe('what the hub deliberately does not have', () => {
     }
   });
 
-  it('reads nothing from the CMS tables', async () => {
+  it('reads no CMS content of its own', async () => {
     api.seen.length = 0;
     await load('/marketplace');
-    for (const call of api.seen) {
+    // The hub composes nothing: it shows listings and services. The one CMS read on this page is 0094's chrome,
+    // which every public surface carries and which is not this hub's content — so it is named rather than
+    // swept into the loop below.
+    for (const call of api.seen.filter((entry) => !entry.url.startsWith('/v1/navigation'))) {
       for (const cms of ['homepage', 'banner', 'navigation', 'cms']) {
         expect(call.url, cms).not.toContain(cms);
       }

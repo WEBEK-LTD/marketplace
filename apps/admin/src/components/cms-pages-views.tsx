@@ -6,7 +6,13 @@ import { getTranslations } from 'next-intl/server';
 import type { CmsPageDetail, CmsPageSummary } from '@repo/contracts';
 import { readCmsPageDetail, readCmsPageList, type CmsPagesResult } from '../server/bff';
 import { currentStaffSession } from '../server/current-staff';
-import { CmsPageCreateForm, CmsPageSettingsForm, CmsPageStatusForm, CmsPageTranslationForm } from './cms-pages-forms';
+import {
+  CmsPageCoverForm,
+  CmsPageCreateForm,
+  CmsPageSettingsForm,
+  CmsPageStatusForm,
+  CmsPageTranslationForm,
+} from './cms-pages-forms';
 
 /**
  * The CMS pages section (authored static pages).
@@ -43,13 +49,21 @@ async function problem<T>(result: CmsPagesResult<T>): Promise<string | null> {
   return t('unavailable');
 }
 
-function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string; body: string }) {
+/**
+ * One box for anything that is not data.
+ *
+ * `note` is the amber one, for something an operator has to know rather than something that went wrong — the
+ * same tone the media library uses for the same purpose.
+ */
+function Message({ tone, title, body }: { tone: 'empty' | 'error' | 'note'; title: string; body: string }) {
+  const classes =
+    tone === 'error'
+      ? 'border-red-200 bg-red-50'
+      : tone === 'note'
+        ? 'border-amber-200 bg-amber-50'
+        : 'border-neutral-200 bg-neutral-50';
   return (
-    <div
-      className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
-      }`}
-    >
+    <div className={`mt-4 rounded-md border p-4 ${classes}`}>
       <p className="font-medium text-neutral-900">{title}</p>
       <p className="mt-1 text-sm text-neutral-700">{body}</p>
     </div>
@@ -300,6 +314,49 @@ async function CmsPageControls({ page }: { readonly page: CmsPageDetail }) {
             failed: t('settingsFailed'),
             slugTaken: t('slugTaken'),
             invalid: t('invalid'),
+          }}
+        />
+      </section>
+
+      <section className={CARD}>
+        <Heading level={2}>{t('coverHeading')}</Heading>
+        <p className="mt-1 text-sm text-neutral-600">{t('coverIntro')}</p>
+
+        {/*
+          Owner decision 5: the stored path and the alt text, and nothing else. The bucket is private and no
+          signed URL is minted anywhere on this screen, so there is no image here and no request for one. An
+          operator recognises an entry by what is written beside it.
+        */}
+        {page.coverMediaId === null ? (
+          <Message tone="empty" title={t('coverNoneTitle')} body={t('coverNoneBody')} />
+        ) : (
+          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dt className="text-neutral-600">{t('coverPathLabel')}</dt>
+            <dd className="break-all font-mono text-xs text-neutral-900">{page.coverObjectPath}</dd>
+            <dt className="text-neutral-600">{t('coverAltEnLabel')}</dt>
+            <dd className="text-neutral-900">{page.coverAltTextEn ?? t('coverAltNone')}</dd>
+            <dt className="text-neutral-600">{t('coverAltArLabel')}</dt>
+            <dd className="text-neutral-900">{page.coverAltTextAr ?? t('coverAltNone')}</dd>
+          </dl>
+        )}
+
+        {/* Owner decision 4: an operator has to know that attaching a cover changes nothing a visitor sees. */}
+        <Message tone="note" title={t('coverNotShownTitle')} body={t('coverNotShownBody')} />
+
+        <CmsPageCoverForm
+          initialMediaId={page.coverMediaId}
+          pageId={page.id}
+          copy={{
+            mediaIdLabel: t('coverMediaIdLabel'),
+            mediaIdHint: t('coverMediaIdHint'),
+            submit: t('coverSubmit'),
+            working: t('working'),
+            failed: t('coverFailed'),
+            invalid: t('invalid'),
+            coverMissing: t('coverMediaMissing'),
+            // Only when there is something to remove: the label would otherwise ship in the payload for a
+            // button that never renders.
+            ...(page.coverMediaId === null ? {} : { remove: t('coverRemove') }),
           }}
         />
       </section>

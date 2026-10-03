@@ -250,9 +250,9 @@ test('B10-hosted: failures are reduced to categories, never passed through', () 
 
 test('B10-hosted: the planned migration set is the committed one, contiguous and ordered', () => {
   const names = plannedMigrations();
-  assert.equal(names.length, 90);
+  assert.equal(names.length, 99);
   assert.equal(names[0], '0001_extensions_and_schemas.sql');
-  assert.equal(names.at(-1), '0090_seo_redirect_map.sql');
+  assert.equal(names.at(-1), '0099_cms_content_media_attachment.sql');
   assert.ok(names.every((name) => name.endsWith('.sql')));
   names.forEach((name, index) => assert.equal(name.slice(0, 4), String(index + 1).padStart(4, '0')));
   assert.equal(GUARD_FUNCTIONS.length, 11);

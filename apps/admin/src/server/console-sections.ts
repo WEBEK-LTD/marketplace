@@ -28,9 +28,9 @@ import 'server-only';
  * section arrived: its entry gates on `cms.page.read`, and `cms.page.manage` is what the authoring controls
  * inside it need. The category tree arrived the same way, with its own `catalog.category.read` entry beside the
  * listing queue's `catalog.listing.read` one — two keys, because moderating a listing and restructuring the
- * catalogue are different jobs. `seo` is a partial departure: the redirect map has an entry, while the metadata
- * and settings clusters of that same module still have tables, seeded keys and no increment, so they still have
- * none.
+ * catalogue are different jobs. `seo` is a partial departure: the redirect map and the metadata overrides each have
+ * an entry, while that module's site-wide settings cluster still has a table, a seeded key and no increment, so it
+ * still has none.
  */
 
 export interface ConsoleSection {
@@ -85,11 +85,47 @@ export const CONSOLE_SECTIONS: readonly ConsoleSection[] = Object.freeze([
   { id: 'users', href: '/users', permission: 'users.profile.read' },
   { id: 'audit', href: '/audit', permission: 'audit.read' },
   { id: 'cms', href: '/cms/pages', permission: 'cms.page.read' },
+  // Phase 8, increment 0092. The mechanism above once more: a new route with a key 0033 already seeds. It is a
+  // separate entry from `cms` because it is a separate key — `cms.blog.read` and `cms.page.read` are different
+  // permissions, and authoring the blog is a different job from maintaining the legal pages. The FAQ, homepage,
+  // banner and navigation clusters keep their seeded keys and no section, because they still have no increment.
+  { id: 'blog', href: '/blog', permission: 'cms.blog.read' },
+  // Phase 8, increment 0093. Another key 0033 already seeds, and a separate entry because composing the homepage
+  // and maintaining the legal pages are different jobs behind different permissions. The banner, FAQ and
+  // navigation clusters keep their seeded keys and no section, because they still have no increment — and banners
+  // cannot have one until a media origin exists.
+  { id: 'homepage', href: '/cms/homepage', permission: 'cms.homepage.read' },
+  // Phase 8, increment 0094. Another key 0033 already seeds, and a separate entry for the same reason: arranging
+  // the header, footer and mobile drawer is a different job from composing the front page or maintaining the legal
+  // pages, behind a different permission. The banner and FAQ clusters keep their seeded keys and no section — the
+  // FAQ because it still has no increment, and a banner because it cannot have one until a media origin exists.
+  { id: 'navigation', href: '/cms/navigation', permission: 'cms.navigation.read' },
+  // Phase 8, increment 0095. The last key in the `cms` module that 0033 seeds and nothing used: writing the help
+  // centre is a different job from the legal pages, the front page or the menus, behind its own permission. The
+  // banner cluster keeps its seeded keys and no section, because a banner cannot have one until a media origin
+  // exists — which leaves `cms.media.manage` as the only `cms` key with no section at all.
+  { id: 'faqs', href: '/cms/faqs', permission: 'cms.faq.read' },
+  // Phase 8, increment 0098. The last `cms` key 0033 seeds and nothing used, and the second place in this list gated
+  // on a **manage** key: there is no `cms.media.read` in the seed and none was invented. Until this increment the
+  // `cms-media` bucket did not exist, so the table could hold nothing — which is why the four columns that point at
+  // it across 0085, 0091, 0092 and 0096 have all been handing out paths nothing could resolve. The banner cluster
+  // keeps its seeded keys and no section: 0098 makes a banner's media possible and builds no banner.
+  { id: 'cmsMedia', href: '/cms/media', permission: 'cms.media.manage' },
   // Phase 8-E. The mechanism above working as designed once more: a new route with a key 0033 already seeds. `seo`
   // leaves the unbuilt list below with this one entry and nothing else — the metadata and settings clusters still
   // have tables, seeded keys and no increment, so they still have no section. It is gated on the read key, and
   // `seo.redirect.manage` is what the controls inside it need.
   { id: 'seoRedirects', href: '/seo/redirects', permission: 'seo.redirect.read' },
+  // Phase 8-F. The second entry in the `seo` module, gated on another key 0033 already carries: maintaining the
+  // redirect map and maintaining the metadata overrides are different jobs behind different keys, so they are
+  // different sections.
+  { id: 'seoMetadata', href: '/seo/metadata', permission: 'seo.metadata.read' },
+  // Phase 8, increment 0096. The third and last entry in the `seo` module, and the one place in this list gated on a
+  // **manage** key: 0033 seeds `seo.settings.manage` and no `seo.settings.read`, so there is no read key to gate it
+  // on and none is invented. The mechanism is the same as everywhere else — a new route with a key 0033 already
+  // seeds — and the consequence is particular to this section: whoever can open it may change it. The `seo` module
+  // now has a section for every key it carries.
+  { id: 'seoSettings', href: '/seo/settings', permission: 'seo.settings.manage' },
   { id: 'platform', href: '/platform/jobs', permission: 'platform.job.read' },
 ] as const);
 

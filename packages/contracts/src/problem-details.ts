@@ -410,9 +410,16 @@ export const PROBLEM_CODES = [
   // `CMS_PAGE_SLUG_TAKEN` — the address is in use by another page, or was previously used by one. A previous
   // slug belongs permanently to the page that gave it up, because it still redirects there, so this refusal
   // can also mean "that address is somebody's history". The remedy is a different slug.
+  //
+  // `CMS_PAGE_COVER_MEDIA_MISSING` (0099) — the cover image named does not exist in the media library. It is
+  // 0030's own foreign key refusing, and it is the only existence check there is on that path, so there is no
+  // second rule in the API that could disagree with it. Reported rather than swallowed, because a console that
+  // silently accepted an unknown id would leave an editor believing a cover was attached. The remedy is to
+  // name an entry that is in the library; it is not an absence, so it is not a 404.
   'CMS_PAGE_LOCALE_REQUIRED',
   'CMS_PAGE_TRANSITION_NOT_ALLOWED',
   'CMS_PAGE_SLUG_TAKEN',
+  'CMS_PAGE_COVER_MEDIA_MISSING',
   // The SEO redirect map. Two codes, both decided by migration 0030's constraints and neither by the API, and
   // the same read/manage split as the pages above: a caller holding `seo.redirect.read` without
   // `seo.redirect.manage` gets NOT_FOUND from a write rather than a forbidden.
@@ -427,6 +434,18 @@ export const PROBLEM_CODES = [
   // finer distinction here would mean keeping a second copy of its constraints. Retrying never helps.
   'SEO_REDIRECT_PATH_TAKEN',
   'SEO_REDIRECT_NOT_ALLOWED',
+  // Per-entity SEO metadata. Two codes, both decided by migration 0030's constraints and neither by the API, with
+  // the same read/manage split as everything else in this console.
+  //
+  // `SEO_METADATA_NOT_ALLOWED` — the entry itself is not a legal one: an entity kind 0030 does not list, a path
+  // that is not relative or would leave the site, a value past one of the length bounds, an empty directive set, a
+  // directive outside the allowed list, or a set that contradicts itself. One code for the family, because 0030
+  // raises one SQLSTATE for all of them and a finer distinction here would mean a second copy of its constraints.
+  //
+  // `SEO_METADATA_TARGET_UNKNOWN` — a locale code or a share-image identifier that names no row. The remedy is a
+  // different value, not a retry.
+  'SEO_METADATA_NOT_ALLOWED',
+  'SEO_METADATA_TARGET_UNKNOWN',
   // The category tree (D8). Migration 0010 owns every one of these rules; the API reports them and decides none
   // of them, which is why they are four codes and not one generic conflict.
   //
@@ -473,6 +492,87 @@ export const PROBLEM_CODES = [
   'ATTRIBUTE_NOT_ANSWERABLE',
   'ATTRIBUTE_VALUE_NOT_ALLOWED',
   'LISTING_ATTRIBUTE_ANSWER_NOT_ALLOWED',
+  // The blog (0092). Migrations 0030 and 0092 own every rule behind these; the API reports them and decides none
+  // of them, which is why they are four codes rather than one generic conflict.
+  //
+  // `BLOG_LOCALE_REQUIRED` — one rule read from two directions: a post cannot be published or scheduled before
+  // it has been written in some locale, and a post that is live cannot lose its last one. Either way the remedy
+  // is the same, which is why it is one code: write the post, or unpublish it before emptying it.
+  //
+  // `BLOG_CHANGE_NOT_ALLOWED` — the post's current state refused the change: a lifecycle edge 0030's transition
+  // trigger does not allow, or a constraint such as the rule that only a published post may be featured. One
+  // code for the family, because the trigger and the constraints raise one SQLSTATE between them and inventing a
+  // finer distinction here would mean keeping a second copy of their rules.
+  //
+  // `BLOG_SLUG_TAKEN` — the address is in use, or it belongs to another post's slug history and can never be
+  // taken over because it still redirects there. The remedy for both is a different slug.
+  //
+  // `BLOG_REFERENCE_UNKNOWN` — a category, cover image or tag in the request does not exist. Reported rather
+  // than swallowed: a console that sent one has a bug, and silently dropping it would hide it.
+  'BLOG_LOCALE_REQUIRED',
+  'BLOG_CHANGE_NOT_ALLOWED',
+  'BLOG_SLUG_TAKEN',
+  'BLOG_REFERENCE_UNKNOWN',
+  // The homepage (0093). Migrations 0030 and 0093 own both of these rules; the API reports them.
+  //
+  // `HOMEPAGE_SECTION_KEY_TAKEN` — another section already holds that key. A key is machine identity and the
+  // remedy is a different one.
+  //
+  // `HOMEPAGE_SECTION_NOT_ALLOWED` — one of 0030's own column constraints refused the value: a key that is not a
+  // key, a section type it does not have, a title longer than the column, or a configuration that is not a JSON
+  // object. One code for the family, because the constraints raise one SQLSTATE between them and a finer
+  // distinction here would be a second copy of their rules.
+  'HOMEPAGE_SECTION_KEY_TAKEN',
+  'HOMEPAGE_SECTION_NOT_ALLOWED',
+  // Navigation (0094). Migrations 0030 and 0094 own both of these rules; the API reports them.
+  //
+  // `NAVIGATION_MENU_KEY_TAKEN` — another menu already holds that key. A key is machine identity, the public
+  // reader addresses a menu by it, and the remedy is a different one.
+  //
+  // `NAVIGATION_NOT_ALLOWED` — one of 0030's own constraints or triggers refused the arrangement: a key that is
+  // not a key, a label longer than the column, a path that is not relative, a third level, or a child in a
+  // different menu from its parent. One code for the family, because those constraints and that trigger raise
+  // one SQLSTATE between them and a finer distinction here would be a second copy of their rules.
+  //
+  // `NAVIGATION_REFERENCE_UNKNOWN` — the page, post, category, menu or parent named does not exist. Reported
+  // rather than swallowed: a console that sent one has a bug, and dropping it silently would hide it.
+  'NAVIGATION_MENU_KEY_TAKEN',
+  'NAVIGATION_NOT_ALLOWED',
+  'NAVIGATION_REFERENCE_UNKNOWN',
+  // The help centre (0095). Migrations 0030 and 0095 own this rule; the API reports it.
+  //
+  // `FAQ_NOT_ALLOWED` — one of 0030's own constraints refused the value: a topic that is not a topic, a question
+  // longer than the column, or an answer with nothing in it. One code for the family, because those constraints
+  // raise one SQLSTATE between them and a finer distinction here would be a second copy of their rules.
+  'FAQ_NOT_ALLOWED',
+  // Site-wide SEO settings (0096). Migration 0030 owns both of these rules; the API reports them.
+  //
+  // `SEO_SETTINGS_NOT_ALLOWED` — one of 0030's own five constraints refused the value: a site name that is blank
+  // or past 120 characters, a default title past 70 or description past 320, a handle that is not `@` followed by
+  // up to fifteen word characters, or an organization document that is not a JSON object. One code for the family,
+  // because those constraints raise one SQLSTATE between them and a finer distinction here would be a second copy
+  // of their rules.
+  //
+  // `SEO_SETTINGS_MEDIA_MISSING` — the share image named does not exist. Reported rather than swallowed: a console
+  // that sent one has a bug, and dropping it silently would hide it.
+  'SEO_SETTINGS_NOT_ALLOWED',
+  'SEO_SETTINGS_MEDIA_MISSING',
+  // The CMS media library (0098). Migration 0030 and the `cms-media` bucket own both of these rules; the API
+  // reports them.
+  //
+  // `CMS_MEDIA_NOT_ALLOWED` — the bucket or one of 0030's own constraints refused the value: a content type the
+  // bucket does not allow (SVG among them), a size outside its limit, an object path that is not the shape the
+  // authorizer issues, or an extension that disagrees with the declared type. One code for the family, because a
+  // finer distinction here would be a second copy of rules this API does not own.
+  //
+  // `CMS_MEDIA_OBJECT_MISSING` — the confirmation named a path with no object behind it. Recording a row for a file
+  // nobody uploaded would be a library pointing at nothing, which is the state that rots quietly.
+  //
+  // `CMS_MEDIA_PATH_TAKEN` — that object already has a library entry. 0030's unique index, reported rather than
+  // raised, because a retried confirmation is a client's accident and not an error worth a 500.
+  'CMS_MEDIA_NOT_ALLOWED',
+  'CMS_MEDIA_OBJECT_MISSING',
+  'CMS_MEDIA_PATH_TAKEN',
 ] as const;
 
 export const ProblemCodeSchema = z.enum(PROBLEM_CODES).openapi('ProblemCode');

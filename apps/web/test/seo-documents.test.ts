@@ -162,13 +162,71 @@ describe('a child sitemap', () => {
   it('serves the fixed landing routes from code, with no lastmod invented from a row', () => {
     const now = new Date('2026-05-02T09:00:00.000Z');
     const entries = routeEntries(now);
-    expect(entries.map((entry) => entry.slug)).toEqual(['/categories', '/listings', '/marketplace', '/services']);
+    expect(entries.map((entry) => entry.slug)).toEqual([
+      '/',
+      '/blog',
+      '/categories',
+      '/listings',
+      '/marketplace',
+      '/services',
+    ]);
     const document = sitemapDocument({ origin: ORIGIN, type: 'route', entries });
     expect(document).toContain('<loc>https://web.test/listings</loc>');
     expect(document).toContain('<loc>https://web.test/ar/listings</loc>');
-    // The home page keeps its blanket noindex, so it is not advertised.
-    expect(document).not.toContain('<loc>https://web.test</loc>');
-    expect(document).not.toContain('<loc>https://web.test/</loc>');
+    // 0097, owner decision 2: the blog index is advertised in both languages.
+    expect(document).toContain('<loc>https://web.test/blog</loc>');
+    expect(document).toContain('<loc>https://web.test/ar/blog</loc>');
+  });
+
+  it('advertises the home page at exactly the address its own canonical names (0097)', () => {
+    // Owner decision 3, and the one place the `route` kind cannot simply concatenate. The home page's own metadata
+    // sets a self-referencing canonical of `/` and `/ar`; a sitemap naming `/ar/` would be advertising a
+    // non-canonical address, which is the one mistake a sitemap must not make.
+    const document = sitemapDocument({
+      origin: ORIGIN,
+      type: 'route',
+      entries: [{ slug: '/', updatedAt: '2026-05-02T09:00:00.000Z' }],
+    });
+    expect(document).toContain('<loc>https://web.test/</loc>');
+    expect(document).toContain('<loc>https://web.test/ar</loc>');
+    expect(document).not.toContain('https://web.test/ar/<');
+    expect(document).not.toContain('<loc>https://web.test/ar/</loc>');
+    // And its alternates name the same two addresses, each entry listing both including itself.
+    expect(document).toContain('<xhtml:link rel="alternate" hreflang="en" href="https://web.test/"/>');
+    expect(document).toContain('<xhtml:link rel="alternate" hreflang="ar" href="https://web.test/ar"/>');
+  });
+
+  it('builds a blog post address in both languages, and only those it resolves in', () => {
+    const both = sitemapDocument({
+      origin: ORIGIN,
+      type: 'blog_post',
+      entries: [{ slug: 'a-lovely-post', updatedAt: '2026-05-02T09:00:00.000Z' }],
+    });
+    expect(both).toContain('<loc>https://web.test/blog/a-lovely-post</loc>');
+    expect(both).toContain('<loc>https://web.test/ar/blog/a-lovely-post</loc>');
+
+    // Owner decision 5: a post written only in Arabic has no English address, and advertising one would send a
+    // crawler to a 404.
+    const arabicOnly = sitemapDocument({
+      origin: ORIGIN,
+      type: 'blog_post',
+      entries: [{ slug: 'arabic-only', updatedAt: '2026-05-02T09:00:00.000Z', locales: ['ar'] }],
+    });
+    expect(arabicOnly).toContain('<loc>https://web.test/ar/blog/arabic-only</loc>');
+    expect(arabicOnly).not.toContain('<loc>https://web.test/blog/arabic-only</loc>');
+    expect(arabicOnly).not.toContain('hreflang="en"');
+  });
+
+  it('encodes a blog slug rather than interpolating it', () => {
+    const document = sitemapDocument({
+      origin: ORIGIN,
+      type: 'blog_post',
+      entries: [{ slug: 'a-lovely-post', updatedAt: '2026-05-02T09:00:00.000Z' }],
+    });
+    // The slug pattern already forbids anything that would need escaping; the builder is asserted to go through the
+    // shared path helper all the same, so a widened pattern cannot become a malformed document.
+    expect(document).not.toContain('/blog//');
+    expect(document).toContain('/blog/a-lovely-post');
   });
 });
 
@@ -177,6 +235,7 @@ describe('the sitemap index', () => {
     pageSize,
     counts: [
       { type: 'page', entries: entries.page ?? 0 },
+      { type: 'blog_post', entries: entries.blog_post ?? 0 },
       { type: 'listing', entries: entries.listing ?? 0 },
       { type: 'service', entries: entries.service ?? 0 },
       { type: 'category', entries: entries.category ?? 0 },

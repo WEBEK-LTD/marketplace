@@ -8,6 +8,7 @@ import {
   CategoryTreeSkeleton,
 } from '../../../components/category-tree';
 import { readCategories } from '../../../server/bff';
+import { metadataWithOverride } from '../../../server/public-metadata';
 
 /**
  * `/categories` and `/ar/categories` — the published category tree.
@@ -40,17 +41,20 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Categories' });
   const path = locale === 'ar' ? '/ar/categories' : '/categories';
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: {
+  // A landing address, so its override is a `route` entry and its stored canonical is served (8-F).
+  return await metadataWithOverride(
+    { routePath: '/categories', locale },
+    {
+      title: t('title'),
+      description: t('description'),
       canonical: path,
       languages: { en: '/categories', ar: '/ar/categories' },
+      // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
+      // the root down, so a page that says nothing about robots inherits that refusal.
+      index: true,
+      follow: true,
     },
-    // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
-    // the root down, so a page that says nothing about robots inherits that refusal.
-    robots: { index: true, follow: true },
-  };
+  );
 }
 
 /** The part that waits on the API, so the shell above it renders immediately. */

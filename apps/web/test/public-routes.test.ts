@@ -86,7 +86,18 @@ describe('publicWebServes', () => {
     expect(publicWebServes('/category/furniture')).toBe(true);
     expect(publicWebServes('/seller/good-shop')).toBe(true);
     expect(publicWebServes('/service/a-haircut')).toBe(true);
+    expect(publicWebServes('/blog/a-lovely-post')).toBe(true);
+    expect(publicWebServes('/ar/blog/a-lovely-post')).toBe(true);
     expect(publicWebServes('/dashboard/messages/11111111-1111-4111-8111-111111111111')).toBe(true);
+  });
+
+  it('serves the blog index and one post, and nothing deeper (0092)', () => {
+    expect(publicWebServes('/blog')).toBe(true);
+    expect(publicWebServes('/ar/blog')).toBe(true);
+    // A post is one segment. `/blog/a-post/comments` is not a route this increment built, and a comment section is
+    // explicitly out of its scope, so the address is unserved and reaches the redirect map like any other 404.
+    expect(publicWebServes('/blog/a-lovely-post/comments')).toBe(false);
+    expect(publicWebServes('/blog/')).toBe(true);
   });
 
   it('serves a dynamic route whether or not the row exists', () => {
@@ -107,8 +118,6 @@ describe('publicWebServes', () => {
       '/old-campaign',
       '/ar/old-campaign',
       '/how-it-works',
-      '/blog',
-      '/blog/a-post',
       '/featured',
       '/deals',
       '/sellers',

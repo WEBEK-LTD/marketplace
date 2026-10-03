@@ -12,6 +12,7 @@ import { StartConversationButton } from '../../../../components/start-conversati
 import { startConversationLabels } from '../../../../components/start-conversation-labels';
 import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
 import { readSeller, type SellerLookup } from '../../../../server/bff';
+import { metadataWithOverride } from '../../../../server/public-metadata';
 
 /**
  * `/seller/[slug]` and `/ar/seller/[slug]` — one public seller profile.
@@ -63,22 +64,27 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
 
   const { seller, availability } = found;
 
-  return {
-    // The seller's own name, on a suspended profile as much as a live one.
-    title: seller.displayName,
-    description: seller.bio ?? t('noDescription'),
-    alternates: {
+  // The administrator's override is merged in by one shared resolver (8-F). A seller's stored canonical is withheld,
+  // so the self-referencing address below stands; and the robots decision below is the floor, so a suspended profile
+  // stays `noindex` however the override is written. 0030's own predicate withholds a suspended seller's override
+  // entirely, which is the same answer reached a second way.
+  return await metadataWithOverride(
+    { entityType: 'seller', slug: seller.slug, locale },
+    {
+      // The seller's own name, on a suspended profile as much as a live one.
+      title: seller.displayName,
+      description: seller.bio ?? t('noDescription'),
       canonical: sellerPath(locale, seller.slug),
       languages: {
         en: `/seller/${encodeURIComponent(seller.slug)}`,
         ar: `/ar/seller/${encodeURIComponent(seller.slug)}`,
       },
+      // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
+      // the root down, so a page that says nothing about robots inherits that refusal.
+      index: availability !== 'unavailable',
+      follow: true,
     },
-    // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
-    // the root down, so a page that says nothing about robots inherits that refusal.
-    robots:
-      availability === 'unavailable' ? { index: false, follow: true } : { index: true, follow: true },
-  };
+  );
 }
 
 export default async function SellerPage({ params }: PageParams) {

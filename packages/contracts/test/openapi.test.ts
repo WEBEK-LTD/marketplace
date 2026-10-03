@@ -68,6 +68,16 @@ describe('OpenAPI document', () => {
       '/v1/admin/attributes/{definitionId}/options/{optionId}/state',
       '/v1/admin/attributes/{definitionId}/state',
       '/v1/admin/audit',
+      '/v1/admin/blog',
+      '/v1/admin/blog/categories',
+      '/v1/admin/blog/categories/{categoryId}',
+      '/v1/admin/blog/tags',
+      '/v1/admin/blog/tags/{tagId}',
+      '/v1/admin/blog/taxonomy',
+      '/v1/admin/blog/{postId}',
+      '/v1/admin/blog/{postId}/status',
+      '/v1/admin/blog/{postId}/tags',
+      '/v1/admin/blog/{postId}/translations/{localeCode}',
       // The category tree (D8): the whole tree, one category, create, edit, show/hide, and one locale.
       '/v1/admin/categories',
       '/v1/admin/categories/{categoryId}',
@@ -75,8 +85,18 @@ describe('OpenAPI document', () => {
       '/v1/admin/categories/{categoryId}/attributes/{definitionId}',
       '/v1/admin/categories/{categoryId}/state',
       '/v1/admin/categories/{categoryId}/translations/{localeCode}',
+      // 0098. The media library: a page of entries, the two halves of a signed upload, one entry's references,
+      // a staff-only signed preview, its alt text and its removal. There is deliberately no public counterpart —
+      // no public media delivery exists.
+      '/v1/admin/cms/media',
+      '/v1/admin/cms/media/uploads',
+      '/v1/admin/cms/media/{mediaId}',
+      '/v1/admin/cms/media/{mediaId}/alt-text',
+      '/v1/admin/cms/media/{mediaId}/preview',
+      '/v1/admin/cms/media/{mediaId}/usage',
       '/v1/admin/cms/pages',
       '/v1/admin/cms/pages/{pageId}',
+      '/v1/admin/cms/pages/{pageId}/cover',
       '/v1/admin/cms/pages/{pageId}/status',
       '/v1/admin/cms/pages/{pageId}/translations/{localeCode}',
       // 7-R: dispute management. Three reads and two writes, and **neither write moves money**: a resolution
@@ -88,6 +108,19 @@ describe('OpenAPI document', () => {
       '/v1/admin/disputes/{disputeId}',
       '/v1/admin/disputes/{disputeId}/messages',
       '/v1/admin/disputes/{disputeId}/resolution',
+      // 8-E (0095): the help centre. Six operations — an entry is created, changed, published, unpublished and
+      // removed, with the topic list beside them because which topics exist and which of them any public address
+      // shows is the one thing an operator cannot work out from the entries alone. The reorder is one request for
+      // a whole topic, for the reason every other reorder in this document is.
+      '/v1/admin/faqs',
+      '/v1/admin/faqs/reorder',
+      '/v1/admin/faqs/topics',
+      '/v1/admin/faqs/{faqId}',
+      '/v1/admin/faqs/{faqId}/state',
+      '/v1/admin/homepage/sections',
+      '/v1/admin/homepage/sections/reorder',
+      '/v1/admin/homepage/sections/{sectionId}',
+      '/v1/admin/homepage/sections/{sectionId}/state',
       '/v1/admin/moderation/listings',
       '/v1/admin/moderation/listings/{listingId}',
       '/v1/admin/moderation/listings/{listingId}/actions',
@@ -96,6 +129,18 @@ describe('OpenAPI document', () => {
       '/v1/admin/moderation/reports/{reportId}',
       '/v1/admin/moderation/reports/{reportId}/actions',
       '/v1/admin/moderation/reports/{reportId}/resolution',
+      // 8-E (0094): navigation. Eight operations — a menu is created, changed, shown, hidden and removed, and so
+      // is an entry, with one more route for promoting an entry out from under its heading, because an absent
+      // `parentId` on a change has to keep meaning "leave it where it is". The reorder is one request for a whole
+      // menu, for the reason every other reorder in this document is.
+      '/v1/admin/navigation/items',
+      '/v1/admin/navigation/items/reorder',
+      '/v1/admin/navigation/items/{itemId}',
+      '/v1/admin/navigation/items/{itemId}/promote',
+      '/v1/admin/navigation/items/{itemId}/state',
+      '/v1/admin/navigation/menus',
+      '/v1/admin/navigation/menus/{menuId}',
+      '/v1/admin/navigation/menus/{menuId}/state',
       // 7-Q: platform job runs and outbox health. Five operations and every one a GET — the group that
       // proves the point: the workers own every write to a run and to an event, and no writer for a retry,
       // a cancel, a requeue or a dead-letter replay exists, so no path here offers one. Sorted before
@@ -140,9 +185,18 @@ describe('OpenAPI document', () => {
       // and a removal — the only admin surface in this document with a real DELETE, because a map entry is an
       // instruction about an address rather than content with a history. There is no priority, group, pattern
       // or analytics path anywhere: none of those exists on this map.
+      // 8-F: per-entity metadata. A list, a detail, one `PUT` on the collection because a surface and a locale
+      // have one row and the request is that row, and a removal that returns the surface to its derived metadata.
+      '/v1/admin/seo/metadata',
+      '/v1/admin/seo/metadata/{entryId}',
       '/v1/admin/seo/redirects',
       '/v1/admin/seo/redirects/{redirectId}',
       '/v1/admin/seo/redirects/{redirectId}/state',
+      // 0096. Authoring only: the collection reads every active locale and the locale route writes or removes one.
+      // There is deliberately no public counterpart — `/v1/seo/robots` is 0086's and already serves the one column
+      // of this table that anything reads.
+      '/v1/admin/seo/settings',
+      '/v1/admin/seo/settings/{localeCode}',
       // 7-J: the Admin Only queue, one detail, the payment information behind its own permission, and the
       // one approved staff closure.
       '/v1/admin/service-requests',
@@ -189,6 +243,9 @@ describe('OpenAPI document', () => {
       '/v1/auth/totp/challenge',
       '/v1/auth/totp/enrol',
       '/v1/auth/totp/verify',
+      '/v1/blog',
+      '/v1/blog/taxonomy',
+      '/v1/blog/{slug}',
       '/v1/categories',
       '/v1/categories/{slug}',
       // 8-D: the listings in a category and every active category beneath it, with the filter panel that
@@ -196,7 +253,11 @@ describe('OpenAPI document', () => {
       '/v1/categories/{slug}/listings',
       '/v1/cms/pages',
       '/v1/cms/pages/{slug}',
+      // 8-E (0095): the published entries of one topic, read by the page that shows it. One operation, no writes:
+      // the public never authors a question.
+      '/v1/faqs',
       '/v1/foundation',
+      '/v1/homepage',
       '/v1/listings',
       '/v1/listings/{slug}',
       '/v1/messaging/conversations',
@@ -207,6 +268,9 @@ describe('OpenAPI document', () => {
       '/v1/messaging/conversations/{conversationId}/read',
       '/v1/messaging/reports',
       '/v1/messaging/unread-count',
+      // 8-E (0094): the public menus, read once per page for the whole chrome. One operation, no writes: the
+      // public never authors navigation.
+      '/v1/navigation',
       // Phase 7-C. Four operations and deliberately no fifth: notifications are created by the domains
       // that cause them, so there is no create path, and archiving is how a row leaves an inbox, so
       // there is no delete path either.
@@ -258,6 +322,9 @@ describe('OpenAPI document', () => {
       // numbered child sitemaps. Unauthenticated and read-only — every value exists to be served to a crawler.
       // The resolution route is asked only about a path the site has already decided answers 404, because the
       // approved precedence is LIVE PAGE WINS.
+      // 8-F's public read: addressed by slug or by route path, never by an identifier, so no internal id has to
+      // cross into a public response to make it possible.
+      '/v1/seo/metadata',
       '/v1/seo/redirects/resolve',
       '/v1/seo/robots',
       '/v1/seo/sitemap',

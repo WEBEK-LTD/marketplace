@@ -23,16 +23,36 @@ import { PublicLocaleSchema } from './categories.js';
 /**
  * The kinds of address a sitemap is built from.
  *
- * `route` is the public web's own: a handful of fixed landing paths (`/listings`, `/services`, `/categories`,
+ * `route` is the public web's own: the fixed landing paths (`/`, `/blog`, `/listings`, `/services`, `/categories`,
  * `/marketplace`) that exist in code rather than in a table, so the API neither counts nor enumerates them.
  * It is in this list because the sitemap index names it alongside the rest.
+ *
+ * `blog_post` joined the list in 0097. The blog shipped in 0092 with public, per-post indexability and no sitemap
+ * entry of any kind, which that increment recorded as deliberate — *"Sitemap inclusion for the blog is a separate
+ * future increment"* — and this is that increment. A post is listed only when it is published **and** its
+ * `is_indexable` is true, so this list and what a crawler is told at the address itself cannot disagree.
  */
-export const SITEMAP_ENTRY_TYPES = ['route', 'page', 'listing', 'service', 'category', 'seller'] as const;
+export const SITEMAP_ENTRY_TYPES = [
+  'route',
+  'page',
+  'blog_post',
+  'listing',
+  'service',
+  'category',
+  'seller',
+] as const;
 export type SitemapEntryType = (typeof SITEMAP_ENTRY_TYPES)[number];
 export const SitemapEntryTypeSchema = z.enum(SITEMAP_ENTRY_TYPES);
 
 /** The kinds the API answers for: every kind except the one the web app holds in code. */
-export const SITEMAP_API_ENTRY_TYPES = ['page', 'listing', 'service', 'category', 'seller'] as const;
+export const SITEMAP_API_ENTRY_TYPES = [
+  'page',
+  'blog_post',
+  'listing',
+  'service',
+  'category',
+  'seller',
+] as const;
 export type SitemapApiEntryType = (typeof SITEMAP_API_ENTRY_TYPES)[number];
 export const SitemapApiEntryTypeSchema = z.enum(SITEMAP_API_ENTRY_TYPES);
 
@@ -64,9 +84,20 @@ export const SITEMAP_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$/;
  * locale's row answered, which is the site's default: `robots.txt` is one document at the root of an origin
  * while `seo_settings` is keyed by locale.
  */
+/**
+ * How long an authored `robots.txt` body may be.
+ *
+ * A boundary bound and not 0030's: the column is `text` with no length. It exists so that a document stays small
+ * enough to serve in one response, and it is **exported** because the authoring request in `seo-settings.ts` reuses
+ * this very constant. Were authoring to allow a longer body than this response accepts, an operator could save a
+ * crawl policy that made `/robots.txt` fail validation and answer 503 — taking the robots document offline by
+ * writing one. One constant for both sides makes that unrepresentable.
+ */
+export const SEO_ROBOTS_BODY_MAX = 10_000;
+
 export const RobotsSettingsResponseSchema = z.object({
   locale: PublicLocaleSchema.nullable(),
-  body: z.string().max(10_000).nullable(),
+  body: z.string().max(SEO_ROBOTS_BODY_MAX).nullable(),
 });
 export type RobotsSettingsResponse = z.infer<typeof RobotsSettingsResponseSchema>;
 

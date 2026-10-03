@@ -19,6 +19,58 @@ import type {
   PublicCmsPageLinkDbRow,
 } from '../cms/cms-pages.service.js';
 import type {
+  BlogPublicStore,
+  PublicBlogPostDbRow,
+  PublicBlogPostListDbRow,
+  PublicBlogTaxonomyDbRow,
+} from '../cms/blog-public.service.js';
+import type {
+  BlogCategoryDbRow,
+  BlogPostDetailDbRow,
+  BlogPostListDbRow,
+  BlogPostTranslationDbRow,
+  BlogStore,
+  BlogTagDbRow,
+} from '../admin/blog.service.js';
+import type {
+  HomepageCategoryDbRow,
+  HomepageListingDbRow,
+  HomepagePostDbRow,
+  HomepagePublicStore,
+  HomepageSellerDbRow,
+  PublicHomepageSectionDbRow,
+} from '../cms/homepage-public.service.js';
+import type {
+  HomepageSectionDetailDbRow,
+  HomepageSectionListDbRow,
+  HomepageStore,
+} from '../admin/homepage.service.js';
+import type {
+  NavigationPublicStore,
+  PublicNavigationItemDbRow,
+} from '../cms/navigation-public.service.js';
+import type { FaqsPublicStore, PublicFaqDbRow } from '../cms/faqs-public.service.js';
+import type {
+  FaqDetailDbRow,
+  FaqListDbRow,
+  FaqTopicDbRow,
+  FaqsStore,
+} from '../admin/faqs.service.js';
+import type { SeoSettingsDbRow, SeoSettingsStore } from '../admin/seo-settings.service.js';
+import type {
+  CmsCoverMediaDbRow,
+  CmsMediaRow,
+  CmsMediaStore,
+  CmsMediaTargetRow,
+  CmsMediaUsageRow,
+} from '../admin/cms-media.service.js';
+import type {
+  NavigationItemDbRow,
+  NavigationMenuDetailDbRow,
+  NavigationMenuListDbRow,
+  NavigationStore,
+} from '../admin/navigation.service.js';
+import type {
   RedirectResolutionRow,
   RobotsBodyRow,
   SeoStore,
@@ -30,6 +82,12 @@ import type {
   SeoRedirectListDbRow,
   SeoRedirectsStore,
 } from '../admin/seo-redirects.service.js';
+import type {
+  PublicSeoMetadataDbRow,
+  SeoMetadataDetailDbRow,
+  SeoMetadataListDbRow,
+  SeoMetadataStore,
+} from '../admin/seo-metadata.service.js';
 import type {
   CategoriesStore,
   CategoryDetailDbRow,
@@ -383,8 +441,19 @@ export class AppSystemStore
     CategoryStore,
     CmsPagesStore,
     CmsPublicStore,
+    BlogPublicStore,
+    BlogStore,
+    HomepagePublicStore,
+    HomepageStore,
+    NavigationPublicStore,
+    NavigationStore,
+    FaqsPublicStore,
+    FaqsStore,
+    SeoSettingsStore,
+    CmsMediaStore,
     SeoStore,
     SeoRedirectsStore,
+    SeoMetadataStore,
     CategoriesStore,
     AttributesStore,
     SellerVocabularyStore,
@@ -6577,6 +6646,60 @@ export class AppSystemStore
     return result.rows[0]?.changed === true;
   }
 
+  /**
+   * `app_private.cms_page_cover_for_staff(...)` (0099). False when no such page.
+   *
+   * Three behaviours, and the caller picks one: a media id attaches it, `clearCover` removes whatever is
+   * there, and neither leaves the cover alone. A media id that names no library entry raises `23503`.
+   */
+  async cmsPageCoverForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    pageId: string;
+    coverMediaId: string | null;
+    clearCover: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ changed: boolean }>`
+      select app_private.cms_page_cover_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.pageId}::uuid,
+        ${input.coverMediaId}::uuid,
+        ${input.clearCover}::boolean
+      ) as changed
+    `.execute(this.db);
+
+    return result.rows[0]?.changed === true;
+  }
+
+  /**
+   * `app_private.cms_cover_media_for_staff(...)` (0099). The cover attached to one page or one post.
+   *
+   * No row covers all of: nothing attached, no such entity, an unrecognised entity type, and a caller
+   * without that section's read key. Reports the stored object path, never a URL.
+   */
+  async cmsCoverMediaForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    entityType: 'page' | 'blog_post';
+    entityId: string;
+  }): Promise<CmsCoverMediaDbRow | null> {
+    const result = await sql<CmsCoverMediaDbRow>`
+      select media_id as "mediaId",
+             object_path as "objectPath",
+             alt_text_en as "altTextEn",
+             alt_text_ar as "altTextAr"
+        from app_private.cms_cover_media_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.entityType}::text,
+          ${input.entityId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows[0] ?? null;
+  }
+
   /** `app_private.cms_page_status_for_staff(...)` (0085). The only writer that changes a page's state. */
   async cmsPageStatusForStaff(input: {
     userId: string;
@@ -6884,6 +7007,189 @@ export class AppSystemStore
   }
 
   // -------------------------------------------------------------------------------------------------
+  // Per-entity SEO metadata (0091)
+  // -------------------------------------------------------------------------------------------------
+  /**
+   * `app_private.public_seo_metadata_for_entity(text, text, text)` (0091). No row means no override.
+   *
+   * Addressed by slug, because two public contracts carry no identifier and the slug resolution belongs in the
+   * database anyway. The two owner decisions — a canonical withheld for a listing, a category and a seller, and
+   * directives reduced to their restrictions — are applied inside that function, so what arrives here is already
+   * what a page may act on.
+   */
+  async publicSeoMetadataForEntity(input: {
+    entityType: string;
+    slug: string;
+    locale: string;
+  }): Promise<PublicSeoMetadataDbRow | null> {
+    const result = await sql<{
+      meta_title: string | null;
+      meta_description: string | null;
+      canonical_path: string | null;
+      robots_directives: string[] | null;
+      og_title: string | null;
+      og_description: string | null;
+      share_object_path: string | null;
+    }>`
+      select meta_title, meta_description, canonical_path, robots_directives, og_title, og_description,
+             share_object_path
+        from app_private.public_seo_metadata_for_entity(
+          ${input.entityType}::text,
+          ${input.slug}::text,
+          ${input.locale}::text
+        )
+    `.execute(this.db);
+
+    return metadataRow(result.rows[0]);
+  }
+
+  /** `app_private.public_seo_metadata_for_route(text, text)` (0091). A route honours its stored canonical. */
+  async publicSeoMetadataForRoute(input: {
+    routePath: string;
+    locale: string;
+  }): Promise<PublicSeoMetadataDbRow | null> {
+    const result = await sql<{
+      meta_title: string | null;
+      meta_description: string | null;
+      canonical_path: string | null;
+      robots_directives: string[] | null;
+      og_title: string | null;
+      og_description: string | null;
+      share_object_path: string | null;
+    }>`
+      select meta_title, meta_description, canonical_path, robots_directives, og_title, og_description,
+             share_object_path
+        from app_private.public_seo_metadata_for_route(${input.routePath}::text, ${input.locale}::text)
+    `.execute(this.db);
+
+    return metadataRow(result.rows[0]);
+  }
+
+  /** `app_private.seo_metadata_for_staff(...)` (0091). Empty for a caller without `seo.metadata.read`. */
+  async seoMetadataForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    limit: number;
+    entityType: string | null;
+    locale: string | null;
+    cursorUpdatedAt: Date | null;
+    cursorId: string | null;
+  }): Promise<readonly SeoMetadataListDbRow[]> {
+    const result = await sql<MetadataListSqlRow>`
+      select entry_id, entity_type, entity_id, route_path, target_slug, locale_code, meta_title, meta_description,
+             canonical_path, robots_directives, og_title, og_description, share_media_id, canonical_is_honoured,
+             updated_at
+        from app_private.seo_metadata_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.limit}::integer,
+          ${input.entityType}::text,
+          ${input.locale}::text,
+          ${input.cursorUpdatedAt}::timestamptz,
+          ${input.cursorId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => metadataListRow(row));
+  }
+
+  /** `app_private.seo_metadata_entry_for_staff(uuid, boolean, uuid)` (0091). No row for absence or no permission. */
+  async seoMetadataEntryForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    entryId: string;
+  }): Promise<SeoMetadataDetailDbRow | null> {
+    const result = await sql<
+      MetadataListSqlRow & {
+        share_object_path: string | null;
+        effective_canonical_path: string | null;
+        effective_robots_directives: string[] | null;
+        created_at: Date;
+        updated_by: string | null;
+        can_manage: boolean;
+      }
+    >`
+      select entry_id, entity_type, entity_id, route_path, target_slug, locale_code, meta_title, meta_description,
+             canonical_path, robots_directives, og_title, og_description, share_media_id, canonical_is_honoured,
+             updated_at, share_object_path, effective_canonical_path, effective_robots_directives, created_at,
+             updated_by, can_manage
+        from app_private.seo_metadata_entry_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.entryId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) return null;
+    return {
+      ...metadataListRow(row),
+      shareObjectPath: row.share_object_path ?? null,
+      effectiveCanonicalPath: row.effective_canonical_path ?? null,
+      effectiveRobotsDirectives: row.effective_robots_directives ?? null,
+      createdAt: row.created_at,
+      updatedBy: row.updated_by ?? null,
+      canManage: row.can_manage,
+    };
+  }
+
+  /** `app_private.seo_metadata_save_for_staff(...)` (0091). Creating and replacing are the same call. */
+  async seoMetadataSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    entityType: string;
+    entityId: string | null;
+    routePath: string | null;
+    localeCode: string;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    canonicalPath: string | null;
+    robotsDirectives: readonly string[] | null;
+    ogTitle: string | null;
+    ogDescription: string | null;
+    shareMediaId: string | null;
+  }): Promise<string> {
+    const result = await sql<{ id: string }>`
+      select app_private.seo_metadata_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.entityType}::text,
+        ${input.entityId}::uuid,
+        ${input.routePath}::text,
+        ${input.localeCode}::text,
+        ${input.metaTitle}::text,
+        ${input.metaDescription}::text,
+        ${input.canonicalPath}::text,
+        ${input.robotsDirectives === null ? null : [...input.robotsDirectives]}::text[],
+        ${input.ogTitle}::text,
+        ${input.ogDescription}::text,
+        ${input.shareMediaId}::uuid
+      ) as id
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('The metadata override was not written.');
+    return row.id;
+  }
+
+  /** `app_private.seo_metadata_delete_for_staff(...)` (0091). False when no such entry. */
+  async seoMetadataDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    entryId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.seo_metadata_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.entryId}::uuid
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  // -------------------------------------------------------------------------------------------------
   // The SEO redirect map (0090)
   // -------------------------------------------------------------------------------------------------
   /**
@@ -7110,6 +7416,25 @@ export class AppSystemStore
     const result = await sql<{ slug: string; updated_at: Date; locales: string[] | null }>`
       select slug, updated_at, locales
         from app_private.public_sitemap_pages(${limit}::integer, ${offset}::integer)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      slug: row.slug,
+      updatedAt: row.updated_at,
+      locales: row.locales ?? [],
+    }));
+  }
+
+  /**
+   * `app_private.public_sitemap_blog_posts(integer, integer)` (0097). Carries the locales that resolve.
+   *
+   * Same shape as the page reader for the same reason: a post, like a static page, can be written in one language
+   * and not the other, so the locales it answers in are the database's answer rather than an assumption here.
+   */
+  async publicSitemapBlogPosts(limit: number, offset: number): Promise<readonly SitemapEntryRow[]> {
+    const result = await sql<{ slug: string; updated_at: Date; locales: string[] | null }>`
+      select slug, updated_at, locales
+        from app_private.public_sitemap_blog_posts(${limit}::integer, ${offset}::integer)
     `.execute(this.db);
 
     return result.rows.map((row) => ({
@@ -7731,6 +8056,1772 @@ export class AppSystemStore
 
     return { outcome: result.rows[0]?.outcome ?? 'not_found' };
   }
+
+  // -------------------------------------------------------------------------------------------------
+  // The blog (0092)
+  // -------------------------------------------------------------------------------------------------
+  /** `app_private.blog_post_for_public(text, text)` (0092): one post, one redirect, or absence. */
+  async blogPostForPublic(input: { slug: string; locale: string }): Promise<PublicBlogPostDbRow | null> {
+    const result = await sql<{
+      kind: string;
+      post_id: string | null;
+      slug: string | null;
+      is_indexable: boolean | null;
+      is_featured: boolean | null;
+      published_at: Date | null;
+      updated_at: Date | null;
+      category_slug: string | null;
+      category_name: string | null;
+      cover_object_path: string | null;
+      resolved_locale: string | null;
+      title: string | null;
+      excerpt: string | null;
+      body: string | null;
+      meta_title: string | null;
+      meta_description: string | null;
+      tag_slugs: string[] | null;
+      tag_names: string[] | null;
+    }>`
+      select kind, post_id, slug, is_indexable, is_featured, published_at, updated_at, category_slug,
+             category_name, cover_object_path, resolved_locale, title, excerpt, body, meta_title,
+             meta_description, tag_slugs, tag_names
+        from app_private.blog_post_for_public(${input.slug}::text, ${input.locale}::text)
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) return null;
+    return {
+      kind: row.kind,
+      postId: row.post_id ?? null,
+      slug: row.slug ?? null,
+      isIndexable: row.is_indexable ?? null,
+      isFeatured: row.is_featured ?? null,
+      publishedAt: row.published_at ?? null,
+      updatedAt: row.updated_at ?? null,
+      categorySlug: row.category_slug ?? null,
+      categoryName: row.category_name ?? null,
+      coverObjectPath: row.cover_object_path ?? null,
+      resolvedLocale: row.resolved_locale ?? null,
+      title: row.title ?? null,
+      excerpt: row.excerpt ?? null,
+      body: row.body ?? null,
+      metaTitle: row.meta_title ?? null,
+      metaDescription: row.meta_description ?? null,
+      tagSlugs: row.tag_slugs ?? null,
+      tagNames: row.tag_names ?? null,
+    };
+  }
+
+  /** `app_private.blog_posts_for_public(text, text, text, integer, timestamptz, uuid)` (0092). */
+  async blogPostsForPublic(input: {
+    locale: string;
+    categorySlug: string | null;
+    tagSlug: string | null;
+    limit: number;
+    cursorPublishedAt: Date | null;
+    cursorId: string | null;
+  }): Promise<readonly PublicBlogPostListDbRow[]> {
+    const result = await sql<{
+      post_id: string;
+      slug: string;
+      is_featured: boolean;
+      published_at: Date;
+      updated_at: Date;
+      category_slug: string | null;
+      category_name: string | null;
+      cover_object_path: string | null;
+      resolved_locale: string;
+      title: string;
+      excerpt: string | null;
+    }>`
+      select post_id, slug, is_featured, published_at, updated_at, category_slug, category_name,
+             cover_object_path, resolved_locale, title, excerpt
+        from app_private.blog_posts_for_public(
+          ${input.locale}::text,
+          ${input.categorySlug}::text,
+          ${input.tagSlug}::text,
+          ${input.limit}::integer,
+          ${input.cursorPublishedAt}::timestamptz,
+          ${input.cursorId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      postId: row.post_id,
+      slug: row.slug,
+      isFeatured: row.is_featured,
+      publishedAt: row.published_at,
+      updatedAt: row.updated_at,
+      categorySlug: row.category_slug ?? null,
+      categoryName: row.category_name ?? null,
+      coverObjectPath: row.cover_object_path ?? null,
+      resolvedLocale: row.resolved_locale,
+      title: row.title,
+      excerpt: row.excerpt ?? null,
+    }));
+  }
+
+  /** `app_private.blog_taxonomy_for_public(text)` (0092). */
+  async blogTaxonomyForPublic(locale: string): Promise<readonly PublicBlogTaxonomyDbRow[]> {
+    const result = await sql<{
+      entry_type: string;
+      entry_id: string;
+      slug: string;
+      name: string;
+      sort_order: number;
+      post_count: string;
+    }>`
+      select entry_type, entry_id, slug, name, sort_order, post_count
+        from app_private.blog_taxonomy_for_public(${locale}::text)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      entryType: row.entry_type,
+      entryId: row.entry_id,
+      slug: row.slug,
+      name: row.name,
+      sortOrder: Number(row.sort_order),
+      postCount: Number(row.post_count),
+    }));
+  }
+
+  /** `app_private.blog_posts_for_staff(uuid, boolean, integer, text, text, uuid, timestamptz, uuid)` (0092). */
+  async blogPostsForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    limit: number;
+    status: string | null;
+    search: string | null;
+    categoryId: string | null;
+    cursorUpdatedAt: Date | null;
+    cursorId: string | null;
+  }): Promise<readonly BlogPostListDbRow[]> {
+    const result = await sql<{
+      post_id: string;
+      slug: string;
+      status: string;
+      blog_category_id: string | null;
+      category_slug: string | null;
+      is_indexable: boolean;
+      is_featured: boolean;
+      scheduled_for: Date | null;
+      published_at: Date | null;
+      archived_at: Date | null;
+      updated_at: Date;
+      translated_locales: string[] | null;
+      tag_count: number;
+      title: string | null;
+    }>`
+      select post_id, slug, status, blog_category_id, category_slug, is_indexable, is_featured,
+             scheduled_for, published_at, archived_at, updated_at, translated_locales, tag_count, title
+        from app_private.blog_posts_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.limit}::integer,
+          ${input.status}::text,
+          ${input.search}::text,
+          ${input.categoryId}::uuid,
+          ${input.cursorUpdatedAt}::timestamptz,
+          ${input.cursorId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      postId: row.post_id,
+      slug: row.slug,
+      status: row.status,
+      blogCategoryId: row.blog_category_id ?? null,
+      categorySlug: row.category_slug ?? null,
+      isIndexable: row.is_indexable,
+      isFeatured: row.is_featured,
+      scheduledFor: row.scheduled_for ?? null,
+      publishedAt: row.published_at ?? null,
+      archivedAt: row.archived_at ?? null,
+      updatedAt: row.updated_at,
+      translatedLocales: row.translated_locales ?? null,
+      tagCount: Number(row.tag_count),
+      title: row.title ?? null,
+    }));
+  }
+
+  /** `app_private.blog_post_for_staff(uuid, boolean, uuid)` (0092). */
+  async blogPostForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+  }): Promise<BlogPostDetailDbRow | null> {
+    const result = await sql<{
+      post_id: string;
+      slug: string;
+      status: string;
+      blog_category_id: string | null;
+      category_slug: string | null;
+      is_indexable: boolean;
+      is_featured: boolean;
+      cover_media_id: string | null;
+      cover_object_path: string | null;
+      author_user_id: string | null;
+      scheduled_for: Date | null;
+      published_at: Date | null;
+      archived_at: Date | null;
+      created_at: Date;
+      updated_at: Date;
+      created_by: string | null;
+      updated_by: string | null;
+      can_manage: boolean;
+      previous_slugs: string[] | null;
+      translated_locales: string[] | null;
+      tag_ids: string[] | null;
+    }>`
+      select post_id, slug, status, blog_category_id, category_slug, is_indexable, is_featured,
+             cover_media_id, cover_object_path, author_user_id, scheduled_for, published_at, archived_at,
+             created_at, updated_at, created_by, updated_by, can_manage, previous_slugs,
+             translated_locales, tag_ids
+        from app_private.blog_post_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.postId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) return null;
+    return {
+      postId: row.post_id,
+      slug: row.slug,
+      status: row.status,
+      blogCategoryId: row.blog_category_id ?? null,
+      categorySlug: row.category_slug ?? null,
+      isIndexable: row.is_indexable,
+      isFeatured: row.is_featured,
+      coverMediaId: row.cover_media_id ?? null,
+      coverObjectPath: row.cover_object_path ?? null,
+      authorUserId: row.author_user_id ?? null,
+      scheduledFor: row.scheduled_for ?? null,
+      publishedAt: row.published_at ?? null,
+      archivedAt: row.archived_at ?? null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      createdBy: row.created_by ?? null,
+      updatedBy: row.updated_by ?? null,
+      canManage: row.can_manage,
+      previousSlugs: row.previous_slugs ?? null,
+      translatedLocales: row.translated_locales ?? null,
+      tagIds: row.tag_ids ?? null,
+    };
+  }
+
+  /** `app_private.blog_post_translations_for_staff(uuid, boolean, uuid)` (0092). */
+  async blogPostTranslationsForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+  }): Promise<readonly BlogPostTranslationDbRow[]> {
+    const result = await sql<{
+      locale_code: string;
+      title: string;
+      excerpt: string | null;
+      body: string;
+      meta_title: string | null;
+      meta_description: string | null;
+      updated_at: Date;
+    }>`
+      select locale_code, title, excerpt, body, meta_title, meta_description, updated_at
+        from app_private.blog_post_translations_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.postId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      localeCode: row.locale_code,
+      title: row.title,
+      excerpt: row.excerpt ?? null,
+      body: row.body,
+      metaTitle: row.meta_title ?? null,
+      metaDescription: row.meta_description ?? null,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  /** `app_private.blog_categories_for_staff(uuid, boolean)` (0092). */
+  async blogCategoriesForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+  }): Promise<readonly BlogCategoryDbRow[]> {
+    const result = await sql<{
+      category_id: string;
+      slug: string;
+      name_en: string;
+      name_ar: string | null;
+      description_en: string | null;
+      description_ar: string | null;
+      sort_order: number;
+      is_active: boolean;
+      post_count: string;
+      updated_at: Date;
+    }>`
+      select category_id, slug, name_en, name_ar, description_en, description_ar, sort_order, is_active,
+             post_count, updated_at
+        from app_private.blog_categories_for_staff(${input.userId}::uuid, ${input.isAal2}::boolean)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      categoryId: row.category_id,
+      slug: row.slug,
+      nameEn: row.name_en,
+      nameAr: row.name_ar ?? null,
+      descriptionEn: row.description_en ?? null,
+      descriptionAr: row.description_ar ?? null,
+      sortOrder: Number(row.sort_order),
+      isActive: row.is_active,
+      postCount: Number(row.post_count),
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  /** `app_private.blog_tags_for_staff(uuid, boolean)` (0092). */
+  async blogTagsForStaff(input: { userId: string; isAal2: boolean }): Promise<readonly BlogTagDbRow[]> {
+    const result = await sql<{
+      tag_id: string;
+      slug: string;
+      name_en: string;
+      name_ar: string | null;
+      is_active: boolean;
+      post_count: string;
+      updated_at: Date;
+    }>`
+      select tag_id, slug, name_en, name_ar, is_active, post_count, updated_at
+        from app_private.blog_tags_for_staff(${input.userId}::uuid, ${input.isAal2}::boolean)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      tagId: row.tag_id,
+      slug: row.slug,
+      nameEn: row.name_en,
+      nameAr: row.name_ar ?? null,
+      isActive: row.is_active,
+      postCount: Number(row.post_count),
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  /** `app_private.blog_post_create_for_staff(uuid, boolean, text, uuid, boolean)` (0092). */
+  async blogPostCreateForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    slug: string;
+    categoryId: string | null;
+    isIndexable: boolean;
+  }): Promise<string> {
+    const result = await sql<{ id: string }>`
+      select app_private.blog_post_create_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.slug}::text,
+        ${input.categoryId}::uuid,
+        ${input.isIndexable}::boolean
+      ) as id
+    `.execute(this.db);
+
+    const id = result.rows[0]?.id;
+    if (id === undefined || id === null) throw new Error('The post was not created.');
+    return id;
+  }
+
+  /** `app_private.blog_post_update_for_staff(...)` (0092). */
+  async blogPostUpdateForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+    slug: string | null;
+    categoryId: string | null;
+    clearCategory: boolean;
+    coverMediaId: string | null;
+    clearCover: boolean;
+    isIndexable: boolean | null;
+    isFeatured: boolean | null;
+  }): Promise<boolean> {
+    const result = await sql<{ updated: boolean }>`
+      select app_private.blog_post_update_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.postId}::uuid,
+        ${input.slug}::text,
+        ${input.categoryId}::uuid,
+        ${input.clearCategory}::boolean,
+        ${input.coverMediaId}::uuid,
+        ${input.clearCover}::boolean,
+        ${input.isIndexable}::boolean,
+        ${input.isFeatured}::boolean
+      ) as updated
+    `.execute(this.db);
+
+    return result.rows[0]?.updated === true;
+  }
+
+  /** `app_private.blog_post_status_for_staff(uuid, boolean, uuid, text, timestamptz)` (0092). */
+  async blogPostStatusForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+    status: string;
+    scheduledFor: Date | null;
+  }): Promise<boolean> {
+    const result = await sql<{ updated: boolean }>`
+      select app_private.blog_post_status_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.postId}::uuid,
+        ${input.status}::text,
+        ${input.scheduledFor}::timestamptz
+      ) as updated
+    `.execute(this.db);
+
+    return result.rows[0]?.updated === true;
+  }
+
+  /** `app_private.blog_post_translation_save_for_staff(...)` (0092). */
+  async blogPostTranslationSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+    localeCode: string;
+    title: string;
+    body: string;
+    excerpt: string | null;
+    metaTitle: string | null;
+    metaDescription: string | null;
+  }): Promise<boolean> {
+    const result = await sql<{ saved: boolean }>`
+      select app_private.blog_post_translation_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.postId}::uuid,
+        ${input.localeCode}::text,
+        ${input.title}::text,
+        ${input.body}::text,
+        ${input.excerpt}::text,
+        ${input.metaTitle}::text,
+        ${input.metaDescription}::text
+      ) as saved
+    `.execute(this.db);
+
+    return result.rows[0]?.saved === true;
+  }
+
+  /** `app_private.blog_post_translation_delete_for_staff(uuid, boolean, uuid, text)` (0092). */
+  async blogPostTranslationDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+    localeCode: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.blog_post_translation_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.postId}::uuid,
+        ${input.localeCode}::text
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  /** `app_private.blog_post_tags_set_for_staff(uuid, boolean, uuid, uuid[])` (0092). */
+  async blogPostTagsSetForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    postId: string;
+    tagIds: readonly string[];
+  }): Promise<boolean> {
+    const result = await sql<{ saved: boolean }>`
+      select app_private.blog_post_tags_set_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.postId}::uuid,
+        ${[...input.tagIds]}::uuid[]
+      ) as saved
+    `.execute(this.db);
+
+    return result.rows[0]?.saved === true;
+  }
+
+  /** `app_private.blog_category_save_for_staff(...)` (0092). Null means the named category does not exist. */
+  async blogCategorySaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    categoryId: string | null;
+    slug: string | null;
+    nameEn: string | null;
+    nameAr: string | null;
+    descriptionEn: string | null;
+    descriptionAr: string | null;
+    sortOrder: number | null;
+    isActive: boolean | null;
+  }): Promise<string | null> {
+    const result = await sql<{ id: string | null }>`
+      select app_private.blog_category_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.categoryId}::uuid,
+        ${input.slug}::text,
+        ${input.nameEn}::text,
+        ${input.nameAr}::text,
+        ${input.descriptionEn}::text,
+        ${input.descriptionAr}::text,
+        ${input.sortOrder}::integer,
+        ${input.isActive}::boolean
+      ) as id
+    `.execute(this.db);
+
+    return result.rows[0]?.id ?? null;
+  }
+
+  /** `app_private.blog_tag_save_for_staff(...)` (0092). Null means the named tag does not exist. */
+  async blogTagSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    tagId: string | null;
+    slug: string | null;
+    nameEn: string | null;
+    nameAr: string | null;
+    isActive: boolean | null;
+  }): Promise<string | null> {
+    const result = await sql<{ id: string | null }>`
+      select app_private.blog_tag_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.tagId}::uuid,
+        ${input.slug}::text,
+        ${input.nameEn}::text,
+        ${input.nameAr}::text,
+        ${input.isActive}::boolean
+      ) as id
+    `.execute(this.db);
+
+    return result.rows[0]?.id ?? null;
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // The homepage (0093)
+  // -------------------------------------------------------------------------------------------------
+  /** `app_private.public_homepage_sections(text)` (0093). */
+  async publicHomepageSections(locale: string): Promise<readonly PublicHomepageSectionDbRow[]> {
+    const result = await sql<{
+      section_id: string;
+      section_key: string;
+      section_type: string;
+      title: string | null;
+      subtitle: string | null;
+      sort_order: number;
+      config: unknown;
+    }>`
+      select section_id, section_key, section_type, title, subtitle, sort_order, config
+        from app_private.public_homepage_sections(${locale}::text)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      sectionId: row.section_id,
+      sectionKey: row.section_key,
+      sectionType: row.section_type,
+      title: row.title ?? null,
+      subtitle: row.subtitle ?? null,
+      sortOrder: Number(row.sort_order),
+      config: row.config,
+    }));
+  }
+
+  /** `app_private.public_homepage_listings(uuid[], integer)` (0093). Order is the administrator's. */
+  async publicHomepageListings(input: {
+    ids: readonly string[];
+    limit: number;
+  }): Promise<readonly HomepageListingDbRow[]> {
+    const result = await sql<HomepageListingSqlRow>`
+      select result_type, slug, title, city, price_minor, currency_code, currency_minor_unit, is_negotiable
+        from app_private.public_homepage_listings(${[...input.ids]}::uuid[], ${input.limit}::integer)
+       order by chosen_position
+    `.execute(this.db);
+
+    return result.rows.map(homepageListingRow);
+  }
+
+  /** `app_private.public_homepage_latest_listings(integer)` (0093). */
+  async publicHomepageLatestListings(limit: number): Promise<readonly HomepageListingDbRow[]> {
+    const result = await sql<HomepageListingSqlRow>`
+      select result_type, slug, title, city, price_minor, currency_code, currency_minor_unit, is_negotiable
+        from app_private.public_homepage_latest_listings(${limit}::integer)
+    `.execute(this.db);
+
+    return result.rows.map(homepageListingRow);
+  }
+
+  /** `app_private.public_homepage_categories(uuid[], text, integer)` (0093). */
+  async publicHomepageCategories(input: {
+    ids: readonly string[];
+    locale: string;
+    limit: number;
+  }): Promise<readonly HomepageCategoryDbRow[]> {
+    const result = await sql<{
+      slug: string;
+      name: string;
+      listing_type_code: string | null;
+      icon: string | null;
+    }>`
+      select slug, name, listing_type_code, icon
+        from app_private.public_homepage_categories(
+          ${[...input.ids]}::uuid[],
+          ${input.locale}::text,
+          ${input.limit}::integer
+        )
+       order by chosen_position
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      slug: row.slug,
+      name: row.name,
+      listingTypeCode: row.listing_type_code ?? null,
+      icon: row.icon ?? null,
+    }));
+  }
+
+  /** `app_private.public_homepage_sellers(uuid[], integer)` (0093). */
+  async publicHomepageSellers(input: {
+    ids: readonly string[];
+    limit: number;
+  }): Promise<readonly HomepageSellerDbRow[]> {
+    const result = await sql<{
+      slug: string;
+      display_name: string;
+      city: string | null;
+      bio: string | null;
+    }>`
+      select slug, display_name, city, bio
+        from app_private.public_homepage_sellers(${[...input.ids]}::uuid[], ${input.limit}::integer)
+       order by chosen_position
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      slug: row.slug,
+      displayName: row.display_name,
+      city: row.city ?? null,
+      bio: row.bio ?? null,
+    }));
+  }
+
+  /** `app_private.public_homepage_posts(text, integer)` (0093). */
+  async publicHomepagePosts(input: {
+    locale: string;
+    limit: number;
+  }): Promise<readonly HomepagePostDbRow[]> {
+    const result = await sql<{
+      slug: string;
+      resolved_locale: string;
+      title: string;
+      excerpt: string | null;
+      category_slug: string | null;
+      category_name: string | null;
+      published_at: Date;
+    }>`
+      select slug, resolved_locale, title, excerpt, category_slug, category_name, published_at
+        from app_private.public_homepage_posts(${input.locale}::text, ${input.limit}::integer)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      slug: row.slug,
+      resolvedLocale: row.resolved_locale,
+      title: row.title,
+      excerpt: row.excerpt ?? null,
+      categorySlug: row.category_slug ?? null,
+      categoryName: row.category_name ?? null,
+      publishedAt: row.published_at,
+    }));
+  }
+
+  /** `app_private.homepage_sections_for_staff(uuid, boolean)` (0093). */
+  async homepageSectionsForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+  }): Promise<readonly HomepageSectionListDbRow[]> {
+    const result = await sql<HomepageSectionSqlRow>`
+      select section_id, section_key, section_type, title_en, title_ar, subtitle_en, subtitle_ar, config,
+             sort_order, is_active, is_served, updated_at
+        from app_private.homepage_sections_for_staff(${input.userId}::uuid, ${input.isAal2}::boolean)
+    `.execute(this.db);
+
+    return result.rows.map(homepageSectionRow);
+  }
+
+  /** `app_private.homepage_section_for_staff(uuid, boolean, uuid)` (0093). */
+  async homepageSectionForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    sectionId: string;
+  }): Promise<HomepageSectionDetailDbRow | null> {
+    const result = await sql<
+      HomepageSectionSqlRow & {
+        created_at: Date;
+        can_manage: boolean;
+        chosen_count: number;
+        renderable_count: number;
+      }
+    >`
+      select section_id, section_key, section_type, title_en, title_ar, subtitle_en, subtitle_ar, config,
+             sort_order, is_active, is_served, created_at, updated_at, can_manage, chosen_count,
+             renderable_count
+        from app_private.homepage_section_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.sectionId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) return null;
+    return {
+      ...homepageSectionRow(row),
+      createdAt: row.created_at,
+      canManage: row.can_manage,
+      chosenCount: Number(row.chosen_count),
+      renderableCount: Number(row.renderable_count),
+    };
+  }
+
+  /** `app_private.homepage_section_save_for_staff(...)` (0093). Null means the named section does not exist. */
+  async homepageSectionSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    sectionId: string | null;
+    sectionKey: string | null;
+    sectionType: string | null;
+    titleEn: string | null;
+    titleAr: string | null;
+    subtitleEn: string | null;
+    subtitleAr: string | null;
+    config: unknown;
+    sortOrder: number | null;
+  }): Promise<string | null> {
+    // `null` for an absent document rather than `{}`: the writer reads null as "leave the stored config alone",
+    // and an empty object would silently clear it on every edit that did not mean to.
+    const config = input.config === null || input.config === undefined ? null : JSON.stringify(input.config);
+    const result = await sql<{ id: string | null }>`
+      select app_private.homepage_section_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.sectionId}::uuid,
+        ${input.sectionKey}::text,
+        ${input.sectionType}::text,
+        ${input.titleEn}::text,
+        ${input.titleAr}::text,
+        ${input.subtitleEn}::text,
+        ${input.subtitleAr}::text,
+        ${config}::jsonb,
+        ${input.sortOrder}::integer
+      ) as id
+    `.execute(this.db);
+
+    return result.rows[0]?.id ?? null;
+  }
+
+  /** `app_private.homepage_section_state_for_staff(uuid, boolean, uuid, boolean)` (0093). */
+  async homepageSectionStateForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    sectionId: string;
+    isActive: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ updated: boolean }>`
+      select app_private.homepage_section_state_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.sectionId}::uuid,
+        ${input.isActive}::boolean
+      ) as updated
+    `.execute(this.db);
+
+    return result.rows[0]?.updated === true;
+  }
+
+  /** `app_private.homepage_sections_reorder_for_staff(uuid, boolean, uuid[])` (0093). */
+  async homepageSectionsReorderForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    sectionIds: readonly string[];
+  }): Promise<number> {
+    const result = await sql<{ moved: number }>`
+      select app_private.homepage_sections_reorder_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${[...input.sectionIds]}::uuid[]
+      ) as moved
+    `.execute(this.db);
+
+    return Number(result.rows[0]?.moved ?? 0);
+  }
+
+  /** `app_private.homepage_section_delete_for_staff(uuid, boolean, uuid)` (0093). */
+  async homepageSectionDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    sectionId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.homepage_section_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.sectionId}::uuid
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // Navigation (0094)
+  // -------------------------------------------------------------------------------------------------
+  /**
+   * `app_private.public_navigation_items(text[], text)` (0094).
+   *
+   * One round trip for every menu a page renders. The order is the function's own — a parent before the children
+   * that sit under it — so this method sends no `order by` of its own and the service relies on it.
+   */
+  async publicNavigationItems(input: {
+    menuKeys: readonly string[];
+    locale: string;
+  }): Promise<readonly PublicNavigationItemDbRow[]> {
+    const result = await sql<{
+      menu_key: string;
+      menu_label: string | null;
+      item_id: string;
+      parent_item_id: string | null;
+      depth: number;
+      label: string | null;
+      target_kind: string;
+      target_slug: string | null;
+      target_path: string | null;
+      opens_in_new_tab: boolean | null;
+      sort_order: number;
+    }>`
+      select menu_key, menu_label, item_id, parent_item_id, depth, label, target_kind, target_slug,
+             target_path, opens_in_new_tab, sort_order
+        from app_private.public_navigation_items(${[...input.menuKeys]}::text[], ${input.locale}::text)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      menuKey: row.menu_key,
+      menuLabel: row.menu_label ?? null,
+      itemId: row.item_id,
+      parentItemId: row.parent_item_id ?? null,
+      depth: Number(row.depth),
+      label: row.label ?? null,
+      targetKind: row.target_kind,
+      targetSlug: row.target_slug ?? null,
+      targetPath: row.target_path ?? null,
+      opensInNewTab: row.opens_in_new_tab ?? null,
+      sortOrder: Number(row.sort_order),
+    }));
+  }
+
+  /** `app_private.navigation_menus_for_staff(uuid, boolean)` (0094). */
+  async navigationMenusForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+  }): Promise<readonly NavigationMenuListDbRow[]> {
+    const result = await sql<NavigationMenuSqlRow>`
+      select menu_id, menu_key, label_en, label_ar, is_active, is_served, item_count,
+             renderable_item_count, created_at, updated_at, false as can_manage
+        from app_private.navigation_menus_for_staff(${input.userId}::uuid, ${input.isAal2}::boolean)
+    `.execute(this.db);
+
+    return result.rows.map(navigationMenuRow);
+  }
+
+  /** `app_private.navigation_menu_for_staff(uuid, boolean, uuid)` (0094). */
+  async navigationMenuForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    menuId: string;
+  }): Promise<NavigationMenuDetailDbRow | null> {
+    const result = await sql<NavigationMenuSqlRow>`
+      select menu_id, menu_key, label_en, label_ar, is_active, is_served, item_count,
+             renderable_item_count, created_at, updated_at, can_manage
+        from app_private.navigation_menu_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.menuId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    return row === undefined ? null : navigationMenuRow(row);
+  }
+
+  /** `app_private.navigation_items_for_staff(uuid, boolean, uuid, text)` (0094). Tree order is the function's. */
+  async navigationItemsForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    menuId: string;
+    locale: string;
+  }): Promise<readonly NavigationItemDbRow[]> {
+    const result = await sql<{
+      item_id: string;
+      parent_item_id: string | null;
+      depth: number;
+      label_en: string;
+      label_ar: string | null;
+      target_kind: string;
+      page_id: string | null;
+      blog_post_id: string | null;
+      category_id: string | null;
+      target_path: string | null;
+      target_slug: string | null;
+      target_title: string | null;
+      target_state: string;
+      opens_in_new_tab: boolean;
+      sort_order: number;
+      is_active: boolean;
+      created_at: Date | string;
+      updated_at: Date | string;
+    }>`
+      select item_id, parent_item_id, depth, label_en, label_ar, target_kind, page_id, blog_post_id,
+             category_id, target_path, target_slug, target_title, target_state, opens_in_new_tab,
+             sort_order, is_active, created_at, updated_at
+        from app_private.navigation_items_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.menuId}::uuid,
+          ${input.locale}::text
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      itemId: row.item_id,
+      parentItemId: row.parent_item_id ?? null,
+      depth: Number(row.depth),
+      labelEn: row.label_en,
+      labelAr: row.label_ar ?? null,
+      targetKind: row.target_kind,
+      pageId: row.page_id ?? null,
+      blogPostId: row.blog_post_id ?? null,
+      categoryId: row.category_id ?? null,
+      targetPath: row.target_path ?? null,
+      targetSlug: row.target_slug ?? null,
+      targetTitle: row.target_title ?? null,
+      targetState: row.target_state,
+      opensInNewTab: row.opens_in_new_tab === true,
+      sortOrder: Number(row.sort_order),
+      isActive: row.is_active === true,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  /** `app_private.navigation_menu_save_for_staff(...)` (0094). Null means the id named nothing. */
+  async navigationMenuSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    menuId: string | null;
+    menuKey: string | null;
+    labelEn: string | null;
+    labelAr: string | null;
+  }): Promise<string | null> {
+    const result = await sql<{ id: string | null }>`
+      select app_private.navigation_menu_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.menuId}::uuid,
+        ${input.menuKey}::text,
+        ${input.labelEn}::text,
+        ${input.labelAr}::text
+      ) as id
+    `.execute(this.db);
+
+    return result.rows[0]?.id ?? null;
+  }
+
+  /** `app_private.navigation_menu_state_for_staff(uuid, boolean, uuid, boolean)` (0094). */
+  async navigationMenuStateForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    menuId: string;
+    isActive: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ changed: boolean }>`
+      select app_private.navigation_menu_state_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.menuId}::uuid,
+        ${input.isActive}::boolean
+      ) as changed
+    `.execute(this.db);
+
+    return result.rows[0]?.changed === true;
+  }
+
+  /** `app_private.navigation_menu_delete_for_staff(uuid, boolean, uuid)` (0094). */
+  async navigationMenuDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    menuId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.navigation_menu_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.menuId}::uuid
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  /**
+   * `app_private.navigation_item_save_for_staff(...)` (0094). Null means the id named nothing.
+   *
+   * The four target columns are passed together: naming a kind replaces all four in one statement, and sending
+   * none leaves the target alone. That is the writer's contract, not this method's opinion.
+   */
+  async navigationItemSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    itemId: string | null;
+    menuId: string | null;
+    labelEn: string | null;
+    labelAr: string | null;
+    targetKind: string | null;
+    pageId: string | null;
+    blogPostId: string | null;
+    categoryId: string | null;
+    path: string | null;
+    parentId: string | null;
+    opensInNewTab: boolean | null;
+    sortOrder: number | null;
+  }): Promise<string | null> {
+    const result = await sql<{ id: string | null }>`
+      select app_private.navigation_item_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.itemId}::uuid,
+        ${input.menuId}::uuid,
+        ${input.labelEn}::text,
+        ${input.labelAr}::text,
+        ${input.targetKind}::text,
+        ${input.pageId}::uuid,
+        ${input.blogPostId}::uuid,
+        ${input.categoryId}::uuid,
+        ${input.path}::text,
+        ${input.parentId}::uuid,
+        ${input.opensInNewTab}::boolean,
+        ${input.sortOrder}::integer
+      ) as id
+    `.execute(this.db);
+
+    return result.rows[0]?.id ?? null;
+  }
+
+  /** `app_private.navigation_item_promote_for_staff(uuid, boolean, uuid)` (0094). */
+  async navigationItemPromoteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    itemId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ changed: boolean }>`
+      select app_private.navigation_item_promote_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.itemId}::uuid
+      ) as changed
+    `.execute(this.db);
+
+    return result.rows[0]?.changed === true;
+  }
+
+  /** `app_private.navigation_item_state_for_staff(uuid, boolean, uuid, boolean)` (0094). */
+  async navigationItemStateForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    itemId: string;
+    isActive: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ changed: boolean }>`
+      select app_private.navigation_item_state_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.itemId}::uuid,
+        ${input.isActive}::boolean
+      ) as changed
+    `.execute(this.db);
+
+    return result.rows[0]?.changed === true;
+  }
+
+  /** `app_private.navigation_items_reorder_for_staff(uuid, boolean, uuid, uuid[])` (0094). */
+  async navigationItemsReorderForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    menuId: string;
+    itemIds: readonly string[];
+  }): Promise<number> {
+    const result = await sql<{ moved: number }>`
+      select app_private.navigation_items_reorder_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.menuId}::uuid,
+        ${[...input.itemIds]}::uuid[]
+      ) as moved
+    `.execute(this.db);
+
+    return Number(result.rows[0]?.moved ?? 0);
+  }
+
+  /** `app_private.navigation_item_delete_for_staff(uuid, boolean, uuid)` (0094). */
+  async navigationItemDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    itemId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.navigation_item_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.itemId}::uuid
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // The help centre (0095)
+  // -------------------------------------------------------------------------------------------------
+  /** `app_private.public_faqs(text, text)` (0095). The order is the operator's own. */
+  async publicFaqs(input: { topic: string; locale: string }): Promise<readonly PublicFaqDbRow[]> {
+    const result = await sql<{
+      faq_id: string;
+      question: string;
+      answer: string;
+      sort_order: number;
+    }>`
+      select faq_id, question, answer, sort_order
+        from app_private.public_faqs(${input.topic}::text, ${input.locale}::text)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      faqId: row.faq_id,
+      question: row.question,
+      answer: row.answer,
+      sortOrder: Number(row.sort_order),
+    }));
+  }
+
+  /** `app_private.faq_topics_for_staff(uuid, boolean)` (0095). */
+  async faqTopicsForStaff(input: { userId: string; isAal2: boolean }): Promise<readonly FaqTopicDbRow[]> {
+    const result = await sql<{
+      topic: string;
+      entry_count: number;
+      published_count: number;
+      is_mapped: boolean;
+      page_slug: string | null;
+    }>`
+      select topic, entry_count, published_count, is_mapped, page_slug
+        from app_private.faq_topics_for_staff(${input.userId}::uuid, ${input.isAal2}::boolean)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      topic: row.topic,
+      entryCount: Number(row.entry_count),
+      publishedCount: Number(row.published_count),
+      isMapped: row.is_mapped === true,
+      pageSlug: row.page_slug ?? null,
+    }));
+  }
+
+  /**
+   * `app_private.faqs_for_staff(uuid, boolean, text, text, integer, uuid, integer)` (0095).
+   *
+   * The cursor arrives as three typed parameters rather than as text: a position is bound, never interpolated.
+   */
+  async faqsForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    topic: string | null;
+    afterTopic: string | null;
+    afterSortOrder: number | null;
+    afterId: string | null;
+    limit: number;
+  }): Promise<readonly FaqListDbRow[]> {
+    const result = await sql<FaqSqlRow>`
+      select faq_id, topic, question_en, question_ar, answer_en, answer_ar, sort_order, is_published,
+             is_mapped, page_slug, created_at, updated_at, false as can_manage
+        from app_private.faqs_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.topic}::text,
+          ${input.afterTopic}::text,
+          ${input.afterSortOrder}::integer,
+          ${input.afterId}::uuid,
+          ${input.limit}::integer
+        )
+    `.execute(this.db);
+
+    return result.rows.map(faqRow);
+  }
+
+  /** `app_private.faq_for_staff(uuid, boolean, uuid)` (0095). */
+  async faqForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    faqId: string;
+  }): Promise<FaqDetailDbRow | null> {
+    const result = await sql<FaqSqlRow>`
+      select faq_id, topic, question_en, question_ar, answer_en, answer_ar, sort_order, is_published,
+             is_mapped, page_slug, created_at, updated_at, can_manage
+        from app_private.faq_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.faqId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    return row === undefined ? null : faqRow(row);
+  }
+
+  /** `app_private.faq_save_for_staff(...)` (0095). Null means the id named nothing. */
+  async faqSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    faqId: string | null;
+    topic: string | null;
+    questionEn: string | null;
+    questionAr: string | null;
+    answerEn: string | null;
+    answerAr: string | null;
+    sortOrder: number | null;
+  }): Promise<string | null> {
+    const result = await sql<{ id: string | null }>`
+      select app_private.faq_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.faqId}::uuid,
+        ${input.topic}::text,
+        ${input.questionEn}::text,
+        ${input.questionAr}::text,
+        ${input.answerEn}::text,
+        ${input.answerAr}::text,
+        ${input.sortOrder}::integer
+      ) as id
+    `.execute(this.db);
+
+    return result.rows[0]?.id ?? null;
+  }
+
+  /** `app_private.faq_state_for_staff(uuid, boolean, uuid, boolean)` (0095). */
+  async faqStateForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    faqId: string;
+    isPublished: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ changed: boolean }>`
+      select app_private.faq_state_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.faqId}::uuid,
+        ${input.isPublished}::boolean
+      ) as changed
+    `.execute(this.db);
+
+    return result.rows[0]?.changed === true;
+  }
+
+  /** `app_private.faqs_reorder_for_staff(uuid, boolean, text, uuid[])` (0095). */
+  async faqsReorderForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    topic: string;
+    faqIds: readonly string[];
+  }): Promise<number> {
+    const result = await sql<{ moved: number }>`
+      select app_private.faqs_reorder_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.topic}::text,
+        ${[...input.faqIds]}::uuid[]
+      ) as moved
+    `.execute(this.db);
+
+    return Number(result.rows[0]?.moved ?? 0);
+  }
+
+  /** `app_private.faq_delete_for_staff(uuid, boolean, uuid)` (0095). */
+  async faqDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    faqId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.faq_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.faqId}::uuid
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // The CMS media library (0098)
+  // -------------------------------------------------------------------------------------------------
+  /** `app_private.cms_media_upload_target(uuid, boolean, text, bigint)` (0098). */
+  async cmsMediaUploadTarget(input: {
+    userId: string;
+    isAal2: boolean;
+    contentType: string;
+    byteSize: number;
+  }): Promise<CmsMediaTargetRow> {
+    const result = await sql<{
+      outcome: string;
+      bucket_id: string | null;
+      object_path: string | null;
+      max_byte_size: string | null;
+    }>`
+      select outcome, bucket_id, object_path, max_byte_size
+        from app_private.cms_media_upload_target(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.contentType}::text,
+          ${input.byteSize}::bigint
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    return {
+      outcome: row?.outcome ?? 'invalid',
+      bucketId: row?.bucket_id ?? null,
+      objectPath: row?.object_path ?? null,
+      maxByteSize: row?.max_byte_size ?? null,
+    };
+  }
+
+  /** `app_private.cms_media_attach(...)` (0098). */
+  async cmsMediaAttach(input: {
+    userId: string;
+    isAal2: boolean;
+    objectPath: string;
+    mimeType: string;
+    byteSize: number;
+    width: number | null;
+    height: number | null;
+    altTextEn: string | null;
+    altTextAr: string | null;
+  }): Promise<{ outcome: string; mediaId: string | null }> {
+    const result = await sql<{ outcome: string; media_id: string | null }>`
+      select outcome, media_id
+        from app_private.cms_media_attach(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.objectPath}::text,
+          ${input.mimeType}::text,
+          ${input.byteSize}::bigint,
+          ${input.width}::integer,
+          ${input.height}::integer,
+          ${input.altTextEn}::text,
+          ${input.altTextAr}::text
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    return { outcome: row?.outcome ?? 'invalid', mediaId: row?.media_id ?? null };
+  }
+
+  /**
+   * `app_private.cms_media_for_staff(uuid, boolean, timestamptz, uuid, integer)` (0098).
+   *
+   * The cursor arrives as two typed parameters rather than as text: a position is bound, never interpolated.
+   */
+  async cmsMediaForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    afterCreatedAt: string | null;
+    afterId: string | null;
+    limit: number;
+  }): Promise<readonly CmsMediaRow[]> {
+    const result = await sql<{
+      media_id: string;
+      object_path: string;
+      mime_type: string;
+      width: number | null;
+      height: number | null;
+      byte_size: string;
+      alt_text_en: string | null;
+      alt_text_ar: string | null;
+      usage_count: number;
+      created_at: Date;
+      updated_at: Date;
+    }>`
+      select media_id, object_path, mime_type, width, height, byte_size, alt_text_en, alt_text_ar,
+             usage_count, created_at, updated_at
+        from app_private.cms_media_for_staff(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.afterCreatedAt}::timestamptz,
+          ${input.afterId}::uuid,
+          ${input.limit}::integer
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      mediaId: row.media_id,
+      objectPath: row.object_path,
+      mimeType: row.mime_type,
+      width: row.width ?? null,
+      height: row.height ?? null,
+      byteSize: row.byte_size,
+      altTextEn: row.alt_text_en ?? null,
+      altTextAr: row.alt_text_ar ?? null,
+      usageCount: row.usage_count,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  /** `app_private.cms_media_usage(uuid, boolean, uuid)` (0098). */
+  async cmsMediaUsage(input: {
+    userId: string;
+    isAal2: boolean;
+    mediaId: string;
+  }): Promise<readonly CmsMediaUsageRow[]> {
+    const result = await sql<{
+      entity_type: string;
+      entity_id: string | null;
+      entity_label: string;
+      entity_column: string;
+    }>`
+      select entity_type, entity_id, entity_label, entity_column
+        from app_private.cms_media_usage(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.mediaId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      entityType: row.entity_type,
+      entityId: row.entity_id ?? null,
+      entityLabel: row.entity_label,
+      entityColumn: row.entity_column,
+    }));
+  }
+
+  /** `app_private.cms_media_read_target(uuid, boolean, uuid)` (0098). */
+  async cmsMediaReadTarget(input: {
+    userId: string;
+    isAal2: boolean;
+    mediaId: string;
+  }): Promise<{ outcome: string; bucketId: string | null; objectPath: string | null }> {
+    const result = await sql<{ outcome: string; bucket_id: string | null; object_path: string | null }>`
+      select outcome, bucket_id, object_path
+        from app_private.cms_media_read_target(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.mediaId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    return {
+      outcome: row?.outcome ?? 'not_found',
+      bucketId: row?.bucket_id ?? null,
+      objectPath: row?.object_path ?? null,
+    };
+  }
+
+  /** `app_private.cms_media_alt_text_for_staff(uuid, boolean, uuid, text, text)` (0098). */
+  async cmsMediaAltTextForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    mediaId: string;
+    altTextEn: string | null;
+    altTextAr: string | null;
+  }): Promise<boolean> {
+    const result = await sql<{ changed: boolean }>`
+      select app_private.cms_media_alt_text_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.mediaId}::uuid,
+        ${input.altTextEn}::text,
+        ${input.altTextAr}::text
+      ) as changed
+    `.execute(this.db);
+
+    return result.rows[0]?.changed === true;
+  }
+
+  /** `app_private.cms_media_delete_for_staff(uuid, boolean, uuid)` (0098). */
+  async cmsMediaDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    mediaId: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.cms_media_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.mediaId}::uuid
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // Site-wide SEO settings (0096)
+  // -------------------------------------------------------------------------------------------------
+  /**
+   * `app_private.seo_settings_for_staff(uuid, boolean)` (0096).
+   *
+   * One row per active locale, authored or not. `robots_is_served` is the database's own answer about which
+   * locale's body `/robots.txt` serves, and is read rather than recomputed anywhere above this line.
+   */
+  async seoSettingsForStaff(input: { userId: string; isAal2: boolean }): Promise<readonly SeoSettingsDbRow[]> {
+    const result = await sql<{
+      locale_code: string;
+      locale_name_en: string;
+      locale_name_native: string;
+      is_default_locale: boolean;
+      is_authored: boolean;
+      robots_is_served: boolean;
+      site_name: string | null;
+      default_meta_title: string | null;
+      default_meta_description: string | null;
+      default_share_media_id: string | null;
+      share_media_object_path: string | null;
+      twitter_site: string | null;
+      robots_txt_body: string | null;
+      organization_structured_data: unknown;
+      updated_at: Date | string | null;
+    }>`
+      select locale_code, locale_name_en, locale_name_native, is_default_locale, is_authored, robots_is_served,
+             site_name, default_meta_title, default_meta_description, default_share_media_id,
+             share_media_object_path, twitter_site, robots_txt_body, organization_structured_data, updated_at
+        from app_private.seo_settings_for_staff(${input.userId}::uuid, ${input.isAal2}::boolean)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      localeCode: row.locale_code,
+      localeNameEn: row.locale_name_en,
+      localeNameNative: row.locale_name_native,
+      isDefaultLocale: row.is_default_locale === true,
+      isAuthored: row.is_authored === true,
+      robotsIsServed: row.robots_is_served === true,
+      siteName: row.site_name ?? null,
+      defaultMetaTitle: row.default_meta_title ?? null,
+      defaultMetaDescription: row.default_meta_description ?? null,
+      defaultShareMediaId: row.default_share_media_id ?? null,
+      shareMediaObjectPath: row.share_media_object_path ?? null,
+      twitterSite: row.twitter_site ?? null,
+      robotsTxtBody: row.robots_txt_body ?? null,
+      organizationStructuredData: row.organization_structured_data ?? null,
+      updatedAt: row.updated_at ?? null,
+    }));
+  }
+
+  /**
+   * `app_private.seo_settings_save_for_staff(...)` (0096). False means the locale is not an active locale.
+   *
+   * The organization document travels as `jsonb`, serialised once here and never interpolated.
+   */
+  async seoSettingsSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    localeCode: string;
+    siteName: string;
+    defaultMetaTitle: string | null;
+    defaultMetaDescription: string | null;
+    defaultShareMediaId: string | null;
+    twitterSite: string | null;
+    robotsTxtBody: string | null;
+    organizationStructuredData: unknown;
+  }): Promise<boolean> {
+    const structuredData =
+      input.organizationStructuredData === null || input.organizationStructuredData === undefined
+        ? null
+        : JSON.stringify(input.organizationStructuredData);
+
+    const result = await sql<{ written: boolean }>`
+      select app_private.seo_settings_save_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.localeCode}::text,
+        ${input.siteName}::text,
+        ${input.defaultMetaTitle}::text,
+        ${input.defaultMetaDescription}::text,
+        ${input.defaultShareMediaId}::uuid,
+        ${input.twitterSite}::text,
+        ${input.robotsTxtBody}::text,
+        ${structuredData}::jsonb
+      ) as written
+    `.execute(this.db);
+
+    return result.rows[0]?.written === true;
+  }
+
+  /** `app_private.seo_settings_delete_for_staff(uuid, boolean, text)` (0096). */
+  async seoSettingsDeleteForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    localeCode: string;
+  }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.seo_settings_delete_for_staff(
+        ${input.userId}::uuid,
+        ${input.isAal2}::boolean,
+        ${input.localeCode}::text
+      ) as removed
+    `.execute(this.db);
+
+    return result.rows[0]?.removed === true;
+  }
+}
+
+/**
+ * The columns both FAQ readers return.
+ *
+ * One shape, so one mapper. The list reader has no `can_manage` of its own — the capability is a property of the
+ * caller rather than of an entry, and the list reports it once at the top level — so it selects a literal `false`
+ * and the service never reads the field.
+ */
+interface FaqSqlRow {
+  readonly faq_id: string;
+  readonly topic: string;
+  readonly question_en: string;
+  readonly question_ar: string | null;
+  readonly answer_en: string;
+  readonly answer_ar: string | null;
+  readonly sort_order: number;
+  readonly is_published: boolean;
+  readonly is_mapped: boolean;
+  readonly page_slug: string | null;
+  readonly created_at: Date | string;
+  readonly updated_at: Date | string;
+  readonly can_manage: boolean;
+}
+
+function faqRow(row: FaqSqlRow): FaqDetailDbRow {
+  return {
+    faqId: row.faq_id,
+    topic: row.topic,
+    questionEn: row.question_en,
+    questionAr: row.question_ar ?? null,
+    answerEn: row.answer_en,
+    answerAr: row.answer_ar ?? null,
+    sortOrder: Number(row.sort_order),
+    isPublished: row.is_published === true,
+    isMapped: row.is_mapped === true,
+    pageSlug: row.page_slug ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    canManage: row.can_manage === true,
+  };
+}
+
+/** The card columns both homepage listing readers return; one shape, so one mapper. */
+interface HomepageListingSqlRow {
+  readonly result_type: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly city: string | null;
+  readonly price_minor: string | null;
+  readonly currency_code: string;
+  readonly currency_minor_unit: number;
+  readonly is_negotiable: boolean | null;
+}
+
+function homepageListingRow(row: HomepageListingSqlRow): HomepageListingDbRow {
+  return {
+    resultType: row.result_type,
+    slug: row.slug,
+    title: row.title,
+    city: row.city ?? null,
+    priceMinor: row.price_minor ?? null,
+    currencyCode: row.currency_code,
+    currencyMinorUnit: Number(row.currency_minor_unit),
+    isNegotiable: row.is_negotiable ?? null,
+  };
+}
+
+/**
+ * The columns both navigation menu readers return.
+ *
+ * One shape, so one mapper. The list reader has no `can_manage` of its own — the capability is a property of the
+ * caller rather than of a menu, and the list reports it once at the top level — so it selects a literal `false`
+ * and the service never reads the field.
+ */
+interface NavigationMenuSqlRow {
+  readonly menu_id: string;
+  readonly menu_key: string;
+  readonly label_en: string;
+  readonly label_ar: string | null;
+  readonly is_active: boolean;
+  readonly is_served: boolean;
+  readonly item_count: number;
+  readonly renderable_item_count: number;
+  readonly created_at: Date | string;
+  readonly updated_at: Date | string;
+  readonly can_manage: boolean;
+}
+
+function navigationMenuRow(row: NavigationMenuSqlRow): NavigationMenuDetailDbRow {
+  return {
+    menuId: row.menu_id,
+    menuKey: row.menu_key,
+    labelEn: row.label_en,
+    labelAr: row.label_ar ?? null,
+    isActive: row.is_active === true,
+    isServed: row.is_served === true,
+    itemCount: Number(row.item_count),
+    renderableItemCount: Number(row.renderable_item_count),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    canManage: row.can_manage === true,
+  };
+}
+
+/** The columns both homepage section readers return. */
+interface HomepageSectionSqlRow {
+  readonly section_id: string;
+  readonly section_key: string;
+  readonly section_type: string;
+  readonly title_en: string | null;
+  readonly title_ar: string | null;
+  readonly subtitle_en: string | null;
+  readonly subtitle_ar: string | null;
+  readonly config: unknown;
+  readonly sort_order: number;
+  readonly is_active: boolean;
+  readonly is_served: boolean;
+  readonly updated_at: Date;
+}
+
+function homepageSectionRow(row: HomepageSectionSqlRow): HomepageSectionListDbRow {
+  return {
+    sectionId: row.section_id,
+    sectionKey: row.section_key,
+    sectionType: row.section_type,
+    titleEn: row.title_en ?? null,
+    titleAr: row.title_ar ?? null,
+    subtitleEn: row.subtitle_en ?? null,
+    subtitleAr: row.subtitle_ar ?? null,
+    config: row.config,
+    sortOrder: Number(row.sort_order),
+    isActive: row.is_active,
+    isServed: row.is_served,
+    updatedAt: row.updated_at,
+  };
 }
 
 /** The columns both attribute-definition readers return; one shape, so one mapper. */
@@ -7771,6 +9862,76 @@ function attributeDefinitionRow(row: AttributeDefinitionSqlRow): AttributeDefini
 }
 
 /** The fourteen-column card projection both the search reader and the category feed return. */
+/**
+ * The columns both metadata staff readers share (0091).
+ *
+ * One shape rather than two, because the detail is the list row plus three fields and keeping them apart would mean
+ * two lists of column names to keep in step.
+ */
+interface MetadataListSqlRow {
+  entry_id: string;
+  entity_type: string;
+  entity_id: string | null;
+  route_path: string | null;
+  target_slug: string | null;
+  locale_code: string;
+  meta_title: string | null;
+  meta_description: string | null;
+  canonical_path: string | null;
+  robots_directives: string[] | null;
+  og_title: string | null;
+  og_description: string | null;
+  share_media_id: string | null;
+  canonical_is_honoured: boolean;
+  updated_at: Date;
+}
+
+function metadataListRow(row: MetadataListSqlRow): SeoMetadataListDbRow {
+  return {
+    entryId: row.entry_id,
+    entityType: row.entity_type,
+    entityId: row.entity_id ?? null,
+    routePath: row.route_path ?? null,
+    targetSlug: row.target_slug ?? null,
+    localeCode: row.locale_code,
+    metaTitle: row.meta_title ?? null,
+    metaDescription: row.meta_description ?? null,
+    canonicalPath: row.canonical_path ?? null,
+    robotsDirectives: row.robots_directives ?? null,
+    ogTitle: row.og_title ?? null,
+    ogDescription: row.og_description ?? null,
+    shareMediaId: row.share_media_id ?? null,
+    canonicalIsHonoured: row.canonical_is_honoured,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** One row of either public metadata reader, or null when the reader returned none. */
+function metadataRow(
+  row:
+    | {
+        meta_title: string | null;
+        meta_description: string | null;
+        canonical_path: string | null;
+        robots_directives: string[] | null;
+        og_title: string | null;
+        og_description: string | null;
+        share_object_path: string | null;
+      }
+    | undefined,
+): PublicSeoMetadataDbRow | null {
+  if (row === undefined) return null;
+  return {
+    metaTitle: row.meta_title ?? null,
+    metaDescription: row.meta_description ?? null,
+    canonicalPath: row.canonical_path ?? null,
+    robotsDirectives: row.robots_directives ?? null,
+    ogTitle: row.og_title ?? null,
+    ogDescription: row.og_description ?? null,
+    shareObjectPath: row.share_object_path ?? null,
+  };
+}
+
 interface SearchSqlRow {
   readonly result_type: string;
   readonly id: string;

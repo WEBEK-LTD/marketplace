@@ -142,12 +142,14 @@ describe('the public entry page', () => {
     expect(page.html).toContain('أنشئ ملف البائع الخاص بك');
   });
 
-  it('reads nothing: the API is never asked anything to render it', async () => {
+  it('reads nothing of its own: the API is asked for nothing but the chrome', async () => {
     api.seen.length = 0;
     await load('/become-a-seller');
     await load('/ar/become-a-seller');
 
-    expect(api.seen).toHaveLength(0);
+    // 0094 gives every public surface a composed header and footer, which is one read per page and the only one
+    // this page performs. The page's own content is still entirely static.
+    expect(api.seen.map((entry) => entry.url.split('?')[0])).toEqual(['/v1/navigation', '/v1/navigation']);
   });
 
   it('is the same page for a signed-in visitor as for a signed-out one', async () => {

@@ -116,6 +116,28 @@ describe('the public catalogue is no longer globally noindex', () => {
     },
   );
 
+  it('the home page is indexable in both languages, and the header does not deny it', async () => {
+    // Owner decision E (0093): `/` is explicitly indexable. The blanket header had to stop firing for it too, because
+    // a header `noindex` is the most restrictive directive on the response and would silently overrule the page.
+    //
+    // The stub answers nothing for `/v1/homepage`, so this is the *unreadable* homepage — which is the stricter proof:
+    // the route's indexability is a property of the route, not of whether a section happened to come back.
+    for (const path of ['/', '/ar']) {
+      const page = await load(path);
+      expect(page.status, path).toBe(200);
+      expect(page.robotsHeader, path).toBeNull();
+      expect(page.robotsMeta, path).toBe('index, follow');
+    }
+  });
+
+  it('a path that only begins with the home page is not the home page', async () => {
+    // `/` is exempted by exact match, so the exemption cannot be widened by a prefix.
+    for (const path of ['/nope', '/arabic', '/ar-nope']) {
+      const page = await load(path);
+      expect(page.robotsHeader, path).toBe('noindex');
+    }
+  });
+
   it('a listing that is available is indexable in both languages', async () => {
     for (const path of ['/listing/a-chair', '/ar/listing/a-chair']) {
       const page = await load(path);
@@ -160,8 +182,6 @@ describe('page-level SEO policy still decides, and still says noindex where it s
 
 describe('everything outside the public catalogue keeps its blanket noindex', () => {
   it.each([
-    '/',
-    '/ar',
     '/login',
     '/ar/login',
     '/forgot-password',
@@ -184,7 +204,17 @@ describe('everything outside the public catalogue keeps its blanket noindex', ()
   });
 
   it('a path that merely looks like a catalogue route is not treated as one', async () => {
-    for (const path of ['/listingsomething', '/categories-secret', '/listing/a-chair/edit']) {
+    for (const path of [
+      '/listingsomething',
+      '/categories-secret',
+      '/listing/a-chair/edit',
+      // 0097 exempted the blog index and one slug-shaped segment beneath it, and nothing wider.
+      '/blogsomething',
+      '/blog-secret',
+      '/blog/a-lovely-post/edit',
+      '/blog/category/news',
+      '/blog/tag/news',
+    ]) {
       const page = await load(path);
       expect(page.robotsHeader, path).toBe('noindex');
     }

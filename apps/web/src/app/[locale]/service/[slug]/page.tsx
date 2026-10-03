@@ -10,6 +10,7 @@ import { RequestQuoteButton } from '../../../../components/request-quote';
 import { ServiceDetailView, ServiceMessage } from '../../../../components/service-views';
 import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
 import { readService, type ServiceLookup } from '../../../../server/bff';
+import { metadataWithOverride } from '../../../../server/public-metadata';
 
 /**
  * `/service/[slug]` and `/ar/service/[slug]` — one public service.
@@ -69,20 +70,25 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   const { service } = found;
   const unavailable = service.availability === 'no_longer_available';
 
-  return {
-    title: service.title,
-    description: service.description.slice(0, 160),
-    alternates: {
+  // The administrator's override is merged in by one shared resolver (8-F). A service is a `listings` row, so its
+  // override is a `listing` entry — 0030 has no `service` kind — and its stored canonical is withheld like any other
+  // listing's, leaving the self-referencing address below as the only one this page can have.
+  return await metadataWithOverride(
+    { entityType: 'listing', slug: service.slug, locale },
+    {
+      title: service.title,
+      description: service.description.slice(0, 160),
       canonical: servicePath(locale, service.slug),
       languages: {
         en: `/service/${encodeURIComponent(service.slug)}`,
         ar: `/ar/service/${encodeURIComponent(service.slug)}`,
       },
+      // Stated on every branch: the root layout's default is `noindex, nofollow`, and metadata is merged
+      // from the root down, so a page that says nothing about robots inherits that refusal.
+      index: !unavailable,
+      follow: true,
     },
-    // Stated on every branch: the root layout's default is `noindex, nofollow`, and metadata is merged
-    // from the root down, so a page that says nothing about robots inherits that refusal.
-    robots: unavailable ? { index: false, follow: true } : { index: true, follow: true },
-  };
+  );
 }
 
 export default async function ServicePage({ params }: PageParams) {

@@ -31,8 +31,19 @@ import { ReviewModerationController } from './review-moderation.controller.js';
 import { PlatformOperationsController } from './platform-operations.controller.js';
 import { CmsPagesAdminController } from './cms-pages-admin.controller.js';
 import { CmsPagesController } from './cms-pages.controller.js';
+import { BlogAdminController } from './blog-admin.controller.js';
+import { BlogController } from './blog.controller.js';
+import { HomepageAdminController } from './homepage-admin.controller.js';
+import { HomepageController } from './homepage.controller.js';
+import { NavigationAdminController } from './navigation-admin.controller.js';
+import { NavigationController } from './navigation.controller.js';
+import { FaqsAdminController } from './faqs-admin.controller.js';
+import { FaqsController } from './faqs.controller.js';
 import { SeoController } from './seo.controller.js';
 import { SeoRedirectsAdminController } from './seo-redirects-admin.controller.js';
+import { SeoMetadataAdminController } from './seo-metadata-admin.controller.js';
+import { SeoSettingsAdminController } from './seo-settings-admin.controller.js';
+import { CmsMediaAdminController } from './cms-media-admin.controller.js';
 import { CategoriesAdminController } from './categories-admin.controller.js';
 import { AttributesAdminController } from './attributes-admin.controller.js';
 import { CategoryAttributesAdminController } from './category-attributes-admin.controller.js';
@@ -97,8 +108,19 @@ export class V1Module {
         DisputeManagementController,
         CmsPagesAdminController,
         CmsPagesController,
+        BlogAdminController,
+        BlogController,
+        HomepageAdminController,
+        HomepageController,
+        NavigationAdminController,
+        NavigationController,
+        FaqsAdminController,
+        FaqsController,
         SeoController,
         SeoRedirectsAdminController,
+        SeoMetadataAdminController,
+        SeoSettingsAdminController,
+        CmsMediaAdminController,
         CategoriesAdminController,
         // Phase 8-C. Three console surfaces and one seller surface; 0087's controller is untouched.
         AttributesAdminController,

@@ -142,6 +142,8 @@ interface Doubles {
   publicRows?: readonly Record<string, unknown>[];
   listRows?: readonly Record<string, unknown>[];
   detailRow?: Record<string, unknown> | null;
+  /** 0099. The cover `app_private.cms_cover_media_for_staff` reports, or null for nothing attached. */
+  coverRow?: Record<string, unknown> | null;
   writeError?: { code: string };
   writeResult?: boolean;
 }
@@ -213,6 +215,11 @@ async function createApp(doubles: Doubles = {}): Promise<Seen[]> {
       if (doubles.writeError !== undefined) throw sqlError(doubles.writeError.code);
       return PAGE;
     },
+    cmsCoverMediaForStaff: async (input: unknown) => {
+      seen.push({ name: 'cmsCoverMediaForStaff', input });
+      return doubles.coverRow === undefined ? null : doubles.coverRow;
+    },
+    cmsPageCoverForStaff: async (input: unknown) => write('cmsPageCoverForStaff', input),
     cmsPageUpdateForStaff: async (input: unknown) => write('cmsPageUpdateForStaff', input),
     cmsPageStatusForStaff: async (input: unknown) => write('cmsPageStatusForStaff', input),
     cmsPageTranslationSaveForStaff: async (input: unknown) => write('cmsPageTranslationSaveForStaff', input),
@@ -582,6 +589,7 @@ describe('the refusals each keep their own code', () => {
     { sqlstate: '23001', code: 'CMS_PAGE_LOCALE_REQUIRED' },
     { sqlstate: '23514', code: 'CMS_PAGE_TRANSITION_NOT_ALLOWED' },
     { sqlstate: '23505', code: 'CMS_PAGE_SLUG_TAKEN' },
+    { sqlstate: '23503', code: 'CMS_PAGE_COVER_MEDIA_MISSING' },
   ] as const;
 
   it('maps each database refusal to a 409 with its own code', async () => {
@@ -735,6 +743,242 @@ describe('the authored detail', () => {
     });
     expect(response.statusCode).toBe(400);
     expect(seen.some((entry) => entry.name === 'cmsPageForStaff')).toBe(false);
+  });
+});
+
+describe('the cover image has its own route (0099)', () => {
+  const MEDIA = 'fc000000-0000-4000-8000-0000000000a1';
+
+  it('attaches an entry by id and does not ask to clear', async () => {
+    const seen = await createApp();
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(200);
+    const input = seen.find((entry) => entry.name === 'cmsPageCoverForStaff')?.input as Record<string, unknown>;
+    expect(input['coverMediaId']).toBe(MEDIA);
+    expect(input['clearCover']).toBe(false);
+    expect(input['pageId']).toBe(PAGE);
+  });
+
+  it('turns an explicit null into the clear flag', async () => {
+    const seen = await createApp();
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: null },
+    });
+    expect(response.statusCode).toBe(200);
+    const input = seen.find((entry) => entry.name === 'cmsPageCoverForStaff')?.input as Record<string, unknown>;
+    expect(input['coverMediaId']).toBeNull();
+    expect(input['clearCover']).toBe(true);
+  });
+
+  it('refuses a body with no mediaId at all, because leaving a cover alone is not sending this request', async () => {
+    const seen = await createApp();
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: {},
+    });
+    expect(response.statusCode).toBe(400);
+    expect(seen.some((entry) => entry.name === 'cmsPageCoverForStaff')).toBe(false);
+  });
+
+  it('refuses an object path, a bucket or any other field', async () => {
+    const seen = await createApp();
+    for (const payload of [
+      { mediaId: MEDIA, objectPath: 'cms-media/x.png' },
+      { mediaId: MEDIA, bucket: 'cms-media' },
+      { objectPath: 'cms-media/x.png' },
+    ]) {
+      const response = await request({
+        method: 'PUT',
+        url: `/v1/admin/cms/pages/${PAGE}/cover`,
+        accessToken: ACCESS_TOKEN,
+        payload,
+      });
+      expect(response.statusCode).toBe(400);
+    }
+    expect(seen.some((entry) => entry.name === 'cmsPageCoverForStaff')).toBe(false);
+  });
+
+  it('refuses a mediaId that is not a uuid', async () => {
+    const seen = await createApp();
+    for (const mediaId of ['', 'not-a-uuid', '../cms-media/x.png', 'cms-media/x.png']) {
+      const response = await request({
+        method: 'PUT',
+        url: `/v1/admin/cms/pages/${PAGE}/cover`,
+        accessToken: ACCESS_TOKEN,
+        payload: { mediaId },
+      });
+      expect(response.statusCode).toBe(400);
+    }
+    expect(seen.some((entry) => entry.name === 'cmsPageCoverForStaff')).toBe(false);
+  });
+
+  it('is a 404 when the writer reports no such page', async () => {
+    await createApp({ writeResult: false });
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('is a 404 when the database refuses the caller, so a refusal looks like an absence', async () => {
+    await createApp({ writeError: { code: '42501' } });
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('is a 409 naming the missing image when the foreign key refuses the id', async () => {
+    await createApp({ writeError: { code: '23503' } });
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(409);
+    expect((response.json() as { code: string }).code).toBe('CMS_PAGE_COVER_MEDIA_MISSING');
+  });
+
+  it('is a 404 for a caller who does not hold cms.page.read', async () => {
+    const seen = await createApp({ permissions: [] });
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(seen.some((entry) => entry.name === 'cmsPageCoverForStaff')).toBe(false);
+  });
+
+  it('cannot be reached without a session', async () => {
+    await createApp({ unauthenticated: true });
+    const response = await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('refuses a page id that is not a uuid before any write', async () => {
+    const seen = await createApp();
+    const response = await request({
+      method: 'PUT',
+      url: '/v1/admin/cms/pages/not-a-uuid/cover',
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(seen.some((entry) => entry.name === 'cmsPageCoverForStaff')).toBe(false);
+  });
+
+  it('is the only route that touches a cover: creating a page cannot carry one', async () => {
+    const seen = await createApp();
+    const response = await request({
+      method: 'POST',
+      url: '/v1/admin/cms/pages',
+      accessToken: ACCESS_TOKEN,
+      payload: { slug: 'new-page', coverMediaId: MEDIA },
+    });
+    expect(response.statusCode).toBe(201);
+    const input = seen.find((entry) => entry.name === 'cmsPageCreateForStaff')?.input as Record<string, unknown>;
+    // Owner decision 2: a cover is not attachable while creating a page, and the field is dropped rather
+    // than relied upon to be absent.
+    expect('coverMediaId' in input).toBe(false);
+    expect('cover' in input).toBe(false);
+  });
+
+  it('cannot publish, rename or reindex a page', async () => {
+    const seen = await createApp();
+    await request({
+      method: 'PUT',
+      url: `/v1/admin/cms/pages/${PAGE}/cover`,
+      accessToken: ACCESS_TOKEN,
+      payload: { mediaId: MEDIA },
+    });
+    expect(seen.some((entry) => entry.name === 'cmsPageStatusForStaff')).toBe(false);
+    expect(seen.some((entry) => entry.name === 'cmsPageUpdateForStaff')).toBe(false);
+  });
+});
+
+describe('the authored detail reports the attachment (0099)', () => {
+  it('carries the stored path and both alt texts, and never a URL', async () => {
+    const seen = await createApp({
+      coverRow: {
+        mediaId: 'fc000000-0000-4000-8000-0000000000a1',
+        objectPath: 'cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png',
+        altTextEn: 'A harbour at dawn',
+        altTextAr: 'ميناء عند الفجر',
+      },
+    });
+    const response = await request({
+      method: 'GET',
+      url: `/v1/admin/cms/pages/${PAGE}`,
+      accessToken: ACCESS_TOKEN,
+    });
+    expect(response.statusCode).toBe(200);
+    const page = (response.json() as { page: Record<string, unknown> }).page;
+    expect(page['coverMediaId']).toBe('fc000000-0000-4000-8000-0000000000a1');
+    expect(page['coverObjectPath']).toBe('cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png');
+    expect(page['coverAltTextEn']).toBe('A harbour at dawn');
+    expect(page['coverAltTextAr']).toBe('ميناء عند الفجر');
+    // Nothing on this response is a URL, because the bucket is private and nothing here is signed.
+    expect(JSON.stringify(page)).not.toContain('http');
+    // And it asked the shared reader for a page, not for anything else.
+    const input = seen.find((entry) => entry.name === 'cmsCoverMediaForStaff')?.input as Record<string, unknown>;
+    expect(input['entityType']).toBe('page');
+    expect(input['entityId']).toBe(PAGE);
+  });
+
+  it('reports nulls throughout when nothing is attached', async () => {
+    await createApp({ coverRow: null });
+    const response = await request({
+      method: 'GET',
+      url: `/v1/admin/cms/pages/${PAGE}`,
+      accessToken: ACCESS_TOKEN,
+    });
+    const page = (response.json() as { page: Record<string, unknown> }).page;
+    expect(page['coverMediaId']).toBeNull();
+    expect(page['coverObjectPath']).toBeNull();
+    expect(page['coverAltTextEn']).toBeNull();
+    expect(page['coverAltTextAr']).toBeNull();
+  });
+
+  it('reports an attachment whose alt text nobody wrote', async () => {
+    await createApp({
+      coverRow: {
+        mediaId: 'fc000000-0000-4000-8000-0000000000a2',
+        objectPath: 'cms-media/2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e.webp',
+        altTextEn: null,
+        altTextAr: null,
+      },
+    });
+    const response = await request({
+      method: 'GET',
+      url: `/v1/admin/cms/pages/${PAGE}`,
+      accessToken: ACCESS_TOKEN,
+    });
+    const page = (response.json() as { page: Record<string, unknown> }).page;
+    expect(page['coverMediaId']).toBe('fc000000-0000-4000-8000-0000000000a2');
+    expect(page['coverAltTextEn']).toBeNull();
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   handleCmsPageCreate,
+  handleCmsPageCover,
   handleCmsPageStatus,
   handleCmsPageTranslationRemove,
   handleCmsPageTranslationSave,
@@ -59,6 +60,11 @@ const DETAIL = {
   createdAt: '2026-04-01T09:00:00.000Z',
   canManage: true,
   previousSlugs: ['terms-old'],
+  // 0099: the attachment, reported as a stored path and alt text and never as a URL.
+  coverMediaId: null,
+  coverObjectPath: null,
+  coverAltTextEn: null,
+  coverAltTextAr: null,
   translations: [
     {
       localeCode: 'en',
@@ -309,6 +315,128 @@ describe('handleCmsPageUpdate', () => {
     expect(empty.status).toBe(400);
     expect(bad.status).toBe(400);
     expect(seen.value).toBeUndefined();
+  });
+});
+
+describe('handleCmsPageCover (0099)', () => {
+  const MEDIA = 'fc000000-0000-4000-8000-0000000000a1';
+
+  it('puts the attachment at its own address, carrying only the media id', async () => {
+    const seen: { value?: Seen } = {};
+    const response = await handleCmsPageCover(
+      writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId: MEDIA }),
+      { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+    );
+    expect(response.status).toBe(200);
+    expect(seen.value?.method).toBe('PUT');
+    expect(seen.value?.url).toBe(`https://api.internal.test/v1/admin/cms/pages/${PAGE}/cover`);
+    expect(JSON.parse(seen.value?.body ?? '{}')).toEqual({ mediaId: MEDIA });
+  });
+
+  it('sends an explicit null for an empty field, which is how a cover is removed', async () => {
+    for (const mediaId of ['', '   ', null]) {
+      const seen: { value?: Seen } = {};
+      const response = await handleCmsPageCover(
+        writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId }),
+        { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+      );
+      expect(response.status).toBe(200);
+      expect(JSON.parse(seen.value?.body ?? '{}')).toEqual({ mediaId: null });
+    }
+  });
+
+  it('refuses a media id that is not a uuid, and never calls upstream', async () => {
+    for (const mediaId of ['not-a-uuid', 'cms-media/x.png', '../cms-media/x.png']) {
+      const seen: { value?: Seen } = {};
+      const response = await handleCmsPageCover(
+        writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId }),
+        { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+      );
+      expect(response.status, String(mediaId)).toBe(400);
+      expect(seen.value).toBeUndefined();
+    }
+  });
+
+  it('refuses a mediaId that is not a string, rather than reading it as a removal', async () => {
+    // A malformed value must not become the destructive operation. Only null, or an empty string from a
+    // cleared form field, mean "remove the cover".
+    for (const mediaId of [42, true, {}, [], 0]) {
+      const seen: { value?: Seen } = {};
+      const response = await handleCmsPageCover(
+        writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId }),
+        { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+      );
+      expect(response.status, JSON.stringify(mediaId)).toBe(400);
+      expect(seen.value).toBeUndefined();
+    }
+  });
+
+  it('refuses a body with no mediaId at all, because absent is not a removal', async () => {
+    const seen: { value?: Seen } = {};
+    const response = await handleCmsPageCover(
+      writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE }),
+      { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+    );
+    expect(response.status).toBe(400);
+    expect(seen.value).toBeUndefined();
+  });
+
+  it('refuses a page id that is not a uuid', async () => {
+    const seen: { value?: Seen } = {};
+    const response = await handleCmsPageCover(
+      writeRequest('/api/cms/pages/cover', 'PUT', { pageId: 'not-a-uuid', mediaId: MEDIA }),
+      { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+    );
+    expect(response.status).toBe(400);
+    expect(seen.value).toBeUndefined();
+  });
+
+  it('forwards no object path, bucket or anything else the caller invents', async () => {
+    const seen: { value?: Seen } = {};
+    await handleCmsPageCover(
+      writeRequest('/api/cms/pages/cover', 'PUT', {
+        pageId: PAGE,
+        mediaId: MEDIA,
+        objectPath: 'cms-media/evil.png',
+        bucket: 'listing-originals',
+      }),
+      { env: ENV, fetch: apiReturns(200, { ok: true }, seen) },
+    );
+    expect(JSON.parse(seen.value?.body ?? '{}')).toEqual({ mediaId: MEDIA });
+  });
+
+  it('forwards the missing-image refusal with the API’s own code', async () => {
+    const response = await handleCmsPageCover(
+      writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId: MEDIA }),
+      {
+        env: ENV,
+        fetch: apiReturns(409, {
+          status: 409,
+          code: 'CMS_PAGE_COVER_MEDIA_MISSING',
+          detail: 'That image is not in the media library.',
+        }),
+      },
+    );
+    expect(response.status).toBe(409);
+    expect(((await response.json()) as { code: string }).code).toBe('CMS_PAGE_COVER_MEDIA_MISSING');
+  });
+
+  it('forwards a 404 as a 404, so a refusal stays indistinguishable from an absence', async () => {
+    const response = await handleCmsPageCover(
+      writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId: MEDIA }),
+      { env: ENV, fetch: apiReturns(404, { status: 404, code: 'NOT_FOUND', detail: 'no' }) },
+    );
+    expect(response.status).toBe(404);
+  });
+
+  it('turns an unexpected upstream status into one 503', async () => {
+    for (const status of [418, 500, 502]) {
+      const response = await handleCmsPageCover(
+        writeRequest('/api/cms/pages/cover', 'PUT', { pageId: PAGE, mediaId: MEDIA }),
+        { env: ENV, fetch: apiReturns(status, { nope: true }) },
+      );
+      expect(response.status, String(status)).toBe(503);
+    }
   });
 });
 

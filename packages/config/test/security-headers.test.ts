@@ -17,6 +17,7 @@ import {
   publicListingPath,
   publicSellerPath,
   publicServicePath,
+  rendersSiteNavigation,
   robotsHeaderFor,
   staticSecurityHeaders,
 } from '../src/index.js';
@@ -113,10 +114,17 @@ describe('the public catalogue routes', () => {
     }
   });
 
+  it('recognises the home page, whose own metadata decides (0093)', () => {
+    // Owner decision E. It is route-aware rather than blanket-noindex, for the same reason a CMS static page is:
+    // a blanket header is the most restrictive directive on the response and would override the page's own answer.
+    for (const path of ['/', '/ar']) {
+      expect(isPublicCatalogRoute(path), path).toBe(true);
+      expect(robotsHeaderFor('web', path), path).toBeNull();
+    }
+  });
+
   it('recognises nothing else, so an unlisted route keeps its noindex', () => {
     for (const path of [
-      '/',
-      '/ar',
       '/login',
       '/ar/login',
       '/forgot-password',
@@ -387,17 +395,69 @@ describe('the CMS static page addresses', () => {
     expect(publicCmsPagePath('ar', '../dashboard')).toBe('/ar/..%2Fdashboard');
   });
 
-  it('publishes the fixed indexable routes the sitemap needs, and not the home page', () => {
-    // One list, read by the robots policy and by the sitemap, so the two cannot disagree about which fixed
-    // paths may be indexed. The home page keeps its blanket noindex, so it is absent on purpose.
-    expect([...indexableExactRoutes]).toEqual(['/categories', '/listings', '/marketplace', '/services']);
+  it('publishes the fixed indexable routes the sitemap needs, the home page and the blog among them', () => {
+    // 0097, owner decisions 2 and 3. 0093 made `/` decide its own robots value and left sitemap membership as a
+    // separate owner decision; that decision has been made, so `/` is here. `/blog` is here for both halves at once:
+    // the blog index decides its own robots value *and* is advertised.
+    expect([...indexableExactRoutes]).toEqual([
+      '/',
+      '/blog',
+      '/categories',
+      '/listings',
+      '/marketplace',
+      '/services',
+    ]);
+
+    // The invariant the robots policy and the sitemap used to share by being one list, now asserted instead: every
+    // address the sitemap advertises is one the policy lets the page decide for, in both languages. A path the
+    // policy still denied would be advertised to a crawler and then refused at the door.
     for (const path of indexableExactRoutes) {
+      const arabic = path === '/' ? '/ar' : `/ar${path}`;
       expect(isPublicCatalogRoute(path), path).toBe(true);
-      expect(isPublicCatalogRoute(`/ar${path}`), path).toBe(true);
+      expect(isPublicCatalogRoute(arabic), arabic).toBe(true);
+      expect(robotsHeaderFor('web', path), path).toBeNull();
+      expect(robotsHeaderFor('web', arabic), arabic).toBeNull();
+    }
+  });
+
+  it('does not let the home page entry widen the policy to paths that merely normalise to it', () => {
+    // `/` reaches the sitemap through `indexableExactRoutes` and the robots policy through its own earlier check,
+    // deliberately not through INDEXABLE_EXACT — which `splitLocale` would also match for `//`.
+    expect(robotsHeaderFor('web', '//')).toBe('noindex');
+    expect(robotsHeaderFor('web', '/en')).toBe('noindex');
+  });
+
+  it('lets a blog post and the blog index decide their own robots value (0097)', () => {
+    // The defect this increment fixes: `blog_posts.is_indexable` is the administrator's own decision and the post
+    // page carries it through, but while the blanket header sat on the response the column could be set either way
+    // and no crawler would ever see the difference.
+    for (const path of [
+      '/blog',
+      '/ar/blog',
+      '/blog/',
+      '/blog/a-lovely-post',
+      '/ar/blog/a-lovely-post',
+    ]) {
+      expect(isPublicCatalogRoute(path), path).toBe(true);
       expect(robotsHeaderFor('web', path), path).toBeNull();
     }
-    expect([...indexableExactRoutes]).not.toContain('/');
-    expect(robotsHeaderFor('web', '/')).toBe('noindex');
+  });
+
+  it('keeps the blog exemption to the two shapes the public web actually serves', () => {
+    // One slug-shaped segment under `/blog/`, and the index itself. Everything else is still refused by the header.
+    for (const path of [
+      '/blogsomething',
+      '/blog-secret',
+      '/ar/blogsomething',
+      '/blog/a-lovely-post/edit',
+      '/blog/A-Lovely-Post',
+      '/blog/category/news',
+      '/blog/tag/news',
+      '/blog/..%2fdashboard',
+    ]) {
+      expect(isPublicCatalogRoute(path), path).toBe(false);
+      expect(robotsHeaderFor('web', path), path).toBe('noindex');
+    }
   });
 
   it('holds the list to the specification route map', () => {
@@ -434,7 +494,9 @@ describe('the robots header', () => {
   });
 
   it('is noindex everywhere else on the public web', () => {
-    for (const path of ['/', '/login', '/dashboard/settings', '/reset-password', '/nope', '/search']) {
+    // `/` left this list in 0093: its own metadata decides. Everything here is still a surface with no metadata
+    // of its own to decide with.
+    for (const path of ['/login', '/dashboard/settings', '/reset-password', '/nope', '/search']) {
       expect(robotsHeaderFor('web', path), path).toBe('noindex');
     }
   });
@@ -442,6 +504,62 @@ describe('the robots header', () => {
   it('is noindex on every admin route without exception', () => {
     for (const path of ['/', '/listings', '/categories', '/listing/a-chair', '/services', '/service/x', '/category/x', '/seller/x', '/marketplace', '/dashboard']) {
       expect(robotsHeaderFor('admin', path), path).toBe('noindex');
+    }
+  });
+});
+
+describe('which surfaces carry the composed navigation (0094)', () => {
+  it('is the public site, in both languages', () => {
+    for (const path of [
+      '/',
+      '/ar',
+      '/ar/',
+      '/listings',
+      '/ar/listings',
+      '/listing/a-chair',
+      '/categories',
+      '/category/furniture',
+      '/seller/good-shop',
+      '/blog',
+      '/ar/blog/a-post',
+      '/about',
+      '/ar/terms',
+      '/marketplace',
+      '/search',
+      '/nope',
+    ]) {
+      expect(rendersSiteNavigation(path), path).toBe(true);
+    }
+  });
+
+  it('is not the account or authentication surfaces (owner decision 2)', () => {
+    for (const path of [
+      '/login',
+      '/ar/login',
+      '/register',
+      '/register/verify',
+      '/ar/register/verify',
+      '/forgot-password',
+      '/forgot-password/verify',
+      '/reset-password',
+      '/dashboard',
+      '/dashboard/',
+      '/dashboard/settings',
+      '/ar/dashboard/notifications',
+    ]) {
+      expect(rendersSiteNavigation(path), path).toBe(false);
+    }
+  });
+
+  it('matches whole segments, so a path cannot be mistaken for one of them', () => {
+    for (const path of ['/loginsomething', '/dashboards', '/registered', '/ar/dashboard-help']) {
+      expect(rendersSiteNavigation(path), path).toBe(true);
+    }
+  });
+
+  it('refuses anything that is not a path at all', () => {
+    for (const value of ['', 'listings', 'https://example.test/listings']) {
+      expect(rendersSiteNavigation(value), value).toBe(false);
     }
   });
 });

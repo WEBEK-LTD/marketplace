@@ -3,12 +3,17 @@ import {
   PUBLIC_LOCALES,
   REDIRECT_STATUS_CODES,
   REDIRECT_TO_PATH_PATTERN,
+  SEO_CANONICAL_PATH_PATTERN,
+  SEO_RESTRICTIVE_DIRECTIVES,
   SITEMAP_API_ENTRY_TYPES,
   SITEMAP_PAGE_SIZE,
   type PublicLocale,
+  type PublicSeoMetadata,
   type RedirectStatusCode,
+  type SeoRestrictiveDirective,
   type SitemapApiEntryType,
 } from '@repo/contracts';
+import type { PublicSeoMetadataDbRow } from '../admin/seo-metadata.service.js';
 import { SeoUnavailableError } from './seo-errors.js';
 
 /**
@@ -47,6 +52,15 @@ export interface SitemapEntryRow {
   readonly locales?: readonly string[];
 }
 
+/**
+ * The four kinds the public metadata reader can resolve from a slug.
+ *
+ * `route` has its own reader, and the three blog kinds have no public surface, so asking about one is asking about a
+ * page that does not exist rather than asking a question with the answer "nothing".
+ */
+export const PUBLIC_METADATA_ENTITY_KINDS = ['page', 'category', 'listing', 'seller'] as const;
+export type PublicMetadataEntityKind = (typeof PUBLIC_METADATA_ENTITY_KINDS)[number];
+
 /** One answer from `app_private.public_redirect_resolve` (0090), or no row at all. */
 export interface RedirectResolutionRow {
   readonly toPath: string;
@@ -54,10 +68,17 @@ export interface RedirectResolutionRow {
 }
 
 export interface SeoStore {
+  publicSeoMetadataForEntity(input: {
+    entityType: string;
+    slug: string;
+    locale: string;
+  }): Promise<PublicSeoMetadataDbRow | null>;
+  publicSeoMetadataForRoute(input: { routePath: string; locale: string }): Promise<PublicSeoMetadataDbRow | null>;
   publicRedirectResolve(path: string): Promise<RedirectResolutionRow | null>;
   publicRobotsBody(): Promise<RobotsBodyRow | null>;
   publicSitemapCounts(): Promise<readonly SitemapCountRow[]>;
   publicSitemapPages(limit: number, offset: number): Promise<readonly SitemapEntryRow[]>;
+  publicSitemapBlogPosts(limit: number, offset: number): Promise<readonly SitemapEntryRow[]>;
   publicSitemapListings(limit: number, offset: number): Promise<readonly SitemapEntryRow[]>;
   publicSitemapServices(limit: number, offset: number): Promise<readonly SitemapEntryRow[]>;
   publicSitemapCategories(limit: number, offset: number): Promise<readonly SitemapEntryRow[]>;
@@ -113,6 +134,53 @@ export class SeoService {
     // A row with a blank body is the same as no body: whitespace is not a directive.
     const body = row.body === null ? null : row.body.trim();
     return { locale: row.localeCode, body: body === null || body === '' ? null : body };
+  }
+
+  /**
+   * One surface's metadata override, or nothing stored for it.
+   *
+   * **Neither owner decision is applied here, because both are already applied.** The reader withholds a canonical
+   * for a listing, a category and a seller, and reduces a directive set to its restrictions, before anything leaves
+   * the database. What this method does is the same thing the redirect resolution does with its answer: refuse a
+   * value the table could not have held. A canonical that is not a relative path, or a directive outside the
+   * restrictive set, means something upstream is wrong, and acting on it would mean putting a value nobody authored
+   * into a crawler-facing tag — so the offending field is dropped and the rest is served.
+   *
+   * Nothing stored is `null`, never a failure: most surfaces have no override, and a page that treated "no
+   * override" as an error would be unrenderable for the ordinary case.
+   */
+  async resolveMetadata(input: {
+    entityType?: PublicMetadataEntityKind;
+    slug?: string;
+    routePath?: string;
+    locale: string;
+  }): Promise<PublicSeoMetadata | null> {
+    const row = await this.#read(async () =>
+      input.routePath !== undefined
+        ? this.store.publicSeoMetadataForRoute({ routePath: input.routePath, locale: input.locale })
+        : this.store.publicSeoMetadataForEntity({
+            entityType: input.entityType ?? '',
+            slug: input.slug ?? '',
+            locale: input.locale,
+          }),
+    );
+    if (row === null) return null;
+
+    const canonical =
+      row.canonicalPath !== null && SEO_CANONICAL_PATH_PATTERN.test(row.canonicalPath) ? row.canonicalPath : null;
+    const directives = (row.robotsDirectives ?? []).filter((directive): directive is SeoRestrictiveDirective =>
+      (SEO_RESTRICTIVE_DIRECTIVES as readonly string[]).includes(directive),
+    );
+
+    return {
+      metaTitle: row.metaTitle,
+      metaDescription: row.metaDescription,
+      canonicalPath: canonical,
+      robotsDirectives: directives,
+      ogTitle: row.ogTitle,
+      ogDescription: row.ogDescription,
+      shareObjectPath: row.shareObjectPath,
+    };
   }
 
   /**
@@ -192,6 +260,10 @@ export class SeoService {
     switch (type) {
       case 'page':
         return this.store.publicSitemapPages(limit, offset);
+      // 0097. The switch is exhaustive over the contract's own list, so adding the kind there is what required this
+      // arm — the compiler asked for it rather than somebody remembering.
+      case 'blog_post':
+        return this.store.publicSitemapBlogPosts(limit, offset);
       case 'listing':
         return this.store.publicSitemapListings(limit, offset);
       case 'service':

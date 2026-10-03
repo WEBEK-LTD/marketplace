@@ -2,11 +2,14 @@ import {
   buildContentSecurityPolicy,
   createNonce,
   parsePublicCategoryPath,
+  parsePublicBlogPostPath,
   parsePublicCmsPagePath,
   parsePublicDetailPath,
   parsePublicSellerPath,
+  publicBlogPostPath,
   publicCmsPagePath,
   publicDetailPath,
+  rendersSiteNavigation,
   robotsHeaderFor,
 } from '@repo/config';
 import createMiddleware from 'next-intl/middleware';
@@ -16,8 +19,10 @@ import { readCategory } from './server/bff/categories';
 import { readCmsPage } from './server/bff/cms-pages';
 import { readListing } from './server/bff/listings';
 import { readRedirect } from './server/bff/seo-redirects';
+import { readBlogPost } from './server/bff/blog';
 import { readSeller } from './server/bff/sellers';
 import { readService } from './server/bff/services';
+import { SITE_CHROME_HEADER, SITE_CHROME_NAVIGATION, SITE_CHROME_PLAIN } from './proxy-headers';
 import { SESSION_COOKIES } from './server/bff/session-cookies';
 import { publicWebServes } from './server/public-routes';
 
@@ -127,13 +132,22 @@ function hasRefreshCookie(request: NextRequest): boolean {
 export default async function proxy(request: NextRequest) {
   const nonce = createNonce();
   const csp = buildContentSecurityPolicy(nonce);
-  // Never trust an inbound copy: this header is ours to set, so any value the client sent is dropped.
+  // Never trust an inbound copy: these headers are ours to set, so any value the client sent is dropped.
   request.headers.delete(CATALOG_OUTCOME_HEADER);
+  request.headers.delete(SITE_CHROME_HEADER);
   // Next.js reads the nonce from the request's CSP header while rendering.
   request.headers.set('x-nonce', nonce);
   request.headers.set('content-security-policy', csp);
   // `/api/listings/<slug>` is dynamic, so it is matched by prefix rather than by exact path.
   const path = request.nextUrl.pathname;
+  // Which chrome the surface carries (0094, owner decision 2). Decided here because this is where the path is
+  // known and where the account area is already defined, and the root layout reads the answer rather than
+  // guessing at a pathname it cannot see. Set for every request this proxy sees, including the BFF routes and the
+  // crawler documents below: none of those renders chrome at all, so the value is simply never read there.
+  request.headers.set(
+    SITE_CHROME_HEADER,
+    rendersSiteNavigation(request.nextUrl.pathname) ? SITE_CHROME_NAVIGATION : SITE_CHROME_PLAIN,
+  );
   // A crawler-facing document: no locale rewrite, no catalogue resolution, and the robots header below still
   // applies, because none of these three addresses is a public catalogue route.
   const isSeo = SEO_ROUTES.has(path) || path.startsWith(SEO_PREFIX);
@@ -168,12 +182,23 @@ export default async function proxy(request: NextRequest) {
   const seller = isBff || detail !== null || category !== null ? null : parsePublicSellerPath(path);
   // A CMS static page is resolved here for the same reason, and only when no catalogue surface owns the path.
   // Its address is one of a closed list, so an unknown URL never reaches this read.
+  // A blog post is resolved here for the same reason, and before the CMS page: `/blog/<slug>` is two segments and
+  // a static page's address is one, so the two can never collide — but resolving the post first keeps the
+  // single-segment parser from ever being asked about a path that starts `/blog/`.
+  const blogPost =
+    isBff || detail !== null || category !== null || seller !== null ? null : parsePublicBlogPostPath(path);
   const staticPage =
-    isBff || detail !== null || category !== null || seller !== null ? null : parsePublicCmsPagePath(path);
+    isBff || detail !== null || category !== null || seller !== null || blogPost !== null
+      ? null
+      : parsePublicCmsPagePath(path);
   // Resolved into its own variable rather than folded in with the catalogue: a static page's `moved` names
   // the address it moved to, while a listing's names the surface that now owns it, and one variable holding
   // both would be a union nothing downstream could narrow.
   const pageOutcome = staticPage === null ? null : await readCmsPage(staticPage.slug, staticPage.locale);
+  // Its own variable for the same reason the static page has one: a post's `moved` names the address it moved to,
+  // which is a different kind of value from a listing's, and one variable holding both would be a union nothing
+  // downstream could narrow.
+  const blogOutcome = blogPost === null ? null : await readBlogPost(blogPost.slug, blogPost.locale);
   const outcome =
     detail !== null
       ? detail.surface === 'service'
@@ -190,6 +215,16 @@ export default async function proxy(request: NextRequest) {
     // never be reassigned to another page, so this is safe to make permanent — and it stays in the locale it
     // arrived in, so an Arabic reader following an old Arabic address is not moved to the English site.
     const target = new URL(publicCmsPagePath(staticPage.locale, pageOutcome.movedTo), request.url);
+    const redirect = NextResponse.redirect(target, 301);
+    redirect.headers.set('content-security-policy', csp);
+    return redirect;
+  }
+
+  if (blogOutcome?.kind === 'moved' && blogPost !== null) {
+    // A previous address of a post that has since been renamed. 0030 keeps every previous slug forever and forbids
+    // another post from taking one, so this is safe to make permanent — and it stays in the locale it arrived in, so
+    // an Arabic reader following an old Arabic address is not moved to the English site.
+    const target = new URL(publicBlogPostPath(blogPost.locale, blogOutcome.movedTo), request.url);
     const redirect = NextResponse.redirect(target, 301);
     redirect.headers.set('content-security-policy', csp);
     return redirect;
@@ -231,8 +266,14 @@ export default async function proxy(request: NextRequest) {
     category === null &&
     seller === null &&
     staticPage === null &&
+    blogPost === null &&
     !publicWebServes(path);
-  if (outcome?.kind === 'not_found' || pageOutcome?.kind === 'not_found' || unservedPath) {
+  if (
+    outcome?.kind === 'not_found' ||
+    pageOutcome?.kind === 'not_found' ||
+    blogOutcome?.kind === 'not_found' ||
+    unservedPath
+  ) {
     const mapped = await readRedirect(path);
     if (mapped.kind === 'redirect') {
       // The destination is relative by constraint, so it can only ever be an address on this site. The status
@@ -244,7 +285,11 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  if (outcome?.kind === 'not_found' || pageOutcome?.kind === 'not_found') {
+  if (
+    outcome?.kind === 'not_found' ||
+    pageOutcome?.kind === 'not_found' ||
+    blogOutcome?.kind === 'not_found'
+  ) {
     // Locale routing still decides the rewrite and the language, so the not-found view renders in the
     // language that was asked for; the status and the outcome header are the only things changed. The
     // page reads that header and renders its own not-found view without asking the API a second time.

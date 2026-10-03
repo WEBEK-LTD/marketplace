@@ -92,6 +92,27 @@ const ADMIN_PERMISSIONS = [
     // another real test of the same mechanism. `seo.redirect.manage` is deliberately absent — it gates the controls
     // inside the section, not the section itself, which `seo.redirect.read` does.
     'seo.redirect.read',
+    // 8-F's metadata overrides: the same mechanism once more, and a second key in the same module, so the two SEO
+    // sections are a real test of permission-driven navigation rather than one entry twice.
+    'seo.metadata.read',
+    'cms.blog.read',
+    'cms.homepage.read',
+    // 0094's navigation menus: admin and super_admin only in the seed, and held by neither narrow console role, so
+    // it is another real test of the same mechanism. `cms.navigation.manage` is deliberately absent — it gates the
+    // controls inside the section, not the section itself, which `cms.navigation.read` does.
+    'cms.navigation.read',
+    // 0095's help centre: admin and super_admin only in the seed, and held by neither narrow console role, so it is
+    // another real test of the same mechanism. `cms.faq.manage` is deliberately absent — it gates the controls
+    // inside the section, not the section itself, which `cms.faq.read` does.
+    'cms.faq.read',
+    // 0096's site-wide SEO defaults, and the third place a section is gated on a **manage** key: `seo.settings.read`
+    // does not exist in the seed and was not invented, so the section is gated on the key its own table's RLS policy
+    // names. Admin and super_admin only, and held by neither narrow console role.
+    'seo.settings.manage',
+    // 0098's media library, and the fourth place a section is gated on a **manage** key: `cms.media.read` does not
+    // exist in the seed and was not invented, so the section is gated on the key its own table's RLS policy names.
+    // Admin and super_admin only, and held by neither narrow console role.
+    'cms.media.manage',
   ]),
 ].sort();
 
@@ -307,7 +328,8 @@ describe('who is admitted, and to what', () => {
    * increment has replaced with a real screen renders that screen's own introduction instead, so the marker
    * moves with it — and the assertion stays about admission rather than about which increment last touched
    * the page. 7-O replaced four: sellers, users, account recovery and audit. 7-P replaced reviews, and 7-Q
-   * replaced platform jobs, and 7-R replaced disputes — the last of 7-F's placeholders.
+   * replaced platform jobs, and 7-R replaced disputes — the last of 7-F's placeholders. Sections added since,
+   * the blog among them, were never placeholders and bring their own introduction with them.
    */
   function admissionMarker(id: string): string {
     if (id === 'sellers') return EN.AdminOps.sellersIntro;
@@ -318,6 +340,9 @@ describe('who is admitted, and to what', () => {
     if (id === 'reviews') return EN.Reviews.queueIntro;
     if (id === 'platform') return EN.Platform.pageIntro;
     if (id === 'disputes') return EN.Disputes.queueIntro;
+    // 0092's blog arrived as a real screen rather than as a placeholder, so its own introduction is the marker.
+    if (id === 'blog') return EN.Blog.pageIntro;
+    if (id === 'homepage') return EN.Homepage.pageIntro;
     return EN.Sections[id as 'support'].description;
   }
 

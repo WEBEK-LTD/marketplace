@@ -16,6 +16,7 @@ import {
   CmsPageDetailResponseSchema,
   CmsPagePageResponseSchema,
   CmsPageSlugSchema,
+  CmsPageCoverRequestSchema,
   CmsPageStatusRequestSchema,
   CmsPageWriteResponseSchema,
   CreateCmsPageRequestSchema,
@@ -25,6 +26,65 @@ import {
   SaveCmsPageTranslationRequestSchema,
   UpdateCmsPageRequestSchema,
 } from '../cms-pages.js';
+import {
+  BlogPostDetailResponseSchema,
+  BlogPostPageResponseSchema,
+  BlogPostStatusRequestSchema,
+  BlogSlugSchema,
+  BlogTaxonomyResponseSchema,
+  BlogWriteResponseSchema,
+  CreateBlogPostRequestSchema,
+  CreateBlogPostResponseSchema,
+  PublicBlogIndexResponseSchema,
+  PublicBlogPostLookupResponseSchema,
+  PublicBlogTaxonomyResponseSchema,
+  SaveBlogCategoryRequestSchema,
+  SaveBlogPostTagsRequestSchema,
+  SaveBlogPostTranslationRequestSchema,
+  SaveBlogTagRequestSchema,
+  SaveBlogTaxonomyResponseSchema,
+  UpdateBlogPostRequestSchema,
+} from '../blog.js';
+import {
+  CreateHomepageSectionRequestSchema,
+  CreateHomepageSectionResponseSchema,
+  HomepageSectionDetailResponseSchema,
+  HomepageSectionStateRequestSchema,
+  HomepageSectionsResponseSchema,
+  HomepageWriteResponseSchema,
+  PublicHomepageResponseSchema,
+  ReorderHomepageSectionsRequestSchema,
+  UpdateHomepageSectionRequestSchema,
+} from '../homepage.js';
+import {
+  CreateNavigationItemRequestSchema,
+  CreateNavigationItemResponseSchema,
+  CreateNavigationMenuRequestSchema,
+  CreateNavigationMenuResponseSchema,
+  NavigationMenuDetailResponseSchema,
+  NavigationMenusResponseSchema,
+  NavigationStateRequestSchema,
+  NavigationWriteResponseSchema,
+  PublicNavigationResponseSchema,
+  ReorderNavigationItemsRequestSchema,
+  UpdateNavigationItemRequestSchema,
+  UpdateNavigationMenuRequestSchema,
+} from '../navigation.js';
+import {
+  CreateFaqRequestSchema,
+  CreateFaqResponseSchema,
+  FAQ_DEFAULT_LIMIT,
+  FAQ_MAX_LIMIT,
+  FaqDetailResponseSchema,
+  FaqPageResponseSchema,
+  FaqStateRequestSchema,
+  FaqTopicSchema,
+  FaqTopicsResponseSchema,
+  FaqWriteResponseSchema,
+  PublicFaqsResponseSchema,
+  ReorderFaqsRequestSchema,
+  UpdateFaqRequestSchema,
+} from '../faqs.js';
 import {
   CreateSeoRedirectRequestSchema,
   CreateSeoRedirectResponseSchema,
@@ -37,6 +97,35 @@ import {
   SeoRedirectsResponseSchema,
   UpdateSeoRedirectRequestSchema,
 } from '../seo-redirects.js';
+import {
+  PublicSeoMetadataResponseSchema,
+  SEO_METADATA_DEFAULT_LIMIT,
+  SEO_METADATA_MAX_LIMIT,
+  SaveSeoMetadataRequestSchema,
+  SaveSeoMetadataResponseSchema,
+  SeoMetadataDetailResponseSchema,
+  SeoMetadataEntriesResponseSchema,
+  SeoMetadataWriteResponseSchema,
+} from '../seo-metadata.js';
+import {
+  SaveSeoSettingsRequestSchema,
+  SeoSettingsResponseSchema,
+  SeoSettingsWriteResponseSchema,
+} from '../seo-settings.js';
+import {
+  CMS_MEDIA_DEFAULT_LIMIT,
+  CMS_MEDIA_MAX_BYTES,
+  CMS_MEDIA_MAX_LIMIT,
+  CmsMediaAltTextRequestSchema,
+  CmsMediaAttachRequestSchema,
+  CmsMediaAttachResponseSchema,
+  CmsMediaPageResponseSchema,
+  CmsMediaPreviewResponseSchema,
+  CmsMediaUploadRequestSchema,
+  CmsMediaUploadResponseSchema,
+  CmsMediaUsageResponseSchema,
+  CmsMediaWriteResponseSchema,
+} from '../cms-media.js';
 import {
   AdminCategoryDetailResponseSchema,
   AdminCategoryTreeResponseSchema,
@@ -5927,6 +6016,33 @@ function buildRegistry(): OpenAPIRegistry {
 
   registry.registerPath({
     method: 'put',
+    path: '/v1/admin/cms/pages/{pageId}/cover',
+    operationId: 'putV1AdminCmsPageCover',
+    summary: 'Attach or remove a page’s cover image',
+    description:
+      'Requires the internal BFF credential and `cms.page.manage` in an aal2 session — **not** `cms.media.manage`: a page editor does not need the media library’s key to name an entry in it. `mediaId` is required and nullable, and the two cases are the two operations: a uuid attaches that library entry and an explicit `null` removes whatever is attached. Leaving a cover alone is not sending this request. There is no object path here and no upload: the entry must already exist, and whether the id names one is decided by the database’s own foreign key, which answers 409 when it does not. A route of its own rather than a field on the page patch, so that changing a page’s address cannot change what it looks like and the reverse. **Nothing on the public site renders a page cover**: this records which image belongs to the page and makes it appear nowhere.',
+    request: {
+      ...sessionHeader,
+      ...cmsPageIdParam,
+      body: { content: { 'application/json': { schema: CmsPageCoverRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The cover was attached or removed.',
+        content: { 'application/json': { schema: CmsPageWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsPageNotFound,
+      409: cmsPageRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
     path: '/v1/admin/cms/pages/{pageId}/status',
     operationId: 'putV1AdminCmsPageStatus',
     summary: 'Move a page through its lifecycle',
@@ -5996,6 +6112,1299 @@ function buildRegistry(): OpenAPIRegistry {
       403: credentialRejected,
       404: cmsPageNotFound,
       409: cmsPageRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // ---------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------
+  // The blog (0092)
+  // ---------------------------------------------------------------------------------------------------
+  // **The blog is deliberately absent from the sitemap**, which is why no sitemap entry type appears for it
+  // anywhere in this document: 0086's five kinds stand unchanged, and blog inclusion is a separate increment.
+  //
+  // **A post's `<head>` comes from the post.** `metaTitle` and `metaDescription` are columns of its own
+  // translation; `seo_metadata` does not reach a blog post, so there is no override field to document.
+  const blogNotFound = {
+    description:
+      'No post the caller may see. A draft, a schedule, an archive, a post whose publication moment has not arrived, a published post nobody has written yet, and a slug that never existed all answer this way, and a staff caller without the read key gets it too.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const blogRefused = {
+    description:
+      'The post exists and the change was refused: an illegal lifecycle edge, featuring a post that is not published, publishing a post that has not been written in any locale, removing the last locale of a published post, an address that belongs to another post’s history, or a category, cover or tag that does not exist.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const blogPostIdParam = {
+    params: z.object({
+      postId: z.string().uuid().openapi({ description: 'The post’s identifier.' }),
+    }),
+  } as const;
+  const blogLocaleParams = {
+    params: z.object({
+      postId: z.string().uuid().openapi({ description: 'The post’s identifier.' }),
+      localeCode: z.string().openapi({ description: 'The locale to write or remove, as a seeded locale code.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/blog',
+    operationId: 'getV1Blog',
+    summary: 'The public blog index, newest published first',
+    description:
+      'Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same page. Ordered strictly by publication moment, newest first — `isFeatured` is reported so a surface can mark a post, and deliberately does not move it, because promoting featured posts would be a presentation rule nobody approved. A post appears only once it is published and its moment has passed, and only if it has been written in at least one locale. `category` and `tag` are filters compared as values, so a slug naming nothing or something deactivated yields an empty page rather than a refusal; `locale` selects a representation, and `resolvedLocale` says which language came back.',
+    request: {
+      query: z.object({
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the text. Absent or unrecognised resolves to the default locale.',
+        }),
+        category: BlogSlugSchema.optional().openapi({ description: 'Narrows the index to one category.' }),
+        tag: BlogSlugSchema.optional().openapi({ description: 'Narrows the index to one tag.' }),
+        limit: z.string().optional().openapi({ description: 'Page size. Clamped to the maximum.' }),
+        cursor: z.string().optional().openapi({ description: 'An opaque position from a previous page.' }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'One page of public posts. An empty array means nothing matches.',
+        content: { 'application/json': { schema: PublicBlogIndexResponseSchema } },
+      },
+      400: validationFailed,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/blog/taxonomy',
+    operationId: 'getV1BlogTaxonomy',
+    summary: 'The filters the blog index offers',
+    description:
+      'Requires the internal BFF credential and carries no user context. Only active categories and tags appear, each with how many posts the public may actually see under it. A filter with nothing behind it reports zero rather than being omitted, so a surface decides for itself whether to show an empty one. Categories carry the administrator’s own sort order; tags have none in the schema and are ordered by slug.',
+    request: {
+      query: z.object({
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the labels. An absent Arabic name falls back to the English one.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The active categories and tags with their public counts.',
+        content: { 'application/json': { schema: PublicBlogTaxonomyResponseSchema } },
+      },
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/blog/{slug}',
+    operationId: 'getV1BlogPostBySlug',
+    summary: 'One public post, or the slug it moved to',
+    description:
+      'Requires the internal BFF credential and carries no user context. **The 200 body is a union discriminated on `outcome`.** `post` is a published post with its text in the requested locale, or in the default locale when that one is untranslated — `resolvedLocale` says which came back, which is what lets a renderer set the right language and direction. `moved` means the slug is a previous address of a post that has since been renamed, and carries the current slug so the caller can issue its own redirect; the body has no content fields at all, so a renderer cannot show an empty post by forgetting to branch. The distinction is in the body rather than in the status line deliberately: a 301 here would be followed transparently by `fetch`, and the caller would receive the renamed post with a 200 and never learn to redirect the browser. `metaTitle` and `metaDescription` come from the post’s own translation and are the only source of its head.',
+    request: {
+      params: z.object({
+        slug: BlogSlugSchema.openapi({ description: 'The post’s address, current or previous.' }),
+      }),
+      query: z.object({
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the text. Absent or unrecognised resolves to the default locale.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The post, or the slug it moved to.',
+        content: { 'application/json': { schema: PublicBlogPostLookupResponseSchema } },
+      },
+      403: credentialRejected,
+      404: blogNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/blog',
+    operationId: 'getV1AdminBlogPosts',
+    summary: 'Authored posts, newest edit first',
+    description:
+      'Requires the internal BFF credential and `cms.blog.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Newest edit first, because this is an authoring list rather than a queue. `translatedLocales` is empty for a post nobody has written, which is also the state that cannot be published. The status and category filters compare values, so an unknown one returns an empty page rather than a refusal, and `search` is matched as a literal substring of the title or the slug — never as a pattern, so nothing in it can be read as a wildcard.',
+    request: {
+      ...sessionHeader,
+      query: z.object({
+        limit: z.string().optional().openapi({ description: 'Page size. Clamped to the maximum.' }),
+        cursor: z.string().optional().openapi({ description: 'An opaque position from a previous page.' }),
+        status: z.string().optional().openapi({ description: 'Narrows the list to one state.' }),
+        search: z.string().optional().openapi({ description: 'A literal substring of the title or the slug.' }),
+        categoryId: z.string().optional().openapi({ description: 'Narrows the list to one category.' }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'One page of authored posts.',
+        content: { 'application/json': { schema: BlogPostPageResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/blog/taxonomy',
+    operationId: 'getV1AdminBlogTaxonomy',
+    summary: 'Blog categories and tags, active or not',
+    description:
+      'Requires the internal BFF credential and `cms.blog.read` in an aal2 session. Includes deactivated rows, which is the difference from the public taxonomy: a console has to be able to see and reactivate what it deactivated. `postCount` counts every post, not only the public ones — it is there to warn before a deactivation, which is a different question from what the public site shows. `canManage` reports whether this caller also holds `cms.blog.manage`, so a console renders its controls from the answer rather than from a role name.',
+    request: { ...sessionHeader },
+    responses: {
+      200: {
+        description: 'Every category and tag, with whether the caller may change them.',
+        content: { 'application/json': { schema: BlogTaxonomyResponseSchema } },
+      },
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/blog/{postId}',
+    operationId: 'getV1AdminBlogPost',
+    summary: 'One authored post',
+    description:
+      'Requires the internal BFF credential and `cms.blog.read` in an aal2 session. Carries every locale the post has been written in, every slug it has had — each of which still redirects to the current one — the tags it carries, and `canManage`, which reports whether this caller also holds `cms.blog.manage`. A post that does not exist and a caller without the read key answer identically, so a refusal cannot be told from an absence. `authorUserId` is the byline, set to the staff member who created the post and not changeable here.',
+    request: { ...sessionHeader, ...blogPostIdParam },
+    responses: {
+      200: {
+        description: 'The post, its locales, its tags and the caller’s capability.',
+        content: { 'application/json': { schema: BlogPostDetailResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/blog',
+    operationId: 'postV1AdminBlogPosts',
+    summary: 'Create a post',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. **The post is always created as a draft and never featured**, and there is neither a status nor a featured flag in the request: publishing is its own call, so a post cannot go live before anybody has written it. The creating staff member becomes the byline. A slug that is a previous address of another post is refused — a historical slug belongs to the post that gave it up, permanently.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CreateBlogPostRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The post was created as a draft.',
+        content: { 'application/json': { schema: CreateBlogPostResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/blog/{postId}',
+    operationId: 'patchV1AdminBlogPost',
+    summary: 'Change a post’s address or presentation',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Every field is optional. **An absent field changes nothing and an explicit `null` clears a reference** — the two mean different things, so sending `categoryId: null` removes the category while omitting it leaves it alone. **The status is deliberately not changeable here**: renaming a post or changing its cover can never publish or archive it. Changing the slug keeps the old one as a permanent redirect. `isFeatured` is refused unless the post is published, which is the database’s own constraint.',
+    request: {
+      ...sessionHeader,
+      ...blogPostIdParam,
+      body: { content: { 'application/json': { schema: UpdateBlogPostRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The post was changed.',
+        content: { 'application/json': { schema: BlogWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/blog/{postId}/status',
+    operationId: 'putV1AdminBlogPostStatus',
+    summary: 'Move a post through its lifecycle',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. The legal transitions are the database’s, shared with CMS pages: a post may move between draft, scheduled, published and archived along defined edges, and an edge that does not exist is refused. Publishing or scheduling a post that has not been written in any locale is refused too, because it would put a live address in front of the public with nothing to render. `scheduledFor` is required for `scheduled` and not allowed otherwise. Leaving the published state clears the featured flag, which no other state may carry.',
+    request: {
+      ...sessionHeader,
+      ...blogPostIdParam,
+      body: { content: { 'application/json': { schema: BlogPostStatusRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The post’s state was changed.',
+        content: { 'application/json': { schema: BlogWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/blog/{postId}/translations/{localeCode}',
+    operationId: 'putV1AdminBlogPostTranslation',
+    summary: 'Write one locale of a post',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Creating and replacing are the same request. Nothing is machine translated: a locale exists because somebody wrote it, and an untranslated locale simply has no row. `metaTitle` and `metaDescription` are written here and nowhere else — they are the only source of the post’s public head.',
+    request: {
+      ...sessionHeader,
+      ...blogLocaleParams,
+      body: { content: { 'application/json': { schema: SaveBlogPostTranslationRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The locale was written.',
+        content: { 'application/json': { schema: BlogWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/blog/{postId}/translations/{localeCode}',
+    operationId: 'deleteV1AdminBlogPostTranslation',
+    summary: 'Remove one locale of a post',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Removing the last locale of a published or scheduled post is refused: its address would start answering 404 while the post was still live. A locale that was never there answers 404 rather than a refusal, because the remedy is the same as for a post that does not exist.',
+    request: { ...sessionHeader, ...blogLocaleParams },
+    responses: {
+      200: {
+        description: 'The locale was removed.',
+        content: { 'application/json': { schema: BlogWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/blog/{postId}/tags',
+    operationId: 'putV1AdminBlogPostTags',
+    summary: 'Replace a post’s tags',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. The whole set is sent rather than one addition or removal at a time, so the write cannot leave a half-applied result and a console that renders checkboxes already knows what it means. An empty array removes every tag. A tag that does not exist is refused rather than quietly dropped. A deactivated tag may be attached and is simply not served to the public, so reactivating it restores it.',
+    request: {
+      ...sessionHeader,
+      ...blogPostIdParam,
+      body: { content: { 'application/json': { schema: SaveBlogPostTagsRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The post’s tags are now exactly what was sent.',
+        content: { 'application/json': { schema: BlogWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/blog/categories',
+    operationId: 'postV1AdminBlogCategories',
+    summary: 'Create a blog category',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. `slug` and `nameEn` are both required: English is the required language throughout and Arabic is optional, which is the schema’s own rule rather than this route’s. Blog categories are separate from the listing catalogue’s categories and share nothing with them.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: SaveBlogCategoryRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The category was created.',
+        content: { 'application/json': { schema: SaveBlogTaxonomyResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/blog/categories/{categoryId}',
+    operationId: 'patchV1AdminBlogCategory',
+    summary: 'Change a blog category',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Every field is optional and an absent one leaves that part of the category alone — including its sort order and whether it is active, so correcting a name cannot silently reactivate a category or move it. An empty string clears an optional Arabic name or description. Deactivating a category removes it from the public filters and from the posts it had categorised, which still appear in the index with no category name.',
+    request: {
+      ...sessionHeader,
+      params: z.object({
+        categoryId: z.string().uuid().openapi({ description: 'The category’s identifier.' }),
+      }),
+      body: { content: { 'application/json': { schema: SaveBlogCategoryRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The category was changed.',
+        content: { 'application/json': { schema: SaveBlogTaxonomyResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/blog/tags',
+    operationId: 'postV1AdminBlogTags',
+    summary: 'Create a blog tag',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. `slug` and `nameEn` are both required. Blog tags are separate from the listing catalogue’s tags and share nothing with them.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: SaveBlogTagRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The tag was created.',
+        content: { 'application/json': { schema: SaveBlogTaxonomyResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/blog/tags/{tagId}',
+    operationId: 'patchV1AdminBlogTag',
+    summary: 'Change a blog tag',
+    description:
+      'Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Every field is optional and an absent one leaves that part of the tag alone, including whether it is active. Deactivating a tag removes it from the public filters and from the posts carrying it, while the rows themselves are kept, so reactivating restores them.',
+    request: {
+      ...sessionHeader,
+      params: z.object({
+        tagId: z.string().uuid().openapi({ description: 'The tag’s identifier.' }),
+      }),
+      body: { content: { 'application/json': { schema: SaveBlogTagRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The tag was changed.',
+        content: { 'application/json': { schema: SaveBlogTaxonomyResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: blogNotFound,
+      409: blogRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // ---------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------
+  // The homepage (0093)
+  // ---------------------------------------------------------------------------------------------------
+  // **A featured section is editorial.** No schema in this document carries a promotion, a package, a placement, a
+  // ranking or a weight, and none can: 0025's `homepage` placement is paid and promoted merging is a Phase 9
+  // decision, so neither is reachable from here.
+  //
+  // **`banner_strip` is one of 0030's nine types and has no configuration shape here**, because a banner is its
+  // image and this platform has no media origin to address one with.
+  const homepageNotFound = {
+    description:
+      'No section the caller may see. A section that does not exist and a caller without `cms.homepage.read` answer the same way, so a refusal cannot be told from an absence; a caller holding only the read key gets this from every write too.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const homepageRefused = {
+    description:
+      'The change was refused by a constraint migration 0030 owns: another section already uses that key, or a key, section type, title length or configuration is not one the column accepts.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const homepageSectionIdParam = {
+    params: z.object({
+      sectionId: z.string().uuid().openapi({ description: 'The section’s identifier.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/homepage',
+    operationId: 'getV1Homepage',
+    summary: 'The public homepage, assembled',
+    description:
+      'Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same homepage. The sections come back in the administrator’s own order, each already resolved to the content it shows — a curated section names rows by id and they are read live, so a sold listing, a suspended seller or a deactivated category simply drops out. **A section with nothing left to show is absent from the response entirely**, which is why no member of the union has an empty state: an empty shelf never reaches a browser. **An empty `sections` array is a real answer** rather than a 404, because a marketplace whose homepage has not been composed yet still has one. `locale` selects a representation; text with no Arabic written falls back to the English. A `banner_strip` section is never returned.',
+    request: {
+      query: z.object({
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the text. Absent or unrecognised resolves to the default locale.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The homepage’s sections, resolved. An empty array means nothing has been composed yet.',
+        content: { 'application/json': { schema: PublicHomepageResponseSchema } },
+      },
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/homepage/sections',
+    operationId: 'getV1AdminHomepageSections',
+    summary: 'Every homepage section, in order',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Includes hidden sections and sections of a type the public homepage will not render; `isServed` marks the latter, and `isConfigured` marks a section whose stored document does not match its own type. `canManage` reports whether this caller also holds `cms.homepage.manage`, so a console renders its controls from the answer rather than from a role name.',
+    request: { ...sessionHeader },
+    responses: {
+      200: {
+        description: 'Every section, with whether the caller may change them.',
+        content: { 'application/json': { schema: HomepageSectionsResponseSchema } },
+      },
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: homepageNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/homepage/sections/reorder',
+    operationId: 'putV1AdminHomepageSectionsReorder',
+    summary: 'Set the order of the homepage',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. The whole order is sent at once rather than one move at a time, so the write cannot leave a half-applied arrangement. Position comes from the array’s own ordering; a section the request leaves out keeps its place, and an id that names no section moves nothing. Positions are spaced so a later insertion between two sections needs no rewrite.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: ReorderHomepageSectionsRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The order was set.',
+        content: { 'application/json': { schema: HomepageWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: homepageNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/homepage/sections/{sectionId}',
+    operationId: 'getV1AdminHomepageSection',
+    summary: 'One homepage section',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.read` in an aal2 session. Carries the stored configuration as written, plus `chosenCount` and `renderableCount` — how many rows the section names and how many of those are still visible to the public. That pair is the reason a section can be skipped on the homepage and the operator can still find out why. A section that does not exist and a caller without the read key answer identically.',
+    request: { ...sessionHeader, ...homepageSectionIdParam },
+    responses: {
+      200: {
+        description: 'The section, its configuration and how much of it is still renderable.',
+        content: { 'application/json': { schema: HomepageSectionDetailResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: homepageNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/homepage/sections',
+    operationId: 'postV1AdminHomepageSections',
+    summary: 'Create a homepage section',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. **The section is always created hidden**, and there is no visibility field in the request: showing a section is its own call, so a half-configured one cannot reach the homepage. The `config` is validated against the `sectionType` it was sent with — each type has exactly one shape, and a shape belonging to another type is refused rather than carried along. A `banner_strip` cannot be created here.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CreateHomepageSectionRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The section was created, hidden.',
+        content: { 'application/json': { schema: CreateHomepageSectionResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: homepageRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/homepage/sections/{sectionId}',
+    operationId: 'patchV1AdminHomepageSection',
+    summary: 'Change a homepage section',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. Every field is optional and an absent field changes nothing; a title sent as null clears it. **Visibility is deliberately not changeable here** — editing a section’s text, configuration or position can never put it in front of the public. A `config` must be sent together with its `sectionType`, because a configuration can only be checked against one.',
+    request: {
+      ...sessionHeader,
+      ...homepageSectionIdParam,
+      body: { content: { 'application/json': { schema: UpdateHomepageSectionRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The section was changed.',
+        content: { 'application/json': { schema: HomepageWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: homepageNotFound,
+      409: homepageRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/homepage/sections/{sectionId}/state',
+    operationId: 'putV1AdminHomepageSectionState',
+    summary: 'Show or hide a homepage section',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. The only route that can put a section in front of the public, or take it back. Showing a section whose content has all disappeared is allowed and harmless: the public homepage skips it, and the section detail reports why.',
+    request: {
+      ...sessionHeader,
+      ...homepageSectionIdParam,
+      body: { content: { 'application/json': { schema: HomepageSectionStateRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The section is now shown or hidden as asked.',
+        content: { 'application/json': { schema: HomepageWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: homepageNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/homepage/sections/{sectionId}',
+    operationId: 'deleteV1AdminHomepageSection',
+    summary: 'Remove a homepage section',
+    description:
+      'Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. A real delete: a section is a composition choice rather than a record of something that happened, and 0030’s audit trigger has already recorded that it existed. The rows it referred to are untouched — a section names them and never owns them.',
+    request: { ...sessionHeader, ...homepageSectionIdParam },
+    responses: {
+      200: {
+        description: 'The section was removed.',
+        content: { 'application/json': { schema: HomepageWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: homepageNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // ---------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------
+  // Navigation (0094)
+  // ---------------------------------------------------------------------------------------------------
+  // **A menu entry points at a row and never copies it.** The label is the operator's own words; the address is
+  // derived from the target every time it is read, so an unpublished page or a deactivated category leaves the
+  // menu by itself.
+  //
+  // **The public response carries a slug, not an href, for a page, a post or a category.** The closed set of
+  // served page addresses is the web application's route map, not a database fact, so the surface that owns the
+  // route map derives the address and drops what it cannot serve.
+  //
+  // **Two levels, structurally.** A menu holds items and an item holds links, and a link holds nothing — so a
+  // third level is unrepresentable here as well as refused by 0030's trigger.
+  const navigationNotFound = {
+    description:
+      'No menu or item the caller may see. One that does not exist and a caller without `cms.navigation.read` answer the same way, so a refusal cannot be told from an absence; a caller holding only the read key gets this from every write too.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const navigationRefused = {
+    description:
+      'The change was refused by a constraint or trigger migration 0030 owns: another menu already uses that key, a label or path is not one the column accepts, the arrangement would be three levels deep or would put a child in another menu, or the page, post, category or menu named does not exist.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const navigationMenuIdParam = {
+    params: z.object({
+      menuId: z.string().uuid().openapi({ description: 'The menu’s identifier.' }),
+    }),
+  } as const;
+  const navigationItemIdParam = {
+    params: z.object({
+      itemId: z.string().uuid().openapi({ description: 'The item’s identifier.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/navigation',
+    operationId: 'getV1Navigation',
+    summary: 'The public navigation menus',
+    description:
+      'Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same menus. `menus` names which of the three placements to return (`header`, `footer`, `mobile`) and may name several at once, so a page renders its whole chrome from one read; an unrecognised key is ignored rather than refused, and asking for none returns all three. Each entry carries the operator’s own label and its target — a slug for a page, post or category, a relative path for a path entry — and never an href: deriving one belongs to whichever surface owns the route map. **An entry whose target is no longer public is absent, and so is any entry beneath it**; a menu left with nothing is absent too, which is why no menu here is ever empty. **An empty `menus` array is a real answer** rather than a 404, because a site whose menus have not been composed yet still has navigation — the application’s own neutral chrome.',
+    request: {
+      query: z.object({
+        menus: z.string().optional().openapi({
+          description:
+            'A comma-separated list of placements to return. Absent returns all three. An unrecognised key is ignored.',
+          example: 'header,footer',
+        }),
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the labels. Absent or unrecognised resolves to the default locale.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The menus asked for, resolved. An empty array means nothing has been composed yet.',
+        content: { 'application/json': { schema: PublicNavigationResponseSchema } },
+      },
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/navigation/menus',
+    operationId: 'getV1AdminNavigationMenus',
+    summary: 'Every navigation menu',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Served placements come first. `isServed` marks a menu the public site places; `renderableItemCount` is how many of its items the public would actually be shown, which is how an operator discovers that a menu has quietly emptied. `canManage` reports whether this caller also holds `cms.navigation.manage`, so a console renders its controls from the answer rather than from a role name.',
+    request: { ...sessionHeader },
+    responses: {
+      200: {
+        description: 'Every menu, with whether the caller may change them.',
+        content: { 'application/json': { schema: NavigationMenusResponseSchema } },
+      },
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/navigation/items/reorder',
+    operationId: 'putV1AdminNavigationItemsReorder',
+    summary: 'Set the order of a menu',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. The whole order is sent at once rather than one move at a time, so the write cannot leave a half-applied arrangement. Position comes from the array’s own ordering; an item the request leaves out keeps its place, and an id belonging to another menu moves nothing. Positions are spaced so a later insertion between two items needs no rewrite.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: ReorderNavigationItemsRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The order was applied.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/navigation/items',
+    operationId: 'postV1AdminNavigationItems',
+    summary: 'Create a menu entry',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. The target is one coherent value: a page, a post, a category or a relative path, and exactly the field belonging to that kind. A `parentId` puts the entry under a heading — 0030 refuses a third level and a parent in another menu. There is no visibility field: showing and hiding is its own call.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CreateNavigationItemRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The entry was created.',
+        content: { 'application/json': { schema: CreateNavigationItemResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: navigationRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/navigation/items/{itemId}',
+    operationId: 'patchV1AdminNavigationItem',
+    summary: 'Change a menu entry',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. Every field is optional and an absent field changes nothing; an Arabic label sent as null clears it. Sending a `target` replaces it whole, so turning a page entry into a path entry clears the page in the same write. **Visibility is deliberately not changeable here**, and neither is which menu the entry belongs to. Moving an entry out from under its heading has its own route.',
+    request: {
+      ...sessionHeader,
+      ...navigationItemIdParam,
+      body: { content: { 'application/json': { schema: UpdateNavigationItemRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The entry was changed.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      409: navigationRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/navigation/items/{itemId}/promote',
+    operationId: 'putV1AdminNavigationItemPromote',
+    summary: 'Move a menu entry to the top level',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A separate route because an absent `parentId` on a change has to keep meaning “leave it where it is”, so clearing one needs a way to be said. An entry already at the top level answers the same way as one that does not exist.',
+    request: { ...sessionHeader, ...navigationItemIdParam },
+    responses: {
+      200: {
+        description: 'The entry is now at the top level of its menu.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/navigation/items/{itemId}/state',
+    operationId: 'putV1AdminNavigationItemState',
+    summary: 'Show or hide a menu entry',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. One of the two routes that can put something in front of the public, or take it back. Hiding a heading takes the entries beneath it off the public menu too, because an entry without its heading is not the arrangement that was made.',
+    request: {
+      ...sessionHeader,
+      ...navigationItemIdParam,
+      body: { content: { 'application/json': { schema: NavigationStateRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The entry is now shown or hidden as asked.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/navigation/items/{itemId}',
+    operationId: 'deleteV1AdminNavigationItem',
+    summary: 'Remove a menu entry',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A real delete, and 0030’s own cascade takes any entry beneath it as well. The rows it referred to are untouched — an entry names them and never owns them.',
+    request: { ...sessionHeader, ...navigationItemIdParam },
+    responses: {
+      200: {
+        description: 'The entry was removed.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/navigation/menus',
+    operationId: 'postV1AdminNavigationMenus',
+    summary: 'Create a navigation menu',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A menu may be created under any key the column accepts, but only the three the site places are ever read publicly; a menu under any other key is legal and simply unplaced. There is no visibility field: showing and hiding is its own call, and a menu with no renderable entry is skipped anyway.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CreateNavigationMenuRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The menu was created.',
+        content: { 'application/json': { schema: CreateNavigationMenuResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: navigationRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/navigation/menus/{menuId}',
+    operationId: 'getV1AdminNavigationMenu',
+    summary: 'One navigation menu, with its entries',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.read` in an aal2 session. Carries every entry in tree order, including hidden ones and ones the public is not being shown: `targetState` says whether the target is public, not public or gone, and `targetSlug` and `targetTitle` let an operator recognise the row being pointed at — which is also how an entry pointing at an address this application does not serve is found. `locale` chooses which of a target’s own titles is shown and never which entries exist. A menu that does not exist and a caller without the read key answer identically.',
+    request: {
+      ...sessionHeader,
+      ...navigationMenuIdParam,
+      query: z.object({
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the targets’ own titles. It never changes which entries are listed.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The menu and its entries.',
+        content: { 'application/json': { schema: NavigationMenuDetailResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/navigation/menus/{menuId}',
+    operationId: 'patchV1AdminNavigationMenu',
+    summary: 'Change a navigation menu',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. Every field is optional and an absent field changes nothing; an Arabic label sent as null clears it. Changing a menu’s key changes where the site places it — or stops placing it — and **visibility is deliberately not changeable here**.',
+    request: {
+      ...sessionHeader,
+      ...navigationMenuIdParam,
+      body: { content: { 'application/json': { schema: UpdateNavigationMenuRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The menu was changed.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      409: navigationRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/navigation/menus/{menuId}/state',
+    operationId: 'putV1AdminNavigationMenuState',
+    summary: 'Show or hide a navigation menu',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. The route that takes a whole menu off every public surface at once, or puts it back. Showing a menu whose entries have all become unavailable is allowed and harmless: the public site skips it, and the menu detail reports why.',
+    request: {
+      ...sessionHeader,
+      ...navigationMenuIdParam,
+      body: { content: { 'application/json': { schema: NavigationStateRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The menu is now shown or hidden as asked.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/navigation/menus/{menuId}',
+    operationId: 'deleteV1AdminNavigationMenu',
+    summary: 'Remove a navigation menu',
+    description:
+      'Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A real delete, and 0030’s cascade takes its entries with it. The rows those entries referred to are untouched.',
+    request: { ...sessionHeader, ...navigationMenuIdParam },
+    responses: {
+      200: {
+        description: 'The menu was removed.',
+        content: { 'application/json': { schema: NavigationWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: navigationNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // ---------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------
+  // The help centre (0095)
+  // ---------------------------------------------------------------------------------------------------
+  // **A topic is a page's own `page_key`.** Which address shows which questions is that mapping and nothing else,
+  // so the public read takes a topic rather than an address and the console reports, for every topic, whether a
+  // publicly visible page carries it.
+  //
+  // **No structured data anywhere.** No schema here carries a `FAQPage` document, a JSON-LD field or anything an
+  // SEO head would read, and `faqs` is not one of `seo_metadata`'s entity types.
+  //
+  // **An answer is plain text.** It is served as stored, blank lines and all, and the renderer splits paragraphs.
+  const faqNotFound = {
+    description:
+      'No entry the caller may see. One that does not exist and a caller without `cms.faq.read` answer the same way, so a refusal cannot be told from an absence; a caller holding only the read key gets this from every write too.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const faqRefused = {
+    description:
+      'The change was refused by a constraint migration 0030 owns: the topic is not a topic, the question is longer than the column, or the answer has nothing in it.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const faqIdParam = {
+    params: z.object({
+      faqId: z.string().uuid().openapi({ description: 'The entry’s identifier.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/faqs',
+    operationId: 'getV1Faqs',
+    summary: 'The published help-centre entries of one topic',
+    description:
+      'Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same questions. `topic` is required and is a page’s own `page_key` — the mapping that decides which address shows which questions — so `/faq` asks for `faq` and `/help` asks for `help`; a value that is not a topic is a 400 rather than an empty answer, because a caller that sent one has a bug. The entries come back in the administrator’s own order, each question and answer in the language asked for with English as the fallback. An answer is plain text and is served exactly as stored, blank lines included, so a renderer can split paragraphs; nothing marks any part of it as markup. **An empty `entries` array is a real answer** rather than a 404, because a page whose topic has nothing published simply shows no help section.',
+    request: {
+      query: z.object({
+        topic: FaqTopicSchema.openapi({
+          description: 'The topic to read, which is a published page’s own page_key.',
+          example: 'faq',
+        }),
+        locale: PublicLocaleSchema.optional().openapi({
+          description: 'Names the language of the text. Absent or unrecognised resolves to the default locale.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The published entries of that topic. An empty array means nothing is published under it.',
+        content: { 'application/json': { schema: PublicFaqsResponseSchema } },
+      },
+      400: validationFailed,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/faqs/topics',
+    operationId: 'getV1AdminFaqTopics',
+    summary: 'Every help-centre topic in use',
+    description:
+      'Requires the internal BFF credential and `cms.faq.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Mapped topics come first. For each one: how many entries it holds, how many of those are published, whether a publicly visible page carries it as its `page_key`, and that page’s slug. A topic no address shows is reported rather than refused — topics are free-form on purpose.',
+    request: { ...sessionHeader },
+    responses: {
+      200: {
+        description: 'Every topic entries exist under.',
+        content: { 'application/json': { schema: FaqTopicsResponseSchema } },
+      },
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/faqs/reorder',
+    operationId: 'putV1AdminFaqsReorder',
+    summary: 'Set the order of one topic',
+    description:
+      'Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. The whole order of one topic is sent at once rather than one move at a time, so the write cannot leave a half-applied arrangement. Position comes from the array’s own ordering; an entry the request leaves out keeps its place, and an id belonging to another topic moves nothing. Positions are spaced so a later insertion between two entries needs no rewrite.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: ReorderFaqsRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The order was applied.',
+        content: { 'application/json': { schema: FaqWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/faqs',
+    operationId: 'getV1AdminFaqs',
+    summary: 'One page of help-centre entries',
+    description:
+      'Requires the internal BFF credential and `cms.faq.read` in an aal2 session. Entries come back in help-centre order — by topic, then by the position somebody arranged — and include the unpublished ones, each with whether a public page shows its topic. `topic` narrows the same order rather than changing it. The cursor is opaque: the client sends it back untouched and reads nothing from it, and a cursor that is not a position is a 400 rather than a silent first page.',
+    request: {
+      ...sessionHeader,
+      query: z.object({
+        topic: FaqTopicSchema.optional().openapi({ description: 'Narrows the list to one topic.' }),
+        cursor: z.string().optional().openapi({ description: 'Opaque. Send back exactly what the last page returned.' }),
+        limit: z
+          .string()
+          .optional()
+          .openapi({ description: `How many entries to return. The default is ${FAQ_DEFAULT_LIMIT} and the maximum is ${FAQ_MAX_LIMIT}.` }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'One page of entries, with whether the caller may change them.',
+        content: { 'application/json': { schema: FaqPageResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/faqs/{faqId}',
+    operationId: 'getV1AdminFaq',
+    summary: 'One help-centre entry',
+    description:
+      'Requires the internal BFF credential and `cms.faq.read` in an aal2 session. Carries both languages as written, the position, whether the entry is published, and whether a publicly visible page shows its topic — with that page’s slug, so a console can check it against the application’s own route map. An entry that does not exist and a caller without the read key answer identically.',
+    request: { ...sessionHeader, ...faqIdParam },
+    responses: {
+      200: {
+        description: 'The entry.',
+        content: { 'application/json': { schema: FaqDetailResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/faqs',
+    operationId: 'postV1AdminFaqs',
+    summary: 'Create a help-centre entry',
+    description:
+      'Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. **The entry is always created unpublished**, and there is no publication field in the request: publishing is its own call, so a half-written answer cannot reach a public page. The English question and answer are required and the Arabic ones are optional, which is D6 and D7. The topic is free-form within the column’s format; one no address shows is legal and simply unseen.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CreateFaqRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The entry was created, unpublished.',
+        content: { 'application/json': { schema: CreateFaqResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      409: faqRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/v1/admin/faqs/{faqId}',
+    operationId: 'patchV1AdminFaq',
+    summary: 'Change a help-centre entry',
+    description:
+      'Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. Every field is optional and an absent field changes nothing; an Arabic wording sent as null clears it. Changing the topic moves the entry to whatever address shows that topic, with no second edit. **Publication is deliberately not changeable here** — editing an answer can never put it in front of the public.',
+    request: {
+      ...sessionHeader,
+      ...faqIdParam,
+      body: { content: { 'application/json': { schema: UpdateFaqRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The entry was changed.',
+        content: { 'application/json': { schema: FaqWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
+      409: faqRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/faqs/{faqId}/state',
+    operationId: 'putV1AdminFaqState',
+    summary: 'Publish or unpublish a help-centre entry',
+    description:
+      'Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. The only route that can put an entry on a public page, or take it back. Publishing an entry under a topic no address shows is allowed and harmless: nothing renders it, and the console reports why.',
+    request: {
+      ...sessionHeader,
+      ...faqIdParam,
+      body: { content: { 'application/json': { schema: FaqStateRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The entry is now published or unpublished as asked.',
+        content: { 'application/json': { schema: FaqWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/faqs/{faqId}',
+    operationId: 'deleteV1AdminFaq',
+    summary: 'Remove a help-centre entry',
+    description:
+      'Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. A real delete: a question and its answer are editorial content rather than a record of something that happened, and 0030 gave this table no history.',
+    request: { ...sessionHeader, ...faqIdParam },
+    responses: {
+      200: {
+        description: 'The entry was removed.',
+        content: { 'application/json': { schema: FaqWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: faqNotFound,
       503: unavailable,
       500: internalError,
     },
@@ -6202,6 +7611,445 @@ function buildRegistry(): OpenAPIRegistry {
       401: authenticationRequired,
       403: credentialRejected,
       404: redirectNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // ---------------------------------------------------------------------------------------------------
+  // Per-entity SEO metadata
+  // ---------------------------------------------------------------------------------------------------
+  const metadataNotFound = {
+    description:
+      'No entry the caller may see. An entry that does not exist and a caller without `seo.metadata.read` answer the same way, so a refusal cannot be told from an absence; a caller holding only the read key gets this from every write too.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const metadataRefused = {
+    description:
+      'The change was refused by a constraint migration 0030 owns: an entity kind it does not list, a path that is not relative or would leave the site, a value past a length bound, an empty or self-contradicting directive set, or a locale or share image that does not exist.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const metadataIdParam = {
+    params: z.object({
+      entryId: z.string().uuid().openapi({ description: 'The entry’s identifier.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/seo/metadata',
+    operationId: 'getV1SeoMetadata',
+    summary: 'One surface’s metadata override',
+    description:
+      'Requires the internal BFF credential and carries no user context: an override is as public as the thing it describes, and nothing about the caller changes the answer. Addressed by `entityType` and `slug`, or by `routePath` for a fixed landing address — **never by an identifier**, so no internal id has to cross into a public response to make this read possible. The answer is `null` rather than a 404 when nothing is stored, because that is the common answer and must be distinguishable from the service being unreachable. Metadata about anything the public cannot already see is withheld by the database. Two owner decisions are already applied to what comes back: `canonicalPath` is null for a listing, a category and a seller whatever was stored, because those keep the self-referencing canonical the specification fixes for them; and `robotsDirectives` holds restrictions only, so a stored value can never widen indexing past a platform rule. A missing locale is no override, never a fallback to the other language.',
+    request: {
+      query: z.object({
+        entityType: z.string().optional().openapi({
+          description: 'The kind of surface — `page`, `category`, `listing` or `seller`. Omitted for a route.',
+        }),
+        slug: z.string().optional().openapi({ description: 'The surface’s slug. Required with `entityType`.' }),
+        routePath: z.string().optional().openapi({
+          description: 'A fixed landing address, relative. Used instead of `entityType` and `slug`.',
+        }),
+        locale: z.string().optional().openapi({ description: 'Which locale’s override to read.' }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'The override, or that there is none.',
+        content: { 'application/json': { schema: PublicSeoMetadataResponseSchema } },
+      },
+      400: validationFailed,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/seo/metadata',
+    operationId: 'getV1AdminSeoMetadata',
+    summary: 'The metadata overrides, newest edit first',
+    description:
+      'Requires the internal BFF credential and `seo.metadata.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Newest edit first, because this is a maintenance list rather than a queue. `targetSlug` names whatever each entry points at, so a row reads as a thing rather than as an identifier. The stored values come back **as stored**, including a canonical the public will not receive: an operator has to be able to see their own work. `canonicalIsHonoured` says whether this kind reads a canonical at all.',
+    request: {
+      ...sessionHeader,
+      query: z.object({
+        limit: z.string().optional().openapi({
+          description: `How many rows to return. Defaults to ${SEO_METADATA_DEFAULT_LIMIT}; a larger value is clamped to ${SEO_METADATA_MAX_LIMIT}.`,
+        }),
+        cursor: z.string().optional().openapi({
+          description: 'An opaque position from a previous page. Never constructed by a client.',
+        }),
+        entityType: z.string().optional().openapi({ description: 'Narrow to one kind of surface.' }),
+        locale: z.string().optional().openapi({ description: 'Narrow to one locale.' }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'One page of entries.',
+        content: { 'application/json': { schema: SeoMetadataEntriesResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: metadataNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/seo/metadata/{entryId}',
+    operationId: 'getV1AdminSeoMetadataEntry',
+    summary: 'One entry, with what the public would actually receive',
+    description:
+      'Requires the internal BFF credential and `seo.metadata.read` in an aal2 session. `canManage` reports whether this caller also holds `seo.metadata.manage`, which is a separate seeded key. `effectiveCanonicalPath` and `effectiveRobotsDirectives` are the database’s own answers for what a visitor’s browser will be told, beside the stored values — so an operator who has written `index` into a row can see that nothing will come of it, from the reader rather than from a sentence on a screen.',
+    request: { ...sessionHeader, ...metadataIdParam },
+    responses: {
+      200: {
+        description: 'The entry.',
+        content: { 'application/json': { schema: SeoMetadataDetailResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: metadataNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/seo/metadata',
+    operationId: 'putV1AdminSeoMetadata',
+    summary: 'Write one surface’s metadata for one locale',
+    description:
+      'Requires the internal BFF credential and `seo.metadata.manage` in an aal2 session. Creating and replacing are the same request, which is why it is a `PUT` on the collection rather than a `POST`: one surface and one locale have one row, and the request *is* that row — **an absent field clears the stored value**. A route carries a path and no identifier; every other kind carries an identifier and no path. `structuredData` is not a field here: the column exists and has no reader, so nothing can send one. Both paths must be relative and neither may leave the site.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: SaveSeoMetadataRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The entry was written.',
+        content: { 'application/json': { schema: SaveSeoMetadataResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: metadataNotFound,
+      409: metadataRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/seo/metadata/{entryId}',
+    operationId: 'deleteV1AdminSeoMetadataEntry',
+    summary: 'Remove one override',
+    description:
+      'Requires the internal BFF credential and `seo.metadata.manage` in an aal2 session. Removing an override returns that surface to the metadata it derives from its own content, which is why removal is real here where an authored page is archived instead: an override is an instruction about a surface rather than content with an address. The audit trail records the removed row.',
+    request: { ...sessionHeader, ...metadataIdParam },
+    responses: {
+      200: {
+        description: 'The override was removed.',
+        content: { 'application/json': { schema: SeoMetadataWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: metadataNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // -------------------------------------------------------------------------------------------------
+  // Site-wide SEO settings (0096)
+  // -------------------------------------------------------------------------------------------------
+  const seoSettingsNotFound = {
+    description:
+      'No settings the caller may see. A caller without `seo.settings.manage` at aal2 gets this from every route here, read or write, so a refusal cannot be told from an absence. There is no `seo.settings.read`: 0033 seeds one key for this cluster, so reading and writing it are the same capability.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const seoSettingsRefused = {
+    description:
+      'The change was refused by a constraint migration 0030 owns: a site name that is blank or past 120 characters, a default title past 70 or description past 320, a handle that is not `@` followed by up to fifteen word characters, an organization document that is not a JSON object, or a share image that is not a media row.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const seoSettingsLocaleParam = {
+    params: z.object({
+      localeCode: z.string().openapi({ description: 'The locale to write or remove, as a seeded locale code.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/seo/settings',
+    operationId: 'getV1AdminSeoSettings',
+    summary: 'The site-wide SEO defaults, one row per active locale',
+    description:
+      'Requires the internal BFF credential and `seo.settings.manage` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. **One row per active locale whether or not it has been authored**, default locale first, because the table ships empty and the first save needs somewhere to happen: `isAuthored` tells the two states apart. `robotsIsServed` is true for the default locale and only the default locale — `/robots.txt` is one document at the root of an origin, so a body authored on any other locale is stored and never served. `shareMediaObjectPath` is a relative path inside a private bucket and is never an address: the image cannot be resolved or displayed, because no media origin or signing capability exists. Everything except `robotsTxtBody` is stored and read by nothing: the site name does not feed the header or any page title, the default title and description feed no metadata resolver, the handle emits no Twitter metadata, and the organization document emits no JSON-LD.',
+    request: sessionHeader,
+    responses: {
+      200: {
+        description: 'Every active locale.',
+        content: { 'application/json': { schema: SeoSettingsResponseSchema } },
+      },
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: seoSettingsNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/seo/settings/{localeCode}',
+    operationId: 'putV1AdminSeoSettingsLocale',
+    summary: 'Write one locale’s site-wide defaults',
+    description:
+      'Requires the internal BFF credential and `seo.settings.manage` in an aal2 session. Creating and replacing are the same request, which is why it is a `PUT` on the locale rather than a `POST`: one locale has one row, and the request *is* that row — **an absent field clears the stored value**, which is also how an authored crawl policy is withdrawn without deleting the locale. `siteName` is required because the column is `not null`. `robotsTxtBody` is served to crawlers **verbatim** and is never parsed here; only surrounding whitespace is removed, and a body of nothing but whitespace is stored as absent rather than as a document that silently says nothing. A locale that is not an active locale answers 404 and writes nothing.',
+    request: {
+      ...sessionHeader,
+      ...seoSettingsLocaleParam,
+      body: { content: { 'application/json': { schema: SaveSeoSettingsRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The settings were written.',
+        content: { 'application/json': { schema: SeoSettingsWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: seoSettingsNotFound,
+      409: seoSettingsRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/seo/settings/{localeCode}',
+    operationId: 'deleteV1AdminSeoSettingsLocale',
+    summary: 'Remove one locale’s site-wide defaults',
+    description:
+      'Requires the internal BFF credential and `seo.settings.manage` in an aal2 session. Afterwards the locale is unauthored, which for the default locale returns `/robots.txt` to the minimal document the public web already serves when nothing has been authored — the zero-row answer the reader has handled since 0086. A real delete, because these are settings rather than a record of an event; the audit trail records the removed row.',
+    request: { ...sessionHeader, ...seoSettingsLocaleParam },
+    responses: {
+      200: {
+        description: 'The settings were removed.',
+        content: { 'application/json': { schema: SeoSettingsWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: seoSettingsNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  // -------------------------------------------------------------------------------------------------
+  // The CMS media library (0098)
+  // -------------------------------------------------------------------------------------------------
+  const cmsMediaNotFound = {
+    description:
+      'No media the caller may see. A caller without `cms.media.manage` at aal2 gets this from every route here, read or write, so a refusal cannot be told from an absence. There is no `cms.media.read`: 0033 seeds one key for this cluster, so reading and changing the library are the same capability. A cursor that does not decode answers the same way.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const cmsMediaRefused = {
+    description:
+      'The operation was refused by the `cms-media` bucket or by a constraint migration 0030 owns: a content type the bucket does not allow (SVG among them), a size outside its 10 MiB limit, an object path that is not the shape the authorizer issues, an extension that disagrees with the declared type, an uploaded file that is not actually there, or an object that already has a library entry.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+  const cmsMediaIdParam = {
+    params: z.object({
+      mediaId: z.string().uuid().openapi({ description: 'The media entry’s identifier.' }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/cms/media',
+    operationId: 'getV1AdminCmsMedia',
+    summary: 'One page of the media library, newest first',
+    description:
+      'Requires the internal BFF credential and `cms.media.manage` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. `objectPath` is a relative path inside a **private** bucket and is never an address: an image is viewed through the per-entry preview below, which issues a short-lived signed URL. `usageCount` is how many CMS rows point at the entry, so an operator can see at a glance which entries deleting would blank.',
+    request: {
+      ...sessionHeader,
+      query: z.object({
+        limit: z.string().optional().openapi({
+          description: `How many entries to return. Defaults to ${CMS_MEDIA_DEFAULT_LIMIT}; a larger value is clamped to ${CMS_MEDIA_MAX_LIMIT}.`,
+        }),
+        cursor: z.string().optional().openapi({
+          description: 'An opaque position from a previous page. Never constructed by a client.',
+        }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'One page of entries.',
+        content: { 'application/json': { schema: CmsMediaPageResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/cms/media/uploads',
+    operationId: 'postV1AdminCmsMediaUpload',
+    summary: 'Authorize one upload',
+    description:
+      `Requires the internal BFF credential and \`cms.media.manage\` in an aal2 session. Creates a signed, time-limited permission to put one object at one path, and **records nothing**: the entry exists only once the companion route confirms it. The request carries a content type and a size and **no path** — the strict schema refuses one — because every component of the path is composed server-side from a generated identifier and an extension derived from the validated type, which makes a traversal or a chosen path unexpressible rather than merely refused. The bucket is the authority on what may be stored: four raster types, SVG excluded, and at most ${CMS_MEDIA_MAX_BYTES} bytes. A signature that cannot be issued is a 503 and no upload.`,
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CmsMediaUploadRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The upload was authorized.',
+        content: { 'application/json': { schema: CmsMediaUploadResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
+      409: cmsMediaRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/cms/media',
+    operationId: 'postV1AdminCmsMedia',
+    summary: 'Confirm an upload and record the entry',
+    description:
+      'Requires the internal BFF credential and `cms.media.manage` in an aal2 session. The path is the one the authorization returned; the database re-checks its whole shape, and the extension must agree with the declared content type, so no nested path, no traversal and no mislabelled file can be recorded. **Storage is asked whether the object is actually there before anything is written**, so a confirmation for a file nobody uploaded never reaches a write — a library pointing at nothing is the state that rots quietly. Confirming the same object twice is refused rather than duplicated.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: CmsMediaAttachRequestSchema } } },
+    },
+    responses: {
+      201: {
+        description: 'The entry was recorded.',
+        content: { 'application/json': { schema: CmsMediaAttachResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
+      409: cmsMediaRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/cms/media/{mediaId}/usage',
+    operationId: 'getV1AdminCmsMediaUsage',
+    summary: 'Every CMS row that points at one entry',
+    description:
+      'Requires the internal BFF credential and `cms.media.manage` in an aal2 session. All six of migration 0030’s referencing columns are `on delete set null`, so deleting an entry blanks a page cover, a blog cover, a banner image or a share image. This is what a console reads **before** offering the delete, rather than leaving an operator to discover it afterwards. `entityId` is null for the SEO settings, whose key is a locale code rather than an identifier; `label` carries the recognisable part for every kind and `column` says which column points at it — a banner has two.',
+    request: { ...sessionHeader, ...cmsMediaIdParam },
+    responses: {
+      200: {
+        description: 'Every reference, which may be none.',
+        content: { 'application/json': { schema: CmsMediaUsageResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/cms/media/{mediaId}/preview',
+    operationId: 'getV1AdminCmsMediaPreview',
+    summary: 'A short-lived signed URL for one stored object',
+    description:
+      'Requires the internal BFF credential and `cms.media.manage` in an aal2 session. The bucket is private and has no read policy, so an image is viewed through a signed URL issued per request for the one object that entry stores — the path is never composed here and never supplied by a client. The URL is a bearer credential for a few minutes and is not stored or cached anywhere. **This is a staff preview and is not how a public page shows an image**: no public media delivery exists.',
+    request: { ...sessionHeader, ...cmsMediaIdParam },
+    responses: {
+      200: {
+        description: 'The signed URL and when it expires.',
+        content: { 'application/json': { schema: CmsMediaPreviewResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/admin/cms/media/{mediaId}/alt-text',
+    operationId: 'putV1AdminCmsMediaAltText',
+    summary: 'Replace one entry’s alt text',
+    description:
+      'Requires the internal BFF credential and `cms.media.manage` in an aal2 session. Both the English and the Arabic alt text are replaced on every call and **neither is required**; a blank one is stored as absent, so no surface could ever carry an empty `alt` attribute. Nothing else about a stored object is editable — the path, the type, the size and the dimensions describe a file that has already been uploaded, and replacing an image means uploading another one.',
+    request: {
+      ...sessionHeader,
+      ...cmsMediaIdParam,
+      body: { content: { 'application/json': { schema: CmsMediaAltTextRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The alt text was written.',
+        content: { 'application/json': { schema: CmsMediaWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
+      409: cmsMediaRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/admin/cms/media/{mediaId}',
+    operationId: 'deleteV1AdminCmsMediaEntry',
+    summary: 'Remove one entry from the library',
+    description:
+      'Requires the internal BFF credential and `cms.media.manage` in an aal2 session. Every reference to the entry becomes null through migration 0030’s own `on delete set null` foreign keys and through nothing else: no statement anywhere updates a referencing row. The usage route above is what a console shows first. The stored object remains in the private bucket and becomes unreachable, because a signed read is only ever issued for an object an entry still points at.',
+    request: { ...sessionHeader, ...cmsMediaIdParam },
+    responses: {
+      200: {
+        description: 'The entry was removed.',
+        content: { 'application/json': { schema: CmsMediaWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: cmsMediaNotFound,
       503: unavailable,
       500: internalError,
     },

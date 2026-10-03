@@ -71,23 +71,41 @@ const LOCALE_PREFIXES = Object.freeze(['ar', 'en']);
  * the page's own `robots` metadata is the one that answers — which is how a sold listing stays `noindex`,
  * a cursor page stays `noindex, follow`, and a listing nobody may see stays a 404.
  */
-const INDEXABLE_EXACT = Object.freeze(['/categories', '/listings', '/marketplace', '/services']);
+const INDEXABLE_EXACT = Object.freeze([
+  // 0097, owner decision 1. The blog index decides its own robots value through its own metadata, exactly as the
+  // catalogue landings and a CMS static page do — it already states `index` at its canonical address and
+  // `noindex, follow` once `?category=`, `?tag=` or `?cursor=` narrows it, which is 8-D's rule for every filtered
+  // view. Until this entry existed the blanket header denied both answers, and `blog_posts.is_indexable` was a
+  // column no crawler could ever see the effect of.
+  '/blog',
+  '/categories',
+  '/listings',
+  '/marketplace',
+  '/services',
+]);
 
 /**
- * The fixed public paths that are indexable in their own right, locale prefix aside.
+ * The fixed public paths that are indexable in their own right **and listed in a sitemap**, locale prefix aside.
  *
- * These are landing surfaces rather than rows in a table, so they exist in code and a sitemap has to be told
- * about them from here rather than from the API. The home page is deliberately **not** among them: it keeps the
- * blanket `noindex`, so advertising it in a sitemap would be advertising an address we ask not to be indexed.
+ * These are landing surfaces rather than rows in a table, so they exist in code and a sitemap has to be told about
+ * them from here rather than from the API.
  *
- * Exported as the same list the robots policy reads, so the sitemap cannot come to list a path that the policy
- * still denies, or miss one it allows.
+ * **The home page is now among them** (0097, owner decision 3). 0093 made `/` decide its own robots value and left
+ * sitemap membership as a separate owner decision; that decision has now been made, so `/` is advertised. It is
+ * added here rather than to `INDEXABLE_EXACT` because the robots policy already answers for it earlier — before
+ * `splitLocale`, which refuses a path with nothing after the locale prefix — and widening that list would also
+ * change the answer for paths that merely normalise to `/`, such as `//`, which is not part of this decision.
+ *
+ * The invariant the two lists used to share by being one list is kept as an assertion instead: every path here is
+ * one the robots policy lets the page decide for, so the sitemap cannot come to list an address the policy still
+ * denies.
  */
-export const indexableExactRoutes: readonly string[] = INDEXABLE_EXACT;
+export const indexableExactRoutes: readonly string[] = Object.freeze(['/', ...INDEXABLE_EXACT]);
 
 /** The category landing and seller profile surfaces: public catalogue routes, not listing detail ones. */
 const CATEGORY_PREFIX = '/category/';
 const SELLER_PREFIX = '/seller/';
+const BLOG_PREFIX = '/blog/';
 
 /**
  * The public addresses served from the CMS static pages, exactly as the specification's route map fixes them.
@@ -276,6 +294,32 @@ export function publicCmsPagePath(locale: PublicLocale, slug: string): string {
   return `${locale === 'ar' ? '/ar' : ''}/${encodeURIComponent(slug)}`;
 }
 
+/**
+ * The blog post named by a public path, or `null` when the path is not one (0092).
+ *
+ * Kept apart from the catalogue parsers for the same reason a CMS page is: a post is on no detail surface and can
+ * never be the target of a cross-surface redirect. The slug shape is the database's own
+ * (`blog_posts_slug_format`), narrowed to a single path segment — so `/blog` itself is not a post, and neither is
+ * a path with anything after the segment.
+ */
+export function parsePublicBlogPostPath(pathname: string): { locale: PublicLocale; slug: string } | null {
+  const split = splitLocale(pathname);
+  if (split === null || !split.rest.startsWith(BLOG_PREFIX)) return null;
+
+  const slug = split.rest.slice(BLOG_PREFIX.length);
+  return SLUG_SEGMENT.test(slug) ? { locale: split.locale, slug } : null;
+}
+
+/** The public path of one blog post, in the locale given. */
+export function publicBlogPostPath(locale: PublicLocale, slug: string): string {
+  return `${locale === 'ar' ? '/ar' : ''}${BLOG_PREFIX}${encodeURIComponent(slug)}`;
+}
+
+/** The public path of the blog index, in the locale given. */
+export function publicBlogIndexPath(locale: PublicLocale): string {
+  return `${locale === 'ar' ? '/ar' : ''}/blog`;
+}
+
 /** The service named by a public service path, or `null`. A listing path is not a service path. */
 export function parsePublicServicePath(pathname: string): { locale: PublicLocale; slug: string } | null {
   const found = parsePublicDetailPath(pathname);
@@ -306,6 +350,19 @@ export function publicServicePath(locale: PublicLocale, slug: string): string {
  * a search index — not an admin console that leaked into one.
  */
 export function isPublicCatalogRoute(pathname: string): boolean {
+  // The home page (0093, owner decision E). Its own metadata decides whether it may be indexed, exactly as a CMS
+  // static page's does, so it must not carry the blanket header — a blanket `noindex` is the most restrictive
+  // directive on the response and would silently override the page's own answer.
+  //
+  // Checked before `splitLocale`, because that helper refuses a path with nothing after the locale prefix: `/ar`
+  // leaves an empty remainder and would never reach a check below it. `withoutLocale` in the web app's served-route
+  // module makes the same allowance for the same reason.
+  //
+  // Checked here rather than added to INDEXABLE_EXACT because `splitLocale` refuses `/ar`, and because widening
+  // that list would also change the answer for paths that merely normalise to `/`. `indexableExactRoutes` carries
+  // `/` for the sitemap instead (0097, owner decision 3).
+  if (pathname === '/' || pathname === '/ar' || pathname === '/ar/') return true;
+
   const split = splitLocale(pathname);
   if (split === null) return false;
   if (INDEXABLE_EXACT.includes(split.rest)) return true;
@@ -314,6 +371,11 @@ export function isPublicCatalogRoute(pathname: string): boolean {
     parsePublicDetailPath(pathname) !== null ||
     parsePublicCategoryPath(pathname) !== null ||
     parsePublicSellerPath(pathname) !== null ||
+    // A blog post carries no blanket header, for the same reason a static page does not: whether it may be indexed
+    // is the administrator's own decision, stored on the post as `is_indexable`, and the post page already carries
+    // it through. A blanket header is the most restrictive directive on the response, so while this check was
+    // missing the column could be set either way and no crawler would ever see the difference (0097).
+    parsePublicBlogPostPath(pathname) !== null ||
     // A static page carries no blanket header, because whether it may be indexed is the administrator's own
     // decision, stored on the page. A blanket header is the most restrictive directive on the response and
     // would silently override it — the same trap the catalogue surfaces were pulled out of.
@@ -329,4 +391,43 @@ export function isPublicCatalogRoute(pathname: string): boolean {
 export function robotsHeaderFor(app: AppKind, pathname: string): string | null {
   if (app === 'admin') return 'noindex';
   return isPublicCatalogRoute(pathname) ? null : 'noindex';
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Which surfaces carry the site's own navigation (0094)                                             */
+/* ------------------------------------------------------------------------------------------------ */
+
+/**
+ * The account and authentication surfaces, which keep the plain chrome (owner decision 2).
+ *
+ * Signing in, registering, recovering an account and everything under the dashboard are the authenticated area's
+ * own surfaces. A composed header there would put editorial links across somebody's account pages, which is not
+ * what the navigation is for — so those paths keep the header and footer the application has always rendered.
+ *
+ * Matched as whole segments, exactly as every other list in this file is: `/loginsomething` is not `/login`.
+ */
+export const ACCOUNT_AREA_PREFIXES = Object.freeze([
+  '/dashboard',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+] as const);
+
+/**
+ * Whether the composed navigation belongs on this path (0094, owner decision 2).
+ *
+ * True for the public site — the home page, the catalogue, the CMS pages, the blog, search and the 404 — and false
+ * for the account and authentication surfaces above.
+ *
+ * The locale prefix is stripped by hand rather than with {@link splitLocale}, because that helper refuses a path
+ * with nothing after the prefix: `/ar` leaves an empty remainder and would be judged as if it were not localized.
+ */
+export function rendersSiteNavigation(pathname: string): boolean {
+  if (typeof pathname !== 'string' || !pathname.startsWith('/')) return false;
+
+  const trimmed = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  const rest = trimmed === '/ar' ? '/' : trimmed.startsWith('/ar/') ? trimmed.slice(3) : trimmed;
+
+  return !ACCOUNT_AREA_PREFIXES.some((prefix) => rest === prefix || rest.startsWith(`${prefix}/`));
 }

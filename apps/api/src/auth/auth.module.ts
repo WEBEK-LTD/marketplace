@@ -4,8 +4,19 @@ import type { ApiEnv } from '../config/env.js';
 import { CATEGORY_STORE } from '../catalog/categories.service.js';
 import { CMS_PAGES_STORE, CmsPagesAdminService } from '../admin/cms-pages.service.js';
 import { CMS_PUBLIC_STORE, CmsPagesService } from '../cms/cms-pages.service.js';
+import { BLOG_PUBLIC_STORE, BlogPublicService } from '../cms/blog-public.service.js';
+import { BLOG_STORE, BlogAdminService } from '../admin/blog.service.js';
+import { HOMEPAGE_PUBLIC_STORE, HomepagePublicService } from '../cms/homepage-public.service.js';
+import { HOMEPAGE_STORE, HomepageAdminService } from '../admin/homepage.service.js';
+import { NAVIGATION_PUBLIC_STORE, NavigationPublicService } from '../cms/navigation-public.service.js';
+import { NAVIGATION_STORE, NavigationAdminService } from '../admin/navigation.service.js';
+import { FAQS_PUBLIC_STORE, FaqsPublicService } from '../cms/faqs-public.service.js';
+import { FAQS_STORE, FaqsAdminService } from '../admin/faqs.service.js';
 import { SEO_STORE, SeoService } from '../seo/seo.service.js';
 import { SEO_REDIRECTS_STORE, SeoRedirectsAdminService } from '../admin/seo-redirects.service.js';
+import { SEO_METADATA_STORE, SeoMetadataAdminService } from '../admin/seo-metadata.service.js';
+import { SEO_SETTINGS_STORE, SeoSettingsAdminService } from '../admin/seo-settings.service.js';
+import { CMS_MEDIA_STORE, CmsMediaAdminService } from '../admin/cms-media.service.js';
 import { CATEGORIES_STORE, CategoriesAdminService } from '../admin/categories.service.js';
 import { ATTRIBUTES_STORE, AttributesAdminService } from '../admin/attributes.service.js';
 import { CATEGORY_FEED_PORT, CategoryFeedService } from '../catalog/category-feed.service.js';
@@ -250,9 +261,24 @@ export class AuthModule {
         { provide: CATEGORY_FEED_PORT, useExisting: AppSystemStore },
         { provide: CMS_PAGES_STORE, useExisting: AppSystemStore },
         { provide: CMS_PUBLIC_STORE, useExisting: AppSystemStore },
+        { provide: BLOG_STORE, useExisting: AppSystemStore },
+        { provide: BLOG_PUBLIC_STORE, useExisting: AppSystemStore },
+        { provide: HOMEPAGE_STORE, useExisting: AppSystemStore },
+        { provide: HOMEPAGE_PUBLIC_STORE, useExisting: AppSystemStore },
+        { provide: NAVIGATION_STORE, useExisting: AppSystemStore },
+        { provide: NAVIGATION_PUBLIC_STORE, useExisting: AppSystemStore },
+        { provide: FAQS_STORE, useExisting: AppSystemStore },
+        { provide: FAQS_PUBLIC_STORE, useExisting: AppSystemStore },
         { provide: SEO_STORE, useExisting: AppSystemStore },
         // Phase 8-E: the SEO redirect map, admin and public halves, through the same single gateway.
         { provide: SEO_REDIRECTS_STORE, useExisting: AppSystemStore },
+        // Phase 8-F: the per-entity metadata overrides, admin and public halves, through the same gateway.
+        { provide: SEO_METADATA_STORE, useExisting: AppSystemStore },
+        // Phase 8, increment 0096: the site-wide SEO defaults, authoring only, through the same gateway.
+        { provide: SEO_SETTINGS_STORE, useExisting: AppSystemStore },
+        // Phase 8, increment 0098: the CMS media library, through the same gateway. Its provider calls reuse
+        // SELLER_MEDIA_STORAGE below for the private cms-media bucket rather than introducing a second client.
+        { provide: CMS_MEDIA_STORE, useExisting: AppSystemStore },
         { provide: CATEGORIES_STORE, useExisting: AppSystemStore },
         // Phase 8-C: the attribute and tag vocabulary, and the seller's own answers, through the same gateway.
         { provide: ATTRIBUTES_STORE, useExisting: AppSystemStore },
@@ -334,8 +360,19 @@ export class AuthModule {
         ReviewModerationService,
         CmsPagesAdminService,
         CmsPagesService,
+        BlogAdminService,
+        BlogPublicService,
+        HomepageAdminService,
+        HomepagePublicService,
+        NavigationAdminService,
+        NavigationPublicService,
+        FaqsAdminService,
+        FaqsPublicService,
         SeoService,
         SeoRedirectsAdminService,
+        SeoMetadataAdminService,
+        SeoSettingsAdminService,
+        CmsMediaAdminService,
         CategoriesAdminService,
         AttributesAdminService,
         CategoryFeedService,
@@ -358,8 +395,19 @@ export class AuthModule {
         CATEGORY_FEED_PORT,
         CMS_PAGES_STORE,
         CMS_PUBLIC_STORE,
+        BLOG_STORE,
+        BLOG_PUBLIC_STORE,
+        HOMEPAGE_STORE,
+        HOMEPAGE_PUBLIC_STORE,
+        NAVIGATION_STORE,
+        NAVIGATION_PUBLIC_STORE,
+        FAQS_STORE,
+        FAQS_PUBLIC_STORE,
         SEO_STORE,
         SEO_REDIRECTS_STORE,
+        SEO_METADATA_STORE,
+        SEO_SETTINGS_STORE,
+        CMS_MEDIA_STORE,
         CATEGORIES_STORE,
         ATTRIBUTES_STORE,
         SELLER_VOCABULARY_STORE,
@@ -406,8 +454,19 @@ export class AuthModule {
         ReviewModerationService,
         CmsPagesAdminService,
         CmsPagesService,
+        BlogAdminService,
+        BlogPublicService,
+        HomepageAdminService,
+        HomepagePublicService,
+        NavigationAdminService,
+        NavigationPublicService,
+        FaqsAdminService,
+        FaqsPublicService,
         SeoService,
         SeoRedirectsAdminService,
+        SeoMetadataAdminService,
+        SeoSettingsAdminService,
+        CmsMediaAdminService,
         CategoriesAdminService,
         AttributesAdminService,
         CategoryFeedService,

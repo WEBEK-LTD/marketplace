@@ -33,9 +33,14 @@ import {
  * - **No optimistic state.** Typed text survives a failed request, because a colleague who lost a page body
  *   has lost more than the request.
  *
- * **Refusals are shown in the server's words, mapped by code.** Three are expected and each means something
- * different to the person reading it: the page has not been written yet, the change is not an allowed one, or
- * the address belongs to another page's history.
+ * **Refusals are shown in the server's words, mapped by code.** Four are expected and each means something
+ * different to the person reading it: the page has not been written yet, the change is not an allowed one, the
+ * address belongs to another page's history, or the cover image named is not in the library.
+ *
+ * **The cover form carries an identifier, not a picker, and no image.** The `cms-media` bucket is private and
+ * nothing here is signed, so what an attached cover looks like in this console is its stored object path and
+ * the alt text somebody wrote — rendered by the server beside this form, never fetched from here. Attaching
+ * needs `cms.page.manage` and nothing else: a page editor is not required to hold `cms.media.manage`.
  */
 
 const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
@@ -82,6 +87,7 @@ function messageFor(
     readonly slugTaken: string;
     readonly localeRequired: string;
     readonly notAllowed: string;
+    readonly coverMissing: string;
   }>,
 ): string {
   if (outcome.code === 'CMS_PAGE_SLUG_TAKEN' && copy.slugTaken !== undefined) return copy.slugTaken;
@@ -90,6 +96,9 @@ function messageFor(
   }
   if (outcome.code === 'CMS_PAGE_TRANSITION_NOT_ALLOWED' && copy.notAllowed !== undefined) {
     return copy.notAllowed;
+  }
+  if (outcome.code === 'CMS_PAGE_COVER_MEDIA_MISSING' && copy.coverMissing !== undefined) {
+    return copy.coverMissing;
   }
   if (outcome.status === 400) return copy.invalid;
   return copy.failed;
@@ -353,6 +362,105 @@ export function CmsPageSettingsForm({
       <button className={BUTTON_CLASS} type="submit" disabled={busy}>
         {busy ? copy.working : copy.submit}
       </button>
+    </form>
+  );
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Cover image (0099)                                                                                */
+/* ------------------------------------------------------------------------------------------------ */
+
+export interface CmsPageCoverCopy {
+  readonly mediaIdLabel: string;
+  readonly mediaIdHint: string;
+  readonly submit: string;
+  readonly working: string;
+  readonly failed: string;
+  readonly invalid: string;
+  readonly coverMissing: string;
+  /**
+   * Present only when a cover is attached, because that is the only time the control renders.
+   *
+   * A client component's whole props object is serialised into the RSC payload, so a label passed
+   * unconditionally would ship on every page view for a button nobody can see. The server decides.
+   */
+  readonly remove?: string;
+}
+
+/**
+ * Attaching or removing a page's cover image.
+ *
+ * Two operations and no third: saving an id attaches that entry, and removing sends an empty value, which the
+ * BFF reads as the explicit null that clears. Leaving a cover alone is not submitting this form.
+ */
+export function CmsPageCoverForm({
+  pageId,
+  initialMediaId,
+  copy,
+}: {
+  readonly pageId: string;
+  readonly initialMediaId: string | null;
+  readonly copy: CmsPageCoverCopy;
+}) {
+  const router = useRouter();
+  const [mediaId, setMediaId] = useState(initialMediaId ?? '');
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function put(value: string): Promise<void> {
+    if (busy) return;
+    setBusy(true);
+    setProblem(null);
+
+    const outcome = await send('PUT', '/api/cms/pages/cover', { pageId, mediaId: value });
+
+    if (outcome.status === 200) router.refresh();
+    else setProblem(messageFor(outcome, copy));
+    setBusy(false);
+  }
+
+  async function submit(event: FormEvent): Promise<void> {
+    event.preventDefault();
+    await put(mediaId.trim());
+  }
+
+  return (
+    <form className="mt-4 max-w-xl space-y-4" onSubmit={submit}>
+      <div>
+        <label className={LABEL_CLASS} htmlFor="cms-cover-media">
+          {copy.mediaIdLabel}
+        </label>
+        <input
+          id="cms-cover-media"
+          className={FIELD_CLASS}
+          value={mediaId}
+          onChange={(event) => setMediaId(event.target.value)}
+          spellCheck={false}
+          autoComplete="off"
+        />
+        <p className={HINT_CLASS}>{copy.mediaIdHint}</p>
+      </div>
+
+      <Problem message={problem} />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button className={BUTTON_CLASS} type="submit" disabled={busy}>
+          {busy ? copy.working : copy.submit}
+        </button>
+        {copy.remove === undefined ? null : (
+          <button
+            className={DANGER_CLASS}
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setMediaId('');
+              void put('');
+            }}
+          >
+            {copy.remove}
+          </button>
+        )}
+      </div>
     </form>
   );
 }

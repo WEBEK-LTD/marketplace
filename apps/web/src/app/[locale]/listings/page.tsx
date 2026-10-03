@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ListingGrid, ListingGridSkeleton, ListingMessage } from '../../../components/listing-views';
 import { readListings } from '../../../server/bff';
+import { metadataWithOverride } from '../../../server/public-metadata';
 
 /**
  * `/listings` and `/ar/listings` — the public browse list.
@@ -42,18 +43,23 @@ export async function generateMetadata({ params, searchParams }: PageParams): Pr
   const t = await getTranslations({ locale, namespace: 'Listings' });
   const paged = typeof query['cursor'] === 'string' && query['cursor'] !== '';
 
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: {
+  // A landing address, so its override is a `route` entry and its stored canonical **is** served: there is no row
+  // behind this address and therefore no derived canonical for an override to contradict (8-F). The robots value
+  // below is still a floor, so a paged view stays `noindex`.
+  return await metadataWithOverride(
+    { routePath: '/listings', locale },
+    {
+      title: t('title'),
+      description: t('description'),
       canonical: basePath(locale),
       languages: { en: '/listings', ar: '/ar/listings' },
+      // Stated on both branches: the root layout's default is `noindex, nofollow`, and metadata is merged
+      // from the root down, so saying nothing here would inherit that refusal and the page would never be
+      // indexed however the robots header is set.
+      index: !paged,
+      follow: true,
     },
-    // Stated on both branches: the root layout's default is `noindex, nofollow`, and metadata is merged
-    // from the root down, so saying nothing here would inherit that refusal and the page would never be
-    // indexed however the robots header is set.
-    robots: paged ? { index: false, follow: true } : { index: true, follow: true },
-  };
+  );
 }
 
 /** The part that waits on the API, so the heading above it renders immediately. */

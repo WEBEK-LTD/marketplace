@@ -45,11 +45,17 @@ export class CmsPageRefusedError extends Error {
   }
 }
 
-/** The three refusals this surface can report, each decided in the database. */
+/**
+ * The four refusals this surface can report, each decided in the database.
+ *
+ * The fourth arrived with 0099: a cover image named by an id that is not in the library. 0030's own foreign
+ * key refuses it, which is the only existence check on that path.
+ */
 export type CmsPageRefusalCode =
   | 'CMS_PAGE_LOCALE_REQUIRED'
   | 'CMS_PAGE_TRANSITION_NOT_ALLOWED'
-  | 'CMS_PAGE_SLUG_TAKEN';
+  | 'CMS_PAGE_SLUG_TAKEN'
+  | 'CMS_PAGE_COVER_MEDIA_MISSING';
 
 /** An unusable cursor. One code for every way a cursor can fail to be one. */
 export class CmsPageCursorInvalidError extends Error {

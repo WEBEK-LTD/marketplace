@@ -16,6 +16,7 @@ import {
   CmsPageUnavailableError,
 } from './cms-pages.errors.js';
 import { decodeCmsPageCursor, encodeCmsPageCursor } from './cms-pages.cursor.js';
+import type { CmsCoverMediaDbRow } from './cms-media.service.js';
 
 /**
  * Authoring CMS static pages.
@@ -177,6 +178,23 @@ export interface CmsPagesStore {
     pageId: string;
     localeCode: string;
   }): Promise<boolean>;
+
+  /** 0099. Attaches, leaves or removes a page's cover. `cms.page.manage`, not `cms.media.manage`. */
+  cmsPageCoverForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    pageId: string;
+    coverMediaId: string | null;
+    clearCover: boolean;
+  }): Promise<boolean>;
+
+  /** 0099. The cover attached to one page, or null. Needs only the section's read key. */
+  cmsCoverMediaForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    entityType: 'page' | 'blog_post';
+    entityId: string;
+  }): Promise<CmsCoverMediaDbRow | null>;
 }
 
 export interface CmsPagePage {
@@ -221,6 +239,15 @@ const REFUSALS: ReadonlyMap<string, { readonly code: CmsPageRefusalCode; readonl
     {
       code: 'CMS_PAGE_SLUG_TAKEN' as const,
       detail: 'That address is already in use, or was previously used by another page.',
+    },
+  ],
+  // foreign_key_violation — 0030's `pages_cover_media_id_fkey` refusing a cover image that is not in the
+  // library (0099). It is the only existence check on that path: this service runs none of its own.
+  [
+    '23503',
+    {
+      code: 'CMS_PAGE_COVER_MEDIA_MISSING' as const,
+      detail: 'That image is not in the media library.',
     },
   ],
 ]);
@@ -304,6 +331,7 @@ export class CmsPagesAdminService {
 
     let row: CmsPageDetailDbRow | null;
     let translations: readonly CmsPageTranslationDbRow[];
+    let cover: CmsCoverMediaDbRow | null;
     try {
       row = await this.store.cmsPageForStaff({
         userId: staff.id,
@@ -317,6 +345,15 @@ export class CmsPagesAdminService {
         userId: staff.id,
         isAal2: staff.isAal2,
         pageId: input.pageId,
+      });
+      // 0085's reader does not mention the cover and its return shape is not reshaped to add one, so the
+      // attachment comes from 0099's own reader. Read unconditionally for the same reason as above: it
+      // applies the same read key and answers nothing for a page this caller may not see.
+      cover = await this.store.cmsCoverMediaForStaff({
+        userId: staff.id,
+        isAal2: staff.isAal2,
+        entityType: 'page',
+        entityId: input.pageId,
       });
     } catch (error) {
       this.logger.error('The authored page could not be read.');
@@ -342,6 +379,10 @@ export class CmsPagesAdminService {
       updatedAt: toIso(row.updatedAt),
       canManage: row.canManage,
       previousSlugs: [...(row.previousSlugs ?? [])],
+      coverMediaId: cover?.mediaId ?? null,
+      coverObjectPath: cover?.objectPath ?? null,
+      coverAltTextEn: cover?.altTextEn ?? null,
+      coverAltTextAr: cover?.altTextAr ?? null,
       translations: translations.map(
         (entry): CmsPageTranslation => ({
           localeCode: entry.localeCode,
@@ -400,6 +441,35 @@ export class CmsPagesAdminService {
         template: input.template,
         sortOrder: input.sortOrder,
         isIndexable: input.isIndexable,
+      }),
+    );
+    if (!changed) throw new CmsPageNotFoundError();
+  }
+
+  /**
+   * Attaches or removes a page's cover image (0099).
+   *
+   * **An explicit null is the clear**, which is the only reason this takes a nullable rather than an optional:
+   * the route's body requires the field, so the caller has always said which of the two operations they mean.
+   * Leaving a cover alone is not sending this request, and the database writer keeps that third behaviour for
+   * callers that need it.
+   *
+   * Needs `cms.page.manage` and nothing else: a page editor does not have to hold `cms.media.manage` to name
+   * an entry, and this service never reads the library.
+   */
+  async setCover(input: {
+    accessToken: string;
+    pageId: string;
+    mediaId: string | null;
+  }): Promise<void> {
+    const staff = await this.#reader(input.accessToken);
+    const changed = await this.#write(async () =>
+      this.store.cmsPageCoverForStaff({
+        userId: staff.id,
+        isAal2: staff.isAal2,
+        pageId: input.pageId,
+        coverMediaId: input.mediaId,
+        clearCover: input.mediaId === null,
       }),
     );
     if (!changed) throw new CmsPageNotFoundError();

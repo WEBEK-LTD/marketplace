@@ -12,7 +12,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(195);
+select plan(200);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Shape
@@ -42,14 +42,14 @@ select is(
   (select count(*)::int
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private' and p.proname like 'cms_page%' and p.prosecdef),
-  12, 'all twelve are security definer');
+  13, 'all thirteen are security definer: 0099''s page cover writer is the thirteenth');
 
 select is(
   (select count(*)::int
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private' and p.proname like 'cms_page%'
       and p.proconfig @> array['search_path=pg_catalog, public']),
-  12, 'all twelve pin search_path to pg_catalog, public');
+  13, 'all thirteen pin search_path to pg_catalog, public');
 
 -- The three-answer contract is in the result type, so a caller cannot forget to branch on it.
 select matches(pg_get_function_result(p.oid), 'kind text', 'the public reader returns a kind column')

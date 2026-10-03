@@ -85,6 +85,7 @@ async function start(doubles: Doubles = {}): Promise<Call[]> {
       return (
         doubles.counts ?? [
           { entryType: 'page', entryCount: 3 },
+          { entryType: 'blog_post', entryCount: 5 },
           { entryType: 'listing', entryCount: 2 },
           { entryType: 'service', entryCount: 1 },
           { entryType: 'category', entryCount: 4 },
@@ -93,6 +94,7 @@ async function start(doubles: Doubles = {}): Promise<Call[]> {
       );
     },
     publicSitemapPages: page('publicSitemapPages'),
+    publicSitemapBlogPosts: page('publicSitemapBlogPosts'),
     publicSitemapListings: page('publicSitemapListings'),
     publicSitemapServices: page('publicSitemapServices'),
     publicSitemapCategories: page('publicSitemapCategories'),
@@ -170,8 +172,17 @@ describe('the sitemap index counts', () => {
     expect(response.statusCode).toBe(200);
     const body = SitemapCountsResponseSchema.parse(response.json());
     expect(body.pageSize).toBe(SITEMAP_PAGE_SIZE);
-    expect(body.counts.map((count) => count.type)).toEqual(['page', 'listing', 'service', 'category', 'seller']);
+    expect(body.counts.map((count) => count.type)).toEqual([
+      'page',
+      'blog_post',
+      'listing',
+      'service',
+      'category',
+      'seller',
+    ]);
     expect(body.counts.find((count) => count.type === 'category')?.entries).toBe(4);
+    // 0097. The blog is a kind of its own, counted like any other.
+    expect(body.counts.find((count) => count.type === 'blog_post')?.entries).toBe(5);
   });
 
   it('reports an empty kind as zero rather than leaving it out', async () => {
@@ -179,8 +190,10 @@ describe('the sitemap index counts', () => {
     // index has no way to tell which it is looking at.
     await start({ counts: [{ entryType: 'page', entryCount: 1 }] });
     const body = SitemapCountsResponseSchema.parse((await request('/v1/seo/sitemap')).json());
-    expect(body.counts).toHaveLength(5);
+    expect(body.counts).toHaveLength(6);
+    // Six since 0097: the blog is reported as zero here like every other kind the database said nothing about.
     expect(body.counts.filter((count) => count.entries === 0).map((count) => count.type)).toEqual([
+      'blog_post',
       'listing',
       'service',
       'category',
@@ -208,6 +221,7 @@ describe('a page of entries', () => {
     const seen = await start({ entries: [{ slug: 'walnut-table', updatedAt: UPDATED }] });
     for (const [type, reader] of [
       ['page', 'publicSitemapPages'],
+      ['blog_post', 'publicSitemapBlogPosts'],
       ['listing', 'publicSitemapListings'],
       ['service', 'publicSitemapServices'],
       ['category', 'publicSitemapCategories'],

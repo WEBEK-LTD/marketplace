@@ -7,6 +7,8 @@ import {
   CMS_PAGE_STATUSES,
   CMS_PAGE_TEMPLATES,
   CMS_PAGE_TITLE_MAX,
+  CmsPageCoverRequestSchema,
+  CmsPageDetailSchema,
   CmsPageSlugSchema,
   CmsPageStatusRequestSchema,
   CreateCmsPageRequestSchema,
@@ -214,5 +216,82 @@ describe('writing a locale', () => {
         metaDescription: null,
       }).success,
     ).toBe(true);
+  });
+});
+
+describe('CmsPageCoverRequestSchema (0099)', () => {
+  const MEDIA = 'fc000000-0000-4000-8000-0000000000a1';
+
+  it('accepts a uuid, which attaches that entry', () => {
+    expect(CmsPageCoverRequestSchema.safeParse({ mediaId: MEDIA }).success).toBe(true);
+  });
+
+  it('accepts an explicit null, which is the removal', () => {
+    expect(CmsPageCoverRequestSchema.safeParse({ mediaId: null }).success).toBe(true);
+  });
+
+  it('requires the field, because leaving a cover alone is not sending this request', () => {
+    expect(CmsPageCoverRequestSchema.safeParse({}).success).toBe(false);
+    expect(CmsPageCoverRequestSchema.safeParse({ mediaId: undefined }).success).toBe(false);
+  });
+
+  it('refuses anything that is not a uuid', () => {
+    for (const mediaId of ['', '  ', 'not-a-uuid', 'cms-media/x.png', '../cms-media/x.png', 42, true, {}, []]) {
+      expect(CmsPageCoverRequestSchema.safeParse({ mediaId }).success, JSON.stringify(mediaId)).toBe(false);
+    }
+  });
+
+  it('carries no object path, bucket or upload, and refuses one', () => {
+    // The browser never names a path: 0098 composes one server-side and this request names an entry by id.
+    expect(CmsPageCoverRequestSchema.safeParse({ mediaId: MEDIA, objectPath: 'cms-media/x.png' }).success).toBe(
+      false,
+    );
+    expect(CmsPageCoverRequestSchema.safeParse({ mediaId: MEDIA, bucket: 'cms-media' }).success).toBe(false);
+    expect(CmsPageCoverRequestSchema.safeParse({ mediaId: MEDIA, contentType: 'image/png' }).success).toBe(false);
+  });
+});
+
+describe('CmsPageDetailSchema carries the attachment (0099)', () => {
+  const base = {
+    id: 'fc000000-0000-4000-8000-00000000c115',
+    slug: 'terms',
+    pageKey: null,
+    status: 'draft' as const,
+    template: 'standard' as const,
+    isIndexable: true,
+    sortOrder: 0,
+    scheduledFor: null,
+    publishedAt: null,
+    archivedAt: null,
+    createdAt: '2026-04-01T09:00:00.000Z',
+    updatedAt: '2026-05-02T09:00:00.000Z',
+    canManage: true,
+    previousSlugs: [],
+    translations: [],
+  };
+
+  it('requires all four cover fields, nulls included', () => {
+    expect(CmsPageDetailSchema.safeParse(base).success).toBe(false);
+    expect(
+      CmsPageDetailSchema.safeParse({
+        ...base,
+        coverMediaId: null,
+        coverObjectPath: null,
+        coverAltTextEn: null,
+        coverAltTextAr: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('reports a path and bilingual alt text for an attached cover', () => {
+    const parsed = CmsPageDetailSchema.parse({
+      ...base,
+      coverMediaId: 'fc000000-0000-4000-8000-0000000000a1',
+      coverObjectPath: 'cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png',
+      coverAltTextEn: 'A harbour at dawn',
+      coverAltTextAr: 'ميناء عند الفجر',
+    });
+    expect(parsed.coverObjectPath).toBe('cms-media/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d.png');
+    expect(parsed.coverAltTextAr).toBe('ميناء عند الفجر');
   });
 });

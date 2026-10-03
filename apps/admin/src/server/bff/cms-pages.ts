@@ -3,6 +3,7 @@ import {
   CMS_PAGE_STATUSES,
   CmsPageDetailResponseSchema,
   CmsPagePageResponseSchema,
+  CmsPageCoverRequestSchema,
   CmsPageStatusRequestSchema,
   CmsPageWriteResponseSchema,
   CreateCmsPageRequestSchema,
@@ -367,6 +368,48 @@ export async function handleCmsPageStatus(
   const upstream = await callWrite(
     'PUT',
     `/v1/admin/cms/pages/${encodeURIComponent(id)}/status`,
+    accepted.accessToken,
+    validated.data,
+    options,
+  );
+  return await writeOutcome(upstream, 200, (body) => CmsPageWriteResponseSchema.safeParse(body));
+}
+
+/**
+ * `PUT /api/cms/pages/cover` — attach or remove a page's cover image (0099).
+ *
+ * The body carries `mediaId`, and the two cases are the two operations: a uuid attaches that library entry
+ * and an explicit `null` removes whatever is attached. An empty string from a form field is read as the
+ * clear, because a cleared text input is how an operator says "no cover" in a console with no picker.
+ *
+ * Nothing about the library is reachable from here: no listing, no upload, no signed URL.
+ */
+export async function handleCmsPageCover(
+  request: Request,
+  options: CmsPagesOptions = {},
+): Promise<Response> {
+  const accepted = await acceptWrite(request, options);
+  if ('refusal' in accepted) return accepted.refusal;
+
+  const id = identifier(typeof accepted.body['pageId'] === 'string' ? accepted.body['pageId'] : null);
+  if (id === null) return VALIDATION_FAILED();
+
+  // The field has to be there, and it has to be a string or null. Anything else is refused rather than read
+  // as a removal: a number or an object falling through to "clear" would turn a malformed request into a
+  // destructive one, which is the opposite of what a caller sending nonsense meant.
+  if (!('mediaId' in accepted.body)) return VALIDATION_FAILED();
+  const supplied = accepted.body['mediaId'];
+  if (supplied !== null && typeof supplied !== 'string') return VALIDATION_FAILED();
+
+  const trimmed = supplied === null ? '' : supplied.trim();
+  const mediaId = trimmed === '' ? null : trimmed;
+
+  const validated = CmsPageCoverRequestSchema.safeParse({ mediaId });
+  if (!validated.success) return VALIDATION_FAILED();
+
+  const upstream = await callWrite(
+    'PUT',
+    `/v1/admin/cms/pages/${encodeURIComponent(id)}/cover`,
     accepted.accessToken,
     validated.data,
     options,

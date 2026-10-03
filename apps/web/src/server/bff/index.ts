@@ -15,6 +15,17 @@ export {
   type CategoryLookup,
 } from './categories';
 export {
+  handleBlogIndex,
+  readBlogIndex,
+  readBlogPost,
+  readBlogTaxonomy,
+  type BlogHandlerOptions,
+  type BlogPostLookup,
+} from './blog';
+export { readHomepage, type HomepageFetchOptions } from './homepage';
+export { readSiteNavigation, type NavigationFetchOptions } from './navigation';
+export { readFaqs, type FaqsFetchOptions } from './faqs';
+export {
   handleCmsPage,
   handleCmsPages,
   readCmsPage,
@@ -250,6 +261,11 @@ export {
   type SeoFetchOptions,
 } from './seo';
 export { readRedirect, type RedirectLookup, type RedirectOptions } from './seo-redirects';
+export {
+  readSeoMetadata,
+  type SeoMetadataFetchOptions,
+  type SeoMetadataTarget,
+} from './seo-metadata';
 export {
   handleSellerVocabularyAttributesSave,
   handleSellerVocabularyTagsSave,

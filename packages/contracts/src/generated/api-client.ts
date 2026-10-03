@@ -124,8 +124,11 @@ export const ProblemCode = {
   CMS_PAGE_LOCALE_REQUIRED: 'CMS_PAGE_LOCALE_REQUIRED',
   CMS_PAGE_TRANSITION_NOT_ALLOWED: 'CMS_PAGE_TRANSITION_NOT_ALLOWED',
   CMS_PAGE_SLUG_TAKEN: 'CMS_PAGE_SLUG_TAKEN',
+  CMS_PAGE_COVER_MEDIA_MISSING: 'CMS_PAGE_COVER_MEDIA_MISSING',
   SEO_REDIRECT_PATH_TAKEN: 'SEO_REDIRECT_PATH_TAKEN',
   SEO_REDIRECT_NOT_ALLOWED: 'SEO_REDIRECT_NOT_ALLOWED',
+  SEO_METADATA_NOT_ALLOWED: 'SEO_METADATA_NOT_ALLOWED',
+  SEO_METADATA_TARGET_UNKNOWN: 'SEO_METADATA_TARGET_UNKNOWN',
   CATEGORY_TREE_NOT_ALLOWED: 'CATEGORY_TREE_NOT_ALLOWED',
   CATEGORY_SLUG_TAKEN: 'CATEGORY_SLUG_TAKEN',
   CATEGORY_NAME_REQUIRED: 'CATEGORY_NAME_REQUIRED',
@@ -134,6 +137,21 @@ export const ProblemCode = {
   ATTRIBUTE_NOT_ANSWERABLE: 'ATTRIBUTE_NOT_ANSWERABLE',
   ATTRIBUTE_VALUE_NOT_ALLOWED: 'ATTRIBUTE_VALUE_NOT_ALLOWED',
   LISTING_ATTRIBUTE_ANSWER_NOT_ALLOWED: 'LISTING_ATTRIBUTE_ANSWER_NOT_ALLOWED',
+  BLOG_LOCALE_REQUIRED: 'BLOG_LOCALE_REQUIRED',
+  BLOG_CHANGE_NOT_ALLOWED: 'BLOG_CHANGE_NOT_ALLOWED',
+  BLOG_SLUG_TAKEN: 'BLOG_SLUG_TAKEN',
+  BLOG_REFERENCE_UNKNOWN: 'BLOG_REFERENCE_UNKNOWN',
+  HOMEPAGE_SECTION_KEY_TAKEN: 'HOMEPAGE_SECTION_KEY_TAKEN',
+  HOMEPAGE_SECTION_NOT_ALLOWED: 'HOMEPAGE_SECTION_NOT_ALLOWED',
+  NAVIGATION_MENU_KEY_TAKEN: 'NAVIGATION_MENU_KEY_TAKEN',
+  NAVIGATION_NOT_ALLOWED: 'NAVIGATION_NOT_ALLOWED',
+  NAVIGATION_REFERENCE_UNKNOWN: 'NAVIGATION_REFERENCE_UNKNOWN',
+  FAQ_NOT_ALLOWED: 'FAQ_NOT_ALLOWED',
+  SEO_SETTINGS_NOT_ALLOWED: 'SEO_SETTINGS_NOT_ALLOWED',
+  SEO_SETTINGS_MEDIA_MISSING: 'SEO_SETTINGS_MEDIA_MISSING',
+  CMS_MEDIA_NOT_ALLOWED: 'CMS_MEDIA_NOT_ALLOWED',
+  CMS_MEDIA_OBJECT_MISSING: 'CMS_MEDIA_OBJECT_MISSING',
+  CMS_MEDIA_PATH_TAKEN: 'CMS_MEDIA_PATH_TAKEN',
 } as const;
 
 export interface ValidationIssue {
@@ -5208,6 +5226,460 @@ export interface SeoRedirectStateRequest {
   isActive: boolean;
 }
 
+export type SeoRestrictiveDirective = typeof SeoRestrictiveDirective[keyof typeof SeoRestrictiveDirective];
+
+
+export const SeoRestrictiveDirective = {
+  noindex: 'noindex',
+  nofollow: 'nofollow',
+  noarchive: 'noarchive',
+  nosnippet: 'nosnippet',
+  noimageindex: 'noimageindex',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PublicSeoMetadata = {
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  canonicalPath: string | null;
+  robotsDirectives: SeoRestrictiveDirective[];
+  /** @nullable */
+  ogTitle: string | null;
+  /** @nullable */
+  ogDescription: string | null;
+  /** @nullable */
+  shareObjectPath: string | null;
+} | null;
+
+export interface PublicSeoMetadataResponse {
+  override: PublicSeoMetadata | null;
+}
+
+export type SeoMetadataEntityType = typeof SeoMetadataEntityType[keyof typeof SeoMetadataEntityType];
+
+
+export const SeoMetadataEntityType = {
+  page: 'page',
+  blog_post: 'blog_post',
+  blog_category: 'blog_category',
+  blog_tag: 'blog_tag',
+  category: 'category',
+  listing: 'listing',
+  seller: 'seller',
+  route: 'route',
+} as const;
+
+export type SeoDirective = typeof SeoDirective[keyof typeof SeoDirective];
+
+
+export const SeoDirective = {
+  index: 'index',
+  noindex: 'noindex',
+  follow: 'follow',
+  nofollow: 'nofollow',
+  noarchive: 'noarchive',
+  nosnippet: 'nosnippet',
+  noimageindex: 'noimageindex',
+  'max-snippet:-1': 'max-snippet:-1',
+} as const;
+
+export interface SeoMetadataEntry {
+  id: string;
+  entityType: SeoMetadataEntityType;
+  /** @nullable */
+  entityId: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  routePath: string | null;
+  /** @nullable */
+  targetSlug: string | null;
+  localeCode: string;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  canonicalPath: string | null;
+  robotsDirectives: SeoDirective[];
+  /** @nullable */
+  ogTitle: string | null;
+  /** @nullable */
+  ogDescription: string | null;
+  /** @nullable */
+  shareMediaId: string | null;
+  canonicalIsHonoured: boolean;
+  updatedAt: string;
+}
+
+export interface SeoMetadataEntriesResponse {
+  items: SeoMetadataEntry[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface SeoMetadataDetail {
+  id: string;
+  entityType: SeoMetadataEntityType;
+  /** @nullable */
+  entityId: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  routePath: string | null;
+  /** @nullable */
+  targetSlug: string | null;
+  localeCode: string;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  canonicalPath: string | null;
+  robotsDirectives: SeoDirective[];
+  /** @nullable */
+  ogTitle: string | null;
+  /** @nullable */
+  ogDescription: string | null;
+  /** @nullable */
+  shareMediaId: string | null;
+  canonicalIsHonoured: boolean;
+  updatedAt: string;
+  /** @nullable */
+  shareObjectPath: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  effectiveCanonicalPath: string | null;
+  effectiveRobotsDirectives: SeoRestrictiveDirective[];
+  createdAt: string;
+  /** @nullable */
+  updatedBy: string | null;
+  canManage: boolean;
+}
+
+export interface SeoMetadataDetailResponse {
+  entry: SeoMetadataDetail;
+}
+
+export interface SaveSeoMetadataResponse {
+  id: string;
+}
+
+export type SeoMetadataWritableEntityType = typeof SeoMetadataWritableEntityType[keyof typeof SeoMetadataWritableEntityType];
+
+
+export const SeoMetadataWritableEntityType = {
+  page: 'page',
+  category: 'category',
+  listing: 'listing',
+  seller: 'seller',
+  route: 'route',
+} as const;
+
+export interface SaveSeoMetadataRequest {
+  entityType: SeoMetadataWritableEntityType;
+  entityId?: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-.%]*$
+     */
+  routePath?: string;
+  /** @pattern ^[a-z]{2}$ */
+  localeCode: string;
+  /**
+     * @maxLength 70
+     * @nullable
+     */
+  metaTitle?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  metaDescription?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^\/(?!\/)[A-Za-z0-9/_\-?=&.%]*$
+     */
+  canonicalPath?: string | null;
+  /**
+     * @minItems 1
+     * @maxItems 8
+     */
+  robotsDirectives?: SeoDirective[];
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  ogTitle?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  ogDescription?: string | null;
+  /** @nullable */
+  shareMediaId?: string | null;
+}
+
+export interface SeoMetadataWriteResponse {
+  ok: true;
+}
+
+/**
+ * @nullable
+ */
+export type SeoSettingsLocaleOrganizationStructuredData = {[key: string]: unknown} | null;
+
+export interface SeoSettingsLocale {
+  /** @pattern ^[a-z]{2}(-[A-Z]{2})?$ */
+  localeCode: string;
+  nameEn: string;
+  nameNative: string;
+  isDefaultLocale: boolean;
+  isAuthored: boolean;
+  robotsIsServed: boolean;
+  /** @nullable */
+  siteName: string | null;
+  /** @nullable */
+  defaultMetaTitle: string | null;
+  /** @nullable */
+  defaultMetaDescription: string | null;
+  /** @nullable */
+  defaultShareMediaId: string | null;
+  /** @nullable */
+  shareMediaObjectPath: string | null;
+  /** @nullable */
+  twitterSite: string | null;
+  /** @nullable */
+  robotsTxtBody: string | null;
+  /** @nullable */
+  organizationStructuredData: SeoSettingsLocaleOrganizationStructuredData;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface SeoSettingsResponse {
+  locales: SeoSettingsLocale[];
+  canManage: boolean;
+}
+
+export interface SeoSettingsWriteResponse {
+  ok: true;
+}
+
+/**
+ * @nullable
+ */
+export type SaveSeoSettingsRequestOrganizationStructuredData = {[key: string]: unknown} | null;
+
+export interface SaveSeoSettingsRequest {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  siteName: string;
+  /**
+     * @maxLength 70
+     * @nullable
+     */
+  defaultMetaTitle?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  defaultMetaDescription?: string | null;
+  /** @nullable */
+  defaultShareMediaId?: string | null;
+  /**
+     * @nullable
+     * @pattern ^@[A-Za-z0-9_]{1,15}$
+     */
+  twitterSite?: string | null;
+  /**
+     * @maxLength 10000
+     * @nullable
+     */
+  robotsTxtBody?: string | null;
+  /** @nullable */
+  organizationStructuredData?: SaveSeoSettingsRequestOrganizationStructuredData;
+}
+
+export interface CmsMediaEntry {
+  id: string;
+  objectPath: string;
+  contentType: string;
+  /**
+     * @exclusiveMinimum 0
+     * @nullable
+     */
+  width: number | null;
+  /**
+     * @exclusiveMinimum 0
+     * @nullable
+     */
+  height: number | null;
+  /** @exclusiveMinimum 0 */
+  byteSize: number;
+  /** @nullable */
+  altTextEn: string | null;
+  /** @nullable */
+  altTextAr: string | null;
+  /** @minimum 0 */
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CmsMediaPageResponse {
+  items: CmsMediaEntry[];
+  /** @nullable */
+  nextCursor: string | null;
+  canManage: boolean;
+}
+
+export interface CmsMediaUpload {
+  uploadUrl: string;
+  /** @pattern ^cms-media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|avif)$ */
+  objectPath: string;
+  expiresAt: string;
+  /** @exclusiveMinimum 0 */
+  maxByteSize: number;
+}
+
+export interface CmsMediaUploadResponse {
+  upload: CmsMediaUpload;
+}
+
+export type CmsMediaContentType = typeof CmsMediaContentType[keyof typeof CmsMediaContentType];
+
+
+export const CmsMediaContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/avif': 'image/avif',
+} as const;
+
+export interface CmsMediaUploadRequest {
+  contentType: CmsMediaContentType;
+  /**
+     * @maximum 10485760
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface CmsMediaAttachResponse {
+  id: string;
+}
+
+export interface CmsMediaAttachRequest {
+  /**
+     * @maxLength 512
+     * @pattern ^cms-media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|avif)$
+     */
+  objectPath: string;
+  contentType: CmsMediaContentType;
+  /**
+     * @maximum 10485760
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+  /** @exclusiveMinimum 0 */
+  width?: number;
+  /** @exclusiveMinimum 0 */
+  height?: number;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  altTextEn?: string | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  altTextAr?: string | null;
+}
+
+export type CmsMediaUsageType = typeof CmsMediaUsageType[keyof typeof CmsMediaUsageType];
+
+
+export const CmsMediaUsageType = {
+  page: 'page',
+  blog_post: 'blog_post',
+  banner: 'banner',
+  seo_settings: 'seo_settings',
+  seo_metadata: 'seo_metadata',
+} as const;
+
+export interface CmsMediaUsage {
+  entityType: CmsMediaUsageType;
+  /** @nullable */
+  entityId: string | null;
+  label: string;
+  column: string;
+}
+
+export interface CmsMediaUsageResponse {
+  id: string;
+  references: CmsMediaUsage[];
+}
+
+export interface CmsMediaPreviewResponse {
+  id: string;
+  url: string;
+  expiresAt: string;
+}
+
+export interface CmsMediaWriteResponse {
+  ok: true;
+}
+
+export interface CmsMediaAltTextRequest {
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  altTextEn?: string | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  altTextAr?: string | null;
+}
+
 export type GetV1CategoriesParams = {
 /**
  * Names the language of the category names. Absent or unrecognised resolves to the default locale.
@@ -6068,6 +6540,14 @@ export type GetV1AdminCmsPage200Page = {
   canManage: boolean;
   /** @items.pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
   previousSlugs: string[];
+  /** @nullable */
+  coverMediaId: string | null;
+  /** @nullable */
+  coverObjectPath: string | null;
+  /** @nullable */
+  coverAltTextEn: string | null;
+  /** @nullable */
+  coverAltTextAr: string | null;
   translations: GetV1AdminCmsPage200PageTranslationsItem[];
 };
 
@@ -6099,6 +6579,15 @@ export type PatchV1AdminCmsPageBody = {
 };
 
 export type PatchV1AdminCmsPage200 = {
+  ok: true;
+};
+
+export type PutV1AdminCmsPageCoverBody = {
+  /** @nullable */
+  mediaId: string | null;
+};
+
+export type PutV1AdminCmsPageCover200 = {
   ok: true;
 };
 
@@ -6155,6 +6644,1573 @@ export type DeleteV1AdminCmsPageTranslation200 = {
   ok: true;
 };
 
+export type GetV1BlogParams = {
+/**
+ * Names the language of the text. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1BlogLocale;
+/**
+ * Narrows the index to one category.
+ * @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$
+ */
+category?: string;
+/**
+ * Narrows the index to one tag.
+ * @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$
+ */
+tag?: string;
+/**
+ * Page size. Clamped to the maximum.
+ */
+limit?: string;
+/**
+ * An opaque position from a previous page.
+ */
+cursor?: string;
+};
+
+export type GetV1BlogLocale = typeof GetV1BlogLocale[keyof typeof GetV1BlogLocale];
+
+
+export const GetV1BlogLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1Blog200ItemsItemResolvedLocale = typeof GetV1Blog200ItemsItemResolvedLocale[keyof typeof GetV1Blog200ItemsItemResolvedLocale];
+
+
+export const GetV1Blog200ItemsItemResolvedLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1Blog200ItemsItem = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  isFeatured: boolean;
+  /**
+     * @nullable
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$
+     */
+  categorySlug: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  resolvedLocale: GetV1Blog200ItemsItemResolvedLocale;
+  title: string;
+  /** @nullable */
+  excerpt: string | null;
+  /** @nullable */
+  coverObjectPath: string | null;
+  publishedAt: string;
+  updatedAt: string;
+};
+
+export type GetV1Blog200 = {
+  items: GetV1Blog200ItemsItem[];
+  /** @nullable */
+  nextCursor: string | null;
+};
+
+export type GetV1BlogTaxonomyParams = {
+/**
+ * Names the language of the labels. An absent Arabic name falls back to the English one.
+ */
+locale?: GetV1BlogTaxonomyLocale;
+};
+
+export type GetV1BlogTaxonomyLocale = typeof GetV1BlogTaxonomyLocale[keyof typeof GetV1BlogTaxonomyLocale];
+
+
+export const GetV1BlogTaxonomyLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1BlogTaxonomy200CategoriesItem = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  name: string;
+  /** @minimum 0 */
+  postCount: number;
+};
+
+export type GetV1BlogTaxonomy200TagsItem = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  name: string;
+  /** @minimum 0 */
+  postCount: number;
+};
+
+export type GetV1BlogTaxonomy200 = {
+  categories: GetV1BlogTaxonomy200CategoriesItem[];
+  tags: GetV1BlogTaxonomy200TagsItem[];
+};
+
+export type GetV1BlogPostBySlugParams = {
+/**
+ * Names the language of the text. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1BlogPostBySlugLocale;
+};
+
+export type GetV1BlogPostBySlugLocale = typeof GetV1BlogPostBySlugLocale[keyof typeof GetV1BlogPostBySlugLocale];
+
+
+export const GetV1BlogPostBySlugLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1BlogPostBySlug200 = {
+  outcome: 'post';
+  post: {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  isIndexable: boolean;
+  isFeatured: boolean;
+  /**
+     * @nullable
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$
+     */
+  categorySlug: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  resolvedLocale: 'en' | 'ar';
+  title: string;
+  /** @nullable */
+  excerpt: string | null;
+  body: string;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  /** @nullable */
+  coverObjectPath: string | null;
+  tags: {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  name: string;
+}[];
+  publishedAt: string;
+  updatedAt: string;
+};
+} | {
+  outcome: 'moved';
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  movedTo: string;
+};
+
+export type GetV1AdminBlogPostsParams = {
+/**
+ * Page size. Clamped to the maximum.
+ */
+limit?: string;
+/**
+ * An opaque position from a previous page.
+ */
+cursor?: string;
+/**
+ * Narrows the list to one state.
+ */
+status?: string;
+/**
+ * A literal substring of the title or the slug.
+ */
+search?: string;
+/**
+ * Narrows the list to one category.
+ */
+categoryId?: string;
+};
+
+export type GetV1AdminBlogPosts200ItemsItemStatus = typeof GetV1AdminBlogPosts200ItemsItemStatus[keyof typeof GetV1AdminBlogPosts200ItemsItemStatus];
+
+
+export const GetV1AdminBlogPosts200ItemsItemStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type GetV1AdminBlogPosts200ItemsItem = {
+  id: string;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  status: GetV1AdminBlogPosts200ItemsItemStatus;
+  /** @nullable */
+  categoryId: string | null;
+  /**
+     * @nullable
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$
+     */
+  categorySlug: string | null;
+  isIndexable: boolean;
+  isFeatured: boolean;
+  /** @nullable */
+  scheduledFor: string | null;
+  /** @nullable */
+  publishedAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+  updatedAt: string;
+  translatedLocales: string[];
+  /** @minimum 0 */
+  tagCount: number;
+  /** @nullable */
+  title: string | null;
+};
+
+export type GetV1AdminBlogPosts200 = {
+  items: GetV1AdminBlogPosts200ItemsItem[];
+  /** @nullable */
+  nextCursor: string | null;
+};
+
+export type PostV1AdminBlogPostsBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  /** @nullable */
+  categoryId?: string | null;
+  isIndexable?: boolean;
+};
+
+export type PostV1AdminBlogPosts201 = {
+  id: string;
+};
+
+export type GetV1AdminBlogTaxonomy200CategoriesItem = {
+  id: string;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  nameEn: string;
+  /** @nullable */
+  nameAr: string | null;
+  /** @nullable */
+  descriptionEn: string | null;
+  /** @nullable */
+  descriptionAr: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  /** @minimum 0 */
+  postCount: number;
+  updatedAt: string;
+};
+
+export type GetV1AdminBlogTaxonomy200TagsItem = {
+  id: string;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  nameEn: string;
+  /** @nullable */
+  nameAr: string | null;
+  isActive: boolean;
+  /** @minimum 0 */
+  postCount: number;
+  updatedAt: string;
+};
+
+export type GetV1AdminBlogTaxonomy200 = {
+  categories: GetV1AdminBlogTaxonomy200CategoriesItem[];
+  tags: GetV1AdminBlogTaxonomy200TagsItem[];
+  canManage: boolean;
+};
+
+export type GetV1AdminBlogPost200PostStatus = typeof GetV1AdminBlogPost200PostStatus[keyof typeof GetV1AdminBlogPost200PostStatus];
+
+
+export const GetV1AdminBlogPost200PostStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type GetV1AdminBlogPost200PostTranslationsItem = {
+  localeCode: string;
+  title: string;
+  /** @nullable */
+  excerpt: string | null;
+  body: string;
+  /** @nullable */
+  metaTitle: string | null;
+  /** @nullable */
+  metaDescription: string | null;
+  updatedAt: string;
+};
+
+export type GetV1AdminBlogPost200Post = {
+  id: string;
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug: string;
+  status: GetV1AdminBlogPost200PostStatus;
+  /** @nullable */
+  categoryId: string | null;
+  /**
+     * @nullable
+     * @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$
+     */
+  categorySlug: string | null;
+  isIndexable: boolean;
+  isFeatured: boolean;
+  /** @nullable */
+  coverMediaId: string | null;
+  /** @nullable */
+  coverObjectPath: string | null;
+  /** @nullable */
+  coverAltTextEn: string | null;
+  /** @nullable */
+  coverAltTextAr: string | null;
+  /** @nullable */
+  authorUserId: string | null;
+  /** @nullable */
+  scheduledFor: string | null;
+  /** @nullable */
+  publishedAt: string | null;
+  /** @nullable */
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  canManage: boolean;
+  /** @items.pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  previousSlugs: string[];
+  tagIds: string[];
+  translations: GetV1AdminBlogPost200PostTranslationsItem[];
+};
+
+export type GetV1AdminBlogPost200 = {
+  post: GetV1AdminBlogPost200Post;
+};
+
+export type PatchV1AdminBlogPostBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug?: string;
+  /** @nullable */
+  categoryId?: string | null;
+  /** @nullable */
+  coverMediaId?: string | null;
+  isIndexable?: boolean;
+  isFeatured?: boolean;
+};
+
+export type PatchV1AdminBlogPost200 = {
+  ok: true;
+};
+
+export type PutV1AdminBlogPostStatusBodyStatus = typeof PutV1AdminBlogPostStatusBodyStatus[keyof typeof PutV1AdminBlogPostStatusBodyStatus];
+
+
+export const PutV1AdminBlogPostStatusBodyStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type PutV1AdminBlogPostStatusBody = {
+  status: PutV1AdminBlogPostStatusBodyStatus;
+  /** @nullable */
+  scheduledFor?: string | null;
+};
+
+export type PutV1AdminBlogPostStatus200 = {
+  ok: true;
+};
+
+export type PutV1AdminBlogPostTranslationBody = {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+  /** @minLength 1 */
+  body: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  excerpt?: string | null;
+  /**
+     * @maxLength 70
+     * @nullable
+     */
+  metaTitle?: string | null;
+  /**
+     * @maxLength 320
+     * @nullable
+     */
+  metaDescription?: string | null;
+};
+
+export type PutV1AdminBlogPostTranslation200 = {
+  ok: true;
+};
+
+export type DeleteV1AdminBlogPostTranslation200 = {
+  ok: true;
+};
+
+export type PutV1AdminBlogPostTagsBody = {
+  /** @maxItems 50 */
+  tagIds: string[];
+};
+
+export type PutV1AdminBlogPostTags200 = {
+  ok: true;
+};
+
+export type PostV1AdminBlogCategoriesBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameEn?: string;
+  nameAr?: string | '' | null;
+  descriptionEn?: string | '' | null;
+  descriptionAr?: string | '' | null;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
+export type PostV1AdminBlogCategories201 = {
+  id: string;
+};
+
+export type PatchV1AdminBlogCategoryBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  nameEn?: string;
+  nameAr?: string | '' | null;
+  descriptionEn?: string | '' | null;
+  descriptionAr?: string | '' | null;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
+export type PatchV1AdminBlogCategory200 = {
+  id: string;
+};
+
+export type PostV1AdminBlogTagsBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  nameEn?: string;
+  nameAr?: string | '' | null;
+  isActive?: boolean;
+};
+
+export type PostV1AdminBlogTags201 = {
+  id: string;
+};
+
+export type PatchV1AdminBlogTagBody = {
+  /** @pattern ^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$ */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  nameEn?: string;
+  nameAr?: string | '' | null;
+  isActive?: boolean;
+};
+
+export type PatchV1AdminBlogTag200 = {
+  id: string;
+};
+
+export type GetV1HomepageParams = {
+/**
+ * Names the language of the text. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1HomepageLocale;
+};
+
+export type GetV1HomepageLocale = typeof GetV1HomepageLocale[keyof typeof GetV1HomepageLocale];
+
+
+export const GetV1HomepageLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1Homepage200SectionsItem = {
+  sectionType: 'hero';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  hero: {
+  /** @nullable */
+  lead: string | null;
+  /** @nullable */
+  ctaLabel: string | null;
+  /** @nullable */
+  ctaPath: string | null;
+};
+} | {
+  sectionType: 'featured_listings';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  /** @minItems 1 */
+  listings: ({
+  resultType: 'listing' | 'service';
+  slug: string;
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  isNegotiable: boolean | null;
+})[];
+} | {
+  sectionType: 'latest_listings';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  /** @minItems 1 */
+  listings: ({
+  resultType: 'listing' | 'service';
+  slug: string;
+  title: string;
+  /** @nullable */
+  city: string | null;
+  /**
+     * @nullable
+     * @pattern ^(0|[1-9][0-9]*)$
+     */
+  priceMinor: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currencyCode: string;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  currencyMinorUnit: number;
+  /** @nullable */
+  isNegotiable: boolean | null;
+})[];
+} | {
+  sectionType: 'featured_categories';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  /** @minItems 1 */
+  categories: ({
+  slug: string;
+  name: string;
+  /** @nullable */
+  listingTypeCode: string | null;
+  /** @nullable */
+  icon: string | null;
+})[];
+} | {
+  sectionType: 'featured_sellers';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  /** @minItems 1 */
+  sellers: ({
+  slug: string;
+  displayName: string;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  bio: string | null;
+})[];
+} | {
+  sectionType: 'blog_highlights';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  /** @minItems 1 */
+  posts: ({
+  slug: string;
+  resolvedLocale: 'en' | 'ar';
+  title: string;
+  /** @nullable */
+  excerpt: string | null;
+  /** @nullable */
+  categorySlug: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  publishedAt: string;
+})[];
+} | {
+  sectionType: 'value_props';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  /** @minItems 1 */
+  items: {
+  title: string;
+  body: string;
+}[];
+} | {
+  sectionType: 'rich_text';
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  subtitle: string | null;
+  body: string;
+};
+
+export type GetV1Homepage200 = {
+  sections: GetV1Homepage200SectionsItem[];
+};
+
+export type GetV1AdminHomepageSections200SectionsItemSectionType = typeof GetV1AdminHomepageSections200SectionsItemSectionType[keyof typeof GetV1AdminHomepageSections200SectionsItemSectionType];
+
+
+export const GetV1AdminHomepageSections200SectionsItemSectionType = {
+  hero: 'hero',
+  banner_strip: 'banner_strip',
+  featured_listings: 'featured_listings',
+  featured_categories: 'featured_categories',
+  featured_sellers: 'featured_sellers',
+  latest_listings: 'latest_listings',
+  blog_highlights: 'blog_highlights',
+  value_props: 'value_props',
+  rich_text: 'rich_text',
+} as const;
+
+export type GetV1AdminHomepageSections200SectionsItem = {
+  id: string;
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  sectionType: GetV1AdminHomepageSections200SectionsItemSectionType;
+  /** @nullable */
+  titleEn: string | null;
+  /** @nullable */
+  titleAr: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  isServed: boolean;
+  isConfigured: boolean;
+  updatedAt: string;
+};
+
+export type GetV1AdminHomepageSections200 = {
+  sections: GetV1AdminHomepageSections200SectionsItem[];
+  canManage: boolean;
+};
+
+export type PostV1AdminHomepageSectionsBodySectionType = typeof PostV1AdminHomepageSectionsBodySectionType[keyof typeof PostV1AdminHomepageSectionsBodySectionType];
+
+
+export const PostV1AdminHomepageSectionsBodySectionType = {
+  hero: 'hero',
+  featured_listings: 'featured_listings',
+  featured_categories: 'featured_categories',
+  featured_sellers: 'featured_sellers',
+  latest_listings: 'latest_listings',
+  blog_highlights: 'blog_highlights',
+  value_props: 'value_props',
+  rich_text: 'rich_text',
+} as const;
+
+export type PostV1AdminHomepageSectionsBody = {
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  sectionType: PostV1AdminHomepageSectionsBodySectionType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  titleEn?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  titleAr?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  subtitleEn?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  subtitleAr?: string | null;
+  config?: unknown;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+};
+
+export type PostV1AdminHomepageSections201 = {
+  id: string;
+};
+
+export type PutV1AdminHomepageSectionsReorderBody = {
+  /** @maxItems 100 */
+  sectionIds: string[];
+};
+
+export type PutV1AdminHomepageSectionsReorder200 = {
+  ok: true;
+};
+
+export type GetV1AdminHomepageSection200SectionSectionType = typeof GetV1AdminHomepageSection200SectionSectionType[keyof typeof GetV1AdminHomepageSection200SectionSectionType];
+
+
+export const GetV1AdminHomepageSection200SectionSectionType = {
+  hero: 'hero',
+  banner_strip: 'banner_strip',
+  featured_listings: 'featured_listings',
+  featured_categories: 'featured_categories',
+  featured_sellers: 'featured_sellers',
+  latest_listings: 'latest_listings',
+  blog_highlights: 'blog_highlights',
+  value_props: 'value_props',
+  rich_text: 'rich_text',
+} as const;
+
+export type GetV1AdminHomepageSection200Section = {
+  id: string;
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey: string;
+  sectionType: GetV1AdminHomepageSection200SectionSectionType;
+  /** @nullable */
+  titleEn: string | null;
+  /** @nullable */
+  titleAr: string | null;
+  /** @nullable */
+  subtitleEn: string | null;
+  /** @nullable */
+  subtitleAr: string | null;
+  config?: unknown;
+  sortOrder: number;
+  isActive: boolean;
+  isServed: boolean;
+  isConfigured: boolean;
+  createdAt: string;
+  updatedAt: string;
+  canManage: boolean;
+  /** @minimum 0 */
+  chosenCount: number;
+  /** @minimum 0 */
+  renderableCount: number;
+};
+
+export type GetV1AdminHomepageSection200 = {
+  section: GetV1AdminHomepageSection200Section;
+};
+
+export type PatchV1AdminHomepageSectionBodySectionType = typeof PatchV1AdminHomepageSectionBodySectionType[keyof typeof PatchV1AdminHomepageSectionBodySectionType];
+
+
+export const PatchV1AdminHomepageSectionBodySectionType = {
+  hero: 'hero',
+  featured_listings: 'featured_listings',
+  featured_categories: 'featured_categories',
+  featured_sellers: 'featured_sellers',
+  latest_listings: 'latest_listings',
+  blog_highlights: 'blog_highlights',
+  value_props: 'value_props',
+  rich_text: 'rich_text',
+} as const;
+
+export type PatchV1AdminHomepageSectionBody = {
+  /**
+     * @maxLength 64
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  sectionKey?: string;
+  sectionType?: PatchV1AdminHomepageSectionBodySectionType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  titleEn?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  titleAr?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  subtitleEn?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     * @nullable
+     */
+  subtitleAr?: string | null;
+  config?: unknown;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+};
+
+export type PatchV1AdminHomepageSection200 = {
+  ok: true;
+};
+
+export type DeleteV1AdminHomepageSection200 = {
+  ok: true;
+};
+
+export type PutV1AdminHomepageSectionStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminHomepageSectionState200 = {
+  ok: true;
+};
+
+export type GetV1NavigationParams = {
+/**
+ * A comma-separated list of placements to return. Absent returns all three. An unrecognised key is ignored.
+ */
+menus?: string;
+/**
+ * Names the language of the labels. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1NavigationLocale;
+};
+
+export type GetV1NavigationLocale = typeof GetV1NavigationLocale[keyof typeof GetV1NavigationLocale];
+
+
+export const GetV1NavigationLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1Navigation200MenusItemMenuKey = typeof GetV1Navigation200MenusItemMenuKey[keyof typeof GetV1Navigation200MenusItemMenuKey];
+
+
+export const GetV1Navigation200MenusItemMenuKey = {
+  header: 'header',
+  footer: 'footer',
+  mobile: 'mobile',
+} as const;
+
+export type GetV1Navigation200MenusItemItemsItemTarget = {
+  kind: 'page';
+  /** @minLength 1 */
+  slug: string;
+} | {
+  kind: 'blog_post';
+  /** @minLength 1 */
+  slug: string;
+} | {
+  kind: 'category';
+  /** @minLength 1 */
+  slug: string;
+} | {
+  kind: 'path';
+  /**
+     * @minLength 1
+     * @maxLength 300
+     * @pattern ^\/[A-Za-z0-9/_\-?=&.%]*$
+     */
+  path: string;
+};
+
+export type GetV1Navigation200MenusItemItemsItemChildrenItemTarget = {
+  kind: 'page';
+  /** @minLength 1 */
+  slug: string;
+} | {
+  kind: 'blog_post';
+  /** @minLength 1 */
+  slug: string;
+} | {
+  kind: 'category';
+  /** @minLength 1 */
+  slug: string;
+} | {
+  kind: 'path';
+  /**
+     * @minLength 1
+     * @maxLength 300
+     * @pattern ^\/[A-Za-z0-9/_\-?=&.%]*$
+     */
+  path: string;
+};
+
+export type GetV1Navigation200MenusItemItemsItemChildrenItem = {
+  itemId: string;
+  /** @minLength 1 */
+  label: string;
+  target: GetV1Navigation200MenusItemItemsItemChildrenItemTarget;
+  opensInNewTab: boolean;
+};
+
+export type GetV1Navigation200MenusItemItemsItem = {
+  itemId: string;
+  /** @minLength 1 */
+  label: string;
+  target: GetV1Navigation200MenusItemItemsItemTarget;
+  opensInNewTab: boolean;
+  children: GetV1Navigation200MenusItemItemsItemChildrenItem[];
+};
+
+export type GetV1Navigation200MenusItem = {
+  menuKey: GetV1Navigation200MenusItemMenuKey;
+  /** @minLength 1 */
+  label: string;
+  /** @minItems 1 */
+  items: GetV1Navigation200MenusItemItemsItem[];
+};
+
+export type GetV1Navigation200 = {
+  menus: GetV1Navigation200MenusItem[];
+};
+
+export type GetV1AdminNavigationMenus200MenusItem = {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  menuKey: string;
+  /** @minLength 1 */
+  labelEn: string;
+  /** @nullable */
+  labelAr: string | null;
+  isActive: boolean;
+  isServed: boolean;
+  /** @minimum 0 */
+  itemCount: number;
+  /** @minimum 0 */
+  renderableItemCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetV1AdminNavigationMenus200 = {
+  menus: GetV1AdminNavigationMenus200MenusItem[];
+  canManage: boolean;
+};
+
+export type PostV1AdminNavigationMenusBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  menuKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     * @nullable
+     */
+  labelAr?: string | null;
+};
+
+export type PostV1AdminNavigationMenus201 = {
+  id: string;
+};
+
+export type PutV1AdminNavigationItemsReorderBody = {
+  menuId: string;
+  /**
+     * @minItems 1
+     * @maxItems 200
+     */
+  itemIds: string[];
+};
+
+export type PutV1AdminNavigationItemsReorder200 = {
+  ok: true;
+};
+
+export type PostV1AdminNavigationItemsBodyTarget = {
+  kind: 'page';
+  pageId: string;
+} | {
+  kind: 'blog_post';
+  blogPostId: string;
+} | {
+  kind: 'category';
+  categoryId: string;
+} | {
+  kind: 'path';
+  /**
+     * @minLength 1
+     * @maxLength 300
+     * @pattern ^\/[A-Za-z0-9/_\-?=&.%]*$
+     */
+  path: string;
+};
+
+export type PostV1AdminNavigationItemsBody = {
+  menuId: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     * @nullable
+     */
+  labelAr?: string | null;
+  target: PostV1AdminNavigationItemsBodyTarget;
+  parentId?: string;
+  opensInNewTab?: boolean;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+};
+
+export type PostV1AdminNavigationItems201 = {
+  id: string;
+};
+
+export type PatchV1AdminNavigationItemBodyTarget = {
+  kind: 'page';
+  pageId: string;
+} | {
+  kind: 'blog_post';
+  blogPostId: string;
+} | {
+  kind: 'category';
+  categoryId: string;
+} | {
+  kind: 'path';
+  /**
+     * @minLength 1
+     * @maxLength 300
+     * @pattern ^\/[A-Za-z0-9/_\-?=&.%]*$
+     */
+  path: string;
+};
+
+export type PatchV1AdminNavigationItemBody = {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelEn?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     * @nullable
+     */
+  labelAr?: string | null;
+  target?: PatchV1AdminNavigationItemBodyTarget;
+  parentId?: string;
+  opensInNewTab?: boolean;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+};
+
+export type PatchV1AdminNavigationItem200 = {
+  ok: true;
+};
+
+export type DeleteV1AdminNavigationItem200 = {
+  ok: true;
+};
+
+export type PutV1AdminNavigationItemPromote200 = {
+  ok: true;
+};
+
+export type PutV1AdminNavigationItemStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminNavigationItemState200 = {
+  ok: true;
+};
+
+export type GetV1AdminNavigationMenuParams = {
+/**
+ * Names the language of the targets’ own titles. It never changes which entries are listed.
+ */
+locale?: GetV1AdminNavigationMenuLocale;
+};
+
+export type GetV1AdminNavigationMenuLocale = typeof GetV1AdminNavigationMenuLocale[keyof typeof GetV1AdminNavigationMenuLocale];
+
+
+export const GetV1AdminNavigationMenuLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export const GetV1AdminNavigationMenu200MenuItemsItemDepth = {  NUMBER_1: 1,
+  NUMBER_2: 2,
+} as const
+export type GetV1AdminNavigationMenu200MenuItemsItemTargetKind = typeof GetV1AdminNavigationMenu200MenuItemsItemTargetKind[keyof typeof GetV1AdminNavigationMenu200MenuItemsItemTargetKind];
+
+
+export const GetV1AdminNavigationMenu200MenuItemsItemTargetKind = {
+  page: 'page',
+  blog_post: 'blog_post',
+  category: 'category',
+  path: 'path',
+} as const;
+
+export type GetV1AdminNavigationMenu200MenuItemsItemTargetState = typeof GetV1AdminNavigationMenu200MenuItemsItemTargetState[keyof typeof GetV1AdminNavigationMenu200MenuItemsItemTargetState];
+
+
+export const GetV1AdminNavigationMenu200MenuItemsItemTargetState = {
+  public: 'public',
+  not_public: 'not_public',
+  missing: 'missing',
+} as const;
+
+export type GetV1AdminNavigationMenu200MenuItemsItem = {
+  id: string;
+  /** @nullable */
+  parentId: string | null;
+  depth: typeof GetV1AdminNavigationMenu200MenuItemsItemDepth[keyof typeof GetV1AdminNavigationMenu200MenuItemsItemDepth];
+  /** @minLength 1 */
+  labelEn: string;
+  /** @nullable */
+  labelAr: string | null;
+  targetKind: GetV1AdminNavigationMenu200MenuItemsItemTargetKind;
+  /** @nullable */
+  pageId: string | null;
+  /** @nullable */
+  blogPostId: string | null;
+  /** @nullable */
+  categoryId: string | null;
+  /** @nullable */
+  path: string | null;
+  /** @nullable */
+  targetSlug: string | null;
+  /** @nullable */
+  targetTitle: string | null;
+  targetState: GetV1AdminNavigationMenu200MenuItemsItemTargetState;
+  opensInNewTab: boolean;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetV1AdminNavigationMenu200Menu = {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  menuKey: string;
+  /** @minLength 1 */
+  labelEn: string;
+  /** @nullable */
+  labelAr: string | null;
+  isActive: boolean;
+  isServed: boolean;
+  /** @minimum 0 */
+  itemCount: number;
+  /** @minimum 0 */
+  renderableItemCount: number;
+  createdAt: string;
+  updatedAt: string;
+  canManage: boolean;
+  items: GetV1AdminNavigationMenu200MenuItemsItem[];
+};
+
+export type GetV1AdminNavigationMenu200 = {
+  menu: GetV1AdminNavigationMenu200Menu;
+};
+
+export type PatchV1AdminNavigationMenuBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  menuKey?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  labelEn?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     * @nullable
+     */
+  labelAr?: string | null;
+};
+
+export type PatchV1AdminNavigationMenu200 = {
+  ok: true;
+};
+
+export type DeleteV1AdminNavigationMenu200 = {
+  ok: true;
+};
+
+export type PutV1AdminNavigationMenuStateBody = {
+  isActive: boolean;
+};
+
+export type PutV1AdminNavigationMenuState200 = {
+  ok: true;
+};
+
+export type GetV1FaqsParams = {
+/**
+ * The topic to read, which is a published page’s own page_key.
+ * @minLength 1
+ * @maxLength 60
+ * @pattern ^[a-z][a-z0-9_]*$
+ */
+topic: string;
+/**
+ * Names the language of the text. Absent or unrecognised resolves to the default locale.
+ */
+locale?: GetV1FaqsLocale;
+};
+
+export type GetV1FaqsLocale = typeof GetV1FaqsLocale[keyof typeof GetV1FaqsLocale];
+
+
+export const GetV1FaqsLocale = {
+  en: 'en',
+  ar: 'ar',
+} as const;
+
+export type GetV1Faqs200EntriesItem = {
+  faqId: string;
+  /** @minLength 1 */
+  question: string;
+  /** @minLength 1 */
+  answer: string;
+};
+
+export type GetV1Faqs200 = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic: string;
+  entries: GetV1Faqs200EntriesItem[];
+};
+
+export type GetV1AdminFaqTopics200TopicsItem = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic: string;
+  /** @minimum 0 */
+  entryCount: number;
+  /** @minimum 0 */
+  publishedCount: number;
+  isMapped: boolean;
+  /** @nullable */
+  pageSlug: string | null;
+};
+
+export type GetV1AdminFaqTopics200 = {
+  topics: GetV1AdminFaqTopics200TopicsItem[];
+};
+
+export type PutV1AdminFaqsReorderBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic: string;
+  /**
+     * @minItems 1
+     * @maxItems 200
+     */
+  faqIds: string[];
+};
+
+export type PutV1AdminFaqsReorder200 = {
+  ok: true;
+};
+
+export type GetV1AdminFaqsParams = {
+/**
+ * Narrows the list to one topic.
+ * @minLength 1
+ * @maxLength 60
+ * @pattern ^[a-z][a-z0-9_]*$
+ */
+topic?: string;
+/**
+ * Opaque. Send back exactly what the last page returned.
+ */
+cursor?: string;
+/**
+ * How many entries to return. The default is 25 and the maximum is 100.
+ */
+limit?: string;
+};
+
+export type GetV1AdminFaqs200ItemsItem = {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic: string;
+  /** @minLength 1 */
+  questionEn: string;
+  /** @nullable */
+  questionAr: string | null;
+  /** @minLength 1 */
+  answerEn: string;
+  /** @nullable */
+  answerAr: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  isMapped: boolean;
+  /** @nullable */
+  pageSlug: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GetV1AdminFaqs200 = {
+  items: GetV1AdminFaqs200ItemsItem[];
+  /** @nullable */
+  nextCursor: string | null;
+  canManage: boolean;
+};
+
+export type PostV1AdminFaqsBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  questionEn: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     * @nullable
+     */
+  questionAr?: string | null;
+  /** @minLength 1 */
+  answerEn: string;
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  answerAr?: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+};
+
+export type PostV1AdminFaqs201 = {
+  id: string;
+};
+
+export type GetV1AdminFaq200Faq = {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic: string;
+  /** @minLength 1 */
+  questionEn: string;
+  /** @nullable */
+  questionAr: string | null;
+  /** @minLength 1 */
+  answerEn: string;
+  /** @nullable */
+  answerAr: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  isMapped: boolean;
+  /** @nullable */
+  pageSlug: string | null;
+  createdAt: string;
+  updatedAt: string;
+  canManage: boolean;
+};
+
+export type GetV1AdminFaq200 = {
+  faq: GetV1AdminFaq200Faq;
+};
+
+export type PatchV1AdminFaqBody = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     * @pattern ^[a-z][a-z0-9_]*$
+     */
+  topic?: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  questionEn?: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     * @nullable
+     */
+  questionAr?: string | null;
+  /** @minLength 1 */
+  answerEn?: string;
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  answerAr?: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  sortOrder?: number;
+};
+
+export type PatchV1AdminFaq200 = {
+  ok: true;
+};
+
+export type DeleteV1AdminFaq200 = {
+  ok: true;
+};
+
+export type PutV1AdminFaqStateBody = {
+  isPublished: boolean;
+};
+
+export type PutV1AdminFaqState200 = {
+  ok: true;
+};
+
 export type GetV1SeoRedirectResolveParams = {
 /**
  * The incoming path, relative and beginning with a single slash.
@@ -6179,6 +8235,55 @@ search?: string;
  * `true` or `false` to filter by state. Absent means both.
  */
 active?: string;
+};
+
+export type GetV1SeoMetadataParams = {
+/**
+ * The kind of surface — `page`, `category`, `listing` or `seller`. Omitted for a route.
+ */
+entityType?: string;
+/**
+ * The surface’s slug. Required with `entityType`.
+ */
+slug?: string;
+/**
+ * A fixed landing address, relative. Used instead of `entityType` and `slug`.
+ */
+routePath?: string;
+/**
+ * Which locale’s override to read.
+ */
+locale?: string;
+};
+
+export type GetV1AdminSeoMetadataParams = {
+/**
+ * How many rows to return. Defaults to 25; a larger value is clamped to 100.
+ */
+limit?: string;
+/**
+ * An opaque position from a previous page. Never constructed by a client.
+ */
+cursor?: string;
+/**
+ * Narrow to one kind of surface.
+ */
+entityType?: string;
+/**
+ * Narrow to one locale.
+ */
+locale?: string;
+};
+
+export type GetV1AdminCmsMediaParams = {
+/**
+ * How many entries to return. Defaults to 24; a larger value is clamped to 96.
+ */
+limit?: string;
+/**
+ * An opaque position from a previous page. Never constructed by a client.
+ */
+cursor?: string;
 };
 
 /**
@@ -7164,6 +9269,7 @@ export type GetV1SeoSitemap200CountsItemType = typeof GetV1SeoSitemap200CountsIt
 
 export const GetV1SeoSitemap200CountsItemType = {
   page: 'page',
+  blog_post: 'blog_post',
   listing: 'listing',
   service: 'service',
   category: 'category',
@@ -7190,6 +9296,7 @@ export type GetV1SeoSitemapPage200Type = typeof GetV1SeoSitemapPage200Type[keyof
 
 export const GetV1SeoSitemapPage200Type = {
   page: 'page',
+  blog_post: 'blog_post',
   listing: 'listing',
   service: 'service',
   category: 'category',
@@ -19801,6 +21908,87 @@ return apiFetch<patchV1AdminCmsPageResponse>(getPatchV1AdminCmsPageUrl(pageId),
 
 
 
+export type putV1AdminCmsPageCoverResponse200 = {
+  data: PutV1AdminCmsPageCover200
+  status: 200
+}
+
+export type putV1AdminCmsPageCoverResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCmsPageCoverResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCmsPageCoverResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCmsPageCoverResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCmsPageCoverResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminCmsPageCoverResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCmsPageCoverResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCmsPageCoverResponseSuccess = (putV1AdminCmsPageCoverResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCmsPageCoverResponseError = (putV1AdminCmsPageCoverResponse400 | putV1AdminCmsPageCoverResponse401 | putV1AdminCmsPageCoverResponse403 | putV1AdminCmsPageCoverResponse404 | putV1AdminCmsPageCoverResponse409 | putV1AdminCmsPageCoverResponse500 | putV1AdminCmsPageCoverResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCmsPageCoverResponse = (putV1AdminCmsPageCoverResponseSuccess | putV1AdminCmsPageCoverResponseError)
+
+export const getPutV1AdminCmsPageCoverUrl = (pageId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/pages/${pageId}/cover`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.page.manage` in an aal2 session — **not** `cms.media.manage`: a page editor does not need the media library’s key to name an entry in it. `mediaId` is required and nullable, and the two cases are the two operations: a uuid attaches that library entry and an explicit `null` removes whatever is attached. Leaving a cover alone is not sending this request. There is no object path here and no upload: the entry must already exist, and whether the id names one is decided by the database’s own foreign key, which answers 409 when it does not. A route of its own rather than a field on the page patch, so that changing a page’s address cannot change what it looks like and the reverse. **Nothing on the public site renders a page cover**: this records which image belongs to the page and makes it appear nowhere.
+ * @summary Attach or remove a page’s cover image
+ */
+export const putV1AdminCmsPageCover = async (pageId: string,
+    putV1AdminCmsPageCoverBody?: PutV1AdminCmsPageCoverBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCmsPageCoverResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCmsPageCoverResponse>(getPutV1AdminCmsPageCoverUrl(pageId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminCmsPageCoverBody)
+  }
+);}
+
+
+
 export type putV1AdminCmsPageStatusResponse200 = {
   data: PutV1AdminCmsPageStatus200
   status: 200
@@ -20031,6 +22219,3369 @@ export const deleteV1AdminCmsPageTranslation = async (pageId: string,
     method: 'DELETE'
 
 
+  }
+);}
+
+
+
+export type getV1BlogResponse200 = {
+  data: GetV1Blog200
+  status: 200
+}
+
+export type getV1BlogResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1BlogResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1BlogResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1BlogResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1BlogResponseSuccess = (getV1BlogResponse200) & {
+  headers: Headers;
+};
+export type getV1BlogResponseError = (getV1BlogResponse400 | getV1BlogResponse403 | getV1BlogResponse500 | getV1BlogResponse503) & {
+  headers: Headers;
+};
+
+export type getV1BlogResponse = (getV1BlogResponseSuccess | getV1BlogResponseError)
+
+export const getGetV1BlogUrl = (params?: GetV1BlogParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/blog?${stringifiedParams}` : `/v1/blog`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same page. Ordered strictly by publication moment, newest first — `isFeatured` is reported so a surface can mark a post, and deliberately does not move it, because promoting featured posts would be a presentation rule nobody approved. A post appears only once it is published and its moment has passed, and only if it has been written in at least one locale. `category` and `tag` are filters compared as values, so a slug naming nothing or something deactivated yields an empty page rather than a refusal; `locale` selects a representation, and `resolvedLocale` says which language came back.
+ * @summary The public blog index, newest published first
+ */
+export const getV1Blog = async (params?: GetV1BlogParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1BlogResponse> => {
+
+  return apiFetch<getV1BlogResponse>(getGetV1BlogUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1BlogTaxonomyResponse200 = {
+  data: GetV1BlogTaxonomy200
+  status: 200
+}
+
+export type getV1BlogTaxonomyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1BlogTaxonomyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1BlogTaxonomyResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1BlogTaxonomyResponseSuccess = (getV1BlogTaxonomyResponse200) & {
+  headers: Headers;
+};
+export type getV1BlogTaxonomyResponseError = (getV1BlogTaxonomyResponse403 | getV1BlogTaxonomyResponse500 | getV1BlogTaxonomyResponse503) & {
+  headers: Headers;
+};
+
+export type getV1BlogTaxonomyResponse = (getV1BlogTaxonomyResponseSuccess | getV1BlogTaxonomyResponseError)
+
+export const getGetV1BlogTaxonomyUrl = (params?: GetV1BlogTaxonomyParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/blog/taxonomy?${stringifiedParams}` : `/v1/blog/taxonomy`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context. Only active categories and tags appear, each with how many posts the public may actually see under it. A filter with nothing behind it reports zero rather than being omitted, so a surface decides for itself whether to show an empty one. Categories carry the administrator’s own sort order; tags have none in the schema and are ordered by slug.
+ * @summary The filters the blog index offers
+ */
+export const getV1BlogTaxonomy = async (params?: GetV1BlogTaxonomyParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1BlogTaxonomyResponse> => {
+
+  return apiFetch<getV1BlogTaxonomyResponse>(getGetV1BlogTaxonomyUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1BlogPostBySlugResponse200 = {
+  data: GetV1BlogPostBySlug200
+  status: 200
+}
+
+export type getV1BlogPostBySlugResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1BlogPostBySlugResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1BlogPostBySlugResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1BlogPostBySlugResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1BlogPostBySlugResponseSuccess = (getV1BlogPostBySlugResponse200) & {
+  headers: Headers;
+};
+export type getV1BlogPostBySlugResponseError = (getV1BlogPostBySlugResponse403 | getV1BlogPostBySlugResponse404 | getV1BlogPostBySlugResponse500 | getV1BlogPostBySlugResponse503) & {
+  headers: Headers;
+};
+
+export type getV1BlogPostBySlugResponse = (getV1BlogPostBySlugResponseSuccess | getV1BlogPostBySlugResponseError)
+
+export const getGetV1BlogPostBySlugUrl = (slug: string,
+    params?: GetV1BlogPostBySlugParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/blog/${slug}?${stringifiedParams}` : `/v1/blog/${slug}`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context. **The 200 body is a union discriminated on `outcome`.** `post` is a published post with its text in the requested locale, or in the default locale when that one is untranslated — `resolvedLocale` says which came back, which is what lets a renderer set the right language and direction. `moved` means the slug is a previous address of a post that has since been renamed, and carries the current slug so the caller can issue its own redirect; the body has no content fields at all, so a renderer cannot show an empty post by forgetting to branch. The distinction is in the body rather than in the status line deliberately: a 301 here would be followed transparently by `fetch`, and the caller would receive the renamed post with a 200 and never learn to redirect the browser. `metaTitle` and `metaDescription` come from the post’s own translation and are the only source of its head.
+ * @summary One public post, or the slug it moved to
+ */
+export const getV1BlogPostBySlug = async (slug: string,
+    params?: GetV1BlogPostBySlugParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1BlogPostBySlugResponse> => {
+
+  return apiFetch<getV1BlogPostBySlugResponse>(getGetV1BlogPostBySlugUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminBlogPostsResponse200 = {
+  data: GetV1AdminBlogPosts200
+  status: 200
+}
+
+export type getV1AdminBlogPostsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminBlogPostsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminBlogPostsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminBlogPostsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminBlogPostsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminBlogPostsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminBlogPostsResponseSuccess = (getV1AdminBlogPostsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminBlogPostsResponseError = (getV1AdminBlogPostsResponse400 | getV1AdminBlogPostsResponse401 | getV1AdminBlogPostsResponse403 | getV1AdminBlogPostsResponse404 | getV1AdminBlogPostsResponse500 | getV1AdminBlogPostsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminBlogPostsResponse = (getV1AdminBlogPostsResponseSuccess | getV1AdminBlogPostsResponseError)
+
+export const getGetV1AdminBlogPostsUrl = (params?: GetV1AdminBlogPostsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/blog?${stringifiedParams}` : `/v1/admin/blog`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Newest edit first, because this is an authoring list rather than a queue. `translatedLocales` is empty for a post nobody has written, which is also the state that cannot be published. The status and category filters compare values, so an unknown one returns an empty page rather than a refusal, and `search` is matched as a literal substring of the title or the slug — never as a pattern, so nothing in it can be read as a wildcard.
+ * @summary Authored posts, newest edit first
+ */
+export const getV1AdminBlogPosts = async (params?: GetV1AdminBlogPostsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminBlogPostsResponse> => {
+
+  return apiFetch<getV1AdminBlogPostsResponse>(getGetV1AdminBlogPostsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminBlogPostsResponse201 = {
+  data: PostV1AdminBlogPosts201
+  status: 201
+}
+
+export type postV1AdminBlogPostsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminBlogPostsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminBlogPostsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminBlogPostsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminBlogPostsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminBlogPostsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminBlogPostsResponseSuccess = (postV1AdminBlogPostsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminBlogPostsResponseError = (postV1AdminBlogPostsResponse400 | postV1AdminBlogPostsResponse401 | postV1AdminBlogPostsResponse403 | postV1AdminBlogPostsResponse409 | postV1AdminBlogPostsResponse500 | postV1AdminBlogPostsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminBlogPostsResponse = (postV1AdminBlogPostsResponseSuccess | postV1AdminBlogPostsResponseError)
+
+export const getPostV1AdminBlogPostsUrl = () => {
+
+
+
+
+  return `/v1/admin/blog`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. **The post is always created as a draft and never featured**, and there is neither a status nor a featured flag in the request: publishing is its own call, so a post cannot go live before anybody has written it. The creating staff member becomes the byline. A slug that is a previous address of another post is refused — a historical slug belongs to the post that gave it up, permanently.
+ * @summary Create a post
+ */
+export const postV1AdminBlogPosts = async (postV1AdminBlogPostsBody?: PostV1AdminBlogPostsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminBlogPostsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminBlogPostsResponse>(getPostV1AdminBlogPostsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminBlogPostsBody)
+  }
+);}
+
+
+
+export type getV1AdminBlogTaxonomyResponse200 = {
+  data: GetV1AdminBlogTaxonomy200
+  status: 200
+}
+
+export type getV1AdminBlogTaxonomyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminBlogTaxonomyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminBlogTaxonomyResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminBlogTaxonomyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminBlogTaxonomyResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminBlogTaxonomyResponseSuccess = (getV1AdminBlogTaxonomyResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminBlogTaxonomyResponseError = (getV1AdminBlogTaxonomyResponse401 | getV1AdminBlogTaxonomyResponse403 | getV1AdminBlogTaxonomyResponse404 | getV1AdminBlogTaxonomyResponse500 | getV1AdminBlogTaxonomyResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminBlogTaxonomyResponse = (getV1AdminBlogTaxonomyResponseSuccess | getV1AdminBlogTaxonomyResponseError)
+
+export const getGetV1AdminBlogTaxonomyUrl = () => {
+
+
+
+
+  return `/v1/admin/blog/taxonomy`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.read` in an aal2 session. Includes deactivated rows, which is the difference from the public taxonomy: a console has to be able to see and reactivate what it deactivated. `postCount` counts every post, not only the public ones — it is there to warn before a deactivation, which is a different question from what the public site shows. `canManage` reports whether this caller also holds `cms.blog.manage`, so a console renders its controls from the answer rather than from a role name.
+ * @summary Blog categories and tags, active or not
+ */
+export const getV1AdminBlogTaxonomy = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminBlogTaxonomyResponse> => {
+
+  return apiFetch<getV1AdminBlogTaxonomyResponse>(getGetV1AdminBlogTaxonomyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminBlogPostResponse200 = {
+  data: GetV1AdminBlogPost200
+  status: 200
+}
+
+export type getV1AdminBlogPostResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminBlogPostResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminBlogPostResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminBlogPostResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminBlogPostResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminBlogPostResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminBlogPostResponseSuccess = (getV1AdminBlogPostResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminBlogPostResponseError = (getV1AdminBlogPostResponse400 | getV1AdminBlogPostResponse401 | getV1AdminBlogPostResponse403 | getV1AdminBlogPostResponse404 | getV1AdminBlogPostResponse500 | getV1AdminBlogPostResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminBlogPostResponse = (getV1AdminBlogPostResponseSuccess | getV1AdminBlogPostResponseError)
+
+export const getGetV1AdminBlogPostUrl = (postId: string,) => {
+
+
+
+
+  return `/v1/admin/blog/${postId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.read` in an aal2 session. Carries every locale the post has been written in, every slug it has had — each of which still redirects to the current one — the tags it carries, and `canManage`, which reports whether this caller also holds `cms.blog.manage`. A post that does not exist and a caller without the read key answer identically, so a refusal cannot be told from an absence. `authorUserId` is the byline, set to the staff member who created the post and not changeable here.
+ * @summary One authored post
+ */
+export const getV1AdminBlogPost = async (postId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminBlogPostResponse> => {
+
+  return apiFetch<getV1AdminBlogPostResponse>(getGetV1AdminBlogPostUrl(postId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminBlogPostResponse200 = {
+  data: PatchV1AdminBlogPost200
+  status: 200
+}
+
+export type patchV1AdminBlogPostResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminBlogPostResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminBlogPostResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminBlogPostResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminBlogPostResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminBlogPostResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminBlogPostResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminBlogPostResponseSuccess = (patchV1AdminBlogPostResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminBlogPostResponseError = (patchV1AdminBlogPostResponse400 | patchV1AdminBlogPostResponse401 | patchV1AdminBlogPostResponse403 | patchV1AdminBlogPostResponse404 | patchV1AdminBlogPostResponse409 | patchV1AdminBlogPostResponse500 | patchV1AdminBlogPostResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminBlogPostResponse = (patchV1AdminBlogPostResponseSuccess | patchV1AdminBlogPostResponseError)
+
+export const getPatchV1AdminBlogPostUrl = (postId: string,) => {
+
+
+
+
+  return `/v1/admin/blog/${postId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Every field is optional. **An absent field changes nothing and an explicit `null` clears a reference** — the two mean different things, so sending `categoryId: null` removes the category while omitting it leaves it alone. **The status is deliberately not changeable here**: renaming a post or changing its cover can never publish or archive it. Changing the slug keeps the old one as a permanent redirect. `isFeatured` is refused unless the post is published, which is the database’s own constraint.
+ * @summary Change a post’s address or presentation
+ */
+export const patchV1AdminBlogPost = async (postId: string,
+    patchV1AdminBlogPostBody?: PatchV1AdminBlogPostBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminBlogPostResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminBlogPostResponse>(getPatchV1AdminBlogPostUrl(postId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminBlogPostBody)
+  }
+);}
+
+
+
+export type putV1AdminBlogPostStatusResponse200 = {
+  data: PutV1AdminBlogPostStatus200
+  status: 200
+}
+
+export type putV1AdminBlogPostStatusResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminBlogPostStatusResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminBlogPostStatusResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminBlogPostStatusResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminBlogPostStatusResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminBlogPostStatusResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminBlogPostStatusResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminBlogPostStatusResponseSuccess = (putV1AdminBlogPostStatusResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminBlogPostStatusResponseError = (putV1AdminBlogPostStatusResponse400 | putV1AdminBlogPostStatusResponse401 | putV1AdminBlogPostStatusResponse403 | putV1AdminBlogPostStatusResponse404 | putV1AdminBlogPostStatusResponse409 | putV1AdminBlogPostStatusResponse500 | putV1AdminBlogPostStatusResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminBlogPostStatusResponse = (putV1AdminBlogPostStatusResponseSuccess | putV1AdminBlogPostStatusResponseError)
+
+export const getPutV1AdminBlogPostStatusUrl = (postId: string,) => {
+
+
+
+
+  return `/v1/admin/blog/${postId}/status`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. The legal transitions are the database’s, shared with CMS pages: a post may move between draft, scheduled, published and archived along defined edges, and an edge that does not exist is refused. Publishing or scheduling a post that has not been written in any locale is refused too, because it would put a live address in front of the public with nothing to render. `scheduledFor` is required for `scheduled` and not allowed otherwise. Leaving the published state clears the featured flag, which no other state may carry.
+ * @summary Move a post through its lifecycle
+ */
+export const putV1AdminBlogPostStatus = async (postId: string,
+    putV1AdminBlogPostStatusBody?: PutV1AdminBlogPostStatusBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminBlogPostStatusResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminBlogPostStatusResponse>(getPutV1AdminBlogPostStatusUrl(postId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminBlogPostStatusBody)
+  }
+);}
+
+
+
+export type putV1AdminBlogPostTranslationResponse200 = {
+  data: PutV1AdminBlogPostTranslation200
+  status: 200
+}
+
+export type putV1AdminBlogPostTranslationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminBlogPostTranslationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminBlogPostTranslationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminBlogPostTranslationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminBlogPostTranslationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminBlogPostTranslationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminBlogPostTranslationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminBlogPostTranslationResponseSuccess = (putV1AdminBlogPostTranslationResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminBlogPostTranslationResponseError = (putV1AdminBlogPostTranslationResponse400 | putV1AdminBlogPostTranslationResponse401 | putV1AdminBlogPostTranslationResponse403 | putV1AdminBlogPostTranslationResponse404 | putV1AdminBlogPostTranslationResponse409 | putV1AdminBlogPostTranslationResponse500 | putV1AdminBlogPostTranslationResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminBlogPostTranslationResponse = (putV1AdminBlogPostTranslationResponseSuccess | putV1AdminBlogPostTranslationResponseError)
+
+export const getPutV1AdminBlogPostTranslationUrl = (postId: string,
+    localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/blog/${postId}/translations/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Creating and replacing are the same request. Nothing is machine translated: a locale exists because somebody wrote it, and an untranslated locale simply has no row. `metaTitle` and `metaDescription` are written here and nowhere else — they are the only source of the post’s public head.
+ * @summary Write one locale of a post
+ */
+export const putV1AdminBlogPostTranslation = async (postId: string,
+    localeCode: string,
+    putV1AdminBlogPostTranslationBody?: PutV1AdminBlogPostTranslationBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminBlogPostTranslationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminBlogPostTranslationResponse>(getPutV1AdminBlogPostTranslationUrl(postId,localeCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminBlogPostTranslationBody)
+  }
+);}
+
+
+
+export type deleteV1AdminBlogPostTranslationResponse200 = {
+  data: DeleteV1AdminBlogPostTranslation200
+  status: 200
+}
+
+export type deleteV1AdminBlogPostTranslationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminBlogPostTranslationResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminBlogPostTranslationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminBlogPostTranslationResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminBlogPostTranslationResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type deleteV1AdminBlogPostTranslationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminBlogPostTranslationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminBlogPostTranslationResponseSuccess = (deleteV1AdminBlogPostTranslationResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminBlogPostTranslationResponseError = (deleteV1AdminBlogPostTranslationResponse400 | deleteV1AdminBlogPostTranslationResponse401 | deleteV1AdminBlogPostTranslationResponse403 | deleteV1AdminBlogPostTranslationResponse404 | deleteV1AdminBlogPostTranslationResponse409 | deleteV1AdminBlogPostTranslationResponse500 | deleteV1AdminBlogPostTranslationResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminBlogPostTranslationResponse = (deleteV1AdminBlogPostTranslationResponseSuccess | deleteV1AdminBlogPostTranslationResponseError)
+
+export const getDeleteV1AdminBlogPostTranslationUrl = (postId: string,
+    localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/blog/${postId}/translations/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Removing the last locale of a published or scheduled post is refused: its address would start answering 404 while the post was still live. A locale that was never there answers 404 rather than a refusal, because the remedy is the same as for a post that does not exist.
+ * @summary Remove one locale of a post
+ */
+export const deleteV1AdminBlogPostTranslation = async (postId: string,
+    localeCode: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminBlogPostTranslationResponse> => {
+
+  return apiFetch<deleteV1AdminBlogPostTranslationResponse>(getDeleteV1AdminBlogPostTranslationUrl(postId,localeCode),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1AdminBlogPostTagsResponse200 = {
+  data: PutV1AdminBlogPostTags200
+  status: 200
+}
+
+export type putV1AdminBlogPostTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminBlogPostTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminBlogPostTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminBlogPostTagsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminBlogPostTagsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminBlogPostTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminBlogPostTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminBlogPostTagsResponseSuccess = (putV1AdminBlogPostTagsResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminBlogPostTagsResponseError = (putV1AdminBlogPostTagsResponse400 | putV1AdminBlogPostTagsResponse401 | putV1AdminBlogPostTagsResponse403 | putV1AdminBlogPostTagsResponse404 | putV1AdminBlogPostTagsResponse409 | putV1AdminBlogPostTagsResponse500 | putV1AdminBlogPostTagsResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminBlogPostTagsResponse = (putV1AdminBlogPostTagsResponseSuccess | putV1AdminBlogPostTagsResponseError)
+
+export const getPutV1AdminBlogPostTagsUrl = (postId: string,) => {
+
+
+
+
+  return `/v1/admin/blog/${postId}/tags`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. The whole set is sent rather than one addition or removal at a time, so the write cannot leave a half-applied result and a console that renders checkboxes already knows what it means. An empty array removes every tag. A tag that does not exist is refused rather than quietly dropped. A deactivated tag may be attached and is simply not served to the public, so reactivating it restores it.
+ * @summary Replace a post’s tags
+ */
+export const putV1AdminBlogPostTags = async (postId: string,
+    putV1AdminBlogPostTagsBody?: PutV1AdminBlogPostTagsBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminBlogPostTagsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminBlogPostTagsResponse>(getPutV1AdminBlogPostTagsUrl(postId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminBlogPostTagsBody)
+  }
+);}
+
+
+
+export type postV1AdminBlogCategoriesResponse201 = {
+  data: PostV1AdminBlogCategories201
+  status: 201
+}
+
+export type postV1AdminBlogCategoriesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminBlogCategoriesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminBlogCategoriesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminBlogCategoriesResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminBlogCategoriesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminBlogCategoriesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminBlogCategoriesResponseSuccess = (postV1AdminBlogCategoriesResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminBlogCategoriesResponseError = (postV1AdminBlogCategoriesResponse400 | postV1AdminBlogCategoriesResponse401 | postV1AdminBlogCategoriesResponse403 | postV1AdminBlogCategoriesResponse409 | postV1AdminBlogCategoriesResponse500 | postV1AdminBlogCategoriesResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminBlogCategoriesResponse = (postV1AdminBlogCategoriesResponseSuccess | postV1AdminBlogCategoriesResponseError)
+
+export const getPostV1AdminBlogCategoriesUrl = () => {
+
+
+
+
+  return `/v1/admin/blog/categories`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. `slug` and `nameEn` are both required: English is the required language throughout and Arabic is optional, which is the schema’s own rule rather than this route’s. Blog categories are separate from the listing catalogue’s categories and share nothing with them.
+ * @summary Create a blog category
+ */
+export const postV1AdminBlogCategories = async (postV1AdminBlogCategoriesBody?: PostV1AdminBlogCategoriesBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminBlogCategoriesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminBlogCategoriesResponse>(getPostV1AdminBlogCategoriesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminBlogCategoriesBody)
+  }
+);}
+
+
+
+export type patchV1AdminBlogCategoryResponse200 = {
+  data: PatchV1AdminBlogCategory200
+  status: 200
+}
+
+export type patchV1AdminBlogCategoryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminBlogCategoryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminBlogCategoryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminBlogCategoryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminBlogCategoryResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminBlogCategoryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminBlogCategoryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminBlogCategoryResponseSuccess = (patchV1AdminBlogCategoryResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminBlogCategoryResponseError = (patchV1AdminBlogCategoryResponse400 | patchV1AdminBlogCategoryResponse401 | patchV1AdminBlogCategoryResponse403 | patchV1AdminBlogCategoryResponse404 | patchV1AdminBlogCategoryResponse409 | patchV1AdminBlogCategoryResponse500 | patchV1AdminBlogCategoryResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminBlogCategoryResponse = (patchV1AdminBlogCategoryResponseSuccess | patchV1AdminBlogCategoryResponseError)
+
+export const getPatchV1AdminBlogCategoryUrl = (categoryId: string,) => {
+
+
+
+
+  return `/v1/admin/blog/categories/${categoryId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Every field is optional and an absent one leaves that part of the category alone — including its sort order and whether it is active, so correcting a name cannot silently reactivate a category or move it. An empty string clears an optional Arabic name or description. Deactivating a category removes it from the public filters and from the posts it had categorised, which still appear in the index with no category name.
+ * @summary Change a blog category
+ */
+export const patchV1AdminBlogCategory = async (categoryId: string,
+    patchV1AdminBlogCategoryBody?: PatchV1AdminBlogCategoryBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminBlogCategoryResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminBlogCategoryResponse>(getPatchV1AdminBlogCategoryUrl(categoryId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminBlogCategoryBody)
+  }
+);}
+
+
+
+export type postV1AdminBlogTagsResponse201 = {
+  data: PostV1AdminBlogTags201
+  status: 201
+}
+
+export type postV1AdminBlogTagsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminBlogTagsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminBlogTagsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminBlogTagsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminBlogTagsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminBlogTagsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminBlogTagsResponseSuccess = (postV1AdminBlogTagsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminBlogTagsResponseError = (postV1AdminBlogTagsResponse400 | postV1AdminBlogTagsResponse401 | postV1AdminBlogTagsResponse403 | postV1AdminBlogTagsResponse409 | postV1AdminBlogTagsResponse500 | postV1AdminBlogTagsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminBlogTagsResponse = (postV1AdminBlogTagsResponseSuccess | postV1AdminBlogTagsResponseError)
+
+export const getPostV1AdminBlogTagsUrl = () => {
+
+
+
+
+  return `/v1/admin/blog/tags`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. `slug` and `nameEn` are both required. Blog tags are separate from the listing catalogue’s tags and share nothing with them.
+ * @summary Create a blog tag
+ */
+export const postV1AdminBlogTags = async (postV1AdminBlogTagsBody?: PostV1AdminBlogTagsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminBlogTagsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminBlogTagsResponse>(getPostV1AdminBlogTagsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminBlogTagsBody)
+  }
+);}
+
+
+
+export type patchV1AdminBlogTagResponse200 = {
+  data: PatchV1AdminBlogTag200
+  status: 200
+}
+
+export type patchV1AdminBlogTagResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminBlogTagResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminBlogTagResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminBlogTagResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminBlogTagResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminBlogTagResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminBlogTagResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminBlogTagResponseSuccess = (patchV1AdminBlogTagResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminBlogTagResponseError = (patchV1AdminBlogTagResponse400 | patchV1AdminBlogTagResponse401 | patchV1AdminBlogTagResponse403 | patchV1AdminBlogTagResponse404 | patchV1AdminBlogTagResponse409 | patchV1AdminBlogTagResponse500 | patchV1AdminBlogTagResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminBlogTagResponse = (patchV1AdminBlogTagResponseSuccess | patchV1AdminBlogTagResponseError)
+
+export const getPatchV1AdminBlogTagUrl = (tagId: string,) => {
+
+
+
+
+  return `/v1/admin/blog/tags/${tagId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.blog.manage` in an aal2 session. Every field is optional and an absent one leaves that part of the tag alone, including whether it is active. Deactivating a tag removes it from the public filters and from the posts carrying it, while the rows themselves are kept, so reactivating restores them.
+ * @summary Change a blog tag
+ */
+export const patchV1AdminBlogTag = async (tagId: string,
+    patchV1AdminBlogTagBody?: PatchV1AdminBlogTagBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminBlogTagResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminBlogTagResponse>(getPatchV1AdminBlogTagUrl(tagId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminBlogTagBody)
+  }
+);}
+
+
+
+export type getV1HomepageResponse200 = {
+  data: GetV1Homepage200
+  status: 200
+}
+
+export type getV1HomepageResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1HomepageResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1HomepageResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1HomepageResponseSuccess = (getV1HomepageResponse200) & {
+  headers: Headers;
+};
+export type getV1HomepageResponseError = (getV1HomepageResponse403 | getV1HomepageResponse500 | getV1HomepageResponse503) & {
+  headers: Headers;
+};
+
+export type getV1HomepageResponse = (getV1HomepageResponseSuccess | getV1HomepageResponseError)
+
+export const getGetV1HomepageUrl = (params?: GetV1HomepageParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/homepage?${stringifiedParams}` : `/v1/homepage`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same homepage. The sections come back in the administrator’s own order, each already resolved to the content it shows — a curated section names rows by id and they are read live, so a sold listing, a suspended seller or a deactivated category simply drops out. **A section with nothing left to show is absent from the response entirely**, which is why no member of the union has an empty state: an empty shelf never reaches a browser. **An empty `sections` array is a real answer** rather than a 404, because a marketplace whose homepage has not been composed yet still has one. `locale` selects a representation; text with no Arabic written falls back to the English. A `banner_strip` section is never returned.
+ * @summary The public homepage, assembled
+ */
+export const getV1Homepage = async (params?: GetV1HomepageParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1HomepageResponse> => {
+
+  return apiFetch<getV1HomepageResponse>(getGetV1HomepageUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminHomepageSectionsResponse200 = {
+  data: GetV1AdminHomepageSections200
+  status: 200
+}
+
+export type getV1AdminHomepageSectionsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminHomepageSectionsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminHomepageSectionsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminHomepageSectionsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminHomepageSectionsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminHomepageSectionsResponseSuccess = (getV1AdminHomepageSectionsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminHomepageSectionsResponseError = (getV1AdminHomepageSectionsResponse401 | getV1AdminHomepageSectionsResponse403 | getV1AdminHomepageSectionsResponse404 | getV1AdminHomepageSectionsResponse500 | getV1AdminHomepageSectionsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminHomepageSectionsResponse = (getV1AdminHomepageSectionsResponseSuccess | getV1AdminHomepageSectionsResponseError)
+
+export const getGetV1AdminHomepageSectionsUrl = () => {
+
+
+
+
+  return `/v1/admin/homepage/sections`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Includes hidden sections and sections of a type the public homepage will not render; `isServed` marks the latter, and `isConfigured` marks a section whose stored document does not match its own type. `canManage` reports whether this caller also holds `cms.homepage.manage`, so a console renders its controls from the answer rather than from a role name.
+ * @summary Every homepage section, in order
+ */
+export const getV1AdminHomepageSections = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminHomepageSectionsResponse> => {
+
+  return apiFetch<getV1AdminHomepageSectionsResponse>(getGetV1AdminHomepageSectionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminHomepageSectionsResponse201 = {
+  data: PostV1AdminHomepageSections201
+  status: 201
+}
+
+export type postV1AdminHomepageSectionsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminHomepageSectionsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminHomepageSectionsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminHomepageSectionsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminHomepageSectionsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminHomepageSectionsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminHomepageSectionsResponseSuccess = (postV1AdminHomepageSectionsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminHomepageSectionsResponseError = (postV1AdminHomepageSectionsResponse400 | postV1AdminHomepageSectionsResponse401 | postV1AdminHomepageSectionsResponse403 | postV1AdminHomepageSectionsResponse409 | postV1AdminHomepageSectionsResponse500 | postV1AdminHomepageSectionsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminHomepageSectionsResponse = (postV1AdminHomepageSectionsResponseSuccess | postV1AdminHomepageSectionsResponseError)
+
+export const getPostV1AdminHomepageSectionsUrl = () => {
+
+
+
+
+  return `/v1/admin/homepage/sections`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. **The section is always created hidden**, and there is no visibility field in the request: showing a section is its own call, so a half-configured one cannot reach the homepage. The `config` is validated against the `sectionType` it was sent with — each type has exactly one shape, and a shape belonging to another type is refused rather than carried along. A `banner_strip` cannot be created here.
+ * @summary Create a homepage section
+ */
+export const postV1AdminHomepageSections = async (postV1AdminHomepageSectionsBody?: PostV1AdminHomepageSectionsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminHomepageSectionsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminHomepageSectionsResponse>(getPostV1AdminHomepageSectionsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminHomepageSectionsBody)
+  }
+);}
+
+
+
+export type putV1AdminHomepageSectionsReorderResponse200 = {
+  data: PutV1AdminHomepageSectionsReorder200
+  status: 200
+}
+
+export type putV1AdminHomepageSectionsReorderResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminHomepageSectionsReorderResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminHomepageSectionsReorderResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminHomepageSectionsReorderResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminHomepageSectionsReorderResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminHomepageSectionsReorderResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminHomepageSectionsReorderResponseSuccess = (putV1AdminHomepageSectionsReorderResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminHomepageSectionsReorderResponseError = (putV1AdminHomepageSectionsReorderResponse400 | putV1AdminHomepageSectionsReorderResponse401 | putV1AdminHomepageSectionsReorderResponse403 | putV1AdminHomepageSectionsReorderResponse404 | putV1AdminHomepageSectionsReorderResponse500 | putV1AdminHomepageSectionsReorderResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminHomepageSectionsReorderResponse = (putV1AdminHomepageSectionsReorderResponseSuccess | putV1AdminHomepageSectionsReorderResponseError)
+
+export const getPutV1AdminHomepageSectionsReorderUrl = () => {
+
+
+
+
+  return `/v1/admin/homepage/sections/reorder`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. The whole order is sent at once rather than one move at a time, so the write cannot leave a half-applied arrangement. Position comes from the array’s own ordering; a section the request leaves out keeps its place, and an id that names no section moves nothing. Positions are spaced so a later insertion between two sections needs no rewrite.
+ * @summary Set the order of the homepage
+ */
+export const putV1AdminHomepageSectionsReorder = async (putV1AdminHomepageSectionsReorderBody?: PutV1AdminHomepageSectionsReorderBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminHomepageSectionsReorderResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminHomepageSectionsReorderResponse>(getPutV1AdminHomepageSectionsReorderUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminHomepageSectionsReorderBody)
+  }
+);}
+
+
+
+export type getV1AdminHomepageSectionResponse200 = {
+  data: GetV1AdminHomepageSection200
+  status: 200
+}
+
+export type getV1AdminHomepageSectionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminHomepageSectionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminHomepageSectionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminHomepageSectionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminHomepageSectionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminHomepageSectionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminHomepageSectionResponseSuccess = (getV1AdminHomepageSectionResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminHomepageSectionResponseError = (getV1AdminHomepageSectionResponse400 | getV1AdminHomepageSectionResponse401 | getV1AdminHomepageSectionResponse403 | getV1AdminHomepageSectionResponse404 | getV1AdminHomepageSectionResponse500 | getV1AdminHomepageSectionResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminHomepageSectionResponse = (getV1AdminHomepageSectionResponseSuccess | getV1AdminHomepageSectionResponseError)
+
+export const getGetV1AdminHomepageSectionUrl = (sectionId: string,) => {
+
+
+
+
+  return `/v1/admin/homepage/sections/${sectionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.read` in an aal2 session. Carries the stored configuration as written, plus `chosenCount` and `renderableCount` — how many rows the section names and how many of those are still visible to the public. That pair is the reason a section can be skipped on the homepage and the operator can still find out why. A section that does not exist and a caller without the read key answer identically.
+ * @summary One homepage section
+ */
+export const getV1AdminHomepageSection = async (sectionId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminHomepageSectionResponse> => {
+
+  return apiFetch<getV1AdminHomepageSectionResponse>(getGetV1AdminHomepageSectionUrl(sectionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminHomepageSectionResponse200 = {
+  data: PatchV1AdminHomepageSection200
+  status: 200
+}
+
+export type patchV1AdminHomepageSectionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminHomepageSectionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminHomepageSectionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminHomepageSectionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminHomepageSectionResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminHomepageSectionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminHomepageSectionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminHomepageSectionResponseSuccess = (patchV1AdminHomepageSectionResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminHomepageSectionResponseError = (patchV1AdminHomepageSectionResponse400 | patchV1AdminHomepageSectionResponse401 | patchV1AdminHomepageSectionResponse403 | patchV1AdminHomepageSectionResponse404 | patchV1AdminHomepageSectionResponse409 | patchV1AdminHomepageSectionResponse500 | patchV1AdminHomepageSectionResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminHomepageSectionResponse = (patchV1AdminHomepageSectionResponseSuccess | patchV1AdminHomepageSectionResponseError)
+
+export const getPatchV1AdminHomepageSectionUrl = (sectionId: string,) => {
+
+
+
+
+  return `/v1/admin/homepage/sections/${sectionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. Every field is optional and an absent field changes nothing; a title sent as null clears it. **Visibility is deliberately not changeable here** — editing a section’s text, configuration or position can never put it in front of the public. A `config` must be sent together with its `sectionType`, because a configuration can only be checked against one.
+ * @summary Change a homepage section
+ */
+export const patchV1AdminHomepageSection = async (sectionId: string,
+    patchV1AdminHomepageSectionBody?: PatchV1AdminHomepageSectionBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminHomepageSectionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminHomepageSectionResponse>(getPatchV1AdminHomepageSectionUrl(sectionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminHomepageSectionBody)
+  }
+);}
+
+
+
+export type deleteV1AdminHomepageSectionResponse200 = {
+  data: DeleteV1AdminHomepageSection200
+  status: 200
+}
+
+export type deleteV1AdminHomepageSectionResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminHomepageSectionResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminHomepageSectionResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminHomepageSectionResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminHomepageSectionResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminHomepageSectionResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminHomepageSectionResponseSuccess = (deleteV1AdminHomepageSectionResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminHomepageSectionResponseError = (deleteV1AdminHomepageSectionResponse400 | deleteV1AdminHomepageSectionResponse401 | deleteV1AdminHomepageSectionResponse403 | deleteV1AdminHomepageSectionResponse404 | deleteV1AdminHomepageSectionResponse500 | deleteV1AdminHomepageSectionResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminHomepageSectionResponse = (deleteV1AdminHomepageSectionResponseSuccess | deleteV1AdminHomepageSectionResponseError)
+
+export const getDeleteV1AdminHomepageSectionUrl = (sectionId: string,) => {
+
+
+
+
+  return `/v1/admin/homepage/sections/${sectionId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. A real delete: a section is a composition choice rather than a record of something that happened, and 0030’s audit trigger has already recorded that it existed. The rows it referred to are untouched — a section names them and never owns them.
+ * @summary Remove a homepage section
+ */
+export const deleteV1AdminHomepageSection = async (sectionId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminHomepageSectionResponse> => {
+
+  return apiFetch<deleteV1AdminHomepageSectionResponse>(getDeleteV1AdminHomepageSectionUrl(sectionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1AdminHomepageSectionStateResponse200 = {
+  data: PutV1AdminHomepageSectionState200
+  status: 200
+}
+
+export type putV1AdminHomepageSectionStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminHomepageSectionStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminHomepageSectionStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminHomepageSectionStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminHomepageSectionStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminHomepageSectionStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminHomepageSectionStateResponseSuccess = (putV1AdminHomepageSectionStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminHomepageSectionStateResponseError = (putV1AdminHomepageSectionStateResponse400 | putV1AdminHomepageSectionStateResponse401 | putV1AdminHomepageSectionStateResponse403 | putV1AdminHomepageSectionStateResponse404 | putV1AdminHomepageSectionStateResponse500 | putV1AdminHomepageSectionStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminHomepageSectionStateResponse = (putV1AdminHomepageSectionStateResponseSuccess | putV1AdminHomepageSectionStateResponseError)
+
+export const getPutV1AdminHomepageSectionStateUrl = (sectionId: string,) => {
+
+
+
+
+  return `/v1/admin/homepage/sections/${sectionId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.homepage.manage` in an aal2 session. The only route that can put a section in front of the public, or take it back. Showing a section whose content has all disappeared is allowed and harmless: the public homepage skips it, and the section detail reports why.
+ * @summary Show or hide a homepage section
+ */
+export const putV1AdminHomepageSectionState = async (sectionId: string,
+    putV1AdminHomepageSectionStateBody?: PutV1AdminHomepageSectionStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminHomepageSectionStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminHomepageSectionStateResponse>(getPutV1AdminHomepageSectionStateUrl(sectionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminHomepageSectionStateBody)
+  }
+);}
+
+
+
+export type getV1NavigationResponse200 = {
+  data: GetV1Navigation200
+  status: 200
+}
+
+export type getV1NavigationResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1NavigationResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1NavigationResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1NavigationResponseSuccess = (getV1NavigationResponse200) & {
+  headers: Headers;
+};
+export type getV1NavigationResponseError = (getV1NavigationResponse403 | getV1NavigationResponse500 | getV1NavigationResponse503) & {
+  headers: Headers;
+};
+
+export type getV1NavigationResponse = (getV1NavigationResponseSuccess | getV1NavigationResponseError)
+
+export const getGetV1NavigationUrl = (params?: GetV1NavigationParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/navigation?${stringifiedParams}` : `/v1/navigation`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same menus. `menus` names which of the three placements to return (`header`, `footer`, `mobile`) and may name several at once, so a page renders its whole chrome from one read; an unrecognised key is ignored rather than refused, and asking for none returns all three. Each entry carries the operator’s own label and its target — a slug for a page, post or category, a relative path for a path entry — and never an href: deriving one belongs to whichever surface owns the route map. **An entry whose target is no longer public is absent, and so is any entry beneath it**; a menu left with nothing is absent too, which is why no menu here is ever empty. **An empty `menus` array is a real answer** rather than a 404, because a site whose menus have not been composed yet still has navigation — the application’s own neutral chrome.
+ * @summary The public navigation menus
+ */
+export const getV1Navigation = async (params?: GetV1NavigationParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1NavigationResponse> => {
+
+  return apiFetch<getV1NavigationResponse>(getGetV1NavigationUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminNavigationMenusResponse200 = {
+  data: GetV1AdminNavigationMenus200
+  status: 200
+}
+
+export type getV1AdminNavigationMenusResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminNavigationMenusResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminNavigationMenusResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminNavigationMenusResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminNavigationMenusResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminNavigationMenusResponseSuccess = (getV1AdminNavigationMenusResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminNavigationMenusResponseError = (getV1AdminNavigationMenusResponse401 | getV1AdminNavigationMenusResponse403 | getV1AdminNavigationMenusResponse404 | getV1AdminNavigationMenusResponse500 | getV1AdminNavigationMenusResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminNavigationMenusResponse = (getV1AdminNavigationMenusResponseSuccess | getV1AdminNavigationMenusResponseError)
+
+export const getGetV1AdminNavigationMenusUrl = () => {
+
+
+
+
+  return `/v1/admin/navigation/menus`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Served placements come first. `isServed` marks a menu the public site places; `renderableItemCount` is how many of its items the public would actually be shown, which is how an operator discovers that a menu has quietly emptied. `canManage` reports whether this caller also holds `cms.navigation.manage`, so a console renders its controls from the answer rather than from a role name.
+ * @summary Every navigation menu
+ */
+export const getV1AdminNavigationMenus = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminNavigationMenusResponse> => {
+
+  return apiFetch<getV1AdminNavigationMenusResponse>(getGetV1AdminNavigationMenusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminNavigationMenusResponse201 = {
+  data: PostV1AdminNavigationMenus201
+  status: 201
+}
+
+export type postV1AdminNavigationMenusResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminNavigationMenusResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminNavigationMenusResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminNavigationMenusResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminNavigationMenusResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminNavigationMenusResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminNavigationMenusResponseSuccess = (postV1AdminNavigationMenusResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminNavigationMenusResponseError = (postV1AdminNavigationMenusResponse400 | postV1AdminNavigationMenusResponse401 | postV1AdminNavigationMenusResponse403 | postV1AdminNavigationMenusResponse409 | postV1AdminNavigationMenusResponse500 | postV1AdminNavigationMenusResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminNavigationMenusResponse = (postV1AdminNavigationMenusResponseSuccess | postV1AdminNavigationMenusResponseError)
+
+export const getPostV1AdminNavigationMenusUrl = () => {
+
+
+
+
+  return `/v1/admin/navigation/menus`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A menu may be created under any key the column accepts, but only the three the site places are ever read publicly; a menu under any other key is legal and simply unplaced. There is no visibility field: showing and hiding is its own call, and a menu with no renderable entry is skipped anyway.
+ * @summary Create a navigation menu
+ */
+export const postV1AdminNavigationMenus = async (postV1AdminNavigationMenusBody?: PostV1AdminNavigationMenusBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminNavigationMenusResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminNavigationMenusResponse>(getPostV1AdminNavigationMenusUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminNavigationMenusBody)
+  }
+);}
+
+
+
+export type putV1AdminNavigationItemsReorderResponse200 = {
+  data: PutV1AdminNavigationItemsReorder200
+  status: 200
+}
+
+export type putV1AdminNavigationItemsReorderResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminNavigationItemsReorderResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminNavigationItemsReorderResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminNavigationItemsReorderResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminNavigationItemsReorderResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminNavigationItemsReorderResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminNavigationItemsReorderResponseSuccess = (putV1AdminNavigationItemsReorderResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminNavigationItemsReorderResponseError = (putV1AdminNavigationItemsReorderResponse400 | putV1AdminNavigationItemsReorderResponse401 | putV1AdminNavigationItemsReorderResponse403 | putV1AdminNavigationItemsReorderResponse404 | putV1AdminNavigationItemsReorderResponse500 | putV1AdminNavigationItemsReorderResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminNavigationItemsReorderResponse = (putV1AdminNavigationItemsReorderResponseSuccess | putV1AdminNavigationItemsReorderResponseError)
+
+export const getPutV1AdminNavigationItemsReorderUrl = () => {
+
+
+
+
+  return `/v1/admin/navigation/items/reorder`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. The whole order is sent at once rather than one move at a time, so the write cannot leave a half-applied arrangement. Position comes from the array’s own ordering; an item the request leaves out keeps its place, and an id belonging to another menu moves nothing. Positions are spaced so a later insertion between two items needs no rewrite.
+ * @summary Set the order of a menu
+ */
+export const putV1AdminNavigationItemsReorder = async (putV1AdminNavigationItemsReorderBody?: PutV1AdminNavigationItemsReorderBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminNavigationItemsReorderResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminNavigationItemsReorderResponse>(getPutV1AdminNavigationItemsReorderUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminNavigationItemsReorderBody)
+  }
+);}
+
+
+
+export type postV1AdminNavigationItemsResponse201 = {
+  data: PostV1AdminNavigationItems201
+  status: 201
+}
+
+export type postV1AdminNavigationItemsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminNavigationItemsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminNavigationItemsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminNavigationItemsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminNavigationItemsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminNavigationItemsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminNavigationItemsResponseSuccess = (postV1AdminNavigationItemsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminNavigationItemsResponseError = (postV1AdminNavigationItemsResponse400 | postV1AdminNavigationItemsResponse401 | postV1AdminNavigationItemsResponse403 | postV1AdminNavigationItemsResponse409 | postV1AdminNavigationItemsResponse500 | postV1AdminNavigationItemsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminNavigationItemsResponse = (postV1AdminNavigationItemsResponseSuccess | postV1AdminNavigationItemsResponseError)
+
+export const getPostV1AdminNavigationItemsUrl = () => {
+
+
+
+
+  return `/v1/admin/navigation/items`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. The target is one coherent value: a page, a post, a category or a relative path, and exactly the field belonging to that kind. A `parentId` puts the entry under a heading — 0030 refuses a third level and a parent in another menu. There is no visibility field: showing and hiding is its own call.
+ * @summary Create a menu entry
+ */
+export const postV1AdminNavigationItems = async (postV1AdminNavigationItemsBody?: PostV1AdminNavigationItemsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminNavigationItemsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminNavigationItemsResponse>(getPostV1AdminNavigationItemsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminNavigationItemsBody)
+  }
+);}
+
+
+
+export type patchV1AdminNavigationItemResponse200 = {
+  data: PatchV1AdminNavigationItem200
+  status: 200
+}
+
+export type patchV1AdminNavigationItemResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminNavigationItemResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminNavigationItemResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminNavigationItemResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminNavigationItemResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminNavigationItemResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminNavigationItemResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminNavigationItemResponseSuccess = (patchV1AdminNavigationItemResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminNavigationItemResponseError = (patchV1AdminNavigationItemResponse400 | patchV1AdminNavigationItemResponse401 | patchV1AdminNavigationItemResponse403 | patchV1AdminNavigationItemResponse404 | patchV1AdminNavigationItemResponse409 | patchV1AdminNavigationItemResponse500 | patchV1AdminNavigationItemResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminNavigationItemResponse = (patchV1AdminNavigationItemResponseSuccess | patchV1AdminNavigationItemResponseError)
+
+export const getPatchV1AdminNavigationItemUrl = (itemId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/items/${itemId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. Every field is optional and an absent field changes nothing; an Arabic label sent as null clears it. Sending a `target` replaces it whole, so turning a page entry into a path entry clears the page in the same write. **Visibility is deliberately not changeable here**, and neither is which menu the entry belongs to. Moving an entry out from under its heading has its own route.
+ * @summary Change a menu entry
+ */
+export const patchV1AdminNavigationItem = async (itemId: string,
+    patchV1AdminNavigationItemBody?: PatchV1AdminNavigationItemBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminNavigationItemResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminNavigationItemResponse>(getPatchV1AdminNavigationItemUrl(itemId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminNavigationItemBody)
+  }
+);}
+
+
+
+export type deleteV1AdminNavigationItemResponse200 = {
+  data: DeleteV1AdminNavigationItem200
+  status: 200
+}
+
+export type deleteV1AdminNavigationItemResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminNavigationItemResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminNavigationItemResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminNavigationItemResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminNavigationItemResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminNavigationItemResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminNavigationItemResponseSuccess = (deleteV1AdminNavigationItemResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminNavigationItemResponseError = (deleteV1AdminNavigationItemResponse400 | deleteV1AdminNavigationItemResponse401 | deleteV1AdminNavigationItemResponse403 | deleteV1AdminNavigationItemResponse404 | deleteV1AdminNavigationItemResponse500 | deleteV1AdminNavigationItemResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminNavigationItemResponse = (deleteV1AdminNavigationItemResponseSuccess | deleteV1AdminNavigationItemResponseError)
+
+export const getDeleteV1AdminNavigationItemUrl = (itemId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/items/${itemId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A real delete, and 0030’s own cascade takes any entry beneath it as well. The rows it referred to are untouched — an entry names them and never owns them.
+ * @summary Remove a menu entry
+ */
+export const deleteV1AdminNavigationItem = async (itemId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminNavigationItemResponse> => {
+
+  return apiFetch<deleteV1AdminNavigationItemResponse>(getDeleteV1AdminNavigationItemUrl(itemId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1AdminNavigationItemPromoteResponse200 = {
+  data: PutV1AdminNavigationItemPromote200
+  status: 200
+}
+
+export type putV1AdminNavigationItemPromoteResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminNavigationItemPromoteResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminNavigationItemPromoteResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminNavigationItemPromoteResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminNavigationItemPromoteResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminNavigationItemPromoteResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminNavigationItemPromoteResponseSuccess = (putV1AdminNavigationItemPromoteResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminNavigationItemPromoteResponseError = (putV1AdminNavigationItemPromoteResponse400 | putV1AdminNavigationItemPromoteResponse401 | putV1AdminNavigationItemPromoteResponse403 | putV1AdminNavigationItemPromoteResponse404 | putV1AdminNavigationItemPromoteResponse500 | putV1AdminNavigationItemPromoteResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminNavigationItemPromoteResponse = (putV1AdminNavigationItemPromoteResponseSuccess | putV1AdminNavigationItemPromoteResponseError)
+
+export const getPutV1AdminNavigationItemPromoteUrl = (itemId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/items/${itemId}/promote`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A separate route because an absent `parentId` on a change has to keep meaning “leave it where it is”, so clearing one needs a way to be said. An entry already at the top level answers the same way as one that does not exist.
+ * @summary Move a menu entry to the top level
+ */
+export const putV1AdminNavigationItemPromote = async (itemId: string, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminNavigationItemPromoteResponse> => {
+
+  return apiFetch<putV1AdminNavigationItemPromoteResponse>(getPutV1AdminNavigationItemPromoteUrl(itemId),
+  {
+    ...options,
+    method: 'PUT'
+
+
+  }
+);}
+
+
+
+export type putV1AdminNavigationItemStateResponse200 = {
+  data: PutV1AdminNavigationItemState200
+  status: 200
+}
+
+export type putV1AdminNavigationItemStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminNavigationItemStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminNavigationItemStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminNavigationItemStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminNavigationItemStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminNavigationItemStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminNavigationItemStateResponseSuccess = (putV1AdminNavigationItemStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminNavigationItemStateResponseError = (putV1AdminNavigationItemStateResponse400 | putV1AdminNavigationItemStateResponse401 | putV1AdminNavigationItemStateResponse403 | putV1AdminNavigationItemStateResponse404 | putV1AdminNavigationItemStateResponse500 | putV1AdminNavigationItemStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminNavigationItemStateResponse = (putV1AdminNavigationItemStateResponseSuccess | putV1AdminNavigationItemStateResponseError)
+
+export const getPutV1AdminNavigationItemStateUrl = (itemId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/items/${itemId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. One of the two routes that can put something in front of the public, or take it back. Hiding a heading takes the entries beneath it off the public menu too, because an entry without its heading is not the arrangement that was made.
+ * @summary Show or hide a menu entry
+ */
+export const putV1AdminNavigationItemState = async (itemId: string,
+    putV1AdminNavigationItemStateBody?: PutV1AdminNavigationItemStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminNavigationItemStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminNavigationItemStateResponse>(getPutV1AdminNavigationItemStateUrl(itemId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminNavigationItemStateBody)
+  }
+);}
+
+
+
+export type getV1AdminNavigationMenuResponse200 = {
+  data: GetV1AdminNavigationMenu200
+  status: 200
+}
+
+export type getV1AdminNavigationMenuResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminNavigationMenuResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminNavigationMenuResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminNavigationMenuResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminNavigationMenuResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminNavigationMenuResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminNavigationMenuResponseSuccess = (getV1AdminNavigationMenuResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminNavigationMenuResponseError = (getV1AdminNavigationMenuResponse400 | getV1AdminNavigationMenuResponse401 | getV1AdminNavigationMenuResponse403 | getV1AdminNavigationMenuResponse404 | getV1AdminNavigationMenuResponse500 | getV1AdminNavigationMenuResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminNavigationMenuResponse = (getV1AdminNavigationMenuResponseSuccess | getV1AdminNavigationMenuResponseError)
+
+export const getGetV1AdminNavigationMenuUrl = (menuId: string,
+    params?: GetV1AdminNavigationMenuParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/navigation/menus/${menuId}?${stringifiedParams}` : `/v1/admin/navigation/menus/${menuId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.read` in an aal2 session. Carries every entry in tree order, including hidden ones and ones the public is not being shown: `targetState` says whether the target is public, not public or gone, and `targetSlug` and `targetTitle` let an operator recognise the row being pointed at — which is also how an entry pointing at an address this application does not serve is found. `locale` chooses which of a target’s own titles is shown and never which entries exist. A menu that does not exist and a caller without the read key answer identically.
+ * @summary One navigation menu, with its entries
+ */
+export const getV1AdminNavigationMenu = async (menuId: string,
+    params?: GetV1AdminNavigationMenuParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminNavigationMenuResponse> => {
+
+  return apiFetch<getV1AdminNavigationMenuResponse>(getGetV1AdminNavigationMenuUrl(menuId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminNavigationMenuResponse200 = {
+  data: PatchV1AdminNavigationMenu200
+  status: 200
+}
+
+export type patchV1AdminNavigationMenuResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminNavigationMenuResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminNavigationMenuResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminNavigationMenuResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminNavigationMenuResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminNavigationMenuResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminNavigationMenuResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminNavigationMenuResponseSuccess = (patchV1AdminNavigationMenuResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminNavigationMenuResponseError = (patchV1AdminNavigationMenuResponse400 | patchV1AdminNavigationMenuResponse401 | patchV1AdminNavigationMenuResponse403 | patchV1AdminNavigationMenuResponse404 | patchV1AdminNavigationMenuResponse409 | patchV1AdminNavigationMenuResponse500 | patchV1AdminNavigationMenuResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminNavigationMenuResponse = (patchV1AdminNavigationMenuResponseSuccess | patchV1AdminNavigationMenuResponseError)
+
+export const getPatchV1AdminNavigationMenuUrl = (menuId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/menus/${menuId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. Every field is optional and an absent field changes nothing; an Arabic label sent as null clears it. Changing a menu’s key changes where the site places it — or stops placing it — and **visibility is deliberately not changeable here**.
+ * @summary Change a navigation menu
+ */
+export const patchV1AdminNavigationMenu = async (menuId: string,
+    patchV1AdminNavigationMenuBody?: PatchV1AdminNavigationMenuBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminNavigationMenuResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminNavigationMenuResponse>(getPatchV1AdminNavigationMenuUrl(menuId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminNavigationMenuBody)
+  }
+);}
+
+
+
+export type deleteV1AdminNavigationMenuResponse200 = {
+  data: DeleteV1AdminNavigationMenu200
+  status: 200
+}
+
+export type deleteV1AdminNavigationMenuResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminNavigationMenuResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminNavigationMenuResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminNavigationMenuResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminNavigationMenuResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminNavigationMenuResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminNavigationMenuResponseSuccess = (deleteV1AdminNavigationMenuResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminNavigationMenuResponseError = (deleteV1AdminNavigationMenuResponse400 | deleteV1AdminNavigationMenuResponse401 | deleteV1AdminNavigationMenuResponse403 | deleteV1AdminNavigationMenuResponse404 | deleteV1AdminNavigationMenuResponse500 | deleteV1AdminNavigationMenuResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminNavigationMenuResponse = (deleteV1AdminNavigationMenuResponseSuccess | deleteV1AdminNavigationMenuResponseError)
+
+export const getDeleteV1AdminNavigationMenuUrl = (menuId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/menus/${menuId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. A real delete, and 0030’s cascade takes its entries with it. The rows those entries referred to are untouched.
+ * @summary Remove a navigation menu
+ */
+export const deleteV1AdminNavigationMenu = async (menuId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminNavigationMenuResponse> => {
+
+  return apiFetch<deleteV1AdminNavigationMenuResponse>(getDeleteV1AdminNavigationMenuUrl(menuId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1AdminNavigationMenuStateResponse200 = {
+  data: PutV1AdminNavigationMenuState200
+  status: 200
+}
+
+export type putV1AdminNavigationMenuStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminNavigationMenuStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminNavigationMenuStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminNavigationMenuStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminNavigationMenuStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminNavigationMenuStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminNavigationMenuStateResponseSuccess = (putV1AdminNavigationMenuStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminNavigationMenuStateResponseError = (putV1AdminNavigationMenuStateResponse400 | putV1AdminNavigationMenuStateResponse401 | putV1AdminNavigationMenuStateResponse403 | putV1AdminNavigationMenuStateResponse404 | putV1AdminNavigationMenuStateResponse500 | putV1AdminNavigationMenuStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminNavigationMenuStateResponse = (putV1AdminNavigationMenuStateResponseSuccess | putV1AdminNavigationMenuStateResponseError)
+
+export const getPutV1AdminNavigationMenuStateUrl = (menuId: string,) => {
+
+
+
+
+  return `/v1/admin/navigation/menus/${menuId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.navigation.manage` in an aal2 session. The route that takes a whole menu off every public surface at once, or puts it back. Showing a menu whose entries have all become unavailable is allowed and harmless: the public site skips it, and the menu detail reports why.
+ * @summary Show or hide a navigation menu
+ */
+export const putV1AdminNavigationMenuState = async (menuId: string,
+    putV1AdminNavigationMenuStateBody?: PutV1AdminNavigationMenuStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminNavigationMenuStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminNavigationMenuStateResponse>(getPutV1AdminNavigationMenuStateUrl(menuId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminNavigationMenuStateBody)
+  }
+);}
+
+
+
+export type getV1FaqsResponse200 = {
+  data: GetV1Faqs200
+  status: 200
+}
+
+export type getV1FaqsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1FaqsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1FaqsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1FaqsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1FaqsResponseSuccess = (getV1FaqsResponse200) & {
+  headers: Headers;
+};
+export type getV1FaqsResponseError = (getV1FaqsResponse400 | getV1FaqsResponse403 | getV1FaqsResponse500 | getV1FaqsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1FaqsResponse = (getV1FaqsResponseSuccess | getV1FaqsResponseError)
+
+export const getGetV1FaqsUrl = (params: GetV1FaqsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/faqs?${stringifiedParams}` : `/v1/faqs`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: a guest and a signed-in person get the same questions. `topic` is required and is a page’s own `page_key` — the mapping that decides which address shows which questions — so `/faq` asks for `faq` and `/help` asks for `help`; a value that is not a topic is a 400 rather than an empty answer, because a caller that sent one has a bug. The entries come back in the administrator’s own order, each question and answer in the language asked for with English as the fallback. An answer is plain text and is served exactly as stored, blank lines included, so a renderer can split paragraphs; nothing marks any part of it as markup. **An empty `entries` array is a real answer** rather than a 404, because a page whose topic has nothing published simply shows no help section.
+ * @summary The published help-centre entries of one topic
+ */
+export const getV1Faqs = async (params: GetV1FaqsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1FaqsResponse> => {
+
+  return apiFetch<getV1FaqsResponse>(getGetV1FaqsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminFaqTopicsResponse200 = {
+  data: GetV1AdminFaqTopics200
+  status: 200
+}
+
+export type getV1AdminFaqTopicsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminFaqTopicsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminFaqTopicsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminFaqTopicsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminFaqTopicsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminFaqTopicsResponseSuccess = (getV1AdminFaqTopicsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminFaqTopicsResponseError = (getV1AdminFaqTopicsResponse401 | getV1AdminFaqTopicsResponse403 | getV1AdminFaqTopicsResponse404 | getV1AdminFaqTopicsResponse500 | getV1AdminFaqTopicsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminFaqTopicsResponse = (getV1AdminFaqTopicsResponseSuccess | getV1AdminFaqTopicsResponseError)
+
+export const getGetV1AdminFaqTopicsUrl = () => {
+
+
+
+
+  return `/v1/admin/faqs/topics`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Mapped topics come first. For each one: how many entries it holds, how many of those are published, whether a publicly visible page carries it as its `page_key`, and that page’s slug. A topic no address shows is reported rather than refused — topics are free-form on purpose.
+ * @summary Every help-centre topic in use
+ */
+export const getV1AdminFaqTopics = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminFaqTopicsResponse> => {
+
+  return apiFetch<getV1AdminFaqTopicsResponse>(getGetV1AdminFaqTopicsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1AdminFaqsReorderResponse200 = {
+  data: PutV1AdminFaqsReorder200
+  status: 200
+}
+
+export type putV1AdminFaqsReorderResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminFaqsReorderResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminFaqsReorderResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminFaqsReorderResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminFaqsReorderResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminFaqsReorderResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminFaqsReorderResponseSuccess = (putV1AdminFaqsReorderResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminFaqsReorderResponseError = (putV1AdminFaqsReorderResponse400 | putV1AdminFaqsReorderResponse401 | putV1AdminFaqsReorderResponse403 | putV1AdminFaqsReorderResponse404 | putV1AdminFaqsReorderResponse500 | putV1AdminFaqsReorderResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminFaqsReorderResponse = (putV1AdminFaqsReorderResponseSuccess | putV1AdminFaqsReorderResponseError)
+
+export const getPutV1AdminFaqsReorderUrl = () => {
+
+
+
+
+  return `/v1/admin/faqs/reorder`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. The whole order of one topic is sent at once rather than one move at a time, so the write cannot leave a half-applied arrangement. Position comes from the array’s own ordering; an entry the request leaves out keeps its place, and an id belonging to another topic moves nothing. Positions are spaced so a later insertion between two entries needs no rewrite.
+ * @summary Set the order of one topic
+ */
+export const putV1AdminFaqsReorder = async (putV1AdminFaqsReorderBody?: PutV1AdminFaqsReorderBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminFaqsReorderResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminFaqsReorderResponse>(getPutV1AdminFaqsReorderUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminFaqsReorderBody)
+  }
+);}
+
+
+
+export type getV1AdminFaqsResponse200 = {
+  data: GetV1AdminFaqs200
+  status: 200
+}
+
+export type getV1AdminFaqsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminFaqsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminFaqsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminFaqsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminFaqsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminFaqsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminFaqsResponseSuccess = (getV1AdminFaqsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminFaqsResponseError = (getV1AdminFaqsResponse400 | getV1AdminFaqsResponse401 | getV1AdminFaqsResponse403 | getV1AdminFaqsResponse404 | getV1AdminFaqsResponse500 | getV1AdminFaqsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminFaqsResponse = (getV1AdminFaqsResponseSuccess | getV1AdminFaqsResponseError)
+
+export const getGetV1AdminFaqsUrl = (params?: GetV1AdminFaqsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/faqs?${stringifiedParams}` : `/v1/admin/faqs`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.read` in an aal2 session. Entries come back in help-centre order — by topic, then by the position somebody arranged — and include the unpublished ones, each with whether a public page shows its topic. `topic` narrows the same order rather than changing it. The cursor is opaque: the client sends it back untouched and reads nothing from it, and a cursor that is not a position is a 400 rather than a silent first page.
+ * @summary One page of help-centre entries
+ */
+export const getV1AdminFaqs = async (params?: GetV1AdminFaqsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminFaqsResponse> => {
+
+  return apiFetch<getV1AdminFaqsResponse>(getGetV1AdminFaqsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminFaqsResponse201 = {
+  data: PostV1AdminFaqs201
+  status: 201
+}
+
+export type postV1AdminFaqsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminFaqsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminFaqsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminFaqsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminFaqsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminFaqsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminFaqsResponseSuccess = (postV1AdminFaqsResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminFaqsResponseError = (postV1AdminFaqsResponse400 | postV1AdminFaqsResponse401 | postV1AdminFaqsResponse403 | postV1AdminFaqsResponse409 | postV1AdminFaqsResponse500 | postV1AdminFaqsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminFaqsResponse = (postV1AdminFaqsResponseSuccess | postV1AdminFaqsResponseError)
+
+export const getPostV1AdminFaqsUrl = () => {
+
+
+
+
+  return `/v1/admin/faqs`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. **The entry is always created unpublished**, and there is no publication field in the request: publishing is its own call, so a half-written answer cannot reach a public page. The English question and answer are required and the Arabic ones are optional, which is D6 and D7. The topic is free-form within the column’s format; one no address shows is legal and simply unseen.
+ * @summary Create a help-centre entry
+ */
+export const postV1AdminFaqs = async (postV1AdminFaqsBody?: PostV1AdminFaqsBody, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminFaqsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminFaqsResponse>(getPostV1AdminFaqsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postV1AdminFaqsBody)
+  }
+);}
+
+
+
+export type getV1AdminFaqResponse200 = {
+  data: GetV1AdminFaq200
+  status: 200
+}
+
+export type getV1AdminFaqResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminFaqResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminFaqResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminFaqResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminFaqResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminFaqResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminFaqResponseSuccess = (getV1AdminFaqResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminFaqResponseError = (getV1AdminFaqResponse400 | getV1AdminFaqResponse401 | getV1AdminFaqResponse403 | getV1AdminFaqResponse404 | getV1AdminFaqResponse500 | getV1AdminFaqResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminFaqResponse = (getV1AdminFaqResponseSuccess | getV1AdminFaqResponseError)
+
+export const getGetV1AdminFaqUrl = (faqId: string,) => {
+
+
+
+
+  return `/v1/admin/faqs/${faqId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.read` in an aal2 session. Carries both languages as written, the position, whether the entry is published, and whether a publicly visible page shows its topic — with that page’s slug, so a console can check it against the application’s own route map. An entry that does not exist and a caller without the read key answer identically.
+ * @summary One help-centre entry
+ */
+export const getV1AdminFaq = async (faqId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminFaqResponse> => {
+
+  return apiFetch<getV1AdminFaqResponse>(getGetV1AdminFaqUrl(faqId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type patchV1AdminFaqResponse200 = {
+  data: PatchV1AdminFaq200
+  status: 200
+}
+
+export type patchV1AdminFaqResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type patchV1AdminFaqResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type patchV1AdminFaqResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type patchV1AdminFaqResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type patchV1AdminFaqResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type patchV1AdminFaqResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type patchV1AdminFaqResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type patchV1AdminFaqResponseSuccess = (patchV1AdminFaqResponse200) & {
+  headers: Headers;
+};
+export type patchV1AdminFaqResponseError = (patchV1AdminFaqResponse400 | patchV1AdminFaqResponse401 | patchV1AdminFaqResponse403 | patchV1AdminFaqResponse404 | patchV1AdminFaqResponse409 | patchV1AdminFaqResponse500 | patchV1AdminFaqResponse503) & {
+  headers: Headers;
+};
+
+export type patchV1AdminFaqResponse = (patchV1AdminFaqResponseSuccess | patchV1AdminFaqResponseError)
+
+export const getPatchV1AdminFaqUrl = (faqId: string,) => {
+
+
+
+
+  return `/v1/admin/faqs/${faqId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. Every field is optional and an absent field changes nothing; an Arabic wording sent as null clears it. Changing the topic moves the entry to whatever address shows that topic, with no second edit. **Publication is deliberately not changeable here** — editing an answer can never put it in front of the public.
+ * @summary Change a help-centre entry
+ */
+export const patchV1AdminFaq = async (faqId: string,
+    patchV1AdminFaqBody?: PatchV1AdminFaqBody, options?: Parameters<typeof apiFetch>[1]): Promise<patchV1AdminFaqResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<patchV1AdminFaqResponse>(getPatchV1AdminFaqUrl(faqId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchV1AdminFaqBody)
+  }
+);}
+
+
+
+export type deleteV1AdminFaqResponse200 = {
+  data: DeleteV1AdminFaq200
+  status: 200
+}
+
+export type deleteV1AdminFaqResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminFaqResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminFaqResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminFaqResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminFaqResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminFaqResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminFaqResponseSuccess = (deleteV1AdminFaqResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminFaqResponseError = (deleteV1AdminFaqResponse400 | deleteV1AdminFaqResponse401 | deleteV1AdminFaqResponse403 | deleteV1AdminFaqResponse404 | deleteV1AdminFaqResponse500 | deleteV1AdminFaqResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminFaqResponse = (deleteV1AdminFaqResponseSuccess | deleteV1AdminFaqResponseError)
+
+export const getDeleteV1AdminFaqUrl = (faqId: string,) => {
+
+
+
+
+  return `/v1/admin/faqs/${faqId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. A real delete: a question and its answer are editorial content rather than a record of something that happened, and 0030 gave this table no history.
+ * @summary Remove a help-centre entry
+ */
+export const deleteV1AdminFaq = async (faqId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminFaqResponse> => {
+
+  return apiFetch<deleteV1AdminFaqResponse>(getDeleteV1AdminFaqUrl(faqId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type putV1AdminFaqStateResponse200 = {
+  data: PutV1AdminFaqState200
+  status: 200
+}
+
+export type putV1AdminFaqStateResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminFaqStateResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminFaqStateResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminFaqStateResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminFaqStateResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminFaqStateResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminFaqStateResponseSuccess = (putV1AdminFaqStateResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminFaqStateResponseError = (putV1AdminFaqStateResponse400 | putV1AdminFaqStateResponse401 | putV1AdminFaqStateResponse403 | putV1AdminFaqStateResponse404 | putV1AdminFaqStateResponse500 | putV1AdminFaqStateResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminFaqStateResponse = (putV1AdminFaqStateResponseSuccess | putV1AdminFaqStateResponseError)
+
+export const getPutV1AdminFaqStateUrl = (faqId: string,) => {
+
+
+
+
+  return `/v1/admin/faqs/${faqId}/state`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.faq.manage` in an aal2 session. The only route that can put an entry on a public page, or take it back. Publishing an entry under a topic no address shows is allowed and harmless: nothing renders it, and the console reports why.
+ * @summary Publish or unpublish a help-centre entry
+ */
+export const putV1AdminFaqState = async (faqId: string,
+    putV1AdminFaqStateBody?: PutV1AdminFaqStateBody, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminFaqStateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminFaqStateResponse>(getPutV1AdminFaqStateUrl(faqId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(putV1AdminFaqStateBody)
   }
 );}
 
@@ -20548,6 +26099,1104 @@ return apiFetch<putV1AdminSeoRedirectStateResponse>(getPutV1AdminSeoRedirectStat
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(seoRedirectStateRequest)
+  }
+);}
+
+
+
+export type getV1SeoMetadataResponse200 = {
+  data: PublicSeoMetadataResponse
+  status: 200
+}
+
+export type getV1SeoMetadataResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1SeoMetadataResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SeoMetadataResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SeoMetadataResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SeoMetadataResponseSuccess = (getV1SeoMetadataResponse200) & {
+  headers: Headers;
+};
+export type getV1SeoMetadataResponseError = (getV1SeoMetadataResponse400 | getV1SeoMetadataResponse403 | getV1SeoMetadataResponse500 | getV1SeoMetadataResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SeoMetadataResponse = (getV1SeoMetadataResponseSuccess | getV1SeoMetadataResponseError)
+
+export const getGetV1SeoMetadataUrl = (params?: GetV1SeoMetadataParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/seo/metadata?${stringifiedParams}` : `/v1/seo/metadata`
+}
+
+/**
+ * Requires the internal BFF credential and carries no user context: an override is as public as the thing it describes, and nothing about the caller changes the answer. Addressed by `entityType` and `slug`, or by `routePath` for a fixed landing address — **never by an identifier**, so no internal id has to cross into a public response to make this read possible. The answer is `null` rather than a 404 when nothing is stored, because that is the common answer and must be distinguishable from the service being unreachable. Metadata about anything the public cannot already see is withheld by the database. Two owner decisions are already applied to what comes back: `canonicalPath` is null for a listing, a category and a seller whatever was stored, because those keep the self-referencing canonical the specification fixes for them; and `robotsDirectives` holds restrictions only, so a stored value can never widen indexing past a platform rule. A missing locale is no override, never a fallback to the other language.
+ * @summary One surface’s metadata override
+ */
+export const getV1SeoMetadata = async (params?: GetV1SeoMetadataParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SeoMetadataResponse> => {
+
+  return apiFetch<getV1SeoMetadataResponse>(getGetV1SeoMetadataUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSeoMetadataResponse200 = {
+  data: SeoMetadataEntriesResponse
+  status: 200
+}
+
+export type getV1AdminSeoMetadataResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSeoMetadataResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSeoMetadataResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSeoMetadataResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSeoMetadataResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSeoMetadataResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSeoMetadataResponseSuccess = (getV1AdminSeoMetadataResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSeoMetadataResponseError = (getV1AdminSeoMetadataResponse400 | getV1AdminSeoMetadataResponse401 | getV1AdminSeoMetadataResponse403 | getV1AdminSeoMetadataResponse404 | getV1AdminSeoMetadataResponse500 | getV1AdminSeoMetadataResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSeoMetadataResponse = (getV1AdminSeoMetadataResponseSuccess | getV1AdminSeoMetadataResponseError)
+
+export const getGetV1AdminSeoMetadataUrl = (params?: GetV1AdminSeoMetadataParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/seo/metadata?${stringifiedParams}` : `/v1/admin/seo/metadata`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.metadata.read` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. Newest edit first, because this is a maintenance list rather than a queue. `targetSlug` names whatever each entry points at, so a row reads as a thing rather than as an identifier. The stored values come back **as stored**, including a canonical the public will not receive: an operator has to be able to see their own work. `canonicalIsHonoured` says whether this kind reads a canonical at all.
+ * @summary The metadata overrides, newest edit first
+ */
+export const getV1AdminSeoMetadata = async (params?: GetV1AdminSeoMetadataParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSeoMetadataResponse> => {
+
+  return apiFetch<getV1AdminSeoMetadataResponse>(getGetV1AdminSeoMetadataUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1AdminSeoMetadataResponse200 = {
+  data: SaveSeoMetadataResponse
+  status: 200
+}
+
+export type putV1AdminSeoMetadataResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminSeoMetadataResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminSeoMetadataResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminSeoMetadataResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminSeoMetadataResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminSeoMetadataResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminSeoMetadataResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminSeoMetadataResponseSuccess = (putV1AdminSeoMetadataResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminSeoMetadataResponseError = (putV1AdminSeoMetadataResponse400 | putV1AdminSeoMetadataResponse401 | putV1AdminSeoMetadataResponse403 | putV1AdminSeoMetadataResponse404 | putV1AdminSeoMetadataResponse409 | putV1AdminSeoMetadataResponse500 | putV1AdminSeoMetadataResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminSeoMetadataResponse = (putV1AdminSeoMetadataResponseSuccess | putV1AdminSeoMetadataResponseError)
+
+export const getPutV1AdminSeoMetadataUrl = () => {
+
+
+
+
+  return `/v1/admin/seo/metadata`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.metadata.manage` in an aal2 session. Creating and replacing are the same request, which is why it is a `PUT` on the collection rather than a `POST`: one surface and one locale have one row, and the request *is* that row — **an absent field clears the stored value**. A route carries a path and no identifier; every other kind carries an identifier and no path. `structuredData` is not a field here: the column exists and has no reader, so nothing can send one. Both paths must be relative and neither may leave the site.
+ * @summary Write one surface’s metadata for one locale
+ */
+export const putV1AdminSeoMetadata = async (saveSeoMetadataRequest?: SaveSeoMetadataRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminSeoMetadataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminSeoMetadataResponse>(getPutV1AdminSeoMetadataUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveSeoMetadataRequest)
+  }
+);}
+
+
+
+export type getV1AdminSeoMetadataEntryResponse200 = {
+  data: SeoMetadataDetailResponse
+  status: 200
+}
+
+export type getV1AdminSeoMetadataEntryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminSeoMetadataEntryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSeoMetadataEntryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSeoMetadataEntryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSeoMetadataEntryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSeoMetadataEntryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSeoMetadataEntryResponseSuccess = (getV1AdminSeoMetadataEntryResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSeoMetadataEntryResponseError = (getV1AdminSeoMetadataEntryResponse400 | getV1AdminSeoMetadataEntryResponse401 | getV1AdminSeoMetadataEntryResponse403 | getV1AdminSeoMetadataEntryResponse404 | getV1AdminSeoMetadataEntryResponse500 | getV1AdminSeoMetadataEntryResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSeoMetadataEntryResponse = (getV1AdminSeoMetadataEntryResponseSuccess | getV1AdminSeoMetadataEntryResponseError)
+
+export const getGetV1AdminSeoMetadataEntryUrl = (entryId: string,) => {
+
+
+
+
+  return `/v1/admin/seo/metadata/${entryId}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.metadata.read` in an aal2 session. `canManage` reports whether this caller also holds `seo.metadata.manage`, which is a separate seeded key. `effectiveCanonicalPath` and `effectiveRobotsDirectives` are the database’s own answers for what a visitor’s browser will be told, beside the stored values — so an operator who has written `index` into a row can see that nothing will come of it, from the reader rather than from a sentence on a screen.
+ * @summary One entry, with what the public would actually receive
+ */
+export const getV1AdminSeoMetadataEntry = async (entryId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSeoMetadataEntryResponse> => {
+
+  return apiFetch<getV1AdminSeoMetadataEntryResponse>(getGetV1AdminSeoMetadataEntryUrl(entryId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type deleteV1AdminSeoMetadataEntryResponse200 = {
+  data: SeoMetadataWriteResponse
+  status: 200
+}
+
+export type deleteV1AdminSeoMetadataEntryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminSeoMetadataEntryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminSeoMetadataEntryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminSeoMetadataEntryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminSeoMetadataEntryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminSeoMetadataEntryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminSeoMetadataEntryResponseSuccess = (deleteV1AdminSeoMetadataEntryResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminSeoMetadataEntryResponseError = (deleteV1AdminSeoMetadataEntryResponse400 | deleteV1AdminSeoMetadataEntryResponse401 | deleteV1AdminSeoMetadataEntryResponse403 | deleteV1AdminSeoMetadataEntryResponse404 | deleteV1AdminSeoMetadataEntryResponse500 | deleteV1AdminSeoMetadataEntryResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminSeoMetadataEntryResponse = (deleteV1AdminSeoMetadataEntryResponseSuccess | deleteV1AdminSeoMetadataEntryResponseError)
+
+export const getDeleteV1AdminSeoMetadataEntryUrl = (entryId: string,) => {
+
+
+
+
+  return `/v1/admin/seo/metadata/${entryId}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.metadata.manage` in an aal2 session. Removing an override returns that surface to the metadata it derives from its own content, which is why removal is real here where an authored page is archived instead: an override is an instruction about a surface rather than content with an address. The audit trail records the removed row.
+ * @summary Remove one override
+ */
+export const deleteV1AdminSeoMetadataEntry = async (entryId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminSeoMetadataEntryResponse> => {
+
+  return apiFetch<deleteV1AdminSeoMetadataEntryResponse>(getDeleteV1AdminSeoMetadataEntryUrl(entryId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1AdminSeoSettingsResponse200 = {
+  data: SeoSettingsResponse
+  status: 200
+}
+
+export type getV1AdminSeoSettingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminSeoSettingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminSeoSettingsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminSeoSettingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminSeoSettingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminSeoSettingsResponseSuccess = (getV1AdminSeoSettingsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminSeoSettingsResponseError = (getV1AdminSeoSettingsResponse401 | getV1AdminSeoSettingsResponse403 | getV1AdminSeoSettingsResponse404 | getV1AdminSeoSettingsResponse500 | getV1AdminSeoSettingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminSeoSettingsResponse = (getV1AdminSeoSettingsResponseSuccess | getV1AdminSeoSettingsResponseError)
+
+export const getGetV1AdminSeoSettingsUrl = () => {
+
+
+
+
+  return `/v1/admin/seo/settings`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.settings.manage` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. **One row per active locale whether or not it has been authored**, default locale first, because the table ships empty and the first save needs somewhere to happen: `isAuthored` tells the two states apart. `robotsIsServed` is true for the default locale and only the default locale — `/robots.txt` is one document at the root of an origin, so a body authored on any other locale is stored and never served. `shareMediaObjectPath` is a relative path inside a private bucket and is never an address: the image cannot be resolved or displayed, because no media origin or signing capability exists. Everything except `robotsTxtBody` is stored and read by nothing: the site name does not feed the header or any page title, the default title and description feed no metadata resolver, the handle emits no Twitter metadata, and the organization document emits no JSON-LD.
+ * @summary The site-wide SEO defaults, one row per active locale
+ */
+export const getV1AdminSeoSettings = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminSeoSettingsResponse> => {
+
+  return apiFetch<getV1AdminSeoSettingsResponse>(getGetV1AdminSeoSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1AdminSeoSettingsLocaleResponse200 = {
+  data: SeoSettingsWriteResponse
+  status: 200
+}
+
+export type putV1AdminSeoSettingsLocaleResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminSeoSettingsLocaleResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminSeoSettingsLocaleResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminSeoSettingsLocaleResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminSeoSettingsLocaleResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminSeoSettingsLocaleResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminSeoSettingsLocaleResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminSeoSettingsLocaleResponseSuccess = (putV1AdminSeoSettingsLocaleResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminSeoSettingsLocaleResponseError = (putV1AdminSeoSettingsLocaleResponse400 | putV1AdminSeoSettingsLocaleResponse401 | putV1AdminSeoSettingsLocaleResponse403 | putV1AdminSeoSettingsLocaleResponse404 | putV1AdminSeoSettingsLocaleResponse409 | putV1AdminSeoSettingsLocaleResponse500 | putV1AdminSeoSettingsLocaleResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminSeoSettingsLocaleResponse = (putV1AdminSeoSettingsLocaleResponseSuccess | putV1AdminSeoSettingsLocaleResponseError)
+
+export const getPutV1AdminSeoSettingsLocaleUrl = (localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/seo/settings/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.settings.manage` in an aal2 session. Creating and replacing are the same request, which is why it is a `PUT` on the locale rather than a `POST`: one locale has one row, and the request *is* that row — **an absent field clears the stored value**, which is also how an authored crawl policy is withdrawn without deleting the locale. `siteName` is required because the column is `not null`. `robotsTxtBody` is served to crawlers **verbatim** and is never parsed here; only surrounding whitespace is removed, and a body of nothing but whitespace is stored as absent rather than as a document that silently says nothing. A locale that is not an active locale answers 404 and writes nothing.
+ * @summary Write one locale’s site-wide defaults
+ */
+export const putV1AdminSeoSettingsLocale = async (localeCode: string,
+    saveSeoSettingsRequest?: SaveSeoSettingsRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminSeoSettingsLocaleResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminSeoSettingsLocaleResponse>(getPutV1AdminSeoSettingsLocaleUrl(localeCode),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveSeoSettingsRequest)
+  }
+);}
+
+
+
+export type deleteV1AdminSeoSettingsLocaleResponse200 = {
+  data: SeoSettingsWriteResponse
+  status: 200
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminSeoSettingsLocaleResponseSuccess = (deleteV1AdminSeoSettingsLocaleResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminSeoSettingsLocaleResponseError = (deleteV1AdminSeoSettingsLocaleResponse400 | deleteV1AdminSeoSettingsLocaleResponse401 | deleteV1AdminSeoSettingsLocaleResponse403 | deleteV1AdminSeoSettingsLocaleResponse404 | deleteV1AdminSeoSettingsLocaleResponse500 | deleteV1AdminSeoSettingsLocaleResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminSeoSettingsLocaleResponse = (deleteV1AdminSeoSettingsLocaleResponseSuccess | deleteV1AdminSeoSettingsLocaleResponseError)
+
+export const getDeleteV1AdminSeoSettingsLocaleUrl = (localeCode: string,) => {
+
+
+
+
+  return `/v1/admin/seo/settings/${localeCode}`
+}
+
+/**
+ * Requires the internal BFF credential and `seo.settings.manage` in an aal2 session. Afterwards the locale is unauthored, which for the default locale returns `/robots.txt` to the minimal document the public web already serves when nothing has been authored — the zero-row answer the reader has handled since 0086. A real delete, because these are settings rather than a record of an event; the audit trail records the removed row.
+ * @summary Remove one locale’s site-wide defaults
+ */
+export const deleteV1AdminSeoSettingsLocale = async (localeCode: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminSeoSettingsLocaleResponse> => {
+
+  return apiFetch<deleteV1AdminSeoSettingsLocaleResponse>(getDeleteV1AdminSeoSettingsLocaleUrl(localeCode),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1AdminCmsMediaResponse200 = {
+  data: CmsMediaPageResponse
+  status: 200
+}
+
+export type getV1AdminCmsMediaResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminCmsMediaResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCmsMediaResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCmsMediaResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCmsMediaResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCmsMediaResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCmsMediaResponseSuccess = (getV1AdminCmsMediaResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCmsMediaResponseError = (getV1AdminCmsMediaResponse400 | getV1AdminCmsMediaResponse401 | getV1AdminCmsMediaResponse403 | getV1AdminCmsMediaResponse404 | getV1AdminCmsMediaResponse500 | getV1AdminCmsMediaResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCmsMediaResponse = (getV1AdminCmsMediaResponseSuccess | getV1AdminCmsMediaResponseError)
+
+export const getGetV1AdminCmsMediaUrl = (params?: GetV1AdminCmsMediaParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/cms/media?${stringifiedParams}` : `/v1/admin/cms/media`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session — a key Admin and Super Admin hold, and both roles require MFA, so a staff session at aal1 reads nothing. `objectPath` is a relative path inside a **private** bucket and is never an address: an image is viewed through the per-entry preview below, which issues a short-lived signed URL. `usageCount` is how many CMS rows point at the entry, so an operator can see at a glance which entries deleting would blank.
+ * @summary One page of the media library, newest first
+ */
+export const getV1AdminCmsMedia = async (params?: GetV1AdminCmsMediaParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCmsMediaResponse> => {
+
+  return apiFetch<getV1AdminCmsMediaResponse>(getGetV1AdminCmsMediaUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminCmsMediaResponse201 = {
+  data: CmsMediaAttachResponse
+  status: 201
+}
+
+export type postV1AdminCmsMediaResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminCmsMediaResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminCmsMediaResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminCmsMediaResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminCmsMediaResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminCmsMediaResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminCmsMediaResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminCmsMediaResponseSuccess = (postV1AdminCmsMediaResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminCmsMediaResponseError = (postV1AdminCmsMediaResponse400 | postV1AdminCmsMediaResponse401 | postV1AdminCmsMediaResponse403 | postV1AdminCmsMediaResponse404 | postV1AdminCmsMediaResponse409 | postV1AdminCmsMediaResponse500 | postV1AdminCmsMediaResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminCmsMediaResponse = (postV1AdminCmsMediaResponseSuccess | postV1AdminCmsMediaResponseError)
+
+export const getPostV1AdminCmsMediaUrl = () => {
+
+
+
+
+  return `/v1/admin/cms/media`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session. The path is the one the authorization returned; the database re-checks its whole shape, and the extension must agree with the declared content type, so no nested path, no traversal and no mislabelled file can be recorded. **Storage is asked whether the object is actually there before anything is written**, so a confirmation for a file nobody uploaded never reaches a write — a library pointing at nothing is the state that rots quietly. Confirming the same object twice is refused rather than duplicated.
+ * @summary Confirm an upload and record the entry
+ */
+export const postV1AdminCmsMedia = async (cmsMediaAttachRequest?: CmsMediaAttachRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminCmsMediaResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminCmsMediaResponse>(getPostV1AdminCmsMediaUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cmsMediaAttachRequest)
+  }
+);}
+
+
+
+export type postV1AdminCmsMediaUploadResponse201 = {
+  data: CmsMediaUploadResponse
+  status: 201
+}
+
+export type postV1AdminCmsMediaUploadResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminCmsMediaUploadResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminCmsMediaUploadResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminCmsMediaUploadResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminCmsMediaUploadResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminCmsMediaUploadResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminCmsMediaUploadResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminCmsMediaUploadResponseSuccess = (postV1AdminCmsMediaUploadResponse201) & {
+  headers: Headers;
+};
+export type postV1AdminCmsMediaUploadResponseError = (postV1AdminCmsMediaUploadResponse400 | postV1AdminCmsMediaUploadResponse401 | postV1AdminCmsMediaUploadResponse403 | postV1AdminCmsMediaUploadResponse404 | postV1AdminCmsMediaUploadResponse409 | postV1AdminCmsMediaUploadResponse500 | postV1AdminCmsMediaUploadResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminCmsMediaUploadResponse = (postV1AdminCmsMediaUploadResponseSuccess | postV1AdminCmsMediaUploadResponseError)
+
+export const getPostV1AdminCmsMediaUploadUrl = () => {
+
+
+
+
+  return `/v1/admin/cms/media/uploads`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session. Creates a signed, time-limited permission to put one object at one path, and **records nothing**: the entry exists only once the companion route confirms it. The request carries a content type and a size and **no path** — the strict schema refuses one — because every component of the path is composed server-side from a generated identifier and an extension derived from the validated type, which makes a traversal or a chosen path unexpressible rather than merely refused. The bucket is the authority on what may be stored: four raster types, SVG excluded, and at most 10485760 bytes. A signature that cannot be issued is a 503 and no upload.
+ * @summary Authorize one upload
+ */
+export const postV1AdminCmsMediaUpload = async (cmsMediaUploadRequest?: CmsMediaUploadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminCmsMediaUploadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminCmsMediaUploadResponse>(getPostV1AdminCmsMediaUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cmsMediaUploadRequest)
+  }
+);}
+
+
+
+export type getV1AdminCmsMediaUsageResponse200 = {
+  data: CmsMediaUsageResponse
+  status: 200
+}
+
+export type getV1AdminCmsMediaUsageResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminCmsMediaUsageResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCmsMediaUsageResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCmsMediaUsageResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCmsMediaUsageResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCmsMediaUsageResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCmsMediaUsageResponseSuccess = (getV1AdminCmsMediaUsageResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCmsMediaUsageResponseError = (getV1AdminCmsMediaUsageResponse400 | getV1AdminCmsMediaUsageResponse401 | getV1AdminCmsMediaUsageResponse403 | getV1AdminCmsMediaUsageResponse404 | getV1AdminCmsMediaUsageResponse500 | getV1AdminCmsMediaUsageResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCmsMediaUsageResponse = (getV1AdminCmsMediaUsageResponseSuccess | getV1AdminCmsMediaUsageResponseError)
+
+export const getGetV1AdminCmsMediaUsageUrl = (mediaId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/media/${mediaId}/usage`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session. All six of migration 0030’s referencing columns are `on delete set null`, so deleting an entry blanks a page cover, a blog cover, a banner image or a share image. This is what a console reads **before** offering the delete, rather than leaving an operator to discover it afterwards. `entityId` is null for the SEO settings, whose key is a locale code rather than an identifier; `label` carries the recognisable part for every kind and `column` says which column points at it — a banner has two.
+ * @summary Every CMS row that points at one entry
+ */
+export const getV1AdminCmsMediaUsage = async (mediaId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCmsMediaUsageResponse> => {
+
+  return apiFetch<getV1AdminCmsMediaUsageResponse>(getGetV1AdminCmsMediaUsageUrl(mediaId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1AdminCmsMediaPreviewResponse200 = {
+  data: CmsMediaPreviewResponse
+  status: 200
+}
+
+export type getV1AdminCmsMediaPreviewResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminCmsMediaPreviewResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminCmsMediaPreviewResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminCmsMediaPreviewResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1AdminCmsMediaPreviewResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminCmsMediaPreviewResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminCmsMediaPreviewResponseSuccess = (getV1AdminCmsMediaPreviewResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminCmsMediaPreviewResponseError = (getV1AdminCmsMediaPreviewResponse400 | getV1AdminCmsMediaPreviewResponse401 | getV1AdminCmsMediaPreviewResponse403 | getV1AdminCmsMediaPreviewResponse404 | getV1AdminCmsMediaPreviewResponse500 | getV1AdminCmsMediaPreviewResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminCmsMediaPreviewResponse = (getV1AdminCmsMediaPreviewResponseSuccess | getV1AdminCmsMediaPreviewResponseError)
+
+export const getGetV1AdminCmsMediaPreviewUrl = (mediaId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/media/${mediaId}/preview`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session. The bucket is private and has no read policy, so an image is viewed through a signed URL issued per request for the one object that entry stores — the path is never composed here and never supplied by a client. The URL is a bearer credential for a few minutes and is not stored or cached anywhere. **This is a staff preview and is not how a public page shows an image**: no public media delivery exists.
+ * @summary A short-lived signed URL for one stored object
+ */
+export const getV1AdminCmsMediaPreview = async (mediaId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminCmsMediaPreviewResponse> => {
+
+  return apiFetch<getV1AdminCmsMediaPreviewResponse>(getGetV1AdminCmsMediaPreviewUrl(mediaId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type putV1AdminCmsMediaAltTextResponse200 = {
+  data: CmsMediaWriteResponse
+  status: 200
+}
+
+export type putV1AdminCmsMediaAltTextResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1AdminCmsMediaAltTextResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1AdminCmsMediaAltTextResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1AdminCmsMediaAltTextResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1AdminCmsMediaAltTextResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type putV1AdminCmsMediaAltTextResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1AdminCmsMediaAltTextResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1AdminCmsMediaAltTextResponseSuccess = (putV1AdminCmsMediaAltTextResponse200) & {
+  headers: Headers;
+};
+export type putV1AdminCmsMediaAltTextResponseError = (putV1AdminCmsMediaAltTextResponse400 | putV1AdminCmsMediaAltTextResponse401 | putV1AdminCmsMediaAltTextResponse403 | putV1AdminCmsMediaAltTextResponse404 | putV1AdminCmsMediaAltTextResponse409 | putV1AdminCmsMediaAltTextResponse500 | putV1AdminCmsMediaAltTextResponse503) & {
+  headers: Headers;
+};
+
+export type putV1AdminCmsMediaAltTextResponse = (putV1AdminCmsMediaAltTextResponseSuccess | putV1AdminCmsMediaAltTextResponseError)
+
+export const getPutV1AdminCmsMediaAltTextUrl = (mediaId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/media/${mediaId}/alt-text`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session. Both the English and the Arabic alt text are replaced on every call and **neither is required**; a blank one is stored as absent, so no surface could ever carry an empty `alt` attribute. Nothing else about a stored object is editable — the path, the type, the size and the dimensions describe a file that has already been uploaded, and replacing an image means uploading another one.
+ * @summary Replace one entry’s alt text
+ */
+export const putV1AdminCmsMediaAltText = async (mediaId: string,
+    cmsMediaAltTextRequest?: CmsMediaAltTextRequest, options?: Parameters<typeof apiFetch>[1]): Promise<putV1AdminCmsMediaAltTextResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<putV1AdminCmsMediaAltTextResponse>(getPutV1AdminCmsMediaAltTextUrl(mediaId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cmsMediaAltTextRequest)
+  }
+);}
+
+
+
+export type deleteV1AdminCmsMediaEntryResponse200 = {
+  data: CmsMediaWriteResponse
+  status: 200
+}
+
+export type deleteV1AdminCmsMediaEntryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1AdminCmsMediaEntryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1AdminCmsMediaEntryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1AdminCmsMediaEntryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1AdminCmsMediaEntryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1AdminCmsMediaEntryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1AdminCmsMediaEntryResponseSuccess = (deleteV1AdminCmsMediaEntryResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AdminCmsMediaEntryResponseError = (deleteV1AdminCmsMediaEntryResponse400 | deleteV1AdminCmsMediaEntryResponse401 | deleteV1AdminCmsMediaEntryResponse403 | deleteV1AdminCmsMediaEntryResponse404 | deleteV1AdminCmsMediaEntryResponse500 | deleteV1AdminCmsMediaEntryResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1AdminCmsMediaEntryResponse = (deleteV1AdminCmsMediaEntryResponseSuccess | deleteV1AdminCmsMediaEntryResponseError)
+
+export const getDeleteV1AdminCmsMediaEntryUrl = (mediaId: string,) => {
+
+
+
+
+  return `/v1/admin/cms/media/${mediaId}`
+}
+
+/**
+ * Requires the internal BFF credential and `cms.media.manage` in an aal2 session. Every reference to the entry becomes null through migration 0030’s own `on delete set null` foreign keys and through nothing else: no statement anywhere updates a referencing row. The usage route above is what a console shows first. The stored object remains in the private bucket and becomes unreachable, because a signed read is only ever issued for an object an entry still points at.
+ * @summary Remove one entry from the library
+ */
+export const deleteV1AdminCmsMediaEntry = async (mediaId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1AdminCmsMediaEntryResponse> => {
+
+  return apiFetch<deleteV1AdminCmsMediaEntryResponse>(getDeleteV1AdminCmsMediaEntryUrl(mediaId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
   }
 );}
 
@@ -23004,7 +29653,7 @@ export type getV1SeoSitemapPageResponseError = (getV1SeoSitemapPageResponse400 |
 
 export type getV1SeoSitemapPageResponse = (getV1SeoSitemapPageResponseSuccess | getV1SeoSitemapPageResponseError)
 
-export const getGetV1SeoSitemapPageUrl = (type: 'page' | 'listing' | 'service' | 'category' | 'seller',
+export const getGetV1SeoSitemapPageUrl = (type: 'page' | 'blog_post' | 'listing' | 'service' | 'category' | 'seller',
     page: string,) => {
 
 
@@ -23017,7 +29666,7 @@ export const getGetV1SeoSitemapPageUrl = (type: 'page' | 'listing' | 'service' |
  * Requires the internal BFF credential and carries no user context. Entries are ordered by slug, which is unique on every one of these surfaces, so a numbered page is stable: an entry cannot be served twice or skipped while the page size holds. Numbered rather than cursored because a sitemap index addresses its children by number. A page past the end is an empty array rather than a 404 — the set may have shrunk since the index was read. `locales` is present only for pages, where an address can be absent in one language: every other surface resolves in both locales whatever language its content is in. An unknown type or a page number below one is a 400.
  * @summary One page of sitemap entries
  */
-export const getV1SeoSitemapPage = async (type: 'page' | 'listing' | 'service' | 'category' | 'seller',
+export const getV1SeoSitemapPage = async (type: 'page' | 'blog_post' | 'listing' | 'service' | 'category' | 'seller',
     page: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SeoSitemapPageResponse> => {
 
   return apiFetch<getV1SeoSitemapPageResponse>(getGetV1SeoSitemapPageUrl(type,page),

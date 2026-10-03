@@ -16,6 +16,7 @@ import { ListingMessage } from '../../../../components/listing-views';
 import { SearchResultList } from '../../../../components/search-results';
 import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
 import { readCategory, readCategoryFeed, type CategoryLookup } from '../../../../server/bff';
+import { metadataWithOverride } from '../../../../server/public-metadata';
 
 /**
  * `/category/[slug]` and `/ar/category/[slug]` — one public category.
@@ -95,26 +96,36 @@ export async function generateMetadata({ params, searchParams }: PageParams): Pr
   // invented sentence would be worse than none.
   const description = seo.metaDescription ?? category.description;
 
-  return {
-    // The admin's meta title when there is one, otherwise the category's name.
-    title: seo.metaTitle ?? category.name,
-    ...(description === null ? {} : { description }),
-    alternates: {
+  // The SEO module's own override is merged in last by one shared resolver (8-F), so the order of precedence is
+  // most-specific-first: the `seo_metadata` entry for this category and locale, then the category's own translated
+  // meta fields, then the category's name and description. Any other order would make the override screen do nothing
+  // for a category that happens to carry a translated meta title, which is a silent failure nobody could diagnose.
+  //
+  // **Neither of 8-D's decisions can be undone by an override.** The canonical passed below is built from the slug
+  // alone and never from the query string, and a stored canonical is withheld for a category — so a filtered view
+  // still points at the unfiltered page. The robots value below is the floor and a stored directive may only narrow
+  // it, so a filtered view stays `noindex` however the override is written.
+  return await metadataWithOverride(
+    { entityType: 'category', slug: category.slug, locale },
+    {
+      // The admin's meta title when there is one, otherwise the category's name.
+      title: seo.metaTitle ?? category.name,
+      description,
       canonical: categoryPath(locale, category.slug),
       languages: {
         en: `/category/${encodeURIComponent(category.slug)}`,
         ar: `/ar/category/${encodeURIComponent(category.slug)}`,
       },
+      // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
+      // the root down, so a page that says nothing about robots inherits that refusal.
+      //
+      // **A filtered view is `noindex`, and its canonical is the unfiltered page.** The combinations are
+      // unbounded and every one of them is a slice of the same shelf, so indexing them would be asking a
+      // crawler to spend its budget on near-duplicates of a page that is already indexed.
+      index: !filtered,
+      follow: true,
     },
-    // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
-    // the root down, so a page that says nothing about robots inherits that refusal.
-    //
-    // **A filtered view is `noindex`, and its canonical is the unfiltered page.** The combinations are
-    // unbounded and every one of them is a slice of the same shelf, so indexing them would be asking a
-    // crawler to spend its budget on near-duplicates of a page that is already indexed. The canonical above
-    // is built from the slug alone and never from the query string, which is what makes that true.
-    robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
-  };
+  );
 }
 
 export default async function CategoryPage({ params, searchParams }: PageParams) {

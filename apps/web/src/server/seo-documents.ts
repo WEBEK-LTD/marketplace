@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   indexableExactRoutes,
+  publicBlogPostPath,
   publicCategoryPath,
   publicCmsPagePath,
   publicListingPath,
@@ -61,9 +62,17 @@ function xml(value: string): string {
 /** The path a given kind of address occupies, in one locale. */
 function pathFor(type: SitemapEntryType, locale: PublicLocale, slug: string): string {
   switch (type) {
-    case 'route':
+    case 'route': {
       // Already a path, prefixed for Arabic the way every other public address is.
-      return `${locale === 'ar' ? '/ar' : ''}${slug}`;
+      const prefix = locale === 'ar' ? '/ar' : '';
+      // The home page is the one fixed route whose path *is* the prefix, so concatenating would advertise `/ar/`
+      // while the page's own canonical says `/ar` — a sitemap naming a non-canonical address is the one mistake a
+      // sitemap must not make. `/` itself is already the English answer (0097, owner decision 3).
+      if (slug === '/') return prefix === '' ? '/' : prefix;
+      return `${prefix}${slug}`;
+    }
+    case 'blog_post':
+      return publicBlogPostPath(locale, slug);
     case 'page':
       return publicCmsPagePath(locale, slug);
     case 'listing':
