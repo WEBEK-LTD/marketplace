@@ -1,4 +1,10 @@
-import { configLoadedEvent, readEnv } from '@repo/server-config';
+import {
+  configLoadedEvent,
+  MIN_ANALYTICS_SESSION_KEY_LENGTH,
+  MIN_DEVICE_KEY_LENGTH,
+  MIN_PSEUDONYMOUS_KEY_LENGTH,
+  readEnv,
+} from '@repo/server-config';
 import { z } from 'zod';
 
 export { EnvValidationError } from '@repo/server-config';
@@ -14,8 +20,31 @@ export interface ApiEnv {
   /** Server-only `app_system` connection string. Never logged; never sent to a browser. */
   readonly appSystemDatabaseUrl: string;
   readonly appSystemDatabaseMaxConnections: number;
+  /**
+   * Server-only HMAC key for the device identity digest (C-15).
+   *
+   * Distinct from the pseudonymous-ID key and separately domain-separated, so the two schemes can
+   * never produce the same value for the same input. Never logged; never sent to a browser.
+   */
+  readonly deviceIdentityKey: string;
+  /**
+   * Server-only HMAC key for the analytics session digest in `listing_events.session_hash` (0101, owner
+   * decision 4).
+   *
+   * Its own key and its own domain label, distinct from both the device key and the pseudonymous-ID key, so
+   * an analytics digest can never be correlated with a device row or a log line. Never logged; never sent to
+   * a browser.
+   */
+  readonly analyticsSessionKey: string;
   /** Server-only HMAC pepper for OTP digests (C-9). Never logged; never sent to a browser. */
   readonly otpPepper: string;
+  /**
+   * Server-only HMAC key for the pseudonymous user ID in logs (C-13, O8-12).
+   *
+   * Shared with the worker within one environment so that a log line from either service names the
+   * same person the same way. Never logged; never sent to a browser; never stored.
+   */
+  readonly pseudonymousUserIdKey: string;
   readonly waabekBaseUrl: string;
   /** Server-only Waabek API key. Never logged; never sent to a browser. */
   readonly waabekApiKey: string;
@@ -24,6 +53,19 @@ export interface ApiEnv {
    * Server-only; never logged, never sent to a browser.
    */
   readonly internalBffCredentials: readonly string[];
+  /** Supabase project base URL. The browser never calls it: sign-in happens here (F2). */
+  readonly supabaseUrl: string;
+  /** Server-only Supabase secret key for the password grant. Never logged; never sent to a browser. */
+  readonly supabaseSecretKey: string;
+  /** Redis URL for the first login-throttle tier (C-1). Server-only. */
+  readonly redisUrl: string;
+  /**
+   * Origin of the public web app, used to build the password-reset recovery link (F3).
+   *
+   * Server-only. The link is composed here and handed to the BFF across one internal hop; the origin
+   * itself is never returned by a response and never reaches a client bundle.
+   */
+  readonly webPublicOrigin: string;
 }
 
 /** Validators for the API's inventory entries (required-ness and defaults come from the inventory). */
@@ -44,12 +86,28 @@ export const API_ENV_FIELDS = Object.freeze({
     .pipe(z.number().int().min(1).max(500)),
   // At least 32 bytes: the pepper is the only thing standing between a leaked digest and a six-digit
   // code that is trivially exhaustible.
+  // C-15. Length only, like the other opaque keys: the floor catches a misconfigured deployment.
+  DEVICE_IDENTITY_KEY: z.string().min(MIN_DEVICE_KEY_LENGTH),
+  // 0101 owner decision 4. Same treatment as the two keys above, and deliberately not either of them.
+  ANALYTICS_SESSION_KEY: z.string().min(MIN_ANALYTICS_SESSION_KEY_LENGTH),
   OTP_PEPPER: z.string().min(32),
+  // C-13. Only length is checked: the value is opaque, and its job is to be unguessable. The floor
+  // exists to catch a misconfigured deployment, not to certify entropy.
+  PSEUDONYMOUS_USER_ID_KEY: z.string().min(MIN_PSEUDONYMOUS_KEY_LENGTH),
   WAABEK_BASE_URL: z.string().regex(/^https?:\/\/\S+$/),
   WAABEK_API_KEY: z.string().min(1),
   // Owner decision C-2d: 32 random bytes as base64url (43 characters), one or two values separated by a
   // comma for overlap rotation — CURRENT first, then the PREVIOUS value still being retired.
   INTERNAL_BFF_CREDENTIAL: z.string().regex(/^[A-Za-z0-9_-]{43}(,[A-Za-z0-9_-]{43})?$/),
+  // https only, no embedded credentials, no path: the API appends `/auth/v1/...` itself.
+  SUPABASE_URL: z.string().regex(/^https:\/\/[^\s/@]+\/?$/),
+  // Shape is the provider's, so only "present and not trivially empty" is checked here. It is never
+  // logged and never leaves the server.
+  SUPABASE_SECRET_KEY: z.string().min(20),
+  REDIS_URL: z.string().min(1),
+  // An origin: scheme and host only, no path, no credentials, no trailing slash of significance. The
+  // recovery link is built by appending a path, so a value carrying one would produce a broken link.
+  WEB_PUBLIC_ORIGIN: z.string().regex(/^https?:\/\/[^\s/@]+\/?$/),
 });
 
 /**
@@ -65,10 +123,17 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>> = p
     logLevel: values.LOG_LEVEL,
     appSystemDatabaseUrl: values.APP_SYSTEM_DATABASE_URL,
     appSystemDatabaseMaxConnections: values.APP_SYSTEM_DATABASE_MAX_CONNECTIONS,
+    analyticsSessionKey: values.ANALYTICS_SESSION_KEY,
+    deviceIdentityKey: values.DEVICE_IDENTITY_KEY,
     otpPepper: values.OTP_PEPPER,
+    pseudonymousUserIdKey: values.PSEUDONYMOUS_USER_ID_KEY,
     waabekBaseUrl: values.WAABEK_BASE_URL,
     waabekApiKey: values.WAABEK_API_KEY,
     internalBffCredentials: Object.freeze(values.INTERNAL_BFF_CREDENTIAL.split(',')),
+    supabaseUrl: values.SUPABASE_URL.replace(/\/$/, ''),
+    supabaseSecretKey: values.SUPABASE_SECRET_KEY,
+    redisUrl: values.REDIS_URL,
+    webPublicOrigin: values.WEB_PUBLIC_ORIGIN.replace(/\/$/, ''),
   });
 }
 

@@ -105,6 +105,46 @@ module.exports = {
       comment: "Database drivers must not be imported by the web and admin apps, ui or contracts.",
       from: { path: "^(apps/(web|admin)|packages/(ui|contracts))/" },
       to: { path: "(^|node_modules/)(kysely|pg|pg-[a-z-]+)(/|$)" }
+    },
+    {
+      // v5.2: "Domain code never imports an adapter (dependency-cruiser rule)." Phase 8-C installs the
+      // rule with the ports, before any adapter exists, so the first adapter is born inside it rather
+      // than having it applied afterwards. A provider adapter lives in a directory named `adapters/`;
+      // only the module that wires one up may name it, and domain code reaches a provider through the
+      // `PAYMENT_PROVIDER` / `PAYOUT_PROVIDER` injection tokens instead.
+      name: "provider-adapters-isolated",
+      severity: "error",
+      comment: "Domain code must not import a provider adapter; it receives one through its injection token.",
+      from: { path: "^(apps|packages)/", pathNot: "((^|/)adapters/|\\.module\\.ts$)" },
+      to: { path: "(^|/)adapters/" }
+    },
+    {
+      // G11 allows test doubles "never registered in production". They sit behind their own entry point
+      // so production code cannot reach them through the package root, and this refuses the direct path
+      // too: only a test may name them.
+      name: "provider-test-doubles-not-in-production",
+      severity: "error",
+      comment: "Provider test doubles may only be imported by tests.",
+      from: { path: "^(apps|packages)/", pathNot: "((^|/)test/|\\.test\\.tsx?$|^packages/provider-ports/src/testing/)" },
+      to: { path: "^packages/provider-ports/(src/testing/|dist/testing/)" }
+    },
+    {
+      name: "provider-ports-standalone",
+      severity: "error",
+      comment: "The provider ports are the platform's own contract: they depend on no workspace package and no framework.",
+      from: { path: "^packages/provider-ports/src/" },
+      to: { path: "(^apps/|^packages/(?!provider-ports/)|(^|/)node_modules/(?!typescript))" }
+    },
+    {
+      // The provisional compliance baseline is a temporary layer that must stay trivially removable: a
+      // counsel finding replaces a rule inside it, and the whole package can be deleted in one commit.
+      // Depending on nothing is what keeps that true, and it also guarantees the layer cannot reach a
+      // database writer, so no "dry run" can post a permanent financial journal through it.
+      name: "compliance-standalone",
+      severity: "error",
+      comment: "The provisional compliance layer depends on no workspace package and no framework, so it stays replaceable and cannot reach a financial writer.",
+      from: { path: "^packages/compliance/src/" },
+      to: { path: "(^apps/|^packages/(?!compliance/)|(^|/)node_modules/(?!typescript))" }
     }
   ],
   options: {

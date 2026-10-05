@@ -24,10 +24,19 @@ export const TEST_ENV = loadEnv({
   API_PORT: '3000',
   LOG_LEVEL: 'info',
   APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
+  DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+  ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
   OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
+  PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
   WAABEK_BASE_URL: 'https://waabek.invalid',
   WAABEK_API_KEY: 'test-waabek-key-not-a-real-secret',
   INTERNAL_BFF_CREDENTIAL: TEST_INTERNAL_CREDENTIAL,
+  // Unreachable on purpose, like the database above: the Supabase client makes no call until a login
+  // happens, and the Redis counter connects lazily. Tests that exercise either supply their own double.
+  SUPABASE_URL: 'https://supabase.invalid',
+  SUPABASE_SECRET_KEY: 'test-supabase-secret-not-a-real-key',
+  REDIS_URL: 'redis://127.0.0.1:6399',
+  WEB_PUBLIC_ORIGIN: 'https://web.invalid',
 });
 
 export async function createTestApp(options: { readinessChecks?: readonly ReadinessCheck[] } = {}): Promise<TestApp> {

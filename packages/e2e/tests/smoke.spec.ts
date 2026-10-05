@@ -77,13 +77,17 @@ test.describe('web', () => {
 });
 
 test.describe('admin', () => {
+  // The console's root page used to be a placeholder headed "Admin". Once staff authentication landed it became
+  // the signed-out surface, and this assertion had been describing a page that no longer existed — unnoticed,
+  // because Playwright has never been runnable in the sandbox this repository is developed in. The heading below
+  // is the one a signed-out visitor actually gets, and `public-surface.spec.ts` asserts that it is all they get.
   test('English home page with a nonce on every script', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     const response = await page.goto(`${ADMIN_URL}/`);
     expect(response?.status()).toBe(200);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
-    await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'You are signed out' })).toBeVisible();
     await expectEveryScriptToUse(page, await nonceFrom(response));
     await page.waitForLoadState('networkidle');
     expect(errors).toEqual([]);

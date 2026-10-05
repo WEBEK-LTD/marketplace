@@ -291,26 +291,89 @@ $$;
 comment on function public.can_join_realtime_topic(text) is
   'The Realtime join check. Clients join private topics only and never publish; unknown topics are refused (0028 extends this with support tickets).';
 
+-- Supabase Realtime creates and owns realtime.messages, exactly as Supabase Storage owns the storage
+-- tables (0012). The migrating role is not that owner, so `alter table realtime.messages …` is
+-- owner-only and unreachable here, and the table's ACL belongs to the provider: a REVOKE or GRANT run
+-- by this role touches only what this role is entitled to change and cannot be relied on. This
+-- migration therefore verifies the provider-managed state it depends on and establishes only what it
+-- can actually establish — the private-topic policy.
+--
+-- The boundary that holds: row level security is on (verified), the one policy is SELECT-only for
+-- `authenticated` and gated by public.can_join_realtime_topic(topic), and there is no INSERT policy, so
+-- a client can receive on a topic it may join and can publish nothing. The worker publishes with server
+-- credentials, outside this path.
+
+-- 1. Provider-managed state: the table exists and row level security is on. Verified, not set.
 do $$
+declare
+  enabled boolean;
 begin
-  if to_regclass('realtime.messages') is null then
+  select c.relrowsecurity into enabled
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'realtime' and c.relname = 'messages';
+  if enabled is null then
     raise exception 'Supabase Realtime is not installed in this database'
       using hint = 'Migration 0014 defines the private-topic policies on realtime.messages.';
   end if;
-  execute 'alter table realtime.messages enable row level security';
-  execute 'revoke all on realtime.messages from anon, authenticated';
-  execute 'grant select on realtime.messages to authenticated';
-  execute 'drop policy if exists realtime_private_topic_receive on realtime.messages';
-  -- Receive only. There is deliberately no insert policy: the worker publishes with server credentials.
-  execute $p$
-    create policy realtime_private_topic_receive on realtime.messages
-      for select to authenticated
-      using (public.can_join_realtime_topic(topic))
-  $p$;
-exception
-  when insufficient_privilege then
-    raise exception 'cannot manage the realtime.messages policies'
-      using hint = 'The migration role must own realtime.messages so private-topic access stays defined in migrations.';
+  if not enabled then
+    raise exception 'row level security is not enabled on realtime.messages'
+      using hint = 'Supabase Realtime enables it on the mailbox, and it is what confines a subscriber to the topics can_join_realtime_topic() allows. The migration role does not own realtime.messages and cannot enable it.';
+  end if;
+end;
+$$;
+
+-- 2. Best effort on the provider's ACL, claimed as nothing.
+-- Reaching a row still requires a policy, so these statements are a tidy-up, not the boundary. They are
+-- attempted and any privilege error is reported and tolerated, because the migration role is not the
+-- owner and a REVOKE or GRANT it issues may legitimately do nothing at all.
+do $$
+declare
+  failed_state text;
+  failed_message text;
+begin
+  begin
+    execute 'revoke all on realtime.messages from anon, authenticated';
+    execute 'grant select on realtime.messages to authenticated';
+  exception
+    when others then
+      get stacked diagnostics failed_state = returned_sqlstate, failed_message = message_text;
+      raise notice 'realtime.messages ACL left as Supabase set it (SQLSTATE %): %', failed_state, failed_message;
+  end;
+end;
+$$;
+
+-- 3. The private-topic policy, and no other.
+-- Receive only. There is deliberately no insert policy: the worker publishes with server credentials.
+do $$
+declare
+  failed_state text;
+  failed_message text;
+  extra text;
+begin
+  begin
+    execute 'drop policy if exists realtime_private_topic_receive on realtime.messages';
+    execute $p$
+      create policy realtime_private_topic_receive on realtime.messages
+        for select to authenticated
+        using (public.can_join_realtime_topic(topic))
+    $p$;
+  exception
+    when others then
+      get stacked diagnostics failed_state = returned_sqlstate, failed_message = message_text;
+      raise exception 'cannot define the private-topic policy on realtime.messages (SQLSTATE %): %', failed_state, failed_message
+        using hint = 'Private-topic access stays defined in migrations. If this is a privilege error, the migration role lost a capability it had when 0014 was written.';
+  end;
+
+  select string_agg(format('%s (%s)', p.polname, p.polcmd), ', ' order by p.polname) into extra
+    from pg_policy p
+   where p.polrelid = 'realtime.messages'::regclass
+     and p.polname <> 'realtime_private_topic_receive';
+
+  if extra is not null then
+    raise exception 'realtime.messages carries a policy this migration did not define: %', extra
+      using hint = 'With row level security on, a policy is the only thing that opens the mailbox. A second policy can hand a client a topic it may not join, or let it publish.';
+  end if;
 end;
 $$;
 

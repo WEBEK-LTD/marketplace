@@ -9,13 +9,15 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(69);
+select plan(70);
 
 -- ---------------------------------------------------------------------------------------------------
 -- The real catalogue
 -- ---------------------------------------------------------------------------------------------------
-select is((select count(*) from cron.job), 12::bigint,
-  'twelve jobs are scheduled, and only twelve');
+-- Narrowed by 0107, which added two prune jobs. The invariant is that the catalogue matches the contract
+-- exactly and carries nothing extra, and that is unchanged — only the number moved.
+select is((select count(*) from cron.job), 17::bigint,
+  'seventeen jobs are scheduled, and only seventeen');
 select is((select count(*) from cron.job where jobname not like 'marketplace.%'), 0::bigint,
   'every scheduled job belongs to this marketplace');
 select is(
@@ -37,9 +39,17 @@ select is(
 select is(
   (select string_agg(format('%s=%s', j.jobname, j.schedule), E'\n' order by j.jobname) from cron.job j),
   E'marketplace.cms.publish_due=*/5 * * * *\n'
+  -- 0102: the daily listing rollup, just after the promotion one.
+  'marketplace.listing_analytics.rollup=50 2 * * *\n'
+  -- 0107: the de-duplication ledgers, pruned after the partition drop below so a ledger is never pruned while
+  -- the partitions it refers to are being dropped. It sorts before `listing_events` because `_` precedes `s`.
+  'marketplace.listing_event_ids.prune=40 4 * * *\n'
+  -- 0101: the raw listing-event retention window, run nightly.
+  'marketplace.listing_events.retention=25 4 * * *\n'
   'marketplace.offers.expire=*/5 * * * *\n'
   'marketplace.partitions.ensure=10 3 * * *\n'
   'marketplace.payment_attempts.expire=*/5 * * * *\n'
+  'marketplace.promotion_event_ids.prune=45 4 * * *\n'
   'marketplace.promotions.expire=*/5 * * * *\n'
   'marketplace.promotions.rollup=35 2 * * *\n'
   'marketplace.promotions.start=*/5 * * * *\n'
@@ -47,7 +57,9 @@ select is(
   'marketplace.security.assert_contract=45 3 * * *\n'
   'marketplace.seller_balances.release=23 * * * *\n'
   'marketplace.service_orders.complete=17 * * * *\n'
-  'marketplace.service_quotes.expire=*/5 * * * *',
+  'marketplace.service_quotes.expire=*/5 * * * *\n'
+  -- 7-J, D7-09: the payment-information retention job.
+  'marketplace.service_requests.payment_info_purge=5 4 * * *',
   'every schedule reads exactly as intended, from the catalogue itself'
 );
 select is((select schedule from cron.job where jobname = 'marketplace.reservations.release'), '* * * * *',
@@ -77,10 +89,24 @@ select is((select count(distinct username) from cron.job), 1::bigint,
 -- The two jobs that are deliberately absent.
 select is((select count(*) from cron.job where command like '%sweep_outbox_events%'), 0::bigint,
   'the outbox sweeper is not scheduled here: the approved split puts the sweeper on the worker');
-select is((select count(*) from cron.job where jobname like '%purge%' or command like '%purge%'), 0::bigint,
-  'and the unverified-account purge is absent, because D24''s schedule depends on C18, which is deferred');
-select is((select count(*) from app_private.scheduled_job_contract where job_key like '%purge%'), 0::bigint,
+-- Named precisely rather than by the word "purge": 7-J's D7-09 payment-information purge is a scheduled
+-- job, and the one that must stay absent is D24's unverified-account purge, whose schedule depends on the
+-- deferred C18. C18 is not reopened by the presence of an unrelated, separately approved retention job.
+select is(
+  (select count(*) from cron.job
+    where jobname like '%unverified%' or command like '%unverified%'
+       or jobname like '%account%purge%' or command like '%purge_unverified%'),
+  0::bigint,
+  'the unverified-account purge is absent, because D24''s schedule depends on C18, which is deferred');
+select is(
+  (select count(*) from app_private.scheduled_job_contract
+    where job_key like '%unverified%' or target_signature like '%unverified%'
+       or job_key like '%account%purge%'),
+  0::bigint,
   'the contract does not quietly describe it either');
+select is(
+  (select count(*) from app_private.scheduled_job_contract where job_key like '%purge%'), 1::bigint,
+  'and the only purge the contract names is D7-09''s payment-information retention job');
 
 -- ---------------------------------------------------------------------------------------------------
 -- The guard agrees, and notices when it should not
@@ -147,7 +173,7 @@ select cron.schedule('marketplace.offers.expire', '*/5 * * * *',
   $$select app_private.run_scheduled_job('offers.expire')$$);
 select is((select count(*) from cron.job where jobname = 'marketplace.offers.expire'), 1::bigint,
   'scheduling it again replaces it rather than duplicating it');
-select is((select count(*) from cron.job), 12::bigint, 'so the catalogue still holds twelve jobs');
+select is((select count(*) from cron.job), 17::bigint, 'so the catalogue still holds seventeen jobs');
 select is((select count(*) from public.cron_job_problems()), 0::bigint, 'and the contract still holds');
 rollback to d1;
 
@@ -163,8 +189,8 @@ begin
   end loop;
 end;
 $$;
-select is((select count(*) from cron.job), 12::bigint,
-  'applying the migration a second time leaves exactly the same twelve jobs');
+select is((select count(*) from cron.job), 17::bigint,
+  'applying the migration a second time leaves exactly the same seventeen jobs');
 select is((select count(*) from public.cron_job_problems()), 0::bigint, 'with no drift');
 rollback to d2;
 
@@ -288,10 +314,10 @@ select lives_ok(
   $$select app_private.run_scheduled_job(job_key) from app_private.scheduled_job_contract order by job_key$$,
   'every contracted job runs without error'
 );
-select is((select count(*) from public.job_runs), 12::bigint,
+select is((select count(*) from public.job_runs), 17::bigint,
   'and each one writes its own job_runs row, as the specification requires');
 select is((select count(*) from public.job_runs where status <> 'succeeded'), 0::bigint,
-  'all twelve succeed on an empty database');
+  'all seventeen succeed on an empty database');
 
 select is(
   (select count(*) from pg_class where relispartition),
@@ -310,7 +336,7 @@ select is(
   (select n from partition_count_before),
   'the partition job created nothing the second time: it is idempotent, not merely repeatable'
 );
-select is((select count(*) from public.job_runs), 24::bigint,
+select is((select count(*) from public.job_runs), 34::bigint,
   'and the second pass is recorded separately, so a run is never silently merged with another');
 select is((select count(*) from public.job_runs where status <> 'succeeded'), 0::bigint,
   'with nothing failing on the repeat');

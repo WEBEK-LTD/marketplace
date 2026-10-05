@@ -26,6 +26,8 @@ export async function createTestRuntime(
   const port = await freePort();
   const env = loadEnv({
     NODE_ENV: 'test',
+    PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
+    APP_WORKER_DATABASE_URL: 'postgres://app_worker@127.0.0.1:5432/marketplace_test',
     REDIS_URL: redisUrl,
     WORKER_HEALTH_HOST: '127.0.0.1',
     WORKER_HEALTH_PORT: String(port),

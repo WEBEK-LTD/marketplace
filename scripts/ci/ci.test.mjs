@@ -250,12 +250,12 @@ test('B10-hosted: failures are reduced to categories, never passed through', () 
 
 test('B10-hosted: the planned migration set is the committed one, contiguous and ordered', () => {
   const names = plannedMigrations();
-  assert.equal(names.length, 37);
+  assert.equal(names.length, 107);
   assert.equal(names[0], '0001_extensions_and_schemas.sql');
-  assert.equal(names.at(-1), '0037_step_up_grant_consumption.sql');
+  assert.equal(names.at(-1), '0107_analytics_event_identity.sql');
   assert.ok(names.every((name) => name.endsWith('.sql')));
   names.forEach((name, index) => assert.equal(name.slice(0, 4), String(index + 1).padStart(4, '0')));
-  assert.equal(GUARD_FUNCTIONS.length, 10);
+  assert.equal(GUARD_FUNCTIONS.length, 11);
   // The hash is of the committed bytes, so the result file states exactly what was applied.
   assert.match(sha256File(new URL('../../supabase/migrations/0001_extensions_and_schemas.sql', import.meta.url)), /^[0-9a-f]{64}$/);
 });

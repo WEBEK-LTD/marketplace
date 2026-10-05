@@ -113,10 +113,22 @@ describe('not-found pages', () => {
 });
 
 describe('noindex', () => {
-  it.each(['/', '/ar', '/nope'])('%s is not indexable', async (path) => {
+  // The robots header is route-aware since the public catalogue went live: these paths are outside it, so
+  // they keep the blanket header. `test/robots-policy.test.ts` covers the catalogue routes themselves.
+  it.each(['/nope'])('%s is not indexable', async (path) => {
     const res = await get(path);
     expect(res.headers.get('x-robots-tag')).toBe('noindex');
     expect(await res.text()).toContain('<meta name="robots" content="noindex, nofollow"/>');
+  });
+
+  // 0093, owner decision E. The home page left the blanket set and now decides for itself, which means two things
+  // have to agree: the header must not deny it, and the page must say `index, follow` in its own metadata. A header
+  // is the most restrictive directive on a response, so a page claiming to be indexable under a `noindex` header
+  // would be indexable nowhere.
+  it.each(['/', '/ar'])('%s is indexable, and the header does not deny it', async (path) => {
+    const res = await get(path);
+    expect(res.headers.get('x-robots-tag')).toBeNull();
+    expect(await res.text()).toContain('<meta name="robots" content="index, follow"/>');
   });
 });
 

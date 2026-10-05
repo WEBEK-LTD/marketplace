@@ -1,0 +1,224 @@
+import { PageContainer } from '@repo/ui';
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { cache } from 'react';
+import { ReportForm } from '../../../../components/report-form';
+import { reportCopy } from '../../../../components/report-copy';
+import { RequestQuoteButton } from '../../../../components/request-quote';
+import { ServiceDetailView, ServiceMessage } from '../../../../components/service-views';
+import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
+import { readService, type ServiceLookup } from '../../../../server/bff';
+import { metadataWithOverride } from '../../../../server/public-metadata';
+
+/**
+ * `/service/[slug]` and `/ar/service/[slug]` — one public service.
+ *
+ * Four outcomes reach this page:
+ *
+ *   * **found** — 200 with the service rendered into the HTML;
+ *   * **moved** — the slug is a previous one, or it names a product; either way the browser is sent to the
+ *     canonical URL on the surface that owns it, so one listing never has two public addresses;
+ *   * **not_found** — 404, identically for a service that never existed, one still in draft, one that was
+ *     rejected and one whose seller is suspended;
+ *   * **unavailable** — the catalogue could not be read. The page renders and says so.
+ *
+ * A service that is no longer purchasable still answers 200 with its content and an availability marker;
+ * it carries `noindex` so it leaves the index rather than standing as a live result.
+ *
+ * **Where the status comes from.** The 301 and the 404 are issued by the middleware, which resolves the
+ * slug before anything renders. They cannot be issued from here: Next.js 16 streams, so by the time this
+ * component has awaited anything the status line is already sent. The middleware tells this page about
+ * the 404 it already issued through a request header, so the not-found view costs no second read.
+ */
+
+interface PageParams {
+  readonly params: Promise<{ locale: string; slug: string }>;
+}
+
+const lookup = cache(
+  async (slug: string, locale: string): Promise<ServiceLookup> => readService(slug, locale),
+);
+
+/** Whether the middleware already answered 404 for this request. */
+const alreadyNotFound = cache(async (): Promise<boolean> => {
+  return (await headers()).get(CATALOG_OUTCOME_HEADER) === 'not_found';
+});
+
+function servicePath(locale: string, slug: string): string {
+  return `${locale === 'ar' ? '/ar' : ''}/service/${encodeURIComponent(slug)}`;
+}
+
+function listingPath(locale: string, slug: string): string {
+  return `${locale === 'ar' ? '/ar' : ''}/listing/${encodeURIComponent(slug)}`;
+}
+
+export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const t = await getTranslations({ locale, namespace: 'Services' });
+
+  if (await alreadyNotFound()) {
+    return { title: t('notFoundTitle'), robots: { index: false, follow: false } };
+  }
+
+  const found = await lookup(slug, locale);
+  if (found.kind !== 'found') {
+    return { title: t('notFoundTitle'), robots: { index: false, follow: false } };
+  }
+
+  const { service } = found;
+  const unavailable = service.availability === 'no_longer_available';
+
+  // The administrator's override is merged in by one shared resolver (8-F). A service is a `listings` row, so its
+  // override is a `listing` entry — 0030 has no `service` kind — and its stored canonical is withheld like any other
+  // listing's, leaving the self-referencing address below as the only one this page can have.
+  return await metadataWithOverride(
+    { entityType: 'listing', slug: service.slug, locale },
+    {
+      title: service.title,
+      description: service.description.slice(0, 160),
+      canonical: servicePath(locale, service.slug),
+      languages: {
+        en: `/service/${encodeURIComponent(service.slug)}`,
+        ar: `/ar/service/${encodeURIComponent(service.slug)}`,
+      },
+      // Stated on every branch: the root layout's default is `noindex, nofollow`, and metadata is merged
+      // from the root down, so a page that says nothing about robots inherits that refusal.
+      index: !unavailable,
+      follow: true,
+    },
+  );
+}
+
+export default async function ServicePage({ params }: PageParams) {
+  const { locale, slug } = await params;
+  const [t, quote, session] = await Promise.all([
+    getTranslations({ locale, namespace: 'Services' }),
+    getTranslations({ locale, namespace: 'RequestQuote' }),
+    getTranslations({ locale, namespace: 'Session' }),
+  ]);
+  const report = await getTranslations({ locale, namespace: 'Report' });
+
+  // The middleware has already answered 404 for this request and said so. Render the localized
+  // not-found view under that status, without asking the API about a service nobody may see.
+  if (await alreadyNotFound()) {
+    return (
+      <PageContainer>
+        <div className="py-12">
+          <ServiceMessage tone="empty" title={t('notFoundTitle')} description={t('notFoundDescription')} />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const found = await lookup(slug, locale);
+
+  if (found.kind === 'moved') {
+    // A backstop only: the middleware issues the real 301 before anything renders.
+    permanentRedirect(
+      found.canonicalType === 'service'
+        ? servicePath(locale, found.canonicalSlug)
+        : listingPath(locale, found.canonicalSlug),
+    );
+  }
+  if (found.kind === 'not_found') notFound();
+
+  if (found.kind === 'unavailable') {
+    return (
+      <PageContainer>
+        <div className="py-12">
+          <ServiceMessage tone="error" title={t('errorTitle')} description={t('errorDescription')} />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer>
+      <div className="py-12">
+        <ServiceDetailView
+          service={found.service}
+          labels={{
+            contactForPrice: t('contactForPrice'),
+            negotiable: '',
+            fixedPrice: t('fixedPrice'),
+            customPricing: t('customPricing'),
+            deliveryTime: t('deliveryTime'),
+            revisionsIncluded: t('revisionsIncluded'),
+            deliveryDays: (count: number) => t('deliveryDays', { count }),
+            noLongerAvailable: t('noLongerAvailable'),
+            requiresBrief: t('requiresBrief'),
+            scope: t('scope'),
+            sellerHeading: t('sellerHeading'),
+            categoryHeading: t('categoryHeading'),
+            detailsHeading: t('detailsHeading'),
+            tagsHeading: t('tagsHeading'),
+            descriptionHeading: t('descriptionHeading'),
+            yes: t('yes'),
+            no: t('no'),
+          }}
+        />
+
+        {/*
+          The request-a-quote action (7-I).
+
+          Two conditions, and both are the repository's own rather than this increment's: the service must be
+          purchasable, and it must be **custom-priced**. v5.2 divides services exactly there — a fixed-price
+          service is bought through the cart, a custom one runs brief → quote → accepted quote — so the action
+          appears only where the flow it starts exists. A fixed-price service offered a brief would be a
+          promise the database refuses, and it says so with its own code if one arrives anyway.
+
+          No session is read here: the page is public and cacheable, and the markup is the same for everyone.
+          Whether this visitor is the seller is the database's to answer, not this page's to guess.
+        */}
+        {found.service.availability === 'available' && found.service.pricingModel === 'custom' ? (
+          <div className="mt-8">
+            <RequestQuoteButton
+              listingId={found.service.id}
+              currencyCode={found.service.currencyCode}
+              requestsPath={`${locale === 'ar' ? '/ar' : ''}/dashboard/service-requests`}
+              loginPath={`${locale === 'ar' ? '/ar' : ''}/login`}
+              copy={{
+                action: quote('action'),
+                heading: quote('heading'),
+                titleLabel: quote('titleLabel'),
+                briefLabel: quote('briefLabel'),
+                budgetLabel: quote('budgetLabel'),
+                budgetHint: quote('budgetHint'),
+                neededByLabel: quote('neededByLabel'),
+                send: quote('send'),
+                cancel: quote('cancel'),
+                working: quote('working'),
+                titleRequired: quote('titleRequired'),
+                briefRequired: quote('briefRequired'),
+                budgetInvalid: quote('budgetInvalid'),
+                signIn: session('signIn'),
+                failedNotCustom: quote('failedNotCustom'),
+                failedOwnListing: quote('failedOwnListing'),
+                failedNotAvailable: quote('failedNotAvailable'),
+                failedBlocked: quote('failedBlocked'),
+                failedGeneric: quote('failedGeneric'),
+              }}
+            />
+          </div>
+        ) : null}
+
+        {/*
+          Reporting the service. **The subject type is `listing`**, not a type of its own: a service is a row
+          in `public.listings` with a service `listing_type_code`, sharing one table and one slug namespace,
+          and 0027's eight subject types contain no `service`. Inventing one would be inventing a subject
+          type; using `listing` is naming the row as the schema names it. Offered whatever the availability,
+          for the reason the listing page gives.
+        */}
+        <div className="mt-8 border-t border-neutral-200 pt-6">
+          <ReportForm
+            subject={{ subjectType: 'listing', subjectSlug: found.service.slug }}
+            loginPath={`${locale === 'ar' ? '/ar' : ''}/login`}
+            copy={reportCopy(report)}
+          />
+        </div>
+      </div>
+    </PageContainer>
+  );
+}

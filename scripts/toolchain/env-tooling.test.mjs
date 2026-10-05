@@ -5,8 +5,12 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { ENV_INVENTORY, variablesFor } from '../../packages/server-config/dist/index.js';
 import {
+  DEPLOY_SURFACES,
   DOC_END,
   DOC_START,
+  MANIFEST_END,
+  MANIFEST_START,
+  deployManifestTables,
   envBoundaryViolations,
   envExampleProblems,
   findEnvAccess,
@@ -14,6 +18,7 @@ import {
   inventoryTable,
   scanClientBundles,
   withGeneratedDocs,
+  withGeneratedManifest,
 } from './env-tooling.mjs';
 
 const kinds = (code, file = 'apps/api/src/x.ts') => findEnvAccess(file, code).map((u) => `${u.kind}${u.name ? ` ${u.name}` : ''}`);
@@ -105,10 +110,58 @@ test('R3: the inventory table is deterministic and contains no secret values', (
   assert.throws(() => withGeneratedDocs('no markers', ENV_INVENTORY), /markers/);
 });
 
+test('the deployment manifest lists exactly what each surface reads, and nothing else', () => {
+  const manifest = deployManifestTables(ENV_INVENTORY);
+  assert.equal(manifest, deployManifestTables(ENV_INVENTORY));
+
+  // One section per deployable surface, each naming exactly that surface's inventory entries. The point of
+  // generating it is that somebody provisions a site from it: a manifest that has drifted is worse than none.
+  for (const surface of DEPLOY_SURFACES) {
+    const section = manifest.slice(manifest.indexOf(`#### ${surface.title} `));
+    const body = section.slice(0, section.indexOf('\n\n####') === -1 ? undefined : section.indexOf('\n\n####'));
+    const listed = [...body.matchAll(/^\| `([A-Z0-9_]+)`/gm)].map((match) => match[1]);
+    assert.deepEqual(listed, variablesFor(surface.app).map((entry) => entry.name), surface.app);
+  }
+
+  // No value ever reaches the manifest: a secret's default is null by construction, and the table has no
+  // column that could carry one.
+  for (const entry of ENV_INVENTORY.filter((e) => e.secret)) assert.equal(entry.default, null);
+
+  const readme = `before\n${MANIFEST_START}\nold\n${MANIFEST_END}\nafter\n`;
+  const updated = withGeneratedManifest(readme, ENV_INVENTORY);
+  assert.equal(withGeneratedManifest(updated, ENV_INVENTORY), updated);
+  assert.throws(() => withGeneratedManifest('no markers', ENV_INVENTORY), /markers/);
+});
+
+test('the manifest says which surfaces have a deployment target and which do not', () => {
+  const hosted = DEPLOY_SURFACES.filter((surface) => surface.hosted).map((surface) => surface.app);
+  // Web and admin are the Netlify sites; the API and worker have no hosting decision yet (O-8), which is the
+  // whole reason the sites must be deployable without them.
+  assert.deepEqual(hosted, ['web', 'admin']);
+  const manifest = deployManifestTables(ENV_INVENTORY);
+  assert.match(manifest, /#### API service — service environment \(no deployment target yet\)/);
+  assert.match(manifest, /#### Worker service — service environment \(no deployment target yet\)/);
+  assert.doesNotMatch(manifest, /#### Web site[^\n]*no deployment target/);
+});
+
+test('the two Netlify sites need the three variables the deployment runbook names', () => {
+  // The relationship the manifest exists to record: both sites present the same internal credential to the API,
+  // both address it through API_BASE_URL, and only the public web has an origin of its own.
+  assert.deepEqual(
+    variablesFor('web').map((entry) => entry.name),
+    ['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'PUBLIC_WEB_ORIGIN'],
+  );
+  assert.deepEqual(
+    variablesFor('admin').map((entry) => entry.name),
+    ['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL'],
+  );
+});
+
 test('R3: the committed README table and .env.example files are current', () => {
   const root = new URL('../../', import.meta.url);
   const readme = readFileSync(new URL('README.md', root), 'utf8');
   assert.equal(withGeneratedDocs(readme, ENV_INVENTORY), readme);
+  assert.equal(withGeneratedManifest(readme, ENV_INVENTORY), readme);
   for (const app of ['api', 'worker', 'web', 'admin']) {
     const text = readFileSync(new URL(`apps/${app}/.env.example`, root), 'utf8');
     assert.deepEqual(envExampleProblems(app, text, variablesFor(app).map((e) => e.name)), []);

@@ -6,7 +6,7 @@ const REPO = '/repo';
 const APP = '/repo/apps/web';
 
 /** A log shaped like a correct repository-root build of the web app. */
-function goodLog({ publish = '/repo/apps/web/.next', packagePath = 'apps/web', repositoryRoot = '/repo', buildDir = '/repo', command = 'pnpm --filter @repo/web run build' } = {}) {
+function goodLog({ publish = '/repo/apps/web/.next', packagePath = 'apps/web', repositoryRoot = '/repo', buildDir = '/repo', command = 'pnpm --filter "@repo/web..." run build' } = {}) {
   return [
     '❯ Flags',
     '  offline: true',
@@ -42,7 +42,7 @@ test('a valid build passes with git absent, and the repository root is still par
 test('duplicate publish lines and admin builds do not cause false failures', () => {
   const log = `${goodLog()}\n    publish: /repo/apps/web/.next`;
   assert.deepEqual(guards(log), []);
-  const adminLog = goodLog({ publish: '/repo/apps/admin/.next', packagePath: 'apps/admin', command: 'pnpm --filter @repo/admin run build' });
+  const adminLog = goodLog({ publish: '/repo/apps/admin/.next', packagePath: 'apps/admin', command: 'pnpm --filter "@repo/admin..." run build' });
   assert.deepEqual(guardProblems({ app: 'admin', appDir: '/repo/apps/admin', repoRoot: REPO, context: parseBuildContext(adminLog), gitPresent: true, exists: never }), []);
 });
 
@@ -72,7 +72,38 @@ test('guard 3 rejects a repository root that is not the repository root when git
 
 test('guard 4 rejects the root workspace build and a missing package-scoped build', () => {
   assert.match(guards(goodLog({ command: 'pnpm run build' })).join(), /root workspace command/);
-  assert.match(guards(goodLog({ command: 'pnpm run build' })).join(), /does not show `pnpm --filter @repo\/web run build`/);
+  assert.match(
+    guards(goodLog({ command: 'pnpm run build' })).join(),
+    /does not show `pnpm --filter "@repo\/web\.\.\." run build`/,
+  );
   const withTurbo = `${goodLog()}\n$ turbo run build`;
   assert.match(guards(withTurbo).join(), /root workspace command `turbo run build`/);
+});
+
+test('guard 4 rejects the dependency-less filter, which cannot build a clean checkout', () => {
+  // The defect this guard was blind to until the first deployment inspection. Every workspace package exports
+  // only `dist/`, `dist/` is gitignored and nothing has a `postinstall`, so `--filter @repo/web` builds no
+  // dependency and `next build` dies loading `next.config.ts`:
+  //
+  //   Error: Cannot find module '.../apps/web/node_modules/@repo/config/dist/index.js'
+  //
+  // Verified by moving every packages/*/dist aside and running the command. CI never saw it because it builds
+  // the graph itself first, so TOOL-1 always inherited a tree where every dist/ existed.
+  const problems = guards(goodLog({ command: 'pnpm --filter @repo/web run build' }));
+  assert.match(problems.join(), /builds no workspace dependency/);
+  assert.match(problems.join(), /Use the `\.\.\.` form/);
+  // And it is reported as the wrong command as well as a missing right one, so neither message stands alone.
+  assert.match(problems.join(), /does not show `pnpm --filter "@repo\/web\.\.\." run build`/);
+
+  // The quoted and unquoted dependency-inclusive forms are both accepted: how a builder echoes a shell-glob
+  // argument is its business, not this repository's.
+  assert.deepEqual(guards(goodLog({ command: 'pnpm --filter "@repo/web..." run build' })), []);
+  assert.deepEqual(guards(goodLog({ command: 'pnpm --filter @repo/web... run build' })), []);
+  assert.deepEqual(guards(goodLog({ command: "pnpm --filter '@repo/web...' run build" })), []);
+
+  // A different app's dependency-inclusive build is not this app's.
+  assert.match(
+    guards(goodLog({ command: 'pnpm --filter "@repo/admin..." run build' })).join(),
+    /does not show `pnpm --filter "@repo\/web\.\.\." run build`/,
+  );
 });

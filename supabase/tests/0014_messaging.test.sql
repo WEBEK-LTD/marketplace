@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-1111-4111-8111-111111111111', 'a@example.test'),
@@ -61,6 +61,36 @@ create temp table outsider_probe as
 select public.can_join_realtime_topic('conversation:dddddddd-4444-4444-8444-444444444444:v3') as conversation_topic;
 reset role;
 select ok(not (select conversation_topic from outsider_probe), 'someone who is not a participant may not join');
+
+-- The realtime mailbox boundary --------------------------------------------------------------------
+-- Supabase Realtime owns realtime.messages, so 0014 verifies row level security rather than enabling
+-- it, and the table's ACL stays the provider's. What confines a subscriber is this: RLS on, one
+-- SELECT-only policy for authenticated gated by can_join_realtime_topic(), and nothing else.
+select ok(
+  (select c.relrowsecurity
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'realtime' and c.relname = 'messages'),
+  'row level security is enabled on realtime.messages, so a subscriber reaches only what a policy allows'
+);
+
+select is(
+  (select format('%s|%s|%s', p.polname, p.polcmd,
+                 (select string_agg(r.rolname, ',' order by r.rolname)
+                    from pg_roles r where r.oid = any (p.polroles)))
+     from pg_policy p
+    where p.polrelid = 'realtime.messages'::regclass),
+  'realtime_private_topic_receive|r|authenticated',
+  'exactly one policy on realtime.messages: SELECT, for authenticated only'
+);
+
+select ok(
+  (select pg_get_expr(p.polqual, p.polrelid) like '%can_join_realtime_topic%'
+     from pg_policy p
+    where p.polrelid = 'realtime.messages'::regclass
+      and p.polname = 'realtime_private_topic_receive'),
+  'and private-topic authorization still runs through public.can_join_realtime_topic(topic)'
+);
 
 -- Clients never publish ------------------------------------------------------------------------------------
 select is(

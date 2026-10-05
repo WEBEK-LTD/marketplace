@@ -12,6 +12,7 @@ const DB_PASSWORD = 'fake-db-password-that-must-not-be-printed';
 const PEPPER = 'fake-otp-pepper-that-must-not-be-printed-0123456789';
 const WAABEK_KEY = 'fake-waabek-key-that-must-not-be-printed';
 const BFF_CREDENTIAL = 'test-current-credential-value-not-a-real-se';
+const SUPABASE_KEY = 'fake-supabase-secret-that-must-not-be-printed';
 
 function runMain(env: Record<string, string>, onReady?: (child: ReturnType<typeof spawn>) => void) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve) => {
@@ -63,10 +64,17 @@ describe('graceful shutdown', () => {
         API_HOST: '127.0.0.1',
         API_PORT: '38123',
         APP_SYSTEM_DATABASE_URL: `postgresql://app_system:${DB_PASSWORD}@db.invalid:5432/marketplace`,
+        DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+        ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
         OTP_PEPPER: PEPPER,
+        PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
         WAABEK_BASE_URL: 'https://waabek.invalid',
         WAABEK_API_KEY: WAABEK_KEY,
         INTERNAL_BFF_CREDENTIAL: BFF_CREDENTIAL,
+        SUPABASE_URL: 'https://supabase.invalid',
+        SUPABASE_SECRET_KEY: SUPABASE_KEY,
+        REDIS_URL: 'redis://127.0.0.1:6399',
+        WEB_PUBLIC_ORIGIN: 'https://web.invalid',
       },
       (child) => child.kill('SIGTERM'),
     );
@@ -75,7 +83,7 @@ describe('graceful shutdown', () => {
     const configLine = result.stdout.split('\n').find((line) => line.includes('"config_loaded"'));
     expect(configLine).toBeDefined();
     const event = JSON.parse(configLine ?? '{}') as Record<string, unknown>;
-    expect(event).toMatchObject({ event: 'config_loaded', component: 'api', variablesValidated: 10 });
+    expect(event).toMatchObject({ event: 'config_loaded', component: 'api', variablesValidated: 17 });
     for (const forbidden of ['38123', '127.0.0.1', 'production', 'API_PORT', 'API_HOST', 'NODE_ENV']) {
       expect(configLine).not.toContain(forbidden);
     }
@@ -85,6 +93,7 @@ describe('graceful shutdown', () => {
     expect(result.stdout + result.stderr).not.toContain(PEPPER);
     expect(result.stdout + result.stderr).not.toContain(WAABEK_KEY);
     expect(result.stdout + result.stderr).not.toContain(BFF_CREDENTIAL);
+    expect(result.stdout + result.stderr).not.toContain(SUPABASE_KEY);
     for (const line of result.stdout.trim().split('\n')) {
       expect(() => JSON.parse(line)).not.toThrow();
     }
@@ -97,10 +106,17 @@ describe('graceful shutdown', () => {
       API_HOST: '127.0.0.1',
       API_PORT: secret,
       APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
+  DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+  ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
   OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
+  PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
   WAABEK_BASE_URL: 'https://waabek.invalid',
   WAABEK_API_KEY: 'test-waabek-key-not-a-real-secret',
       INTERNAL_BFF_CREDENTIAL: 'test-current-credential-value-not-a-real-se',
+      SUPABASE_URL: 'https://supabase.invalid',
+      SUPABASE_SECRET_KEY: 'test-supabase-secret-not-a-real-key',
+      REDIS_URL: 'redis://127.0.0.1:6399',
+      WEB_PUBLIC_ORIGIN: 'https://web.invalid',
     });
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('Invalid or missing environment variables: API_PORT');

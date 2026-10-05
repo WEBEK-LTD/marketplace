@@ -4,7 +4,14 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ENV_INVENTORY, variablesFor } from '../packages/server-config/dist/index.js';
 import { REPO_ROOT } from './toolchain/deno.mjs';
-import { envBoundaryViolations, envExampleProblems, forbiddenEnvFiles, sourceFiles, withGeneratedDocs } from './toolchain/env-tooling.mjs';
+import {
+  envBoundaryViolations,
+  envExampleProblems,
+  forbiddenEnvFiles,
+  sourceFiles,
+  withGeneratedDocs,
+  withGeneratedManifest,
+} from './toolchain/env-tooling.mjs';
 
 const problems = [];
 
@@ -20,12 +27,17 @@ for (const file of forbiddenEnvFiles(REPO_ROOT)) problems.push(`${file}: environ
 
 const readmePath = join(REPO_ROOT, 'README.md');
 const readme = readFileSync(readmePath, 'utf8');
-const generated = withGeneratedDocs(readme, ENV_INVENTORY);
+// Both generated blocks: the inventory table and the per-surface deployment manifest. The manifest is
+// generated from the same inventory because a manifest that has drifted from what the code reads is worse
+// than none at all — somebody provisions a site from it.
+const generated = withGeneratedManifest(withGeneratedDocs(readme, ENV_INVENTORY), ENV_INVENTORY);
 if (process.argv.includes('--write-docs')) {
   writeFileSync(readmePath, generated);
-  console.log('README inventory table regenerated.');
+  console.log('README inventory table and deployment manifest regenerated.');
 } else if (generated !== readme) {
-  problems.push('README.md inventory table is out of date (run `pnpm run check:env -- --write-docs`)');
+  problems.push(
+    'README.md inventory table or deployment manifest is out of date (run `pnpm run check:env -- --write-docs`)',
+  );
 }
 
 if (problems.length > 0) {

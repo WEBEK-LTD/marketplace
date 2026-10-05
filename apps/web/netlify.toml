@@ -1,10 +1,28 @@
 # Build configuration only; no Netlify site is created in Phase 1.
-# Repository-root-relative build model (Phase 1 Step 9): Netlify resolves paths against the git
-# repository root, so `publish` is repo-root-relative and the command is package-scoped. TOOL-1 runs
+#
+# Repository-root-relative build model (Phase 1 Step 9): Netlify resolves paths against the git repository
+# root, so `publish` is repo-root-relative and the command is package-scoped. TOOL-1 runs
 # `netlify build --offline --filter @repo/web` from the repository root and verifies both.
+#
+# **The `...` suffix is required, not stylistic.** Every workspace package exports only `dist/`, `dist/` is
+# gitignored, and no package has a `postinstall` or `prepare` script — so a fresh Netlify checkout has no
+# `dist/` anywhere. `--filter @repo/web` alone does not build dependencies, and `next.config.ts` imports
+# `@repo/config` before Next.js does anything else, so the build dies loading its own config:
+#
+#     Error: Cannot find module '.../apps/web/node_modules/@repo/config/dist/index.js'
+#
+# CI never saw this because it builds the dependency graph itself before invoking Netlify
+# (`turbo run build --filter="@repo/web..."`), so TOOL-1 always inherited a tree where every `dist/` existed.
+# Netlify does no such pre-step. `--filter "@repo/web..."` builds this app and exactly its own dependencies;
+# the root workspace build stays prohibited, which `scripts/toolchain/tool1-guards.mjs` still enforces.
 [build]
-  command = "pnpm --filter @repo/web run build"
+  command = "pnpm --filter \"@repo/web...\" run build"
   publish = "apps/web/.next"
+
+# A backstop to .nvmrc: `engines` pins Node exactly and pnpm-workspace.yaml sets `engineStrict: true`, so a
+# builder on any other version is a failed install rather than a warning.
+[build.environment]
+  NODE_VERSION = "24.21.0"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

@@ -34,6 +34,20 @@ export interface AppPrivateAppendOnlyContract {
   "reason": string;
 }
 
+export interface AppPrivateAuditAttributionContract {
+  "function_schema": string;
+  "function_name": string;
+  "role": string;
+  "actor_parameter": string | null;
+  "reason": string;
+}
+
+export interface AppPrivateConversationDedupe {
+  "dedupe_key": string;
+  "conversation_id": string;
+  "created_at": Generated<Timestamp>;
+}
+
 export interface AppPrivateCurrencyDependencies {
   "dependency_key": string;
   "table_schema": string;
@@ -834,6 +848,17 @@ export interface PublicLedgerJournals {
   "created_at": Generated<Timestamp>;
 }
 
+export interface PublicListingAnalytics {
+  "listing_id": string;
+  "seller_user_id": string;
+  "day": Timestamp;
+  "clicks": Generated<string>;
+  "contacts": Generated<string>;
+  "favorites": Generated<string>;
+  "shares": Generated<string>;
+  "computed_at": Generated<Timestamp>;
+}
+
 export interface PublicListingAttributeValues {
   "listing_id": string;
   "attribute_definition_id": string;
@@ -843,6 +868,11 @@ export interface PublicListingAttributeValues {
   "option_ids": Generated<string[]>;
   "created_at": Generated<Timestamp>;
   "updated_at": Generated<Timestamp>;
+}
+
+export interface PublicListingEventIds {
+  "event_id": string;
+  "first_seen_at": Generated<Timestamp>;
 }
 
 export interface PublicListingEvents {
@@ -1609,6 +1639,11 @@ export interface PublicPromotionAnalytics {
   "computed_at": Generated<Timestamp>;
 }
 
+export interface PublicPromotionEventIds {
+  "event_id": string;
+  "first_seen_at": Generated<Timestamp>;
+}
+
 export interface PublicPromotionEvents {
   "id": Generated<string>;
   "event_id": string;
@@ -2066,7 +2101,7 @@ export interface PublicServiceRequests {
   "currency_code": string;
   "listing_id": string | null;
   "buyer_user_id": string;
-  "seller_user_id": string;
+  "seller_user_id": string | null;
   "title": string;
   "brief": string;
   "budget_minor": string | null;
@@ -2075,6 +2110,9 @@ export interface PublicServiceRequests {
   "closed_at": Timestamp | null;
   "created_at": Generated<Timestamp>;
   "updated_at": Generated<Timestamp>;
+  "routing_mode": Generated<string>;
+  "preferred_payment_method": string | null;
+  "payment_notes": string | null;
 }
 
 export interface PublicShippingProfiles {
@@ -2338,6 +2376,8 @@ export interface PublicWithdrawals {
 export interface Database {
   "app_private.account_lockouts": AppPrivateAccountLockouts;
   "app_private.append_only_contract": AppPrivateAppendOnlyContract;
+  "app_private.audit_attribution_contract": AppPrivateAuditAttributionContract;
+  "app_private.conversation_dedupe": AppPrivateConversationDedupe;
   "app_private.currency_dependencies": AppPrivateCurrencyDependencies;
   "app_private.login_attempts": AppPrivateLoginAttempts;
   "app_private.otp_challenges": AppPrivateOtpChallenges;
@@ -2397,7 +2437,9 @@ export interface Database {
   "public.ledger_accounts": PublicLedgerAccounts;
   "public.ledger_entries": PublicLedgerEntries;
   "public.ledger_journals": PublicLedgerJournals;
+  "public.listing_analytics": PublicListingAnalytics;
   "public.listing_attribute_values": PublicListingAttributeValues;
+  "public.listing_event_ids": PublicListingEventIds;
   "public.listing_events": PublicListingEvents;
   "public.listing_media": PublicListingMedia;
   "public.listing_moderation_actions": PublicListingModerationActions;
@@ -2448,6 +2490,7 @@ export interface Database {
   "public.permissions": PublicPermissions;
   "public.profiles": PublicProfiles;
   "public.promotion_analytics": PublicPromotionAnalytics;
+  "public.promotion_event_ids": PublicPromotionEventIds;
   "public.promotion_events": PublicPromotionEvents;
   "public.promotion_package_categories": PublicPromotionPackageCategories;
   "public.promotion_package_placements": PublicPromotionPackagePlacements;

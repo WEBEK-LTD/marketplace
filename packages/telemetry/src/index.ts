@@ -1,3 +1,10 @@
+export {
+  activeLogIdentityFields,
+  currentLogIdentity,
+  runInLogIdentityScope,
+  setLogIdentity,
+  type LogIdentityScope,
+} from './log-identity.js';
 export { ALLOWED_SPAN_ATTRIBUTES, pathOnly, sanitizeAttributes, sanitizeSpan, sanitizeSpanName } from './sanitize.js';
 export {
   activeTraceFields,

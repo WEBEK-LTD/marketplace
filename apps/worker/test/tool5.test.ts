@@ -33,7 +33,9 @@ describe('TOOL-5: enqueue and process', () => {
     const producer = createProducer('tool5-basic', inspector(server.url));
     const jobId = await producer.enqueue('probe', { orderId: ID_A });
     await waitUntil(() => seen.length === 1);
-    expect(seen[0]).toEqual({ id: jobId, name: 'probe', data: { orderId: ID_A } });
+    // `scheduledFor` is part of the job a definition sees (Phase 8-A): null for an enqueued job,
+    // and the scheduler's occurrence for one a repeatable schedule produced.
+    expect(seen[0]).toEqual({ id: jobId, name: 'probe', data: { orderId: ID_A }, scheduledFor: null });
 
     const redis = inspector(server.url);
     const keys = await redis.keys('*');

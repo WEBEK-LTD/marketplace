@@ -59,7 +59,8 @@ export const DECISIONS_PATH = join(REPO_ROOT, 'policy/b10-hosted-decisions.json'
 const CREDENTIAL_VARIABLE = 'B10_HOSTED_DATABASE_URL';
 const PGTAP_IMAGE = 'public.ecr.aws/supabase/pg_prove:3.36';
 
-/** The guard functions migration 0031 installs. All ten must report zero problems. */
+/** The guard functions of the security contract: ten from 0031 and the attribution guard from 0084.
+ * All eleven must report zero problems. */
 export const GUARD_FUNCTIONS = Object.freeze([
   'security_contract_problems',
   'rls_problems',
@@ -71,6 +72,7 @@ export const GUARD_FUNCTIONS = Object.freeze([
   'append_only_problems',
   'cron_job_problems',
   'storage_bucket_problems',
+  'audit_attribution_problems',
 ]);
 
 export function target(path = DECISIONS_PATH) {
@@ -198,6 +200,12 @@ function verifyDatabase(env) {
     problems: Number(scalar(`select count(*) from public.${name}()`, env)),
   }));
   const contract = Number(scalar(`select count(*) from app_private.assert_security_contract()`, env));
+  // 0105's twelfth checker. It lives in `app_private` rather than `public` because it reads `prosrc` of every
+  // definer function, which is not something a public reader should be able to ask for, so it is counted here
+  // beside the security contract rather than in GUARD_FUNCTIONS above.
+  const whitespaceProblems = Number(
+    scalar(`select count(*) from app_private.whitespace_contract_problems()`, env),
+  );
   const definerWithoutSearchPath = Number(
     scalar(
       `select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -230,6 +238,7 @@ function verifyDatabase(env) {
     guards,
     guardsClean: guards.every((guard) => guard.problems === 0),
     securityContractProblems: contract,
+    whitespaceContractProblems: whitespaceProblems,
     definerWithoutSearchPath,
     publicExecute,
     tablesWithoutRls,
@@ -238,6 +247,7 @@ function verifyDatabase(env) {
       schemas.length === 2 &&
       guards.every((guard) => guard.problems === 0) &&
       contract === 0 &&
+      whitespaceProblems === 0 &&
       definerWithoutSearchPath === 0 &&
       publicExecute === 0 &&
       tablesWithoutRls === 0,

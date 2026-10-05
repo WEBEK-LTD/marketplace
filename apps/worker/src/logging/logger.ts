@@ -1,4 +1,4 @@
-import { activeTraceFields } from '@repo/telemetry';
+import { activeLogIdentityFields, activeTraceFields } from '@repo/telemetry';
 import { destination as pinoDestination, pino, type DestinationStream, type Logger } from 'pino';
 import type { LogLevel } from '../config/env.js';
 
@@ -12,11 +12,12 @@ export function createLogger(level: LogLevel, destination?: DestinationStream): 
     level,
     base: { service: 'worker' },
     redact: { paths: [...REDACTED_PATHS], censor: '[REDACTED]' },
-    // Log correlation (O8-12): trace and span IDs of the active span, and a module name
+    // Log correlation (O8-12): trace and span IDs of the active span, the pseudonymous user ID of the
+    // job (C-13; absent when a job has no user, never a placeholder), and a module name
     // ("runtime" unless the line or logger already names one).
     mixin(mergeObject: object, _level: number, logger: Logger) {
       const named = 'module' in mergeObject || 'module' in logger.bindings();
-      return { ...(named ? {} : { module: 'runtime' }), ...activeTraceFields() };
+      return { ...(named ? {} : { module: 'runtime' }), ...activeTraceFields(), ...activeLogIdentityFields() };
     },
   };
   // Synchronous stdout so that no log line is lost or reordered when the process exits.

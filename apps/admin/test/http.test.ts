@@ -47,12 +47,15 @@ describe('admin security headers', () => {
 });
 
 describe('admin pages', () => {
-  it('renders the neutral admin home in English (no profiles yet)', async () => {
+  it('renders the console home in English, signed out (Phase 7-F)', async () => {
+    // 7-F made the home a gated console. A visitor with no staff session gets the signed-out state,
+    // in English, in the same document frame — and none of the console itself.
     const html = await (await get('/')).text();
     expect(html).toContain('<html lang="en" dir="ltr">');
-    expect(html).toContain('>Admin</h1>');
+    expect(html).toContain('>You are signed out</h1>');
     expect(html).toContain('<meta name="robots" content="noindex, nofollow"/>');
     expect(html).toContain(`© ${new Date().getFullYear()} Marketplace`);
+    expect(html).not.toContain('Console sections');
   });
 
   it('has no /ar prefix and ignores Accept-Language', async () => {

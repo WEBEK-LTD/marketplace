@@ -10,7 +10,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(83);
+select plan(86);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Locales — English primary, Arabic secondary (D6)
@@ -107,7 +107,7 @@ select is((select count(*) from public.roles where btrim(name_ar) = '' or name_a
 -- ---------------------------------------------------------------------------------------------------
 -- Permissions — compared with what the schema actually enforces, not with the migration
 -- ---------------------------------------------------------------------------------------------------
-select is((select count(*) from public.permissions), 82::bigint, 'eighty-two permissions are seeded');
+select is((select count(*) from public.permissions), 85::bigint, 'eighty-five permissions are seeded');
 select is(
   (select coalesce(string_agg(distinct e.k, ', ' order by e.k), '')
      from (select (regexp_matches(pg_get_expr(p.polqual, p.polrelid) || ' ' ||
@@ -118,6 +118,12 @@ select is(
   '',
   'every permission key a live policy enforces exists as a row'
 );
+-- And nothing is seeded that nothing enforces. **Two mechanisms count, not one.** A row-level key is
+-- enforced by a policy; a *field-level* key cannot be, because a row policy cannot express a column — so
+-- `service_requests.payment_info.read` (D7-09) is enforced by a named `app_private` SECURITY DEFINER
+-- function that names it as a literal, which is where the two columns it governs are selected. Widened
+-- here rather than satisfied by a broad row policy, which would have granted more than the key means. A
+-- key enforced by neither mechanism still fails this assertion, which is the property that matters.
 select is(
   (select coalesce(string_agg(pm.key, ', ' order by pm.key), '')
      from public.permissions pm
@@ -126,12 +132,29 @@ select is(
                                             coalesce(pg_get_expr(p.polwithcheck, p.polrelid), ''),
                                             'has_permission\(''([a-z_.]+)''::text\)', 'g'))[1] as k
                        from pg_policy p) e
-       where e.k = pm.key)),
+       where e.k = pm.key)
+      and not exists (
+        select 1 from pg_proc pr
+          join pg_namespace n on n.oid = pr.pronamespace
+         where n.nspname = 'app_private'
+           and pr.prosecdef
+           and pr.prosrc like '%' || quote_literal(pm.key) || '%')),
   '',
-  'and no permission is seeded that nothing enforces: the two sets are equal'
+  'and no permission is seeded that nothing enforces: every key is applied by a policy or by a named definer function'
 );
-select is((select count(distinct module) from public.permissions), 19::bigint,
-  'the keys span the nineteen modules the schema guards');
+-- The field-level key is enforced the second way and deliberately not the first.
+select is(
+  (select count(*)::int from pg_policy p
+    where pg_get_expr(p.polqual, p.polrelid) || ' ' ||
+          coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '') like '%service_requests.payment_info.read%'),
+  0, 'no row policy grants payment-information access: it is a field-level key');
+select is(
+  (select count(*)::int from pg_proc pr join pg_namespace n on n.oid = pr.pronamespace
+    where n.nspname = 'app_private' and pr.prosecdef
+      and pr.prosrc like '%''service_requests.payment_info.read''%'),
+  1, 'exactly one definer function names it, and that is where the two columns are read');
+select is((select count(distinct module) from public.permissions), 20::bigint,
+  'the keys span the twenty modules the schema guards');
 select is(
   (select count(*) from public.permissions where module <> split_part(key, '.', 1)),
   0::bigint,
@@ -217,8 +240,8 @@ select ok(
      from public.roles where key in ('moderator', 'support_agent')),
   'both roles still require TOTP and open the admin console'
 );
-select is((select count(*) from public.role_permissions), 178::bigint,
-  'the mapping is 82 + 82 + 9 + 5, and nothing else');
+select is((select count(*) from public.role_permissions), 184::bigint,
+  'the mapping is 85 + 85 + 9 + 5, and nothing else');
 select is(
   (select count(*) from public.role_permissions rp
     where not exists (select 1 from public.roles r where r.key = rp.role_key)
@@ -230,8 +253,13 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- Site settings
 -- ---------------------------------------------------------------------------------------------------
-select is((select count(*) from public.site_settings), 9::bigint,
-  'nine settings exist: the six seeded here and the three earlier migrations own');
+-- Ten as of 7-H: the six seeded here, the three earlier migrations own, and `finance.payment_due_hours`,
+-- which 0070 seeds because D25's default value was pending until 7-H supplied it.
+select is((select count(*) from public.site_settings), 10::bigint,
+  'ten settings exist: the six seeded here, the three earlier migrations own, and 0070''s payment window');
+select is(
+  (select value #>> '{}' from public.site_settings where key = 'finance.payment_due_hours'),
+  '48', 'and the payment window is the approved 48 hours, seeded by 0070 rather than by this migration');
 select is(
   (select string_agg(format('%s=%s', key, value #>> '{}'), ' ' order by key)
      from public.site_settings
