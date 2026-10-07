@@ -16,7 +16,12 @@ import {
   encodeInboxCursor,
   encodeMessagesCursor,
 } from '../src/messaging/messaging-cursor.js';
-import { MESSAGING_STORE, type InboxRow, type MessageRow } from '../src/messaging/messaging.service.js';
+import {
+  MESSAGING_STORE,
+  type InboxRow,
+  type MessageAttachmentRow,
+  type MessageRow,
+} from '../src/messaging/messaging.service.js';
 import { CURRENT_USER_STORE } from '../src/users/current-user.service.js';
 import { INTERNAL_CREDENTIAL_HEADER } from '../src/v1/internal-credential.guard.js';
 import { TEST_ENV, TEST_INTERNAL_CREDENTIAL } from './support/app.js';
@@ -49,6 +54,7 @@ const AT = new Date('2026-09-24T18:30:00.000Z');
 interface Recorded {
   readonly inboxCalls: Array<{ userId: string; limit: number; cursorLastMessageAt: Date | null; cursorId: string | null }>;
   readonly messageCalls: Array<{ userId: string; conversationId: string; limit: number; cursorSeq: string | null }>;
+  readonly attachmentCalls: Array<{ userId: string; conversationId: string; messageIds: readonly string[] }>;
   readonly unreadCalls: string[];
   readonly tokensSeen: string[];
 }
@@ -56,6 +62,7 @@ interface Recorded {
 interface Doubles {
   readonly inboxRows?: readonly InboxRow[];
   readonly messageRows?: readonly MessageRow[];
+  readonly attachmentRows?: readonly MessageAttachmentRow[];
   readonly unread?: string;
   readonly storeThrows?: boolean;
   readonly unauthenticated?: boolean;
@@ -105,7 +112,13 @@ function messageRow(seq: number, overrides: Partial<MessageRow> = {}): MessageRo
 let app: NestFastifyApplication | undefined;
 
 async function start(doubles: Doubles = {}): Promise<Recorded> {
-  const recorded: Recorded = { inboxCalls: [], messageCalls: [], unreadCalls: [], tokensSeen: [] };
+  const recorded: Recorded = {
+    inboxCalls: [],
+    messageCalls: [],
+    attachmentCalls: [],
+    unreadCalls: [],
+    tokensSeen: [],
+  };
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(TEST_ENV)] })
     .overrideProvider(SUPABASE_AUTH_CLIENT)
@@ -145,6 +158,17 @@ async function start(doubles: Doubles = {}): Promise<Recorded> {
         recorded.messageCalls.push(input);
         if (doubles.storeThrows === true) throw new Error('database unavailable');
         return doubles.messageRows ?? [messageRow(1), messageRow(2)];
+      },
+      // 0104. A sibling reader rather than a change to the one above, so this stub answers it separately and
+      // the existing reader's assertions below are unaffected by its presence.
+      messagingMessageAttachments: async (input: {
+        userId: string;
+        conversationId: string;
+        messageIds: readonly string[];
+      }) => {
+        recorded.attachmentCalls.push(input);
+        if (doubles.storeThrows === true) throw new Error('database unavailable');
+        return doubles.attachmentRows ?? [];
       },
       messagingUnreadCount: async (userId: string) => {
         recorded.unreadCalls.push(userId);
@@ -432,12 +456,20 @@ describe('GET /v1/messaging/conversations/:id/messages', () => {
     expect(ConversationMessagesResponseSchema.safeParse(result.body).success).toBe(true);
   });
 
-  it('projects exactly the approved fields, and no attachment among them', async () => {
+  /**
+   * Extended by 0104, which added the one field this assertion used to forbid.
+   *
+   * The rule it exists for has not changed: the projection is **exactly** the approved fields and nothing more.
+   * `attachments` joined the list because it is now approved; what must still be absent is anything that would
+   * describe where a file is stored, which is asserted directly below rather than inferred from the word.
+   */
+  it('projects exactly the approved fields', async () => {
     await start();
     const result = await get(`/v1/messaging/conversations/${CONVERSATION}/messages`);
     const item = (result.body['items'] as Array<Record<string, unknown>>)[0]!;
 
     expect(Object.keys(item).sort()).toEqual([
+      'attachments',
       'body',
       'conversationId',
       'createdAt',
@@ -451,7 +483,30 @@ describe('GET /v1/messaging/conversations/:id/messages', () => {
       'senderUserId',
       'seq',
     ]);
-    expect(result.raw.toLowerCase()).not.toContain('attachment');
+    expect(item['attachments']).toEqual([]);
+  });
+
+  it('never describes where a file is stored', async () => {
+    await start({
+      attachmentRows: [
+        {
+          id: 'b2000000-0000-4000-8000-000000000001',
+          messageId: messageRow(1).id,
+          contentType: 'image/png',
+          byteSize: '1000',
+          createdAt: AT,
+        },
+      ],
+    });
+    const result = await get(`/v1/messaging/conversations/${CONVERSATION}/messages`);
+
+    for (const absent of ['objectPath', 'message-attachments', 'bucket', 'storage/v1', 'originalFilename']) {
+      expect(result.raw, absent).not.toContain(absent);
+    }
+    const item = (result.body['items'] as Array<Record<string, unknown>>)[0]!;
+    expect(item['attachments']).toEqual([
+      { id: 'b2000000-0000-4000-8000-000000000001', contentType: 'image/png', byteSize: '1000' },
+    ]);
   });
 
   it('returns the page in chronological order', async () => {
@@ -746,11 +801,32 @@ describe('a drifting response is a failure, not a silent pass', () => {
           createdAt: AT.toISOString(),
           editedAt: null,
           deletedAt: null,
+          // 0104. Reversed from what this test asserted before: an attachments field is now part of the
+          // contract, so its presence is correct. What drifts a response is an attachment that describes
+          // where the file is stored, which is what the second case below pins.
           attachments: [],
         },
       ],
       nextCursor: null,
     };
-    expect(ConversationMessagesResponseSchema.safeParse(drifted).success).toBe(false);
+    expect(ConversationMessagesResponseSchema.safeParse(drifted).success).toBe(true);
+
+    const withPath = {
+      items: [
+        {
+          ...drifted.items[0],
+          attachments: [
+            {
+              id: 'b2000000-0000-4000-8000-000000000001',
+              contentType: 'image/png',
+              byteSize: '1000',
+              objectPath: 'message-attachments/a/b/c.png',
+            },
+          ],
+        },
+      ],
+      nextCursor: null,
+    };
+    expect(ConversationMessagesResponseSchema.safeParse(withPath).success).toBe(false);
   });
 });

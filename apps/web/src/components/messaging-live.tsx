@@ -1,5 +1,6 @@
 'use client';
 
+import type { MessageAttachment } from '@repo/contracts';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
@@ -10,6 +11,11 @@ import {
   type PollCycle,
 } from './message-polling';
 import { fetchInboxPage, fetchLatestMessages, fetchUnreadCount } from './messaging-read';
+import {
+  AttachToMessage,
+  AttachmentDownload,
+  type AttachmentCopy,
+} from './messaging-attachments';
 import { ReportAction, type ReportCopy } from './messaging-report';
 import { useMessagePolling } from './use-message-polling';
 import {
@@ -190,6 +196,13 @@ export interface LiveThreadProps {
    * exactly as it did before 5-H.
    */
   readonly reportCopy?: ReportCopy;
+  /**
+   * The attachment copy (0104), as plain strings for the same reason the report copy is.
+   *
+   * Omit it and the thread renders exactly as it did before 0104: files still appear, because they are part of
+   * a message, but with no download button and no attach button.
+   */
+  readonly attachmentCopy?: AttachmentCopy;
 }
 
 export function LiveThread({
@@ -200,6 +213,7 @@ export function LiveThread({
   olderHref,
   labels,
   reportCopy,
+  attachmentCopy,
 }: LiveThreadProps) {
   const [messages, setMessages] = useState<readonly RenderableMessage[]>(initialMessages);
 
@@ -222,11 +236,38 @@ export function LiveThread({
       isClosed={isClosed}
       olderHref={olderHref}
       labels={labels}
-      {...(reportCopy === undefined
+      {...(reportCopy === undefined && attachmentCopy === undefined
         ? {}
         : {
             actionFor: (message: RenderableMessage) => (
-              <ReportAction subject={{ kind: 'message', messageId: message.id }} copy={reportCopy} />
+              <span className="mt-2 flex flex-wrap items-center gap-3">
+                {reportCopy === undefined ? null : (
+                  <ReportAction subject={{ kind: 'message', messageId: message.id }} copy={reportCopy} />
+                )}
+                {/*
+                  0104. Offered on the caller's own messages only, which is the database's rule restated where
+                  a person can see it rather than discovered by pressing a button that always refuses. A closed
+                  or left thread shows none, because neither takes anything new.
+                */}
+                {attachmentCopy !== undefined && message.isOwnMessage && !isClosed ? (
+                  <AttachToMessage
+                    conversationId={conversationId}
+                    messageId={message.id}
+                    copy={attachmentCopy}
+                  />
+                ) : null}
+              </span>
+            ),
+          })}
+      {...(attachmentCopy === undefined
+        ? {}
+        : {
+            attachmentActionFor: (attachment: MessageAttachment) => (
+              <AttachmentDownload
+                conversationId={conversationId}
+                attachmentId={attachment.id}
+                copy={attachmentCopy}
+              />
             ),
           })}
     />

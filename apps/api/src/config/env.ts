@@ -1,5 +1,6 @@
 import {
   configLoadedEvent,
+  MIN_ANALYTICS_SESSION_KEY_LENGTH,
   MIN_DEVICE_KEY_LENGTH,
   MIN_PSEUDONYMOUS_KEY_LENGTH,
   readEnv,
@@ -26,6 +27,15 @@ export interface ApiEnv {
    * never produce the same value for the same input. Never logged; never sent to a browser.
    */
   readonly deviceIdentityKey: string;
+  /**
+   * Server-only HMAC key for the analytics session digest in `listing_events.session_hash` (0101, owner
+   * decision 4).
+   *
+   * Its own key and its own domain label, distinct from both the device key and the pseudonymous-ID key, so
+   * an analytics digest can never be correlated with a device row or a log line. Never logged; never sent to
+   * a browser.
+   */
+  readonly analyticsSessionKey: string;
   /** Server-only HMAC pepper for OTP digests (C-9). Never logged; never sent to a browser. */
   readonly otpPepper: string;
   /**
@@ -78,6 +88,8 @@ export const API_ENV_FIELDS = Object.freeze({
   // code that is trivially exhaustible.
   // C-15. Length only, like the other opaque keys: the floor catches a misconfigured deployment.
   DEVICE_IDENTITY_KEY: z.string().min(MIN_DEVICE_KEY_LENGTH),
+  // 0101 owner decision 4. Same treatment as the two keys above, and deliberately not either of them.
+  ANALYTICS_SESSION_KEY: z.string().min(MIN_ANALYTICS_SESSION_KEY_LENGTH),
   OTP_PEPPER: z.string().min(32),
   // C-13. Only length is checked: the value is opaque, and its job is to be unguessable. The floor
   // exists to catch a misconfigured deployment, not to certify entropy.
@@ -111,6 +123,7 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>> = p
     logLevel: values.LOG_LEVEL,
     appSystemDatabaseUrl: values.APP_SYSTEM_DATABASE_URL,
     appSystemDatabaseMaxConnections: values.APP_SYSTEM_DATABASE_MAX_CONNECTIONS,
+    analyticsSessionKey: values.ANALYTICS_SESSION_KEY,
     deviceIdentityKey: values.DEVICE_IDENTITY_KEY,
     otpPepper: values.OTP_PEPPER,
     pseudonymousUserIdKey: values.PSEUDONYMOUS_USER_ID_KEY,

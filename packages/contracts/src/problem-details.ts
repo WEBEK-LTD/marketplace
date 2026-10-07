@@ -48,6 +48,22 @@ export const PROBLEM_CODES = [
   'MESSAGING_BLOCKED',
   'MESSAGING_SELLER_NOT_CONTACTABLE',
   'MESSAGING_REPORT_TARGET_NOT_FOUND',
+  // 0104 conversation attachments. Two codes, and deliberately only two, because only two refusals are things
+  // a caller can act on; everything else is a plain NOT_FOUND or VALIDATION_FAILED.
+  //
+  // `MESSAGE_ATTACHMENT_LIMIT_REACHED` — the message already holds the five it may. Its own code because the
+  // remedy is specific and not obvious: send another message and attach to that one. A bare refusal would
+  // leave somebody retrying the same upload.
+  //
+  // `MESSAGE_ATTACHMENT_OBJECT_MISSING` — a confirmation arrived for a file the storage provider does not
+  // have, exactly as `SUPPORT_ATTACHMENT_OBJECT_MISSING` reports for a ticket. Its own code because the remedy
+  // is to upload the bytes again rather than to stop, and because recording a row that points at nothing would
+  // leave a thread showing a file nobody can open.
+  //
+  // A **blocked pair** reuses `MESSAGING_BLOCKED` above rather than adding a third: it is the same refusal for
+  // the same reason, and a second name for it would be two things to keep in step.
+  'MESSAGE_ATTACHMENT_LIMIT_REACHED',
+  'MESSAGE_ATTACHMENT_OBJECT_MISSING',
   // Phase 6-C seller onboarding. Two conflicts a form can act on, and they are deliberately distinct: the
   // caller already has a storefront, or the public address they chose belongs to somebody else. The second
   // says only that the address is unavailable — never who holds it, or what state their storefront is in.
@@ -349,6 +365,39 @@ export const PROBLEM_CODES = [
   'SELLER_STATUS_REASON_REQUIRED',
   'SELLER_STATUS_NOT_VERIFIED',
   'SELLER_STATUS_ALREADY_VERIFIED',
+  // 0100, staff role assignment. The most privilege-sensitive writer the platform has, so each refusal says
+  // which boundary stopped it — and an absence, a role nobody holds and a caller without `users.role.manage`
+  // are all one NOT_FOUND, as everywhere else in this console.
+  //
+  // `STAFF_ROLE_IS_SELF` — the caller is the target. Refused for granting and revoking alike, so nobody
+  // promotes or demotes themselves. Discloses nothing: the caller already knows who they are.
+  //
+  // `STAFF_ROLE_ABOVE_CEILING` — the role's `sort_order` is above the caller's own highest effective role, or
+  // the caller effectively holds none. The remedy is somebody more senior, never a retry.
+  //
+  // `STAFF_ROLE_NOT_GRANTABLE` — `super_admin`, which this console never grants whoever asks. It is a
+  // database-level operation by decision, in both directions.
+  //
+  // `STAFF_ROLE_NOT_REVOCABLE` — `super_admin` again, from the other side: the console that cannot create one
+  // does not destroy one either.
+  //
+  // `STAFF_ROLE_NOT_ASSIGNABLE` — `roles.is_assignable` is false for that role. It is reference data, not a
+  // state, so retrying never helps.
+  //
+  // `STAFF_ROLE_ALREADY_REVOKED` — the grant was already withdrawn. This is what a repeat looks like, and what
+  // the second of two colleagues acting at once receives, the writer having locked the row.
+  //
+  // `STAFF_ROLE_EXPIRY_INVALID` — an expiry that is not in the future, which 0003's own constraint refuses.
+  //
+  // `STAFF_ROLE_REASON_REQUIRED` — a blank reason. The contract refuses it first, so this is the floor.
+  'STAFF_ROLE_IS_SELF',
+  'STAFF_ROLE_ABOVE_CEILING',
+  'STAFF_ROLE_NOT_GRANTABLE',
+  'STAFF_ROLE_NOT_REVOCABLE',
+  'STAFF_ROLE_NOT_ASSIGNABLE',
+  'STAFF_ROLE_ALREADY_REVOKED',
+  'STAFF_ROLE_EXPIRY_INVALID',
+  'STAFF_ROLE_REASON_REQUIRED',
   // Phase 7-P, review moderation. A review a caller may not read, and one that does not exist, are one
   // NOT_FOUND, and there is no "forbidden" on this surface either.
   //
@@ -573,6 +622,10 @@ export const PROBLEM_CODES = [
   'CMS_MEDIA_NOT_ALLOWED',
   'CMS_MEDIA_OBJECT_MISSING',
   'CMS_MEDIA_PATH_TAKEN',
+  // 0102. One code for a malformed list position, an altered one, one of the wrong kind and one from a
+  // retired version: the remedy is the same in all four, and naming which check failed would help only
+  // somebody probing the format.
+  'LISTING_ANALYTICS_CURSOR_INVALID',
 ] as const;
 
 export const ProblemCodeSchema = z.enum(PROBLEM_CODES).openapi('ProblemCode');

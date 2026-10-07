@@ -3,10 +3,13 @@ import type {
   ConversationMembershipState,
   ConversationSubjectType,
   InboxItem,
+  MessageAttachment,
+  MessageAttachmentContentType,
   MessageItem,
   MessageReferenceType,
   MessageType,
 } from '@repo/contracts';
+import { MESSAGE_ATTACHMENT_CONTENT_TYPES } from '@repo/contracts';
 import {
   ConversationNotAccessibleError,
   InvalidMessagingCursorError,
@@ -18,6 +21,9 @@ import {
   encodeInboxCursor,
   encodeMessagesCursor,
 } from './messaging-cursor.js';
+
+/** The four types the contract names, as a set, so a drifted database value is dropped rather than passed on. */
+const ATTACHMENT_CONTENT_TYPES = new Set<MessageAttachmentContentType>(MESSAGE_ATTACHMENT_CONTENT_TYPES);
 
 /**
  * One row of `app_private.messaging_inbox`, as the driver returns it.
@@ -61,6 +67,19 @@ export interface MessageRow {
   readonly deletedAt: Date | null;
 }
 
+/**
+ * One attachment row, as `app_private.messaging_message_attachments` returns it (0104).
+ *
+ * `byteSize` is a string because it is a `bigint` in the database, the same reason `seq` is.
+ */
+export interface MessageAttachmentRow {
+  readonly id: string;
+  readonly messageId: string;
+  readonly contentType: string;
+  readonly byteSize: string;
+  readonly createdAt: Date;
+}
+
 export interface MessagingStore {
   /** `app_private.messaging_inbox(uuid, integer, timestamptz, uuid)`. */
   messagingInbox(input: {
@@ -77,6 +96,18 @@ export interface MessagingStore {
     limit: number;
     cursorSeq: string | null;
   }): Promise<readonly MessageRow[]>;
+
+  /**
+   * `app_private.messaging_message_attachments(uuid, uuid, uuid[])` (0104).
+   *
+   * A sibling of the message reader rather than a change to it, so the existing reader keeps its exact shape
+   * and 5-F's poll is served by the same pair of calls a page load makes.
+   */
+  messagingMessageAttachments(input: {
+    userId: string;
+    conversationId: string;
+    messageIds: readonly string[];
+  }): Promise<readonly MessageAttachmentRow[]>;
 
   /** `app_private.messaging_unread_count(uuid)`. */
   messagingUnreadCount(userId: string): Promise<string>;
@@ -156,6 +187,8 @@ export class MessagingService {
     try {
       rows = await this.store.messagingInbox({
         userId: input.userId,
+        // One more than asked for: the extra row is how "is there another page?" is answered without a
+        // count. The reader's ceiling is the public maximum plus one so this row survives the clamp (0106).
         limit: input.limit + 1,
         cursorLastMessageAt: position?.lastMessageAt ?? null,
         cursorId: position?.conversationId ?? null,
@@ -207,6 +240,8 @@ export class MessagingService {
       rows = await this.store.messagingConversationMessages({
         userId: input.userId,
         conversationId: input.conversationId,
+        // One more than asked for: the extra row is how "is there another page?" is answered without a
+        // count. The reader's ceiling is the public maximum plus one so this row survives the clamp (0106).
         limit: input.limit + 1,
         cursorSeq: position?.seq ?? null,
       });
@@ -221,10 +256,67 @@ export class MessagingService {
     // Rows arrive oldest-first, so the row beyond the page is the oldest of them.
     const page = hasMore ? rows.slice(rows.length - input.limit) : rows;
     const oldest = page.at(0);
+
+    // 0104. Keyed on this page's own ids, in one further call rather than a join, so the existing reader is
+    // untouched. An empty page asks nothing: there is no set of ids to ask about, and a round trip that could
+    // only answer "none" is a round trip worth not making. 5-F's poll reaches this same code.
+    const attachments =
+      page.length === 0
+        ? new Map<string, MessageAttachment[]>()
+        : this.groupAttachments(
+            await this.readAttachments({
+              userId: input.userId,
+              conversationId: input.conversationId,
+              messageIds: page.map((row) => row.id),
+            }),
+          );
+
     return {
-      items: page.map((row) => this.toMessageItem(row)),
+      items: page.map((row) => this.toMessageItem(row, attachments.get(row.id) ?? [])),
       nextCursor: hasMore && oldest !== undefined ? encodeMessagesCursor({ seq: oldest.seq }) : null,
     };
+  }
+
+  /**
+   * The attachments on a page, with an unreachable database treated exactly as the message read treats one.
+   *
+   * A thread whose attachments could not be read is **not** rendered as a thread with no attachments: that
+   * would quietly lose a file somebody sent, and a reader cannot tell the difference afterwards. So this fails
+   * the whole read, the same way the message query does.
+   */
+  private async readAttachments(input: {
+    userId: string;
+    conversationId: string;
+    messageIds: readonly string[];
+  }): Promise<readonly MessageAttachmentRow[]> {
+    try {
+      return await this.store.messagingMessageAttachments(input);
+    } catch (error) {
+      this.logger.error('The attachments of a conversation could not be read.');
+      throw new MessagingUnavailableError(error);
+    }
+  }
+
+  /** Rows to a lookup by message, with a vocabulary the contract does not know dropped rather than passed on. */
+  private groupAttachments(rows: readonly MessageAttachmentRow[]): Map<string, MessageAttachment[]> {
+    const grouped = new Map<string, MessageAttachment[]>();
+    for (const row of rows) {
+      if (!ATTACHMENT_CONTENT_TYPES.has(row.contentType as MessageAttachmentContentType)) {
+        // A type the contract cannot name is a disagreement between this service and the database, and a
+        // response carrying one would fail validation at the next boundary anyway. Dropping it keeps the rest
+        // of the thread readable, which is the better failure for a file nobody can render.
+        this.logger.warn('An attachment content type outside the contract was skipped.');
+        continue;
+      }
+      const list = grouped.get(row.messageId) ?? [];
+      list.push({
+        id: row.id,
+        contentType: row.contentType as MessageAttachmentContentType,
+        byteSize: row.byteSize,
+      });
+      grouped.set(row.messageId, list);
+    }
+    return grouped;
   }
 
   /** The caller's total unread count, straight from the reader. */
@@ -268,7 +360,7 @@ export class MessagingService {
     };
   }
 
-  private toMessageItem(row: MessageRow): MessageItem {
+  private toMessageItem(row: MessageRow, attachments: readonly MessageAttachment[]): MessageItem {
     return {
       id: row.id,
       seq: row.seq,
@@ -282,6 +374,7 @@ export class MessagingService {
       createdAt: row.createdAt.toISOString(),
       editedAt: iso(row.editedAt),
       deletedAt: iso(row.deletedAt),
+      attachments: [...attachments],
     };
   }
 }

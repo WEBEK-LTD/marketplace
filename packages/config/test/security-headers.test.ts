@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ADMIN_SURFACE_PREFIX,
   buildContentSecurityPolicy,
   cmsPageSlugs,
   indexableExactRoutes,
   createNonce,
+  isAdminSurfacePath,
+  referrerPolicyFor,
+  sharedSecurityHeaders,
   isCmsPageSlug,
   isPublicCatalogRoute,
   parsePublicCategoryPath,
@@ -561,5 +565,63 @@ describe('which surfaces carry the composed navigation (0094)', () => {
     for (const value of ['', 'listings', 'https://example.test/listings']) {
       expect(rendersSiteNavigation(value), value).toBe(false);
     }
+  });
+});
+
+/* ------------------------------------------------------------------------------- the two surfaces, one origin */
+
+describe('one origin, two surfaces (0108)', () => {
+  it('names the console prefix once, and matches whole segments only', () => {
+    expect(ADMIN_SURFACE_PREFIX).toBe('/admin');
+    for (const path of ['/admin', '/admin/', '/admin/login', '/admin/api/faqs']) {
+      expect(isAdminSurfacePath(path), path).toBe(true);
+    }
+    // `/administrator` is a public 404, not the console. The locale prefix does not reach it either: the console
+    // takes its language from the reader's profile, so `/ar/admin` is not an Arabic console.
+    for (const path of ['/administrator', '/adminish/x', '/ar/admin', '/ar/admin/users', '/', '/listings']) {
+      expect(isAdminSurfacePath(path), path).toBe(false);
+    }
+    for (const value of ['', 'admin', '//admin']) {
+      expect(isAdminSurfacePath(value), JSON.stringify(value)).toBe(false);
+    }
+  });
+
+  it('splits the header set so no response can carry two values of one key', () => {
+    // The shared four are declared once for the whole origin in `next.config.ts`; the two that differ between the
+    // surfaces are emitted from the proxy. A key appearing in both places is the bug this prevents.
+    const shared = sharedSecurityHeaders().map((entry) => entry.key);
+    expect(shared).toEqual([
+      'Strict-Transport-Security',
+      'X-Content-Type-Options',
+      'Permissions-Policy',
+      'Cross-Origin-Opener-Policy',
+    ]);
+    expect(shared).not.toContain('Referrer-Policy');
+    expect(shared).not.toContain('X-Robots-Tag');
+
+    // And the full per-surface contract is still exactly the shared set plus what differs, so the split did not
+    // quietly drop a header from either surface.
+    expect(staticSecurityHeaders('web').map((e) => e.key)).toEqual([...shared, 'Referrer-Policy']);
+    expect(staticSecurityHeaders('admin').map((e) => e.key)).toEqual([...shared, 'Referrer-Policy', 'X-Robots-Tag']);
+  });
+
+  it('keeps the approved referrer policy for each surface', () => {
+    expect(referrerPolicyFor('web')).toEqual({ key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' });
+    expect(referrerPolicyFor('admin')).toEqual({ key: 'Referrer-Policy', value: 'no-referrer' });
+  });
+
+  it('never lets the console be a public catalogue route or carry site navigation', () => {
+    for (const path of ['/admin', '/admin/login', '/admin/catalog', '/admin/api/faqs']) {
+      // No page metadata may decide indexing for the console: it is noindex permanently.
+      expect(isPublicCatalogRoute(path), path).toBe(false);
+      expect(robotsHeaderFor('admin', path), path).toBe('noindex');
+      expect(robotsHeaderFor('web', path), path).toBe('noindex');
+      // And the composed marketplace header and footer never reach it.
+      expect(rendersSiteNavigation(path), path).toBe(false);
+    }
+    // The public surfaces are unaffected: the home page and the catalogue still decide for themselves.
+    expect(isPublicCatalogRoute('/')).toBe(true);
+    expect(robotsHeaderFor('web', '/')).toBeNull();
+    expect(rendersSiteNavigation('/')).toBe(true);
   });
 });

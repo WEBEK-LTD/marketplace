@@ -2,6 +2,7 @@ import { Heading, PageContainer } from '@repo/ui';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { ListingClickBeacon } from '../../../components/listing-beacon';
 import { ListingGrid, ListingGridSkeleton, ListingMessage } from '../../../components/listing-views';
 import { ServiceGrid, ServiceGridSkeleton } from '../../../components/service-views';
 import { readListings, readServices } from '../../../server/bff';
@@ -85,14 +86,17 @@ async function ListingsSection({ locale }: { readonly locale: string }) {
 
   return (
     <>
-      <ListingGrid
-        listings={page.items}
-        hrefFor={(slug) => `${prefix(locale)}/listing/${encodeURIComponent(slug)}`}
-        labels={{
-          contactForPrice: tListings('contactForPrice'),
-          negotiable: tListings('negotiable'),
-        }}
-      />
+      {/* 0101: one listener for the whole grid. No source: see `ListingClickBeacon`. */}
+      <ListingClickBeacon>
+        <ListingGrid
+          listings={page.items}
+          hrefFor={(slug) => `${prefix(locale)}/listing/${encodeURIComponent(slug)}`}
+          labels={{
+            contactForPrice: tListings('contactForPrice'),
+            negotiable: tListings('negotiable'),
+          }}
+        />
+      </ListingClickBeacon>
       <ViewAll href={`${prefix(locale)}/listings`} label={t('viewAllListings')} />
     </>
   );

@@ -27,7 +27,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(111);
+select plan(112);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Fixtures
@@ -99,15 +99,25 @@ select is(
   16::bigint,
   'the sixteen buyer functions exist and there are no others'
 );
+-- Restated by 0103, which added three more `buyer_%` functions (`buyer_blocks`, `buyer_block_add`,
+-- `buyer_block_remove`). The rule this assertion exists for is not a count — it is that **nothing** on this
+-- prefix escapes the privilege model. Counting matching functions made the assertion fail whenever a later
+-- increment added a compliant one, which is the opposite of what it is for; counting the *non*-compliant ones
+-- states the same rule and cannot go stale.
 select is(
   (select count(*) from pg_proc p
      join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and p.proname like 'buyer\_%'
-      and p.prosecdef
-      and p.proconfig @> array['search_path=pg_catalog, public']),
-  15::bigint,
+      and not (p.prosecdef and p.proconfig @> array['search_path=pg_catalog, public'])),
+  0::bigint,
   'every one of them is SECURITY DEFINER with a pinned search path'
+);
+select ok(
+  (select count(*) from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'app_private' and p.proname like 'buyer\_%') >= 15,
+  'and the fifteen this increment added are still among them'
 );
 select ok(
   (select p.prosecdef and p.proconfig @> array['search_path=pg_catalog, public']

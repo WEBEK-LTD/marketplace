@@ -74,6 +74,8 @@ const MESSAGE_ITEM = {
   createdAt: '2026-09-24T18:00:00.000Z',
   editedAt: null,
   deletedAt: null,
+  // 0104. Required and usually empty, so a surface never has to tell "no files" from "field missing".
+  attachments: [],
 };
 
 describe('the inbox item', () => {
@@ -154,10 +156,34 @@ describe('the message item', () => {
     expect(MessageItemSchema.safeParse(system).success).toBe(true);
   });
 
-  it('has no attachment field, and refuses one', () => {
-    expect(Object.keys(MessageItemSchema.shape)).not.toContain('attachments');
-    expect(MessageItemSchema.safeParse({ ...MESSAGE_ITEM, attachments: [] }).success).toBe(false);
+  /**
+   * Reversed by 0104, which built the operations 5-D deferred.
+   *
+   * 5-D recorded that this contract deliberately could not describe an attachment, because describing one
+   * would have been the first half of building them. They are built, so the field exists — and the rules that
+   * survive are the ones that were never about the field's presence: it is **required**, so a response cannot
+   * omit it, and it describes a file without describing where the file is.
+   */
+  it('has an attachments field that is required, and carries no storage detail', () => {
+    expect(Object.keys(MessageItemSchema.shape)).toContain('attachments');
+
+    const { attachments: _omitted, ...without } = MESSAGE_ITEM;
+    expect(MessageItemSchema.safeParse(without).success).toBe(false);
+
     expect(MessageItemSchema.safeParse({ ...MESSAGE_ITEM, attachmentCount: 0 }).success).toBe(false);
+    expect(
+      MessageItemSchema.safeParse({
+        ...MESSAGE_ITEM,
+        attachments: [
+          {
+            id: 'b2000000-0000-4000-8000-000000000001',
+            contentType: 'image/png',
+            byteSize: '1000',
+            objectPath: 'message-attachments/a/b/c.png',
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it('refuses a message type or reference type outside the 0014 vocabularies', () => {
@@ -285,13 +311,17 @@ describe('the messaging problem codes', () => {
 describe('the documented messaging operations', () => {
   const doc = generateOpenApiDocument();
 
-  it('are exactly the three approved reads, the six approved writes and the one report', () => {
+  /** Extended once, by 0104's three attachment operations. The inventory is still exhaustive. */
+  it('are exactly the approved reads, writes, the one report and 0104’s three attachment operations', () => {
     const messaging = Object.keys(doc.paths ?? {}).filter((path) => path.startsWith('/v1/messaging'));
     expect(messaging.sort()).toEqual([
       '/v1/messaging/conversations',
+      '/v1/messaging/conversations/{conversationId}/attachments/{attachmentId}/link',
       '/v1/messaging/conversations/{conversationId}/closed',
       '/v1/messaging/conversations/{conversationId}/membership',
       '/v1/messaging/conversations/{conversationId}/messages',
+      '/v1/messaging/conversations/{conversationId}/messages/{messageId}/attachments',
+      '/v1/messaging/conversations/{conversationId}/messages/{messageId}/attachments/uploads',
       '/v1/messaging/conversations/{conversationId}/muted',
       '/v1/messaging/conversations/{conversationId}/read',
       '/v1/messaging/reports',
@@ -465,6 +495,9 @@ describe('the write responses', () => {
       createdAt: '2026-09-24T18:30:00.000Z',
       editedAt: null,
       deletedAt: null,
+      // 0104. Empty on a read-back: a message cannot be created with a file, so one that has just committed
+      // has none, and the field is required so the shape cannot omit it.
+      attachments: [],
     };
     expect(SendMessageResponseSchema.safeParse({ message }).success).toBe(true);
     expect(SendMessageResponseSchema.safeParse({ message, echo: true }).success).toBe(false);

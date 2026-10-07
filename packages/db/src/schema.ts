@@ -848,6 +848,17 @@ export interface PublicLedgerJournals {
   "created_at": Generated<Timestamp>;
 }
 
+export interface PublicListingAnalytics {
+  "listing_id": string;
+  "seller_user_id": string;
+  "day": Timestamp;
+  "clicks": Generated<string>;
+  "contacts": Generated<string>;
+  "favorites": Generated<string>;
+  "shares": Generated<string>;
+  "computed_at": Generated<Timestamp>;
+}
+
 export interface PublicListingAttributeValues {
   "listing_id": string;
   "attribute_definition_id": string;
@@ -857,6 +868,11 @@ export interface PublicListingAttributeValues {
   "option_ids": Generated<string[]>;
   "created_at": Generated<Timestamp>;
   "updated_at": Generated<Timestamp>;
+}
+
+export interface PublicListingEventIds {
+  "event_id": string;
+  "first_seen_at": Generated<Timestamp>;
 }
 
 export interface PublicListingEvents {
@@ -1621,6 +1637,11 @@ export interface PublicPromotionAnalytics {
   "views": Generated<string>;
   "clicks": Generated<string>;
   "computed_at": Generated<Timestamp>;
+}
+
+export interface PublicPromotionEventIds {
+  "event_id": string;
+  "first_seen_at": Generated<Timestamp>;
 }
 
 export interface PublicPromotionEvents {
@@ -2416,7 +2437,9 @@ export interface Database {
   "public.ledger_accounts": PublicLedgerAccounts;
   "public.ledger_entries": PublicLedgerEntries;
   "public.ledger_journals": PublicLedgerJournals;
+  "public.listing_analytics": PublicListingAnalytics;
   "public.listing_attribute_values": PublicListingAttributeValues;
+  "public.listing_event_ids": PublicListingEventIds;
   "public.listing_events": PublicListingEvents;
   "public.listing_media": PublicListingMedia;
   "public.listing_moderation_actions": PublicListingModerationActions;
@@ -2467,6 +2490,7 @@ export interface Database {
   "public.permissions": PublicPermissions;
   "public.profiles": PublicProfiles;
   "public.promotion_analytics": PublicPromotionAnalytics;
+  "public.promotion_event_ids": PublicPromotionEventIds;
   "public.promotion_events": PublicPromotionEvents;
   "public.promotion_package_categories": PublicPromotionPackageCategories;
   "public.promotion_package_placements": PublicPromotionPackagePlacements;

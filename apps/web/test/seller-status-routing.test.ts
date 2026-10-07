@@ -311,6 +311,55 @@ describe('the contact action (Phase 5-E)', () => {
   });
 });
 
+describe('the block action (0103)', () => {
+  it('offers to block a seller who is trading', async () => {
+    const page = await load('/seller/good-shop');
+    expect(page.html).toContain('>Block</button>');
+  });
+
+  /**
+   * Not on a suspended profile, for the same reason the contact action is not: 0103's resolver requires a
+   * publicly visible storefront, so the button there would be one that always refuses.
+   */
+  it('offers nothing to block on a suspended profile', async () => {
+    const page = await load('/seller/gone-shop');
+    expect(page.html).not.toContain('>Block</button>');
+  });
+
+  it('carries the action in Arabic on the Arabic profile', async () => {
+    const page = await load('/ar/seller/arabic-shop');
+    expect(page.html).toContain('حجب');
+  });
+
+  /** The handle is the slug already in the URL. There is no identifier for it to carry. */
+  it('still exposes no seller identifier', async () => {
+    const page = await load('/seller/good-shop');
+    expect(page.html).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}/);
+    expect(page.html).toContain('good-shop');
+  });
+
+  /**
+   * This is a cached public catalogue page, so it reads no session to decide whether to draw the control.
+   * A visitor who turns out not to be signed in is offered the way in by the BFF's answer instead — which
+   * is why the sign-out wording is not in the markup and no session cookie was presented upstream.
+   */
+  it('decides nothing from a session, so the page stays the same for everybody', async () => {
+    api.seen.length = 0;
+    const page = await load('/seller/good-shop');
+    expect(page.html).not.toContain('>Yes, block</button>');
+    for (const seen of api.seen) {
+      expect(seen.cookie).toBeNull();
+    }
+  });
+
+  it('does not filter the seller out of anything, and says nothing about blocking anywhere else', async () => {
+    const page = await load('/seller/good-shop');
+    for (const absent of ['blocked you', 'has blocked', 'blockedUserId', 'Unblock']) {
+      expect(page.html, absent).not.toContain(absent);
+    }
+  });
+});
+
 describe('the page carries nothing it was told not to', () => {
   it('has no listing, service, rating or contact details', async () => {
     const page = await load('/seller/good-shop');

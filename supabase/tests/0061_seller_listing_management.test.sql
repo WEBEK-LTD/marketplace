@@ -114,7 +114,9 @@ select is(
       -- 8-C's listing attribute and tag functions share the prefix and are inventoried by their own suite.
       and p.proname not like 'seller\_listing\_attribute%'
       and p.proname not like 'seller\_listing\_tag%'
-      and p.proname not like 'seller\_listing\_vocabulary%'),
+      and p.proname not like 'seller\_listing\_vocabulary%'
+      -- 0102's listing analytics reader shares the prefix and is inventoried by its own suite.
+      and p.proname <> 'seller_listing_analytics'),
   'seller_listing_archive/2 seller_listing_create_draft/13 seller_listing_submit/2'
     || ' seller_listing_update_draft/20 seller_listings/4',
   'this migration adds exactly five functions, each with the arity it declares, and no overloads');

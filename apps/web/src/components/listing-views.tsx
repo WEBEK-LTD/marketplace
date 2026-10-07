@@ -29,7 +29,15 @@ export function ListingCard({
   return (
     <li className="rounded-lg border border-neutral-200 p-5">
       <h2 className="text-base font-medium text-neutral-900">
-        <a href={href} className="underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900">
+        {/*
+          `data-listing-id` is what 0101's click beacon reads. One attribute rather than a client component
+          per card: the card stays a server component and a page of fifty results ships one handler.
+        */}
+        <a
+          data-listing-id={listing.id}
+          href={href}
+          className="underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+        >
           {listing.title}
         </a>
       </h2>

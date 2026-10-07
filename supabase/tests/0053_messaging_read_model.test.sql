@@ -16,7 +16,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(130);
+select plan(132);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Fixtures
@@ -533,10 +533,23 @@ select is(
   'the maximum page is 50'
 );
 
+-- Narrowed by 0106. The invariant this has always protected is that a request larger than the page size is
+-- **bounded rather than honoured** — 999 must never return 999. That still holds, and still holds here.
+--
+-- The figure moved from 50 to 51 because the API asks for `limit + 1` to learn whether another page exists, and
+-- a ceiling of exactly 50 ate that probe row: a caller asking for the maximum was told the list had ended when
+-- it had not. The ceiling is the database's bound on a parameter it does not trust; the extra row is the API's
+-- own business. The public maximum is unchanged at 50 — the assertion above still proves it.
 select is(
   (select count(*)::int from app_private.messaging_inbox('d0000000-0000-4000-8000-000000000006'::uuid, 999)),
-  50,
-  'and a larger request is clamped to it rather than honoured'
+  51,
+  'and a larger request is bounded rather than honoured: 51, not 999'
+);
+
+select cmp_ok(
+  (select count(*)::int from app_private.messaging_inbox('d0000000-0000-4000-8000-000000000006'::uuid, 999)),
+  '<=', 51,
+  'the bound is the public maximum plus one probe row and nothing more'
 );
 
 select is(
@@ -762,11 +775,20 @@ select is(
   'the maximum message page is 100'
 );
 
+-- Narrowed by 0106, for the reason given on the inbox assertion above: bounded rather than honoured is the
+-- invariant, and the bound is now the public maximum of 100 plus the API's probe row.
 select is(
   (select count(*)::int from app_private.messaging_conversation_messages(
      'd0000000-0000-4000-8000-000000000006'::uuid, 'f0000000-0000-4000-8000-000000000001'::uuid, 999)),
-  100,
-  'and a larger request is clamped to it'
+  101,
+  'and a larger request is bounded rather than honoured: 101, not 999'
+);
+
+select cmp_ok(
+  (select count(*)::int from app_private.messaging_conversation_messages(
+     'd0000000-0000-4000-8000-000000000006'::uuid, 'f0000000-0000-4000-8000-000000000001'::uuid, 999)),
+  '<=', 101,
+  'the bound is the public maximum plus one probe row and nothing more'
 );
 
 select is(

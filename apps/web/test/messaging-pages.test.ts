@@ -84,6 +84,7 @@ const MESSAGES = [
     createdAt: '2026-09-24T18:10:00.000Z',
     editedAt: null,
     deletedAt: null,
+    attachments: [],
   },
   {
     id: 'a1000000-0000-4000-8000-000000000002',
@@ -98,6 +99,11 @@ const MESSAGES = [
     createdAt: '2026-09-24T18:20:00.000Z',
     editedAt: null,
     deletedAt: null,
+    // 0104. On the caller's own message, because that is the only kind that can carry one.
+    attachments: [
+      { id: 'b2000000-0000-4000-8000-000000000001', contentType: 'image/png', byteSize: '204800' },
+      { id: 'b2000000-0000-4000-8000-000000000002', contentType: 'application/pdf', byteSize: '2097152' },
+    ],
   },
   {
     id: 'a1000000-0000-4000-8000-000000000003',
@@ -112,6 +118,7 @@ const MESSAGES = [
     createdAt: '2026-09-24T18:25:00.000Z',
     editedAt: null,
     deletedAt: null,
+    attachments: [],
   },
   {
     id: 'a1000000-0000-4000-8000-000000000004',
@@ -126,6 +133,7 @@ const MESSAGES = [
     createdAt: '2026-09-24T18:30:00.000Z',
     editedAt: null,
     deletedAt: null,
+    attachments: [],
   },
 ];
 
@@ -490,11 +498,12 @@ describe('the thread', () => {
 
     expect(buttons.length).toBeGreaterThan(0);
     // 5-H added reporting, which is a request for a look rather than an operation on the message, so
-    // `Report` is no longer in this list. Editing, deleting, reopening and attaching still do not exist.
-    for (const forbidden of ['Edit', 'Delete', 'Reopen', 'Attach']) {
+    // `Report` is no longer in this list. 0104 added attaching, so `Attach` left it too — it operates on a
+    // message the caller owns rather than on the conversation, and the attachment section below asserts its
+    // shape. Editing, deleting and reopening still do not exist anywhere in the stack.
+    for (const forbidden of ['Edit', 'Delete', 'Reopen']) {
       expect(buttons.join(' '), forbidden).not.toContain(forbidden);
     }
-    expect(page.html).not.toContain('type="file"');
   });
 
   it('is not indexable, and names no API address or token', async () => {
@@ -785,7 +794,8 @@ describe('the composer and the controls on the thread page', () => {
   it('offers no edit, delete or reopen control among the rendered buttons', async () => {
     const page = await load(`/dashboard/messages/${CONVERSATION}`);
     const buttons = (page.html.match(/>[^<>]+<\/button>/g) ?? []).join(' ');
-    for (const absent of ['Edit', 'Delete', 'Reopen', 'Attach']) {
+    // Narrowed by 0104: attaching exists now. Nothing that would alter a message that has been sent does.
+    for (const absent of ['Edit', 'Delete', 'Reopen']) {
       expect(buttons, absent).not.toContain(absent);
     }
   });
@@ -964,17 +974,124 @@ describe('the report actions', () => {
     expect(page.html).not.toMatch(/(href|action)="[^"]*Hello/);
   });
 
-  it('brings no moderation surface, no attachment control and no Realtime', async () => {
+  /**
+   * Narrowed by 0103, which added the one self-service safety control this thread may carry.
+   *
+   * `Block` left this list because it now exists and is the caller's own action over their own
+   * `user_blocks` row — not a moderation power. Everything a *moderator* would need is still absent, and
+   * the next test asserts the control that replaced it is the self-service one rather than a sanction.
+   */
+  it('brings no moderation surface and no Realtime', async () => {
     const page = await load(`/dashboard/messages/${CONVERSATION}`);
     const buttons = (page.html.match(/>[^<>]+<\/button>/g) ?? []).join(' ');
 
-    for (const absent of ['Hide', 'Remove', 'Ban', 'Suspend', 'Block', 'Moderat', 'Dismiss', 'Attach']) {
+    // Narrowed twice: `Block` by 0103 and `Attach` by 0104, both of which are the caller's own actions rather
+    // than moderation powers. Everything a *moderator* would need is still absent.
+    for (const absent of ['Hide', 'Remove', 'Ban', 'Suspend', 'Moderat', 'Dismiss']) {
       expect(buttons, absent).not.toContain(absent);
     }
-    expect(page.html).not.toContain('type="file"');
     for (const absent of ['ws://', 'wss://', 'EventSource']) {
       expect(page.html, absent).not.toContain(absent);
     }
+  });
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Attachments (0104)                                                                              */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  it('renders each file on its message, by kind and size, with a way to open it', async () => {
+    apiServes();
+    const page = await load(`/dashboard/messages/${CONVERSATION}`);
+
+    expect(page.html).toContain('Files');
+    expect(page.html).toContain('Image');
+    expect(page.html).toContain('PDF');
+    expect(page.html).toContain('200 KB');
+    expect(page.html).toContain('2.0 MB');
+    // One open control per file.
+    expect((page.html.match(/>Open<\/button>/g) ?? []).length).toBe(2);
+  });
+
+  /**
+   * Nothing about the stored object reaches the browser, flight data included.
+   *
+   * The download is reached by attachment id through its own operation, so a path in the payload would be a
+   * path nothing needs — and the one place a path is ever disclosed is the upload authorization, which is a
+   * response to a request this page does not make.
+   */
+  it('puts no object path, bucket or storage URL in the page or its flight data', async () => {
+    apiServes();
+    const page = await load(`/dashboard/messages/${CONVERSATION}`);
+
+    for (const absent of ['message-attachments/', 'objectPath', 'storage/v1', 'supabase']) {
+      expect(page.html.toLowerCase(), absent).not.toContain(absent.toLowerCase());
+    }
+    // The ids are there, because the open control needs them.
+    expect(page.html).toContain('b2000000-0000-4000-8000-000000000001');
+  });
+
+  it('offers the attach control on the caller’s own message only', async () => {
+    apiServes();
+    const page = await load(`/dashboard/messages/${CONVERSATION}`);
+
+    // One own message in the fixture, so exactly one attach control and one file input.
+    expect((page.html.match(/>Attach a file<\/button>/g) ?? []).length).toBe(1);
+    expect((page.html.match(/type="file"/g) ?? []).length).toBe(1);
+  });
+
+  /** SVG is not offered by the picker, for the same reason the server refuses it. */
+  it('offers only the four permitted types to the file picker, never SVG', async () => {
+    apiServes();
+    const page = await load(`/dashboard/messages/${CONVERSATION}`);
+
+    expect(page.html).toContain('accept="image/jpeg,image/png,image/webp,application/pdf"');
+    expect(page.html).not.toContain('svg');
+  });
+
+  it('offers no attach control on a closed conversation, which takes nothing new', async () => {
+    apiServes({ inbox: 'closed' });
+    const page = await load(`/dashboard/messages/${DIRECT_CONVERSATION}`);
+
+    expect(page.html).toContain('Conversation closed');
+    expect(page.html).not.toContain('>Attach a file</button>');
+    // The files already there stay openable, because a closed thread is still readable.
+    expect(page.html).toContain('>Open</button>');
+  });
+
+  it('renders the attachment copy in Arabic', async () => {
+    apiServes();
+    const page = await load(`/ar/dashboard/messages/${CONVERSATION}`);
+
+    expect(page.html).toContain('الملفات');
+    expect(page.html).toContain('إرفاق ملف');
+    expect(page.html).toContain('فتح');
+  });
+
+  /**
+   * Blocking from the thread (0103).
+   *
+   * It sits beside reporting rather than among the four controls, for the same reason reporting does: the
+   * four change the caller's own relationship to the conversation, and these two do something else. A
+   * report asks staff to look; a block stops contact and tells nobody.
+   */
+  it('offers the self-service block, and nothing that sanctions anybody', async () => {
+    const page = await load(`/dashboard/messages/${CONVERSATION}`);
+
+    expect(page.html).toContain('>Block</button>');
+    // The handle is the conversation. Nothing in the payload names an account.
+    expect(page.html).toContain(CONVERSATION);
+    expect(page.html).not.toContain('blockedUserId');
+    expect(page.html).not.toContain('sellerUserId');
+    // And it is not dressed as a moderation decision.
+    for (const absent of ['Report user', 'Ban user', 'Suspend account', 'Warn']) {
+      expect(page.html, absent).not.toContain(absent);
+    }
+  });
+
+  it('asks before blocking, rather than acting on one press', async () => {
+    const page = await load(`/dashboard/messages/${CONVERSATION}`);
+    // The confirmation words are not in the markup until the first press, which is what makes it two steps.
+    expect(page.html).not.toContain('>Yes, block</button>');
   });
 
   it('keeps the message and the conversation exactly as they were: reporting is not a control', async () => {

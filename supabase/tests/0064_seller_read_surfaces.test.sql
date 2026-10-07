@@ -31,7 +31,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(158);
+select plan(159);
 
 -- Fixtures ------------------------------------------------------------------------------------------
 -- Three decimal places on purpose: a reader that assumed two would be caught.
@@ -851,12 +851,19 @@ select is(
   (select count(*) from app_private.seller_promotion_analytics('a1000000-0000-4000-8000-000000000001', null)),
   1::bigint, 'and an unstated window takes the default');
 
--- There is deliberately no listing-level analytics reader, because no rollup defines one.
+-- Narrowed by 0102, which added the listing rollup this assertion said did not exist and a reader for it.
+-- The half that belongs to 6-J still holds exactly as written: this migration's own promotion reader is not
+-- duplicated or overloaded, and **no seller reader anywhere reads the raw event stream** — 0102's reads the
+-- rollup, which is the distinction the original assertion was protecting.
 select is(
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'app_private' and p.proname like 'seller%analytic%'),
-  1::bigint,
-  'exactly one analytics reader exists: the promotion one. There is no listing_events reader, because no authoritative listing-level rollup exists to read');
+    where n.nspname = 'app_private' and p.proname like 'seller%promotion%analytic%'),
+  1::bigint, 'exactly one promotion analytics reader exists, and it is 6-J''s');
+select is(
+  (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'app_private' and p.proname like 'seller%analytic%'
+      and p.prosrc ~ 'listing_events'),
+  0::bigint, 'and no seller analytics reader touches listing_events: the rollup is what gets read');
 select is(
   (select count(*) from read_surface r where r.code like '%listing_events%'),
   0::bigint,

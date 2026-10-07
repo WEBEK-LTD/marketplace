@@ -1,9 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ACCOUNT_MAX_LIMIT,
+  BLOCKS_MAX_LIMIT,
   type Address,
   type AddressInput,
   type BuyerProfile,
+  type BlockRequest,
+  type BlockedPerson,
   type BuyerSettings,
   type CountryReference,
   type FavoriteItem,
@@ -16,8 +19,12 @@ import {
 } from '@repo/contracts';
 import { RequestValidationException } from '../common/request-validation.exception.js';
 import {
+  decodeBlockReference,
+  decodeBlocksCursor,
   decodeFavoritesCursor,
   decodeSavedSearchesCursor,
+  encodeBlockReference,
+  encodeBlocksCursor,
   encodeFavoritesCursor,
   encodeSavedSearchesCursor,
 } from './account-cursor.js';
@@ -153,6 +160,21 @@ export interface SavedSearchRow {
   readonly updatedAt: Date;
 }
 
+/**
+ * One block, as `app_private.buyer_blocks` returns it.
+ *
+ * `blockedUserId` is here and goes no further: the service turns it into an opaque reference and never
+ * puts it in a response. It is in the row because a definer function is inside the boundary, and because
+ * the pair `(created_at, blockedUserId)` is what the cursor needs to be total.
+ */
+export interface BlockRow {
+  readonly blockedUserId: string;
+  readonly displayName: string | null;
+  readonly sellerSlug: string | null;
+  readonly reason: string | null;
+  readonly createdAt: Date;
+}
+
 export interface AddressRow {
   readonly id: string;
   readonly label: string | null;
@@ -209,7 +231,7 @@ export interface CountryRow {
 /* ------------------------------------------------------------------------------------------------ */
 
 /**
- * The sixteen database operations the buyer account surfaces need, and nothing else.
+ * The nineteen database operations the buyer account surfaces need, and nothing else.
  *
  * Every method takes the account as its first argument, and that value is always one the API resolved
  * from the caller's own access token. None of them takes two accounts, and none takes a role, a
@@ -245,6 +267,20 @@ export interface BuyerAccountStore {
     notify: boolean;
   }): Promise<'updated' | 'not_found' | 'duplicate_name'>;
   buyerSavedSearchDelete(input: { userId: string; id: string }): Promise<boolean>;
+
+  buyerBlocks(input: {
+    userId: string;
+    limit: number;
+    cursorCreatedAt: Date | null;
+    cursorBlockedId: string | null;
+  }): Promise<readonly BlockRow[]>;
+  buyerBlockAdd(input: {
+    userId: string;
+    conversationId: string | null;
+    sellerSlug: string | null;
+    reason: string | null;
+  }): Promise<'blocked' | 'exists' | 'not_found'>;
+  buyerBlockRemove(input: { userId: string; blockedUserId: string }): Promise<boolean>;
 
   buyerAddresses(userId: string): Promise<readonly AddressRow[]>;
   buyerAddressCreate(input: {
@@ -286,6 +322,11 @@ export interface FavoritesPage {
 
 export interface SavedSearchesPage {
   readonly items: readonly SavedSearch[];
+  readonly nextCursor: string | null;
+}
+
+export interface BlocksPage {
+  readonly items: readonly BlockedPerson[];
   readonly nextCursor: string | null;
 }
 
@@ -343,6 +384,8 @@ export class BuyerAccountService {
     const rows = await this.read(() =>
       this.store.buyerFavorites({
         userId: input.userId,
+        // One more than asked for: the extra row is how "is there another page?" is answered without a
+        // count. The reader's ceiling is the public maximum plus one so this row survives the clamp (0106).
         limit: limit + 1,
         cursorCreatedAt: position?.createdAt ?? null,
         cursorId: position?.id ?? null,
@@ -387,6 +430,8 @@ export class BuyerAccountService {
     const rows = await this.read(() =>
       this.store.buyerSavedSearches({
         userId: input.userId,
+        // One more than asked for: the extra row is how "is there another page?" is answered without a
+        // count. The reader's ceiling is the public maximum plus one so this row survives the clamp (0106).
         limit: limit + 1,
         cursorCreatedAt: position?.createdAt ?? null,
         cursorId: position?.id ?? null,
@@ -437,6 +482,84 @@ export class BuyerAccountService {
 
   async deleteSavedSearch(input: { userId: string; id: string }): Promise<{ changed: boolean }> {
     return { changed: await this.read(() => this.store.buyerSavedSearchDelete(input)) };
+  }
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Blocking                                                                                        */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  /**
+   * The caller's own block list.
+   *
+   * Every row's account identifier is replaced by an opaque reference before it leaves this method, so
+   * `blockedUserId` exists inside this function and in no response. The cursor is built from the same
+   * pair the database ordered by, which is why paging is total across blocks that share a timestamp.
+   */
+  async blocks(input: { userId: string; limit: number; cursor: string | null }): Promise<BlocksPage> {
+    const position = this.position(input.cursor, decodeBlocksCursor);
+    const limit = Math.min(Math.max(input.limit, 1), BLOCKS_MAX_LIMIT);
+
+    const rows = await this.read(() =>
+      this.store.buyerBlocks({
+        userId: input.userId,
+        // One more than asked for: the extra row is how "is there another page?" is answered without a
+        // count. The reader's ceiling is the public maximum plus one so this row survives the clamp (0106).
+        limit: limit + 1,
+        cursorCreatedAt: position?.createdAt ?? null,
+        cursorBlockedId: position?.id ?? null,
+      }),
+    );
+
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    const nextCursor =
+      rows.length > limit && last !== undefined
+        ? encodeBlocksCursor({ createdAt: last.createdAt, id: last.blockedUserId })
+        : null;
+
+    return { items: page.map((row) => this.blockedPerson(row)), nextCursor };
+  }
+
+  /**
+   * Blocks the person on the other side of a conversation or of a storefront slug.
+   *
+   * The handle is passed through untouched; which account it names is decided inside one definer function,
+   * which also decides whether the caller may name it at all. `not_found` therefore covers a conversation
+   * that does not exist, one the caller is not in, an unknown slug, a storefront that is not publicly
+   * visible, and blocking oneself — one answer for all five, because telling them apart would make this
+   * surface a way to probe for threads and storefronts.
+   *
+   * Idempotent: somebody already blocked reports `changed: false` and the block still stands.
+   */
+  async addBlock(input: { userId: string; body: BlockRequest }): Promise<{ changed: boolean }> {
+    const outcome = await this.read(() =>
+      this.store.buyerBlockAdd({
+        userId: input.userId,
+        conversationId: 'conversationId' in input.body ? input.body.conversationId : null,
+        sellerSlug: 'sellerSlug' in input.body ? input.body.sellerSlug : null,
+        reason: input.body.reason ?? null,
+      }),
+    );
+    if (outcome === 'not_found') throw new AccountRowNotFoundError();
+    return { changed: outcome === 'blocked' };
+  }
+
+  /**
+   * Removes a block named by the reference this API issued.
+   *
+   * A reference that cannot be decoded is **not** a distinct refusal: it reports `changed: false`, exactly
+   * as a reference naming somebody the caller never blocked does. The writer is scoped to the caller in
+   * its own statement, so the two are the same event as far as anything observable goes, and making them
+   * answer differently would turn this route into a way to test whether a reference is real.
+   */
+  async removeBlock(input: { userId: string; reference: string }): Promise<{ changed: boolean }> {
+    const blockedUserId = decodeBlockReference(input.reference);
+    if (blockedUserId === null) return { changed: false };
+    return {
+      changed: await this.read(() =>
+        this.store.buyerBlockRemove({ userId: input.userId, blockedUserId }),
+      ),
+    };
   }
 
   /* ---------------------------------------------------------------------------------------------- */
@@ -609,6 +732,16 @@ export class BuyerAccountService {
       lastNotifiedAt: iso(row.lastNotifiedAt),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+
+  private blockedPerson(row: BlockRow): BlockedPerson {
+    return {
+      reference: encodeBlockReference(row.blockedUserId),
+      displayName: row.displayName,
+      sellerSlug: row.sellerSlug,
+      reason: row.reason,
+      blockedAt: row.createdAt.toISOString(),
     };
   }
 

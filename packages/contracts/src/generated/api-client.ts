@@ -57,6 +57,8 @@ export const ProblemCode = {
   MESSAGING_BLOCKED: 'MESSAGING_BLOCKED',
   MESSAGING_SELLER_NOT_CONTACTABLE: 'MESSAGING_SELLER_NOT_CONTACTABLE',
   MESSAGING_REPORT_TARGET_NOT_FOUND: 'MESSAGING_REPORT_TARGET_NOT_FOUND',
+  MESSAGE_ATTACHMENT_LIMIT_REACHED: 'MESSAGE_ATTACHMENT_LIMIT_REACHED',
+  MESSAGE_ATTACHMENT_OBJECT_MISSING: 'MESSAGE_ATTACHMENT_OBJECT_MISSING',
   SELLER_PROFILE_EXISTS: 'SELLER_PROFILE_EXISTS',
   SELLER_SLUG_TAKEN: 'SELLER_SLUG_TAKEN',
   SELLER_PROFILE_NOT_EDITABLE: 'SELLER_PROFILE_NOT_EDITABLE',
@@ -114,6 +116,14 @@ export const ProblemCode = {
   SELLER_STATUS_REASON_REQUIRED: 'SELLER_STATUS_REASON_REQUIRED',
   SELLER_STATUS_NOT_VERIFIED: 'SELLER_STATUS_NOT_VERIFIED',
   SELLER_STATUS_ALREADY_VERIFIED: 'SELLER_STATUS_ALREADY_VERIFIED',
+  STAFF_ROLE_IS_SELF: 'STAFF_ROLE_IS_SELF',
+  STAFF_ROLE_ABOVE_CEILING: 'STAFF_ROLE_ABOVE_CEILING',
+  STAFF_ROLE_NOT_GRANTABLE: 'STAFF_ROLE_NOT_GRANTABLE',
+  STAFF_ROLE_NOT_REVOCABLE: 'STAFF_ROLE_NOT_REVOCABLE',
+  STAFF_ROLE_NOT_ASSIGNABLE: 'STAFF_ROLE_NOT_ASSIGNABLE',
+  STAFF_ROLE_ALREADY_REVOKED: 'STAFF_ROLE_ALREADY_REVOKED',
+  STAFF_ROLE_EXPIRY_INVALID: 'STAFF_ROLE_EXPIRY_INVALID',
+  STAFF_ROLE_REASON_REQUIRED: 'STAFF_ROLE_REASON_REQUIRED',
   REVIEW_IS_PARTY: 'REVIEW_IS_PARTY',
   REVIEW_REASON_REQUIRED: 'REVIEW_REASON_REQUIRED',
   DISPUTE_IS_PARTY: 'DISPUTE_IS_PARTY',
@@ -152,6 +162,7 @@ export const ProblemCode = {
   CMS_MEDIA_NOT_ALLOWED: 'CMS_MEDIA_NOT_ALLOWED',
   CMS_MEDIA_OBJECT_MISSING: 'CMS_MEDIA_OBJECT_MISSING',
   CMS_MEDIA_PATH_TAKEN: 'CMS_MEDIA_PATH_TAKEN',
+  LISTING_ANALYTICS_CURSOR_INVALID: 'LISTING_ANALYTICS_CURSOR_INVALID',
 } as const;
 
 export interface ValidationIssue {
@@ -1828,6 +1839,52 @@ export interface SellerAnalyticsResponse {
   promotions: SellerPromotionPerformance[];
 }
 
+export type ListingStatus = typeof ListingStatus[keyof typeof ListingStatus];
+
+
+export const ListingStatus = {
+  draft: 'draft',
+  pending_review: 'pending_review',
+  approved: 'approved',
+  active: 'active',
+  sold: 'sold',
+  expired: 'expired',
+  archived: 'archived',
+  rejected: 'rejected',
+  suspended: 'suspended',
+  deleted: 'deleted',
+} as const;
+
+/**
+ * @pattern ^(0|[1-9][0-9]*)$
+ */
+export type AnalyticsCount = string;
+
+export interface SellerListingPerformance {
+  /** @minLength 1 */
+  listingSlug: string;
+  /** @minLength 1 */
+  listingTitle: string;
+  listingStatus: ListingStatus;
+  /** @minLength 1 */
+  firstDay: string;
+  /** @minLength 1 */
+  lastDay: string;
+  clicks: AnalyticsCount;
+  contacts: AnalyticsCount;
+  favorites: AnalyticsCount;
+  shares: AnalyticsCount;
+}
+
+export interface SellerListingAnalyticsResponse {
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  days: number;
+  listings: SellerListingPerformance[];
+}
+
 export type ConversationSubjectType = typeof ConversationSubjectType[keyof typeof ConversationSubjectType];
 
 
@@ -1911,6 +1968,23 @@ export const MessageReferenceType = {
   order: 'order',
 } as const;
 
+export type MessageAttachmentContentType = typeof MessageAttachmentContentType[keyof typeof MessageAttachmentContentType];
+
+
+export const MessageAttachmentContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface MessageAttachment {
+  id: string;
+  contentType: MessageAttachmentContentType;
+  /** @pattern ^[1-9][0-9]*$ */
+  byteSize: string;
+}
+
 export interface MessageItem {
   id: string;
   /** @pattern ^[1-9][0-9]*$ */
@@ -1930,6 +2004,7 @@ export interface MessageItem {
   editedAt: string | null;
   /** @nullable */
   deletedAt: string | null;
+  attachments: MessageAttachment[];
 }
 
 export interface ConversationMessagesResponse {
@@ -2076,6 +2151,56 @@ export interface FileMessagingReportRequest {
   subjectType: FileMessagingReportRequestSubjectType;
   subjectId: string;
   reasonCode: FileMessagingReportRequestReasonCode;
+}
+
+export interface MessageAttachmentUpload {
+  uploadUrl: string;
+  /** @minLength 1 */
+  objectPath: string;
+  expiresAt: string;
+  /** @exclusiveMinimum 0 */
+  maxByteSize: number;
+}
+
+export interface MessageAttachmentUploadResponse {
+  upload: MessageAttachmentUpload;
+}
+
+export interface MessageAttachmentUploadRequest {
+  contentType: MessageAttachmentContentType;
+  /**
+     * @maximum 10485760
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface MessageAttachmentRecordResponse {
+  attachmentId: string;
+  /**
+     * @maximum 5
+     * @exclusiveMinimum 0
+     */
+  attachmentCount: number;
+}
+
+export interface MessageAttachmentRecordRequest {
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+  contentType: MessageAttachmentContentType;
+  /**
+     * @maximum 10485760
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface MessageAttachmentLinkResponse {
+  url: string;
+  expiresAt: string;
 }
 
 export type TotpStatusResponseStatus = typeof TotpStatusResponseStatus[keyof typeof TotpStatusResponseStatus];
@@ -2378,6 +2503,46 @@ export interface SavedSearchInput {
 export interface SavedSearchMutationResponse {
   changed: boolean;
 }
+
+export interface BlockedPerson {
+  /** @minLength 1 */
+  reference: string;
+  /** @nullable */
+  displayName: string | null;
+  /** @nullable */
+  sellerSlug: string | null;
+  /** @nullable */
+  reason: string | null;
+  blockedAt: string;
+}
+
+export interface BlocksResponse {
+  items: BlockedPerson[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface BlockMutationResponse {
+  changed: boolean;
+}
+
+export interface BlockByConversationRequest {
+  conversationId: string;
+  /** @nullable */
+  reason?: string | null;
+}
+
+export interface BlockBySellerRequest {
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  sellerSlug: string;
+  /** @nullable */
+  reason?: string | null;
+}
+
+export type BlockRequest = BlockByConversationRequest | BlockBySellerRequest;
 
 export type AddressPurpose = typeof AddressPurpose[keyof typeof AddressPurpose];
 
@@ -3790,25 +3955,6 @@ export interface ModerationReportQueueResponse {
   nextCursor: string | null;
 }
 
-/**
- * @nullable
- */
-export type ListingStatus = typeof ListingStatus[keyof typeof ListingStatus] | null;
-
-
-export const ListingStatus = {
-  draft: 'draft',
-  pending_review: 'pending_review',
-  approved: 'approved',
-  active: 'active',
-  sold: 'sold',
-  expired: 'expired',
-  archived: 'archived',
-  rejected: 'rejected',
-  suspended: 'suspended',
-  deleted: 'deleted',
-} as const;
-
 export type ModerationReportDetailReasonCode = typeof ModerationReportDetailReasonCode[keyof typeof ModerationReportDetailReasonCode];
 
 
@@ -3845,7 +3991,7 @@ export interface ModerationReportDetail {
   subjectSlug: string | null;
   /** @nullable */
   subjectLabel: string | null;
-  subjectStatus: ListingStatus | null;
+  subjectStatus: ListingStatus & (string | null);
   subjectIsResolvable: boolean;
   reasonCode: ModerationReportDetailReasonCode;
   /** @nullable */
@@ -3942,7 +4088,7 @@ export interface ModerationListingRow {
   id: string;
   slug: string;
   title: string;
-  status: ListingStatus | null;
+  status: ListingStatus;
   listingTypeCode: string;
   /**
      * @minLength 3
@@ -3969,7 +4115,7 @@ export interface ModerationListingDetail {
   title: string;
   description: string;
   contentLanguage: string;
-  status: ListingStatus | null;
+  status: ListingStatus;
   listingTypeCode: string;
   /**
      * @minLength 3
@@ -4006,7 +4152,7 @@ export const ModerateListingResponseOutcome = {
 
 export interface ModerateListingResponse {
   outcome: ModerateListingResponseOutcome;
-  status: ListingStatus | null;
+  status: ListingStatus;
 }
 
 /**
@@ -4036,8 +4182,8 @@ export interface ModerateListingRequest {
 export interface ListingModerationRow {
   id: string;
   action: ListingModerationAction;
-  fromStatus: ListingStatus | null;
-  toStatus: ListingStatus | null;
+  fromStatus: ListingStatus;
+  toStatus: ListingStatus;
   reason: string;
   /** @nullable */
   reportId: string | null;
@@ -4266,6 +4412,111 @@ export interface AdminUserRole {
 
 export interface AdminUserRolesResponse {
   items: AdminUserRole[];
+}
+
+export interface TrackResponse {
+  /** @minimum 0 */
+  accepted: number;
+}
+
+export type TrackEventEventType = typeof TrackEventEventType[keyof typeof TrackEventEventType];
+
+
+export const TrackEventEventType = {
+  click: 'click',
+  contact: 'contact',
+  favorite: 'favorite',
+  share: 'share',
+} as const;
+
+export type TrackEventSource = typeof TrackEventSource[keyof typeof TrackEventSource];
+
+
+export const TrackEventSource = {
+  search: 'search',
+  category: 'category',
+  listing: 'listing',
+  seller: 'seller',
+  home: 'home',
+  external: 'external',
+} as const;
+
+export interface TrackEvent {
+  eventId: string;
+  listingId: string;
+  eventType: TrackEventEventType;
+  occurredAt?: string;
+  source?: TrackEventSource;
+  /** @maxLength 255 */
+  referrerHost?: string;
+  promotionId?: string;
+}
+
+export interface TrackRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     * @nullable
+     */
+  sessionId?: string | null;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  events: TrackEvent[];
+}
+
+export interface StaffGrantableRole {
+  roleKey: string;
+  nameEn: string;
+  nameAr: string;
+  requiresMfa: boolean;
+  isAdminConsole: boolean;
+}
+
+export interface StaffGrantableRolesResponse {
+  items: StaffGrantableRole[];
+}
+
+export type StaffRoleWriteResponseOutcome = typeof StaffRoleWriteResponseOutcome[keyof typeof StaffRoleWriteResponseOutcome];
+
+
+export const StaffRoleWriteResponseOutcome = {
+  granted: 'granted',
+  revoked: 'revoked',
+} as const;
+
+export interface StaffRoleWriteResponse {
+  outcome: StaffRoleWriteResponseOutcome;
+  roleKey: string;
+}
+
+export interface StaffRoleGrantRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  roleKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+  /** @nullable */
+  expiresAt?: string | null;
+}
+
+export interface StaffRoleRevokeRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  roleKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
 }
 
 /**
@@ -5680,6 +5931,41 @@ export interface CmsMediaAltTextRequest {
   altTextAr?: string | null;
 }
 
+export interface ListingAnalyticsRow {
+  /** @minLength 1 */
+  day: string;
+  /** @minLength 1 */
+  listingSlug: string;
+  /** @minLength 1 */
+  listingTitle: string;
+  listingStatus: ListingStatus;
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  sellerSlug: string | null;
+  clicks: AnalyticsCount;
+  contacts: AnalyticsCount;
+  favorites: AnalyticsCount;
+  shares: AnalyticsCount;
+  /** @minLength 1 */
+  computedAt: string;
+}
+
+export interface ListingAnalyticsResponse {
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  days: number;
+  items: ListingAnalyticsRow[];
+  /**
+     * @minLength 1
+     * @nullable
+     */
+  nextCursor: string | null;
+}
+
 export type GetV1CategoriesParams = {
 /**
  * Names the language of the category names. Absent or unrecognised resolves to the default locale.
@@ -5942,6 +6228,13 @@ export type GetV1SellersMeAnalyticsParams = {
 days?: string;
 };
 
+export type GetV1SellersMeListingAnalyticsParams = {
+/**
+ * How many days back to sum. Defaults to 30; a larger value is clamped to 365. It selects rows and decides nothing about them.
+ */
+days?: string;
+};
+
 export type GetV1MessagingConversationsParams = {
 /**
  * How many conversations to return. Defaults to 20; a larger value is clamped to 50.
@@ -5991,6 +6284,17 @@ cursor?: string;
 };
 
 export type GetV1UsersMeSavedSearchesParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+};
+
+export type GetV1UsersMeBlocksParams = {
 /**
  * How many rows to return. Defaults to 20; a larger value is clamped to 50.
  */
@@ -8499,6 +8803,21 @@ export type PutV1AdminCategoryTranslation200 = {
 
 export type DeleteV1AdminCategoryTranslation200 = {
   changed: boolean;
+};
+
+export type GetV1AdminAnalyticsListingsParams = {
+/**
+ * How many rows to return. Defaults to 20; a larger value is clamped to 50.
+ */
+limit?: string;
+/**
+ * An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.
+ */
+cursor?: string;
+/**
+ * How many days back to cover. Defaults to 30; a larger value is clamped to 365.
+ */
+days?: string;
 };
 
 export type GetV1AdminAttributes200AttributesItemDataType = typeof GetV1AdminAttributes200AttributesItemDataType[keyof typeof GetV1AdminAttributes200AttributesItemDataType];
@@ -12633,12 +12952,83 @@ export const getGetV1SellersMeAnalyticsUrl = (params?: GetV1SellersMeAnalyticsPa
 }
 
 /**
- * Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. It is therefore the whole of the analytics available to a seller — **there is no listing-level analytics operation**, because no authoritative listing-level rollup exists in this schema, and counting raw listing events into "views per listing" would mean inventing what a view is and how to de-duplicate a session. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.
+ * Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. A seller’s listing-level analytics is a **separate operation**, `GET /v1/sellers/me/listing-analytics`, added by 0102 over its own rollup; this one’s shape is unchanged by it. That operation reports **no listing-level views or impressions**, for the reason this one was first written with: counting raw listing events into "views per listing" would mean inventing what a view is and how to de-duplicate a session, and 0101 deliberately ingests neither. The impressions and views here are the promotion stream’s own, which 0025 has always collected. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.
  * @summary The caller’s own promotion performance
  */
 export const getV1SellersMeAnalytics = async (params?: GetV1SellersMeAnalyticsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeAnalyticsResponse> => {
 
   return apiFetch<getV1SellersMeAnalyticsResponse>(getGetV1SellersMeAnalyticsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type getV1SellersMeListingAnalyticsResponse200 = {
+  data: SellerListingAnalyticsResponse
+  status: 200
+}
+
+export type getV1SellersMeListingAnalyticsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1SellersMeListingAnalyticsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1SellersMeListingAnalyticsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1SellersMeListingAnalyticsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1SellersMeListingAnalyticsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1SellersMeListingAnalyticsResponseSuccess = (getV1SellersMeListingAnalyticsResponse200) & {
+  headers: Headers;
+};
+export type getV1SellersMeListingAnalyticsResponseError = (getV1SellersMeListingAnalyticsResponse401 | getV1SellersMeListingAnalyticsResponse403 | getV1SellersMeListingAnalyticsResponse404 | getV1SellersMeListingAnalyticsResponse500 | getV1SellersMeListingAnalyticsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1SellersMeListingAnalyticsResponse = (getV1SellersMeListingAnalyticsResponseSuccess | getV1SellersMeListingAnalyticsResponseError)
+
+export const getGetV1SellersMeListingAnalyticsUrl = (params?: GetV1SellersMeListingAnalyticsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/sellers/me/listing-analytics?${stringifiedParams}` : `/v1/sellers/me/listing-analytics`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The clicks, contacts, favourites and shares the `listing_analytics` rollup has already computed for the caller’s own listings, summed over a recent window and grouped per listing. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw event. There are no impressions and no views, because 0101 ingests neither and their definitions are a later decision; there is no unique-visitor or unique-session count, because an absent session digest is stored as a zero-length value and a distinct count would report all anonymous traffic as one visitor. `favourites` and `shares` read zero until a control on some surface fires them. The totals are `bigint` counts and travel as decimal integer strings — counts, not money, and carrying no currency. An empty list means no listing of the caller’s has been rolled up yet.
+ * @summary The caller’s own listing performance
+ */
+export const getV1SellersMeListingAnalytics = async (params?: GetV1SellersMeListingAnalyticsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1SellersMeListingAnalyticsResponse> => {
+
+  return apiFetch<getV1SellersMeListingAnalyticsResponse>(getGetV1SellersMeListingAnalyticsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -13393,6 +13783,243 @@ return apiFetch<postV1MessagingReportsResponse>(getPostV1MessagingReportsUrl(),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(fileMessagingReportRequest)
+  }
+);}
+
+
+
+export type postV1MessagingAttachmentUploadResponse200 = {
+  data: MessageAttachmentUploadResponse
+  status: 200
+}
+
+export type postV1MessagingAttachmentUploadResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1MessagingAttachmentUploadResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1MessagingAttachmentUploadResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1MessagingAttachmentUploadResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1MessagingAttachmentUploadResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1MessagingAttachmentUploadResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1MessagingAttachmentUploadResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1MessagingAttachmentUploadResponseSuccess = (postV1MessagingAttachmentUploadResponse200) & {
+  headers: Headers;
+};
+export type postV1MessagingAttachmentUploadResponseError = (postV1MessagingAttachmentUploadResponse400 | postV1MessagingAttachmentUploadResponse401 | postV1MessagingAttachmentUploadResponse403 | postV1MessagingAttachmentUploadResponse404 | postV1MessagingAttachmentUploadResponse409 | postV1MessagingAttachmentUploadResponse500 | postV1MessagingAttachmentUploadResponse503) & {
+  headers: Headers;
+};
+
+export type postV1MessagingAttachmentUploadResponse = (postV1MessagingAttachmentUploadResponseSuccess | postV1MessagingAttachmentUploadResponseError)
+
+export const getPostV1MessagingAttachmentUploadUrl = (conversationId: string,
+    messageId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/messages/${messageId}/attachments/uploads`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Authorizes a single upload into the **private** `message-attachments` bucket and returns the one object path it may go to. **The request carries no path**: the bucket, the conversation, the message and a fresh random file name are all composed in the database from rows the caller was found to own, so another conversation’s namespace or a traversal is unrepresentable rather than merely refused. **Nothing is written** — a client that asks and never uploads leaves no trace, which is what stops a row ever pointing at nothing. Only the message’s **sender** may attach, and only while they are still a live participant. At most 5 attachments per message and 10485760 bytes each, which are technical safety limits rather than business rules; the ceiling reported is the tighter of that figure and the bucket’s own. The permitted types are three image formats and PDF — **SVG is refused**, because it is XML a browser executes and serving one from a signed URL would be a stored-XSS primitive.
+ * @summary Authorize one conversation attachment upload
+ */
+export const postV1MessagingAttachmentUpload = async (conversationId: string,
+    messageId: string,
+    messageAttachmentUploadRequest: MessageAttachmentUploadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1MessagingAttachmentUploadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1MessagingAttachmentUploadResponse>(getPostV1MessagingAttachmentUploadUrl(conversationId,messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(messageAttachmentUploadRequest)
+  }
+);}
+
+
+
+export type postV1MessagingAttachmentsResponse201 = {
+  data: MessageAttachmentRecordResponse
+  status: 201
+}
+
+export type postV1MessagingAttachmentsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1MessagingAttachmentsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1MessagingAttachmentsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1MessagingAttachmentsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1MessagingAttachmentsResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1MessagingAttachmentsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1MessagingAttachmentsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1MessagingAttachmentsResponseSuccess = (postV1MessagingAttachmentsResponse201) & {
+  headers: Headers;
+};
+export type postV1MessagingAttachmentsResponseError = (postV1MessagingAttachmentsResponse400 | postV1MessagingAttachmentsResponse401 | postV1MessagingAttachmentsResponse403 | postV1MessagingAttachmentsResponse404 | postV1MessagingAttachmentsResponse409 | postV1MessagingAttachmentsResponse500 | postV1MessagingAttachmentsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1MessagingAttachmentsResponse = (postV1MessagingAttachmentsResponseSuccess | postV1MessagingAttachmentsResponseError)
+
+export const getPostV1MessagingAttachmentsUrl = (conversationId: string,
+    messageId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/messages/${messageId}/attachments`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Records the path the previous operation issued, **after** the API has confirmed with the storage provider that the object is actually there — which is why the row cannot describe a file that never arrived. The expected prefix is rebuilt in the database from the caller’s own conversation and message, and the remainder must be one plain file name of the shape the authorization issues, so a path for another message, another conversation, another bucket, with a traversal in it, or with an extension that disagrees with the declared type cannot be recorded. A path already recorded is refused rather than stored twice, so a retrying client records the file once. No event, no notification and no audit row is written.
+ * @summary Record a conversation attachment that was uploaded
+ */
+export const postV1MessagingAttachments = async (conversationId: string,
+    messageId: string,
+    messageAttachmentRecordRequest: MessageAttachmentRecordRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1MessagingAttachmentsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1MessagingAttachmentsResponse>(getPostV1MessagingAttachmentsUrl(conversationId,messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(messageAttachmentRecordRequest)
+  }
+);}
+
+
+
+export type getV1MessagingAttachmentLinkResponse200 = {
+  data: MessageAttachmentLinkResponse
+  status: 200
+}
+
+export type getV1MessagingAttachmentLinkResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1MessagingAttachmentLinkResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1MessagingAttachmentLinkResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1MessagingAttachmentLinkResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1MessagingAttachmentLinkResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1MessagingAttachmentLinkResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1MessagingAttachmentLinkResponseSuccess = (getV1MessagingAttachmentLinkResponse200) & {
+  headers: Headers;
+};
+export type getV1MessagingAttachmentLinkResponseError = (getV1MessagingAttachmentLinkResponse400 | getV1MessagingAttachmentLinkResponse401 | getV1MessagingAttachmentLinkResponse403 | getV1MessagingAttachmentLinkResponse404 | getV1MessagingAttachmentLinkResponse500 | getV1MessagingAttachmentLinkResponse503) & {
+  headers: Headers;
+};
+
+export type getV1MessagingAttachmentLinkResponse = (getV1MessagingAttachmentLinkResponseSuccess | getV1MessagingAttachmentLinkResponseError)
+
+export const getGetV1MessagingAttachmentLinkUrl = (conversationId: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/v1/messaging/conversations/${conversationId}/attachments/${attachmentId}/link`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Returns a signed URL for exactly one object, for ten minutes. **The caller names an attachment; the path comes from the row**: no operation on this surface accepts a storage path for reading, and the database requires the attachment, its message’s conversation and the conversation in the route to agree, so an identifier cannot be spent against another conversation. **Either participant may ask, including after a block and after leaving** — a thread that is readable stays readable, and blocking takes away the next thing sent rather than the record of the last one. The bucket stays private and this URL is the only authorization that ever reaches a browser.
+ * @summary A short-lived link to one conversation attachment
+ */
+export const getV1MessagingAttachmentLink = async (conversationId: string,
+    attachmentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1MessagingAttachmentLinkResponse> => {
+
+  return apiFetch<getV1MessagingAttachmentLinkResponse>(getGetV1MessagingAttachmentLinkUrl(conversationId,attachmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 
@@ -14577,6 +15204,211 @@ export const getDeleteV1UsersMeSavedSearchUrl = (savedSearchId: string,) => {
 export const deleteV1UsersMeSavedSearch = async (savedSearchId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1UsersMeSavedSearchResponse> => {
 
   return apiFetch<deleteV1UsersMeSavedSearchResponse>(getDeleteV1UsersMeSavedSearchUrl(savedSearchId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1UsersMeBlocksResponse200 = {
+  data: BlocksResponse
+  status: 200
+}
+
+export type getV1UsersMeBlocksResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1UsersMeBlocksResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1UsersMeBlocksResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1UsersMeBlocksResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1UsersMeBlocksResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1UsersMeBlocksResponseSuccess = (getV1UsersMeBlocksResponse200) & {
+  headers: Headers;
+};
+export type getV1UsersMeBlocksResponseError = (getV1UsersMeBlocksResponse400 | getV1UsersMeBlocksResponse401 | getV1UsersMeBlocksResponse403 | getV1UsersMeBlocksResponse500 | getV1UsersMeBlocksResponse503) & {
+  headers: Headers;
+};
+
+export type getV1UsersMeBlocksResponse = (getV1UsersMeBlocksResponseSuccess | getV1UsersMeBlocksResponseError)
+
+export const getGetV1UsersMeBlocksUrl = (params?: GetV1UsersMeBlocksParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/users/me/blocks?${stringifiedParams}` : `/v1/users/me/blocks`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. One page of the caller’s own blocks, newest first, keyed on when the block was made with the blocked row as a tie-breaker so the page boundary is total. Each row names the person by **display name and storefront slug only**, both of which may be null, and carries an opaque `reference` for the unblock. **No account identifier is returned**, here or anywhere on this surface. There is no corresponding operation for the other direction: nothing in this API answers who has blocked the caller.
+ * @summary The people the caller has blocked
+ */
+export const getV1UsersMeBlocks = async (params?: GetV1UsersMeBlocksParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1UsersMeBlocksResponse> => {
+
+  return apiFetch<getV1UsersMeBlocksResponse>(getGetV1UsersMeBlocksUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1UsersMeBlocksResponse200 = {
+  data: BlockMutationResponse
+  status: 200
+}
+
+export type postV1UsersMeBlocksResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1UsersMeBlocksResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1UsersMeBlocksResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1UsersMeBlocksResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1UsersMeBlocksResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1UsersMeBlocksResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1UsersMeBlocksResponseSuccess = (postV1UsersMeBlocksResponse200) & {
+  headers: Headers;
+};
+export type postV1UsersMeBlocksResponseError = (postV1UsersMeBlocksResponse400 | postV1UsersMeBlocksResponse401 | postV1UsersMeBlocksResponse403 | postV1UsersMeBlocksResponse404 | postV1UsersMeBlocksResponse500 | postV1UsersMeBlocksResponse503) & {
+  headers: Headers;
+};
+
+export type postV1UsersMeBlocksResponse = (postV1UsersMeBlocksResponseSuccess | postV1UsersMeBlocksResponseError)
+
+export const getPostV1UsersMeBlocksUrl = () => {
+
+
+
+
+  return `/v1/users/me/blocks`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Blocks the person on the other side of a conversation the caller is in, or of a public storefront slug — **exactly one of the two per request**, which is why the body is a union rather than one object with optional fields. **No account identifier is accepted**: there is no field in either shape that could carry one. The effect is symmetric, because the predicate six existing operations already consult tests both directions: after this, neither person can start a conversation with the other, send a message into one they already share, make or counter an offer, open a service request or quote one. Nothing historical is touched — no conversation is deleted, closed, muted or hidden, no message is altered, and no offer or service request changes state. The blocked person is **not notified**, and the blocked seller’s catalogue listings stay exactly as visible as before. **Idempotent**: blocking somebody already blocked reports `changed: false`, refreshes the stored reason and still succeeds. A conversation that does not exist, one the caller is not in, an unknown slug, a storefront that is not publicly visible and the caller themselves all answer 404 — one answer for all five, so this operation cannot be used to find out which threads or storefronts exist. No second factor is required: blocking is a safety action, and a step-up challenge in front of it would be the wrong trade.
+ * @summary Block somebody
+ */
+export const postV1UsersMeBlocks = async (blockRequest: BlockRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1UsersMeBlocksResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1UsersMeBlocksResponse>(getPostV1UsersMeBlocksUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(blockRequest)
+  }
+);}
+
+
+
+export type deleteV1UsersMeBlockResponse200 = {
+  data: BlockMutationResponse
+  status: 200
+}
+
+export type deleteV1UsersMeBlockResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1UsersMeBlockResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1UsersMeBlockResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1UsersMeBlockResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1UsersMeBlockResponseSuccess = (deleteV1UsersMeBlockResponse200) & {
+  headers: Headers;
+};
+export type deleteV1UsersMeBlockResponseError = (deleteV1UsersMeBlockResponse401 | deleteV1UsersMeBlockResponse403 | deleteV1UsersMeBlockResponse500 | deleteV1UsersMeBlockResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1UsersMeBlockResponse = (deleteV1UsersMeBlockResponseSuccess | deleteV1UsersMeBlockResponseError)
+
+export const getDeleteV1UsersMeBlockUrl = (reference: string,) => {
+
+
+
+
+  return `/v1/users/me/blocks/${reference}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Removes one block, named by the opaque `reference` a previous list response carried. The reference is **not** an account identifier and must not be constructed or parsed by a client. **Idempotent, and deliberately silent about failure**: a reference this API cannot read and a reference naming somebody the caller never blocked both report `changed: false` and succeed, so trying references cannot reveal whose blocks exist. The writer is scoped to the caller in its own statement, so a reference from another person’s list removes nothing. Unblocking restores contact rather than merely recording it: the operations refused while the block stood work again immediately.
+ * @summary Unblock somebody
+ */
+export const deleteV1UsersMeBlock = async (reference: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1UsersMeBlockResponse> => {
+
+  return apiFetch<deleteV1UsersMeBlockResponse>(getDeleteV1UsersMeBlockUrl(reference),
   {
     ...options,
     method: 'DELETE'
@@ -19834,7 +20666,7 @@ export const getGetV1AdminUserRolesUrl = (userId: string,) => {
 }
 
 /**
- * Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it. **Strictly read-only**: there is no operation in this API that creates, changes or removes a role assignment, because no authoritative writer for `user_roles` exists in this repository and the rules for one are not defined. That gap is reported rather than filled.
+ * Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it, and that is unchanged by the writers below: who acted and why is recorded on the row and reported in no response. The operations that change a grant are `POST /v1/admin/users/{userId}/roles` and `POST /v1/admin/users/{userId}/roles/revoke`, both behind `users.role.manage` rather than this key, so a colleague who may read roles can change none.
  * @summary The roles one account holds
  */
 export const getV1AdminUserRoles = async (userId: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminUserRolesResponse> => {
@@ -19845,6 +20677,302 @@ export const getV1AdminUserRoles = async (userId: string, options?: Parameters<t
     method: 'GET'
 
 
+  }
+);}
+
+
+
+export type postV1AdminUserRoleResponse200 = {
+  data: StaffRoleWriteResponse
+  status: 200
+}
+
+export type postV1AdminUserRoleResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminUserRoleResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminUserRoleResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminUserRoleResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminUserRoleResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminUserRoleResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminUserRoleResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminUserRoleResponseSuccess = (postV1AdminUserRoleResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminUserRoleResponseError = (postV1AdminUserRoleResponse400 | postV1AdminUserRoleResponse401 | postV1AdminUserRoleResponse403 | postV1AdminUserRoleResponse404 | postV1AdminUserRoleResponse409 | postV1AdminUserRoleResponse500 | postV1AdminUserRoleResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminUserRoleResponse = (postV1AdminUserRoleResponseSuccess | postV1AdminUserRoleResponseError)
+
+export const getPostV1AdminUserRoleUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}/roles`
+}
+
+/**
+ * Requires the internal BFF credential and `users.role.manage` in an aal2 session. A `reason` is always required, and a value of whitespace is not one. `expiresAt` is optional and must be in the future; absent means a grant that does not expire, and a later grant of the same role is the only way to change an expiry. Granting a role the account already holds refreshes that single grant rather than adding a second, and granting one that was withdrawn reinstates it with a fresh actor, moment and reason — there is no operation anywhere that clears a withdrawal on its own. **Every boundary is applied in the database against the caller’s own effective roles**: a self-grant is refused, `super_admin` is never grantable, a role the role table marks unassignable is refused, and a role above the caller’s own highest effective role is refused. Nothing in the request body can widen any of that. A caller without the key, an account that does not exist and a role key that names no role are one indistinguishable 404.
+ * @summary Grant a role to one account
+ */
+export const postV1AdminUserRole = async (userId: string,
+    staffRoleGrantRequest?: StaffRoleGrantRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminUserRoleResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminUserRoleResponse>(getPostV1AdminUserRoleUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(staffRoleGrantRequest)
+  }
+);}
+
+
+
+export type postV1TrackResponse202 = {
+  data: TrackResponse
+  status: 202
+}
+
+export type postV1TrackResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1TrackResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1TrackResponse429 = {
+  data: ProblemDetails
+  status: 429
+}
+
+export type postV1TrackResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1TrackResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1TrackResponseSuccess = (postV1TrackResponse202) & {
+  headers: Headers;
+};
+export type postV1TrackResponseError = (postV1TrackResponse400 | postV1TrackResponse403 | postV1TrackResponse429 | postV1TrackResponse500 | postV1TrackResponse503) & {
+  headers: Headers;
+};
+
+export type postV1TrackResponse = (postV1TrackResponseSuccess | postV1TrackResponseError)
+
+export const getPostV1TrackUrl = () => {
+
+
+
+
+  return `/v1/track`
+}
+
+/**
+ * Requires the internal BFF credential, like every `/v1` route, and **no session** — a signed-out visitor browsing the catalogue is the normal case, so the account is optional and its absence simply means the events have none. A session token, when the caller has one, is the **only** source of the account: the request body has no `userId` field and the schema is strict, so a caller cannot claim to be somebody. The session digest stored with each event is computed server-side from an opaque identifier under a dedicated domain-separated key, so a caller cannot choose it either. At most fifty events per request, refused whole rather than truncated. Only four event types are ingested — `click`, `contact`, `favorite`, `share`; `impression` and `view` are refused, because the impression definition is a Phase 9 decision. A dedicated rate limit applies per address and **fails closed**: if no counter can answer, the request is refused. `accepted` is how many events the server took responsibility for, not how many rows were written — de-duplication happens downstream on the event id alone, through a database identity ledger, so a retried batch legitimately writes none whatever timestamp it carries, and a client has no use for the row count. Nothing in the response reveals whether a listing exists.
+ * @summary Batched listing analytics ingestion
+ */
+export const postV1Track = async (trackRequest?: TrackRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1TrackResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1TrackResponse>(getPostV1TrackUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(trackRequest)
+  }
+);}
+
+
+
+export type getV1AdminGrantableRolesResponse200 = {
+  data: StaffGrantableRolesResponse
+  status: 200
+}
+
+export type getV1AdminGrantableRolesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminGrantableRolesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminGrantableRolesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminGrantableRolesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminGrantableRolesResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminGrantableRolesResponseSuccess = (getV1AdminGrantableRolesResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminGrantableRolesResponseError = (getV1AdminGrantableRolesResponse400 | getV1AdminGrantableRolesResponse401 | getV1AdminGrantableRolesResponse403 | getV1AdminGrantableRolesResponse500 | getV1AdminGrantableRolesResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminGrantableRolesResponse = (getV1AdminGrantableRolesResponseSuccess | getV1AdminGrantableRolesResponseError)
+
+export const getGetV1AdminGrantableRolesUrl = () => {
+
+
+
+
+  return `/v1/admin/roles/grantable`
+}
+
+/**
+ * Requires the internal BFF credential and `users.role.manage` in an aal2 session. **The set is computed in the database** from the caller’s own effective roles, by the same three tests the grant writer applies: the role must be assignable, it must not be `super_admin`, and its position in the role order must not be above the caller’s own highest effective role. So a console renders this list rather than filtering a catalogue — a filter in a client is a convention, and this is a privilege boundary. An empty list is also the answer for a caller who does not hold the key, so the two are indistinguishable. `admin` is the highest role this endpoint ever returns, to anybody.
+ * @summary The roles this caller may grant
+ */
+export const getV1AdminGrantableRoles = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminGrantableRolesResponse> => {
+
+  return apiFetch<getV1AdminGrantableRolesResponse>(getGetV1AdminGrantableRolesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1AdminUserRoleRevokeResponse200 = {
+  data: StaffRoleWriteResponse
+  status: 200
+}
+
+export type postV1AdminUserRoleRevokeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1AdminUserRoleRevokeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1AdminUserRoleRevokeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1AdminUserRoleRevokeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1AdminUserRoleRevokeResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1AdminUserRoleRevokeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1AdminUserRoleRevokeResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1AdminUserRoleRevokeResponseSuccess = (postV1AdminUserRoleRevokeResponse200) & {
+  headers: Headers;
+};
+export type postV1AdminUserRoleRevokeResponseError = (postV1AdminUserRoleRevokeResponse400 | postV1AdminUserRoleRevokeResponse401 | postV1AdminUserRoleRevokeResponse403 | postV1AdminUserRoleRevokeResponse404 | postV1AdminUserRoleRevokeResponse409 | postV1AdminUserRoleRevokeResponse500 | postV1AdminUserRoleRevokeResponse503) & {
+  headers: Headers;
+};
+
+export type postV1AdminUserRoleRevokeResponse = (postV1AdminUserRoleRevokeResponseSuccess | postV1AdminUserRoleRevokeResponseError)
+
+export const getPostV1AdminUserRoleRevokeUrl = (userId: string,) => {
+
+
+
+
+  return `/v1/admin/users/${userId}/roles/revoke`
+}
+
+/**
+ * Requires the internal BFF credential and `users.role.manage` in an aal2 session, and a `reason` as the grant does. **The row is never deleted**: the withdrawal is recorded on it with who did it and why, beside the grant it withdraws, so the history of an assignment survives its removal. Reinstatement is a fresh grant through the other operation. A self-withdrawal is refused, `super_admin` cannot be withdrawn here any more than it can be granted, and a role above the caller’s own highest effective role is refused. **The withdrawal takes effect on the target’s next request**, when the permission predicates are next evaluated: nothing in this platform terminates a session, and this operation does not claim to. Withdrawing a grant that is already withdrawn is refused rather than recorded twice, which is also what the second of two colleagues acting at once receives.
+ * @summary Withdraw a role from one account
+ */
+export const postV1AdminUserRoleRevoke = async (userId: string,
+    staffRoleRevokeRequest?: StaffRoleRevokeRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1AdminUserRoleRevokeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1AdminUserRoleRevokeResponse>(getPostV1AdminUserRoleRevokeUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(staffRoleRevokeRequest)
   }
 );}
 
@@ -27724,6 +28852,77 @@ export const deleteV1AdminCategoryTranslation = async (categoryId: string,
   {
     ...options,
     method: 'DELETE'
+
+
+  }
+);}
+
+
+
+export type getV1AdminAnalyticsListingsResponse200 = {
+  data: ListingAnalyticsResponse
+  status: 200
+}
+
+export type getV1AdminAnalyticsListingsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1AdminAnalyticsListingsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1AdminAnalyticsListingsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1AdminAnalyticsListingsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1AdminAnalyticsListingsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1AdminAnalyticsListingsResponseSuccess = (getV1AdminAnalyticsListingsResponse200) & {
+  headers: Headers;
+};
+export type getV1AdminAnalyticsListingsResponseError = (getV1AdminAnalyticsListingsResponse400 | getV1AdminAnalyticsListingsResponse401 | getV1AdminAnalyticsListingsResponse403 | getV1AdminAnalyticsListingsResponse500 | getV1AdminAnalyticsListingsResponse503) & {
+  headers: Headers;
+};
+
+export type getV1AdminAnalyticsListingsResponse = (getV1AdminAnalyticsListingsResponseSuccess | getV1AdminAnalyticsListingsResponseError)
+
+export const getGetV1AdminAnalyticsListingsUrl = (params?: GetV1AdminAnalyticsListingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/admin/analytics/listings?${stringifiedParams}` : `/v1/admin/analytics/listings`
+}
+
+/**
+ * Requires the internal BFF credential and `analytics.listing.read` in an aal2 session. One page of the `listing_analytics` rollup, newest day first, across every seller: the clicks, contacts, favourites and shares a scheduled job computed for each listing on each UTC day. **Every number is the rollup’s.** This operation defines no metric, computes no rate, ratio or click-through, reads no raw event, and reports neither impressions nor views, because 0101 ingests neither and their definitions are a later decision. There is no unique-visitor or unique-session count, because an absent session digest is stored as a zero-length value and a distinct count would report all anonymous traffic as one visitor. A seller is named by their storefront’s public slug and never by an account identifier; nothing derived from a session digest or a signed-in account appears anywhere in a row. The counts are `bigint` and travel as decimal integer strings — counts, not money, carrying no currency. A caller who does not hold the key at aal2 receives an empty page, which is the same answer as a window with nothing in it.
+ * @summary Listing analytics, by day
+ */
+export const getV1AdminAnalyticsListings = async (params?: GetV1AdminAnalyticsListingsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getV1AdminAnalyticsListingsResponse> => {
+
+  return apiFetch<getV1AdminAnalyticsListingsResponse>(getGetV1AdminAnalyticsListingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
 
 
   }

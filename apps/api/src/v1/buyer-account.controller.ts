@@ -4,6 +4,9 @@ import {
   ACCOUNT_MAX_LIMIT,
   AddFavoriteRequestSchema,
   AddressInputSchema,
+  BLOCKS_DEFAULT_LIMIT,
+  BLOCKS_MAX_LIMIT,
+  BlockRequestSchema,
   SESSION_TOKEN_HEADER,
   SavedSearchInputSchema,
   UpdateBuyerProfileRequestSchema,
@@ -14,6 +17,9 @@ import {
   type AddressInput,
   type AddressMutationResponse,
   type AddressesResponse,
+  type BlockMutationResponse,
+  type BlockRequest,
+  type BlocksResponse,
   type BuyerProfileMutationResponse,
   type BuyerProfileResponse,
   type BuyerSettingsMutationResponse,
@@ -186,6 +192,71 @@ export class BuyerAccountController {
   }
 
   /* ---------------------------------------------------------------------------------------------- */
+  /* Blocking                                                                                        */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  @Get('users/me/blocks')
+  async blocks(
+    @Req() request: AccountRequestContext,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ): Promise<BlocksResponse> {
+    const userId = await this.caller(request);
+    const page = await this.account.blocks({
+      userId,
+      limit: this.blockLimit(limit),
+      cursor: cursor === undefined || cursor === '' ? null : cursor,
+    });
+    return { items: [...page.items], nextCursor: page.nextCursor };
+  }
+
+  /**
+   * Blocks somebody.
+   *
+   * The body names a conversation or a storefront slug, never an account — there is no shape in
+   * `BlockRequestSchema` that could carry one, which is the point of it being a union of two single-handle
+   * objects rather than one object with optional fields.
+   *
+   * No second factor is required. Blocking is a safety action a frightened person takes now, and a step-up
+   * challenge between them and that action would be the wrong trade; nothing it can reach is privileged,
+   * since the only row it writes is one the caller owns and the only effect is to stop contact.
+   *
+   * Idempotent, and 200 rather than 201 for the same reason the favorite write is: the caller asked for a
+   * state, and a repeat finds the state already true.
+   */
+  @Post('users/me/blocks')
+  @HttpCode(200)
+  async addBlock(
+    @Body(new ZodValidationPipe(BlockRequestSchema)) body: BlockRequest,
+    @Req() request: AccountRequestContext,
+  ): Promise<BlockMutationResponse> {
+    const userId = await this.caller(request);
+    return await this.account.addBlock({ userId, body });
+  }
+
+  /**
+   * Unblocks somebody, by the opaque reference the list issued.
+   *
+   * The path parameter is **not** checked for identifier shape, unlike every other one on this controller.
+   * It is not an identifier: it is an opaque token, and the one decoder that understands it refuses
+   * anything it does not recognise by reporting that nothing changed — the same answer a reference for a
+   * block that is not there gets. Validating its shape here would create a second, louder refusal and with
+   * it a way to tell a malformed reference from an unmatched one.
+   */
+  @Delete('users/me/blocks/:reference')
+  @HttpCode(200)
+  async removeBlock(
+    @Param('reference') reference: string,
+    @Req() request: AccountRequestContext,
+  ): Promise<BlockMutationResponse> {
+    const userId = await this.caller(request);
+    return await this.account.removeBlock({
+      userId,
+      reference: typeof reference === 'string' ? reference : '',
+    });
+  }
+
+  /* ---------------------------------------------------------------------------------------------- */
   /* Addresses                                                                                       */
   /* ---------------------------------------------------------------------------------------------- */
 
@@ -309,6 +380,16 @@ export class BuyerAccountController {
     const parsed = parseMessagingLimit(value, {
       fallback: ACCOUNT_DEFAULT_LIMIT,
       maximum: ACCOUNT_MAX_LIMIT,
+    });
+    if (!parsed.ok) throw new RequestValidationException([{ path: 'limit', message: 'The limit is invalid.' }]);
+    return parsed.limit;
+  }
+
+  /** The same parse, against the block list's own ceiling. */
+  private blockLimit(value: string | undefined): number {
+    const parsed = parseMessagingLimit(value, {
+      fallback: BLOCKS_DEFAULT_LIMIT,
+      maximum: BLOCKS_MAX_LIMIT,
     });
     if (!parsed.ok) throw new RequestValidationException([{ path: 'limit', message: 'The limit is invalid.' }]);
     return parsed.limit;

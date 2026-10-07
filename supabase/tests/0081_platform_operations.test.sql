@@ -372,7 +372,10 @@ select is(
 select is(pg_temp.detail_outcome('fb000000-0000-4000-8000-000000000001', true, null), 'not_found',
   'a null run id is the same answer again');
 
-select is(pg_temp.catalogue('fb000000-0000-4000-8000-000000000001'), 13::bigint,
+-- Fifteen since 0102 added the listing analytics rollup, after 0101's retention job made it fourteen.
+-- Narrowed by 0107, which added two prune jobs. The invariant is that the catalogue matches the contract
+-- exactly and carries nothing extra, and that is unchanged — only the number moved.
+select is(pg_temp.catalogue('fb000000-0000-4000-8000-000000000001'), 17::bigint,
   'an admin reads the whole contract');
 select is(pg_temp.catalogue('fb000000-0000-4000-8000-000000000003'), 0::bigint,
   'a moderator reads no contract row');
@@ -915,7 +918,7 @@ select is((select count(*) from public.job_runs), 6::bigint,
   'six job runs went in and six are there after every function has been called');
 select is((select count(*) from public.outbox_events), 7::bigint,
   'seven outbox events went in and seven are there');
-select is((select count(*) from app_private.scheduled_job_contract), 13::bigint,
+select is((select count(*) from app_private.scheduled_job_contract), 17::bigint,
   'and the contract is untouched');
 
 select * from finish();

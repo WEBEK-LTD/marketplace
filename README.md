@@ -6,8 +6,7 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 
 | Path | Workspace | Status |
 | --- | --- | --- |
-| `apps/web` | `@repo/web` | Placeholder; public Next.js app added in a later Phase 1 step |
-| `apps/admin` | `@repo/admin` | Placeholder; separate Next.js admin app added later |
+| `apps/web` | `@repo/web` | The one Next.js deployment: public marketplace at `/`, staff console at `/admin` (0108) |
 | `apps/api` | `@repo/api` | Implemented (Step 3): NestJS 12 + Fastify baseline |
 | `apps/worker` | `@repo/worker` | Implemented (Step 4): BullMQ worker skeleton on Redis |
 | `packages/contracts` | `@repo/contracts` | Implemented (Step 3): Zod contracts, OpenAPI, generated client |
@@ -18,7 +17,7 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 | `packages/db` | `@repo/db` | Implemented (Step 6): server-only Kysely factory and RLS transaction helper |
 | `packages/server-config` | `@repo/server-config` | Implemented (Step 7): environment variable inventory and server-only configuration reader |
 | `packages/telemetry` | `@repo/telemetry` | Implemented (Step 8): vendor-neutral tracing and log correlation (server-only) |
-| `packages/e2e` | `@repo/e2e` | Implemented (Step 9): Playwright smoke tests (TOOL-7), test tooling only |
+| `packages/e2e` | `@repo/e2e` | Implemented (Step 9): Playwright smoke tests (TOOL-7), test tooling only. Points at the two local servers by default and at deployed targets through `E2E_WEB_URL` / `E2E_ADMIN_URL` (see *Deployment verification*) |
 
 ## `@repo/api`
 
@@ -31,13 +30,16 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 - Graceful shutdown on SIGTERM/SIGINT: in-flight requests finish, their connections close, and the process exits with code 0.
 - The OpenAPI document is not served by the API.
 
-## `@repo/web` and `@repo/admin`
+## `@repo/web` — the marketplace and the console
 
-- Next.js 16 (App Router, Turbopack), React 19, next-intl 4, Tailwind CSS 4. Local ports: web 3000, admin 3001. Built for Netlify with `@netlify/plugin-nextjs`; each app has a `netlify.toml` (configuration only, no Netlify site exists).
-- Every HTML response is rendered per request and carries a nonce-based CSP (`default-src 'self'`; scripts and styles only from this origin with the request's nonce and `'strict-dynamic'`; `object-src 'none'`; `frame-ancestors 'none'`; no `unsafe-inline`/`unsafe-eval`). Static headers on every response: HSTS, `nosniff`, `Referrer-Policy` (`strict-origin-when-cross-origin` on web, `no-referrer` on admin), a restrictive `Permissions-Policy`, `Cross-Origin-Opener-Policy: same-origin` and `X-Robots-Tag: noindex` on every path except the public catalogue and the CMS static pages, where the page's own metadata decides instead (admin stays noindex everywhere). Canonical URLs, hreflang alternates and `robots.txt` are served. The sitemaps are built from the API and exclude everything that is not indexable; they need absolute URLs, so they are **deferred until a production domain is configured** — while `PUBLIC_WEB_ORIGIN` is unset the sitemap index and its children answer 404, `robots.txt` is served without a `Sitemap:` directive, and nothing anywhere derives an origin from the request host.
-- `src/proxy.ts` only handles locale routing and the CSP nonce; it never authorizes.
+- Next.js 16 (App Router, Turbopack), React 19, next-intl 4, Tailwind CSS 4. Local port 3000. Built for Netlify with `@netlify/plugin-nextjs` and one `netlify.toml`.
+- **One origin, two surfaces (0108, owner-approved topology revision).** `www.example.com` serves the public marketplace and `www.example.com/admin` serves the staff console. There is no `admin.` hostname, no second Netlify site and no reverse proxy. The two share a runtime and nothing else: `src/app/layout.tsx` branches on the surface and renders a different document for each, `src/i18n/request.ts` gives each its own locale model and message catalogue (`messages/` and `messages/admin/`), the console's code lives under `src/admin/` and `src/app/admin/`, and `.dependency-cruiser.cjs` refuses an import either way across that line. `src/admin/paths.ts` is the only module that knows where the console is mounted.
+- **`/admin/*` bypasses every public routing stage**, in `src/proxy.ts`, before locale routing: no next-intl rewrite (so the console's own route handlers are reachable), no catalogue resolution, no `publicWebServes` check and — the one that matters — no SEO redirect-map lookup, so an operator-authored redirect can never shadow a live console page.
+- Session cookies stay separate by name: `__Host-mp_access`/`__Host-mp_refresh` for the marketplace, `__Host-mp_admin_access`/`__Host-mp_admin_refresh` for the console. The `__Host-` prefix forbids path scoping, so both are sent on every request to the host; nothing reads the other's, and `test/no-totp.test.ts` and `test/admin/no-recovery.test.ts` assert that neither surface contains the code to mint or read the other's. Authorization is unchanged and entirely server-side: token, `aal2`, role, permission and RLS in the API, never the proxy (C22).
+- Every HTML response is rendered per request and carries a nonce-based CSP (`default-src 'self'`; scripts and styles only from this origin with the request's nonce and `'strict-dynamic'`; `object-src 'none'`; `frame-ancestors 'none'`; no `unsafe-inline`/`unsafe-eval`). Static headers on every response: HSTS, `nosniff`, a restrictive `Permissions-Policy` and `Cross-Origin-Opener-Policy: same-origin` from `next.config.ts`, plus `Referrer-Policy` (`strict-origin-when-cross-origin` on the marketplace, `no-referrer` on the console) from the proxy — the two surfaces disagree about its value and share an origin, so it is emitted in exactly one place to keep a response from carrying two values of it. `X-Robots-Tag: noindex` and `X-Robots-Tag: noindex` on every path except the public catalogue and the CMS static pages, where the page's own metadata decides instead (admin stays noindex everywhere). Canonical URLs, hreflang alternates and `robots.txt` are served. The sitemaps are built from the API and exclude everything that is not indexable; they need absolute URLs, so they are **deferred until a production domain is configured** — while `PUBLIC_WEB_ORIGIN` is unset the sitemap index and its children answer 404, `robots.txt` is served without a `Sitemap:` directive, and nothing anywhere derives an origin from the request host.
+- `src/proxy.ts` only handles locale routing, surface selection and the CSP nonce; it never authorizes.
 - Public web: English at `/`, Arabic at `/ar` (right-to-left). The URL alone decides the language: no Accept-Language redirect and no locale cookie; `/en` redirects to `/`. The header links to the other language.
-- Admin: no `/ar` prefix; the language will come from the user profile. Until profiles exist the resolver returns English; Arabic messages and the right-to-left frame are tested with an explicit locale.
+- Console: no `/ar` prefix at `/admin`; the language comes from the signed-in staff member's own profile, and resolves to English for a signed-out visitor or an unreachable API. Arabic messages and the right-to-left frame are tested with an explicit locale.
 - Unknown URLs return a server-rendered, localized 404. There is deliberately no catch-all route: Next.js 16 does not server-render not-found pages reached through `notFound()` (vercel/next.js#98295).
 - Placeholder content only (site name "Marketplace" / "السوق", neutral home pages); no production branding.
 - BFF skeleton (`src/server/bff`, server-only): validated `API_BASE_URL` (required at runtime, `http`/`https`, no credentials), the generated API client, and an Origin/CSRF check (state-changing requests need an `Origin` equal to the request origin, or `Sec-Fetch-Site: same-origin`). No route handlers, no API forwarding, no authentication. No `NEXT_PUBLIC_*` variables.
@@ -70,10 +72,11 @@ Shared primitives used by both apps: `PageContainer`, `SkipLink`, `Heading`. App
 | `APP_SYSTEM_DATABASE_URL` | api | yes | — | yes | local, ci, staging, production | current | Server-only PostgreSQL connection string for the app_system role, which reaches the database only through named SECURITY DEFINER functions |
 | `APP_SYSTEM_DATABASE_MAX_CONNECTIONS` | api | no | `10` | no | local, ci, staging, production | current | Upper bound of pooled app_system connections (1-500) |
 | `DEVICE_IDENTITY_KEY` | api | yes | — | yes | local, ci, staging, production | current | Server-only HMAC-SHA-256 key for the device identity digest stored in known_devices.device_hash (owner decision C-15); at least 32 characters, cryptographically random. Distinct from PSEUDONYMOUS_USER_ID_KEY and separately domain-separated; never reaches a browser, a database, Redis, a response or telemetry |
+| `ANALYTICS_SESSION_KEY` | api | yes | — | yes | local, ci, staging, production | current | Server-only HMAC-SHA-256 key for the analytics session digest stored in listing_events.session_hash (0101 owner decision 4); at least 32 characters, cryptographically random. Distinct from PSEUDONYMOUS_USER_ID_KEY and DEVICE_IDENTITY_KEY and separately domain-separated, so an analytics digest can never be correlated with a device row or a log line; never reaches a browser, a database, Redis, a response or telemetry |
 | `OTP_PEPPER` | api | yes | — | yes | local, ci, staging, production | current | Server-only HMAC-SHA-256 pepper for OTP code digests (owner decision C-9); at least 32 bytes |
 | `WAABEK_BASE_URL` | api | yes | — | no | local, ci, staging, production | current | Base URL of the Waabek WhatsApp delivery API (http or https, no credentials); https://waabek.com in production |
 | `WAABEK_API_KEY` | api | yes | — | yes | local, ci, staging, production | current | Server-only Waabek API key sent as the X-API-Key header; never reaches a browser |
-| `INTERNAL_BFF_CREDENTIAL` | api, web, admin | yes | — | yes | local, ci, staging, production | current | Server-only internal BFF credential presented as the x-internal-credential header (owner decision C-2d); 32 random bytes as base64url. The API accepts CURRENT,PREVIOUS during rotation; web and admin send one value and accept only a single credential |
+| `INTERNAL_BFF_CREDENTIAL` | api, web | yes | — | yes | local, ci, staging, production | current | Server-only internal BFF credential presented as the x-internal-credential header (owner decision C-2d); 32 random bytes as base64url. The API accepts CURRENT,PREVIOUS during rotation; the web deployment sends one value and accepts only a single credential. Since 0108 one Next.js deployment serves both the public marketplace and the staff console, so one value covers both surfaces |
 | `SUPABASE_URL` | api | yes | — | no | local, ci, staging, production | current | Base URL of the Supabase project the API signs users in against (https, no credentials). Server-only: the browser never calls Supabase Auth (F2) |
 | `SUPABASE_SECRET_KEY` | api | yes | — | yes | local, ci, staging, production | current | Server-only Supabase secret key used for the password grant against Supabase Auth; never reaches a browser, a log or a response body (F2) |
 | `WEB_PUBLIC_ORIGIN` | api | yes | — | no | local, ci, staging, production | current | Origin of the public web app (https, no path), used server-side to build the password-reset recovery link (F3). Server-only: it is never returned by an API response and never reaches a client bundle |
@@ -87,7 +90,7 @@ Shared primitives used by both apps: `PageContainer`, `SkipLink`, `Heading`. App
 | `EMAIL_RELAY_INTERVAL_MS` | worker | no | `15000` | no | local, ci, staging, production | current | How often the email outbox relay claims a batch, in milliseconds (1000-3600000). Transport only: it sets the polling cadence and no delivery, retry or business rule |
 | `OUTBOX_RELAY_INTERVAL_MS` | worker | no | `15000` | no | local, ci, staging, production | current | How often the transactional outbox relay claims a batch, in milliseconds (1000-3600000). Transport only: it sets the polling cadence and no business, retry or completion rule |
 | `OUTBOX_SWEEPER_INTERVAL_MS` | worker | no | `300000` | no | local, ci, staging, production | current | How often the outbox sweeper runs, in milliseconds (1000-3600000). The default matches the 5-minute staleness threshold that sweep_outbox_events itself defines; the threshold, not this cadence, decides what is stale |
-| `API_BASE_URL` | web, admin | yes | — | no | local, ci, staging, production | current | Server-only API base URL for the BFF (http or https, no credentials); required at runtime, not at build |
+| `API_BASE_URL` | web | yes | — | no | local, ci, staging, production | current | Server-only API base URL for the BFF (http or https, no credentials); required at runtime, not at build |
 | `PUBLIC_WEB_ORIGIN` | web | no | — | no | local, ci, staging, production | current | The public origin this site is served from — scheme and host only, no path, no trailing slash, no credentials (for example https://host.example). The sitemap protocol requires absolute URLs and the robots.txt Sitemap directive requires one, so they are built from this value and never from the request Host header, which a client controls. Deferred until the production domain is chosen: it is optional and has no default, and while it is unset the app runs normally, robots.txt is served without a Sitemap directive, and the sitemaps answer 404. Setting it is the only step needed to turn them on. When it IS set it is validated strictly, so a malformed value is a named start-up failure rather than a malformed document. Non-secret, but server-only all the same: it is read by the sitemap and robots routes, not shipped to a browser |
 | `TOOL3_POOLER_URL` | tooling | no | — | no | local, ci | tooling | TOOL-3: local Supabase pooler URL (fixture role, no password) |
 | `TOOL3_ADMIN_URL` | tooling | no | — | yes | local, ci | tooling | TOOL-3: direct local database URL with credentials |
@@ -97,6 +100,228 @@ Shared primitives used by both apps: `PageContainer`, `SkipLink`, `Heading`. App
 | `ORVAL_OUTPUT` | tooling | no | — | no | local, ci | tooling | Code generation (TOOL-2): temporary output path set by the contracts drift check |
 | `REDIS_SERVER_BIN` | tooling | no | — | no | local, ci | tooling | redis-server binary used by the worker tests |
 <!-- env-inventory:end -->
+
+## Deployed environments (web, admin, API)
+
+A request travels **browser → Netlify site (web or admin) → API service**, and nothing skips a hop: the browser
+never addresses the API, and the site's BFF is the only thing that does. Three facts hold that chain together, and
+all three are configuration rather than code:
+
+- **`INTERNAL_BFF_CREDENTIAL` must be the same value on the web site, the admin site and the API.** The API's guard
+  is registered with `APP_GUARD` and nothing skips it, so a site whose credential does not match the API's receives
+  `403` on every call it makes. The API accepts a list, so a rotation sets the new value on the API first, then on
+  both sites, then removes the old one.
+- **`API_BASE_URL` is the API's origin as the Netlify function runtime can reach it**, not as a browser can. It is
+  required: the sites validate it at start-up and answer `500` without it. It is *not* required to be reachable —
+  see the deployment phases below, which is what lets the sites be deployed before the API is hosted (O-8).
+- **`PUBLIC_WEB_ORIGIN` is the public web's alone.** It supplies the absolute URLs in the sitemap and the
+  `Sitemap:` line in `robots.txt`; while it is unset those are simply absent, and nothing else changes. The admin
+  console is never indexed and has no field for it.
+
+The API and the worker have no hosting decision yet (O-8), so their tables below describe what they will need
+rather than something currently set anywhere.
+
+### External deployment requirements
+
+Values that cannot be derived, generated or defaulted by anything in this repository. Each has to be created
+outside it and set on the surface that reads it; a deployment is not ready until every one of them exists.
+
+| Requirement | Surface | Rule |
+| --- | --- | --- |
+| `INTERNAL_BFF_CREDENTIAL` | web, admin, API | One 43-character base64url value, cryptographically random, **the same on all three**. The API accepts a list, so a rotation sets the new value there first. |
+| `ANALYTICS_SESSION_KEY` (0101) | API | **At least 32 characters, cryptographically random, and a dedicated key.** It must never reuse `PSEUDONYMOUS_USER_ID_KEY` or `DEVICE_IDENTITY_KEY`, and neither of those may be set to it. It is the HMAC key behind `listing_events.session_hash`; the three schemes are domain-separated as well, so reuse would not break correlation resistance outright, but separate keys are what owner decision 4 requires and the API will not start without this one. |
+| `DEVICE_IDENTITY_KEY` (C-15), `PSEUDONYMOUS_USER_ID_KEY` (C-13), `OTP_PEPPER` (C-9) | API (and the pseudonymous key on the worker) | Each at least 32 characters, cryptographically random, and each a dedicated key distinct from the other two and from `ANALYTICS_SESSION_KEY`. The pseudonymous key is shared with the worker on purpose, so the same person reads the same in both services' logs; nothing else is shared. |
+| `APP_SYSTEM_DATABASE_URL`, `APP_WORKER_DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `REDIS_URL`, `WAABEK_BASE_URL`, `WAABEK_API_KEY` | API, worker | Provisioned services. None exists for a deployed environment yet, which is part of what O-8 covers. |
+| A production domain | — | **Not yet.** The first deployment phase uses the default Netlify domains, and no real domain is named anywhere in this repository. |
+
+<!-- deploy-manifest:start (generated by `pnpm run check:env -- --write-docs`; do not edit) -->
+#### Web site — Netlify site environment variables
+
+| Variable | Required | Secret | Default |
+| --- | --- | --- | --- |
+| `INTERNAL_BFF_CREDENTIAL` | yes | yes | — |
+| `API_BASE_URL` | yes | no | — |
+| `PUBLIC_WEB_ORIGIN` | no | no | — |
+
+#### API service — service environment (no deployment target yet)
+
+| Variable | Required | Secret | Default |
+| --- | --- | --- | --- |
+| `NODE_ENV` | yes | no | — |
+| `LOG_LEVEL` | no | no | `info` |
+| `PSEUDONYMOUS_USER_ID_KEY` | yes | yes | — |
+| `API_HOST` | yes | no | — |
+| `API_PORT` | yes | no | — |
+| `APP_SYSTEM_DATABASE_URL` | yes | yes | — |
+| `APP_SYSTEM_DATABASE_MAX_CONNECTIONS` | no | no | `10` |
+| `DEVICE_IDENTITY_KEY` | yes | yes | — |
+| `ANALYTICS_SESSION_KEY` | yes | yes | — |
+| `OTP_PEPPER` | yes | yes | — |
+| `WAABEK_BASE_URL` | yes | no | — |
+| `WAABEK_API_KEY` | yes | yes | — |
+| `INTERNAL_BFF_CREDENTIAL` | yes | yes | — |
+| `SUPABASE_URL` | yes | no | — |
+| `SUPABASE_SECRET_KEY` | yes | yes | — |
+| `WEB_PUBLIC_ORIGIN` | yes | no | — |
+| `REDIS_URL` | yes | yes | — |
+
+#### Worker service — service environment (no deployment target yet)
+
+| Variable | Required | Secret | Default |
+| --- | --- | --- | --- |
+| `NODE_ENV` | yes | no | — |
+| `LOG_LEVEL` | no | no | `info` |
+| `PSEUDONYMOUS_USER_ID_KEY` | yes | yes | — |
+| `REDIS_URL` | yes | yes | — |
+| `WORKER_CONCURRENCY` | no | no | `5` |
+| `WORKER_HEALTH_HOST` | yes | no | — |
+| `WORKER_HEALTH_PORT` | yes | no | — |
+| `WORKER_SHUTDOWN_TIMEOUT_MS` | no | no | `25000` |
+| `APP_WORKER_DATABASE_URL` | yes | yes | — |
+| `APP_WORKER_DATABASE_MAX_CONNECTIONS` | no | no | `10` |
+| `EMAIL_RELAY_INTERVAL_MS` | no | no | `15000` |
+| `OUTBOX_RELAY_INTERVAL_MS` | no | no | `15000` |
+| `OUTBOX_SWEEPER_INTERVAL_MS` | no | no | `300000` |
+<!-- deploy-manifest:end -->
+
+### What a deployed site does without a reachable API
+
+Measured against both built apps under `next start` with `API_BASE_URL` pointing at a closed port. This is the
+state of the first deployment phase, and it is the reason that phase is worth doing:
+
+| Surface | Without a reachable API |
+| --- | --- |
+| Web home, `/ar`, `/listings`, `/marketplace`, `/search?q=…`, `/blog` | `200` with the page shell, heading and a named unavailable region (for example "We couldn't load the listings") |
+| Web CMS pages (`/about`, `/faq`, …) | `200` titled "Page unavailable", with `<meta name="robots" content="noindex, nofollow">` |
+| Web unknown path | `404` with the 404 page and `X-Robots-Tag: noindex` |
+| `robots.txt` | **`503`**, by design: an empty `robots.txt` means "no restrictions", so a failed read must not quietly open what an administrator disallowed |
+| `sitemap.xml` | **`404`** when `PUBLIC_WEB_ORIGIN` is unset, which is the first deployment phase's configuration — the origin check runs *before* the API is consulted, so the absent origin answers first. **`503`** once the origin is set and the API is unreachable, for the same reason as `robots.txt`. Either way, never a `200` with an empty document |
+| Admin root, `/login`, and any console route | `200` with the signed-out surface ("You are signed out"), never console content |
+| Admin `robots.txt`, `sitemap.xml` | `404`: the console is never indexed and publishes neither |
+
+Every web and admin response carries `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`,
+`Permissions-Policy`, `Cross-Origin-Opener-Policy` and a `Content-Security-Policy` with a per-response nonce and
+`frame-ancestors 'none'` — none of which depends on the API. Every admin response also carries
+`X-Robots-Tag: noindex`.
+
+## Deployment verification
+
+A checklist for the first deployment of the two Netlify sites, in the order the facts become knowable. It assumes
+the **default Netlify domains**; no real domain is named anywhere in this repository. Nothing here enables, or
+depends on, any financial capability.
+
+**This is a Final QA procedure, not a development activity.** Every step below is executed once, at the Final QA
+stage, against the actual deployed targets. Until then the specs, the URL parameterization, the generated manifest
+and this runbook are repository content and nothing more: no end-to-end, browser or deployed experiment is run
+outside Final QA, and no result obtained outside it is deployment evidence (see *The status of the local Playwright
+run* below).
+
+### Owner actions, outside the repository
+
+1. Create the two Netlify sites from this repository, with the base directory left at the repository root — Netlify
+   resolves paths against the git root, which is why each app's `netlify.toml` uses a repository-root-relative
+   `publish` and a package-scoped build command (see *TOOL-1 and the pinned Deno toolchain*).
+2. Set the variables from the manifest above on each site. `API_BASE_URL` may point at a host that does not exist
+   yet; `INTERNAL_BFF_CREDENTIAL` must be the same 43-character base64url value on both. **Do not create a
+   `PUBLIC_WEB_ORIGIN` field at all** unless you are setting a real origin: only an absent variable counts as
+   deferred, and an empty field is a present value that fails its validator, which means every request answers
+   `500`.
+3. If pull-request previews are enabled, **the admin previews must have access protection**. A preview is a public
+   URL unless something stops it, and an admin preview with none is a sign-in page on the open internet.
+4. Note both default domains. Everything below is run against them.
+
+### Phase 1 — the sites, before an API is hosted
+
+Each step says what a pass looks like. A failure here is a runtime, routing, header or configuration defect, which
+is what this phase exists to find.
+
+1. **The runtime boots.** The web home page answers `200` and renders its heading. A `500` on every path means
+   configuration validation failed — the Netlify function log names the variable and never its value.
+2. **Middleware runs.** The home page sets a `Content-Security-Policy` containing `'nonce-…'`, and a second request
+   gets a *different* nonce. `/ar` answers `200` with `lang="ar"` and `dir="rtl"`. A missing nonce means the
+   middleware did not run in this runtime, and every inline script would be blocked.
+3. **Headers are present**, as listed in the table above, on both sites.
+4. **Error states are correct, not blank.** `/listings`, `/marketplace`, `/search?q=chair` and `/blog` answer `200`
+   with their heading and a named unavailable region. A `500`, an empty page or a visible stack trace is a defect.
+5. **`robots.txt` answers `503` and `sitemap.xml` answers `404`**, with no body a crawler could read as
+   permission. The two statuses differ because the two routes fail for different reasons: `robots.txt` is gated on
+   the API read, which cannot answer; `sitemap.xml` checks `PUBLIC_WEB_ORIGIN` first and returns `404` because
+   step 2 leaves it unset. Once an origin is configured, `sitemap.xml` becomes `503` while the API is unreachable.
+   A `200` with an empty body, from either route, would be the one genuinely dangerous outcome.
+6. **Unknown paths answer `404`** with the 404 page, on both sites.
+7. **The admin console refuses to show anything.** Its root and every console route answer `200` with the signed-out
+   surface. No console heading, table, name or identifier appears in any response. Every admin response carries
+   `X-Robots-Tag: noindex`.
+8. **Nothing leaks.** No response body contains `x-internal-credential`, the credential value, `API_BASE_URL`, or any
+   variable name from the manifest.
+9. **Run the deployed smoke** (below) against both domains. This run — not any earlier one — is the evidence.
+
+### Phase 2 — once an API is hosted (O-8)
+
+10. `robots.txt` answers `200` with the authored directives, and a `Sitemap:` line exactly when `PUBLIC_WEB_ORIGIN`
+    is set. `sitemap.xml` answers `200` with a `<urlset>` or `<sitemapindex>`.
+11. The catalogue surfaces render content instead of their unavailable regions.
+12. A staff sign-in on the admin console completes, and the console renders. Financial activation stays disabled:
+    `finance.settlement_posting_enabled` remains `FALSE`, and no payment, payout, settlement, refund or
+    seller-balance operation is exercised by any step here.
+
+### Running the smoke against a deployed target
+
+`packages/e2e` points at local servers by default and at deployed ones when told to:
+
+```
+E2E_WEB_URL=https://<web-site>.netlify.app \
+E2E_ADMIN_URL=https://<admin-site>.netlify.app \
+pnpm --filter @repo/e2e run test:e2e
+```
+
+Each URL is independent: set one and that app is addressed remotely while the other still starts locally. With
+neither set, nothing changes — the same two local servers on ports 3100 and 3101 as before. A deployed run starts
+no server, so Playwright needs only a browser (`playwright install --with-deps chromium`).
+
+The specs assert what holds in **both** phases, which is what makes one suite usable before and after the API
+exists: `robots.txt` is either authored directives or a `503`, never a permissive empty `200`; a catalogue page is
+either results or a named unavailable region, never an error; the admin console shows the signed-out surface
+whatever its API can do.
+
+### The status of the local Playwright run
+
+The suite was executed once in the development sandbox, against two locally built servers with `API_BASE_URL`
+pointing at a closed port: **41 of 41 passed**, and that run is what found the two stale specs recorded below and
+the admin console's stricter referrer policy.
+
+**That result is non-authoritative local validation only.** It is not Final QA evidence, not deployment evidence,
+and not part of Gate B. It demonstrates that the specs run and that they describe the current application; it
+demonstrates nothing about any deployed target, because it visited none. It also ran against a Chromium staged to
+the pinned revision's path in that sandbox rather than the pinned build itself, so it is not even evidence about
+the pinned browser.
+
+The authoritative verification is a single run at the Final QA stage, against the actual deployed sites, with the
+pinned Chromium installed by `playwright install --with-deps chromium`. Nothing between now and then re-runs it.
+
+### What the local run found
+
+Recorded as the origin of three repository changes, not as evidence of anything deployed:
+
+- `smoke.spec.ts` expected the admin console's root heading to be "Admin". It became the signed-out surface when
+  staff authentication landed, so the assertion had been describing a page that no longer existed.
+- All four tests in `contact-change.spec.ts` navigated to `/dashboard/settings` expecting a rendered phone-change
+  form. Dashboard protection now answers a real `307` to the sign-in page, so those assertions described a surface a
+  signed-out browser cannot reach. The spec was rewritten around what a browser can establish without a session.
+- Both had gone unnoticed because Playwright has never been runnable in the sandbox this repository is developed in.
+- The admin console sets `Referrer-Policy: no-referrer` where the public site sets `strict-origin-when-cross-origin`
+  — stricter, and correct, because an admin page's path is itself information about what is being administered.
+
+### Known-correct states, and one known defect
+
+- The `503` on `robots.txt` and `sitemap.xml` without an API is **correct** and deliberate: it fails closed.
+- A side effect worth knowing while it lasts: a crawler that reads `robots.txt` first — Google and Bing both do —
+  treats a `5xx` there as "disallow everything", so during phase 1 the site is effectively closed to them.
+- **Known defect, recorded for a corrective increment** (see *Corrective increment candidates*): the catalogue index
+  pages and the blog index keep `<meta name="robots" content="index, follow">` while rendering their unavailable
+  region, so an error state is indexable at `200`. The CMS pages already show the right pattern — they switch to
+  `noindex, nofollow` when the content could not be read. Phase 1's `robots.txt` `503` masks this; a transient read
+  failure once the API is up does not.
 
 ## Telemetry: tracing and log correlation
 
@@ -652,6 +877,556 @@ API stays off (`auto_expose_new_tables = false`, `pg_graphql` never installed).
 > have RLS and at least one policy, and holds nothing in `app_private`. The pgTAP guard asserts exactly
 > that. Confirm or correct this reading when convenient; nothing else depends on the wording.
 
+#### Who may grant a role (0100)
+
+`public.user_roles` is written by exactly two named definer functions, `app_private.staff_role_grant` and
+`app_private.staff_role_revoke`, and by nothing else — `app_system` holds no `insert`, `update` or `delete`
+on the table, so "a withdrawal is never a delete" is a privilege fact rather than a convention. Both require
+`users.role.manage`, the key 0033 has seeded since the beginning and that nothing could reach before this
+increment, at the assurance level the holding role demands.
+
+**The ceiling is computed in the database, from the caller's own effective roles.** A manager may never act on
+a role whose `roles.sort_order` is above the highest they themselves effectively hold under 0003's rule — not
+revoked, not expired, and MFA satisfied — and `roles.is_assignable` is honoured, so `guest` is never granted.
+`super_admin` is excluded by key rather than by position, which makes `admin` the highest role this console
+can grant to anybody. `app_private.staff_role_grantable` answers the same three tests as a list, so a console
+renders what the writer would accept instead of filtering a catalogue on the client.
+
+By **approved owner decision**, confirmed after delivery, the ceiling governs **withdrawal as well as
+granting**: no role-management operation may remove a role above the caller's effective ceiling, and
+`super_admin` cannot be revoked here either. This console can neither create nor destroy a `super_admin`, so
+that role stays a database-level operation in both directions and there is no path from a web request to a
+last-`super_admin` lockout. `STAFF_ROLE_NOT_REVOCABLE` is the code for it.
+
+A self-grant and a self-revoke are both refused; a reason is required on both operations and whitespace is not
+a reason; an expiry must be in the future and a later grant of the same role is the only way to change one.
+Reinstatement is an explicit new grant that records a fresh actor, moment and reason — exactly one function in
+`app_private` clears `revoked_at`, and it does so only in the statement that records that new grant. Who acted
+and why is stored on the row in `granted_by`, `revoked_by` and `reason`, and is deliberately absent from every
+read contract: `app_private.admin_user_roles` reports no actor and no reason.
+
+**Nothing ends a session.** There is no revocation primitive anywhere in the platform, and 0043 records that
+reading `auth.sessions` needs its columns established by live observation under C-14 first. A withdrawal
+therefore takes effect when the permission predicates are next evaluated — the target's next request — and the
+console says so in words rather than implying a lockout it cannot deliver.
+
+#### What listing analytics counts, and what it cannot (0102)
+
+`public.listing_analytics` holds one row per `(listing_id, day)` with four counts — clicks, contacts,
+favourites and shares — written only by `app_private.rollup_listing_analytics` on the nightly
+`listing_analytics.rollup` job, and read by exactly two functions: the seller's own, scoped by ownership, and
+the staff page behind `analytics.listing.read`. That key has been seeded since 0033 and this increment is the
+first thing in the platform to consume it.
+
+**Four columns of `listing_events` are structurally null, which is why the rollup is shaped as it is.**
+`seller_user_id` is never written — 0101 omits it and 0013's writer derives nothing — and
+`listing_events_append_only` rejects `UPDATE` per row, so it can never be backfilled; the table's own
+`listing_events_seller_read` policy therefore matches nothing, and **seller attribution comes from
+`listings.seller_user_id`**, resolved at rollup time and stored on the rollup row. `promotion_id`,
+`referrer_host` and (on the browse surfaces) `source` are null for the same kind of reason: nothing in this
+repository sends them.
+
+**There are no impressions and no views**, because 0101 ingests neither and what counts as one is a later
+decision. There is therefore **no rate, ratio or click-through** anywhere on either surface: without
+impressions there is no denominator, and inventing one would be inventing a KPI. **There is no unique-visitor
+or unique-session count either**, and that is a data fact rather than a preference — 0013 stores an absent
+session digest as `decode('', 'hex')`, which is a **zero-length `bytea` and not null**, so every anonymous
+event shares one value and a distinct count would report all anonymous traffic as a single visitor.
+
+**The day is a UTC day**, matching `rollup_promotion_analytics`. `platform.display_timezone` is seeded
+`"Africa/Cairo"` (C20) and is a display setting: a stored day and a displayed day can differ by up to three
+hours at the boundary, and the alternative — one rollup on Cairo days and one on UTC days — would have been
+worse. Retention does not reach the aggregate: raw events live 90 days at minimum (0101) and
+`listing_analytics` is kept indefinitely, which is the point of having it.
+
+**Nothing writes but the job.** There is no console control, no recompute button and no API write anywhere in
+0102; a day is corrected by running the rollup for that day, which is idempotent because the upsert replaces
+the counts rather than adding to them. The rollup function is granted to **nobody** and is reachable only
+through `app_private.run_scheduled_job`, which is also what gives every occurrence its single `job_runs` row
+with the rollup's own row count as `processed_count`. (`rollup_promotion_analytics` is granted to `app_system`
+and `app_worker`; that is an older, looser shape, and 0025 was not reopened to change it.)
+
+**The counts are counts, not money.** They are `bigint` sums and cross the contract as decimal integer strings
+through `AnalyticsCountSchema`, which is deliberately **not** the minor-amount schema: no currency, no decimal
+places and no dependency on `@repo/money`, so nothing downstream can render a click through a money formatter.
+`favourites` and `shares` read zero until a control on the public site fires one — both are accepted by the
+ingestion contract and by the database, and no catalogue surface emits either yet.
+
+#### Blocking somebody, and the six things it already stopped (0103)
+
+`public.user_blocks` and `public.is_blocked_between` have existed since **0005**, and six closed increments
+consult the predicate: `messaging_start_conversation`, `offer_create`, `offer_counter`,
+`service_request_create`, `service_quote_create`, and `tg_messages_block_rule` — a `before insert` trigger on
+`public.messages`, which is why a message into a thread that already exists is refused too.
+`messaging_send_message` has no block check of its own; it inserts, catches the trigger's
+`insufficient_privilege` and reports `blocked`, so the refusal cannot be forgotten by a writer that neglects
+to ask for it. **Nothing could create the row.** `MESSAGING_BLOCKED`, `OFFER_BLOCKED` and
+`SERVICE_REQUEST_BLOCKED` were three tested refusals that could not happen, and somebody being harassed had no
+way to stop it. 0103 adds the writer, the remover and the list, and changes none of the six.
+
+**A person is named by a conversation or by a seller slug, never by an account identifier.** Both are handles
+the caller already holds; `app_private.block_target` is the one place either becomes an account, and it accepts
+**exactly one per call** — both at once is a malformed request rather than a precedence rule nobody decided.
+The conversation arm requires the caller to be a live participant and resolves the single other live
+non-support participant; the slug arm follows 0053's own precedent for the "message this seller" surface, where
+the identifier is read and used inside one `SECURITY DEFINER` function and never crosses a boundary in either
+direction. Every failure answers the same way — a conversation that does not exist, one the caller is not in,
+one they have left, a three-party thread, an unknown slug, a storefront that is not publicly visible, and the
+caller themselves all become one `not_found` — so neither surface is an oracle over threads or storefronts.
+
+**The unblock reference is an opaque token, not an identifier.** `public.user_blocks` has no surrogate key — its
+primary key is the pair — so the only thing that names one of its rows is the blocked account, which is exactly
+the value that must not cross. The API therefore mints a versioned `br1` token over a row it has just returned
+to that caller, beside the `bl1` list cursor, with the same strict decode as every other cursor in the
+platform. It is **not a credential**: `buyer_block_remove` carries `blocker_id = <caller>` in its own
+predicate, so a reference lifted from another person's list matches nothing. A reference the API cannot read
+and one naming a block that was never there answer **identically** — `changed: false`, byte for byte — so
+trying references cannot reveal whose blocks exist.
+
+**The effect is symmetric, and that is 0005's predicate rather than a decision made here.**
+`is_blocked_between` tests both directions and is not modified, so blocking somebody also stops them reaching
+the blocker — proved from both sides, including the blocked seller being refused a quote on a request opened
+before the block.
+
+**Nothing historical moves.** No conversation is deleted, closed, muted, hidden or left; no message is altered
+and an existing thread stays readable and in both inboxes; no offer and no service request changes state —
+their state machines are 7-H's and 7-I's and a block refuses only the *next* action. **The public catalogue is
+untouched**: visibility is `listing_is_visible()`'s decision, no `public_%` reader consults the block
+predicate, and a blocked seller's listings stay exactly as findable as before. Filtering them per viewer would
+have changed a closed read surface and the caching in front of it.
+
+**Blocking is silent, and that is load-bearing.** There is no staff or moderation view, no reverse lookup, and
+`user_blocks` keeps the single `user_blocks_self_all` policy 0005 gave it. The quieter routes to the same
+disclosure are closed too: a block writes **no audit row, no outbox event, no security event and no
+notification** — each of those is a durable record of who blocked whom, two are already read by staff
+consoles, and one is a relay that would reach the blocked person. The `user_blocks_by_blocked` index exists for
+the predicate; turning it into a reader would tell somebody exactly whom they have upset.
+
+**Two owner-confirmed decisions, recorded here so a later increment does not quietly undo them.**
+
+1. **No new cursor problem code.** The buyer block-list cursor refuses with the existing
+   `ACCOUNT_CURSOR_INVALID`, which 7-E already defines as "one code for every unusable favorites or
+   saved-search cursor, for the same reason the messaging and notification ones have only one: the remedy is
+   identical in all cases and naming which structural check failed would only help somebody mapping the
+   format." A block-list position is the same kind of value and gets the same code. A `BUYER_BLOCKS_CURSOR_INVALID`
+   was considered and deliberately **not** added. An unusable *unblock reference* is not a cursor refusal at
+   all and gets no code: it reports `changed: false`.
+2. **The unblock reference stays an opaque versioned `br1` token minted at the API edge.** No surrogate `id`
+   column is added to `public.user_blocks` — its primary key remains the pair `(blocker_id, blocked_id)` — and
+   **a blocked account UUID is never exposed**, in any response, cursor, path, prop or RSC payload. Adding a
+   column would have put the identifier one `select` away from a response; minting the reference keeps the
+   account on the database side of the boundary while still giving the list something to act on.
+
+**No new permission key, no cap, no second factor.** The table's own policy already says who may write it: its
+owner. 0005 sets no limit on how many people somebody may block and none is invented. And a step-up challenge
+between a frightened person and the button that stops contact would be the wrong trade — nothing this surface
+reaches is privileged, since the only row it writes is one the caller owns.
+
+The web surface puts the list at `/dashboard/blocks` and the **Block** control in two places: on a conversation,
+where it sits beside reporting because the two are what somebody reaches for when a thread has gone wrong and
+they do different things (a report asks staff to look; a block stops contact and tells nobody), and on a
+trading seller's storefront. The storefront control reads **no session** to decide whether to draw itself —
+that page is cached public catalogue and personalising it would change its caching — so it is drawn for
+everybody and a visitor who turns out not to be signed in is offered the way in by the BFF's answer. Both
+presses are needed: the first asks, the second acts.
+
+#### Attachments in a conversation, and the three steps that make them honest (0104)
+
+0014 created `public.message_attachments` with its constraints, its unique `object_path` index and its two RLS
+policies, and provisioned the **private** `message-attachments` bucket. 0053 then left all of it unread and the
+messaging contract wrote the deferral down: *"0014 has a `message_attachments` table and 0053 deliberately does
+not read it; these contracts deliberately cannot describe it. Attachments are a later increment."* 0104 is that
+increment and **changes nothing in 0014** — not the table, not a constraint, not the index, not either policy,
+not the bucket.
+
+**A message exists, then an upload is authorized, then the object is confirmed and the row is written.** Three
+steps, and the middle one is the reason: a row written when an upload was *allowed* is a row that may point at
+nothing, and no retry fixes it because the row already exists. `message_attachment_target` authorizes and
+**writes nothing**; the API then asks the storage provider whether the object is actually there; only then does
+`message_attachment_attach` record it. Storage is asked **before** the database, so the worst failure is an
+orphaned object in a private bucket that nothing links to — a cost, not a wrong answer. This is 7-?'s
+`support_attachment_*` sequence applied to a conversation rather than reinvented, and it reuses the same
+`SellerMediaStoragePort`: there is no second storage client.
+
+**The path is derived and re-derived, never supplied.** The database composes
+`message-attachments/<conversation>/<message>/<uuid>.<ext>`, and the confirmation rebuilds that prefix and
+matches the tail against an anchored pattern — so a path for another message, another conversation, another
+bucket, with a traversal segment, or with an extension that disagrees with the declared type is refused even
+though the API passed it along. 0014's unique index is what makes a repeated confirmation record the file once.
+The **signed read takes no path at all**: it takes an attachment id, and the path comes out of the row.
+
+**Sender only, five per message, ten mebibytes each.** 0014's `message_attachments_sender_insert` policy says
+the attacher is the message's sender, and both writers carry `sender_user_id = p_user_id` in the predicate that
+*finds* the message, so somebody else's message is never matched rather than refused. The count and the size are
+technical safety limits rather than business rules, enforced in 0104 because a constraint would have been a
+change to 0014 — and the byte ceiling is the **tighter of 0104's figure and the bucket's own**, so neither can
+be loosened alone. The bucket stays at 20 MiB and is left alone; 0104 asks for 10.
+
+> **The two figures are intentional, and neither is a mistake to reconcile.** The `message-attachments` bucket's
+> `file_size_limit` is **20 MiB** and is the storage layer's outer boundary, inherited from 0014 and shared in
+> spirit with every other private bucket in this platform. 0104's **10 MiB** is the application's own, tighter
+> limit, applied with `least(bucket_limit, 10485760)` in both writers. The arrangement is deliberate in both
+> directions: the application figure can be tightened without a storage migration, and the bucket cannot be
+> loosened into a larger effective limit without the application agreeing. **Neither is to be widened** — not
+> the bucket, and not the shared storage adapter's defaults, whose 120-second signing lifetime four closed
+> surfaces depend on and which 0104 left untouched by taking its ten minutes as a per-call argument instead.
+> `supabase/tests/0104_message_attachments.test.sql` pins the bucket at 20 MiB, the reported ceiling at 10 MiB
+> and the refusal of anything above it; `apps/api/test/seller-media-storage.test.ts` pins the adapter default at
+> 120 seconds. A later increment that changes either number fails one of those two files.
+
+**Three image types and PDF, and SVG is refused by name.** The bucket's `allowed_mime_types` is the outer
+authority and is read at call time; 0104 also names its own list, and a type must satisfy **both**. SVG is in
+neither, and it is called out rather than merely omitted because an SVG is XML a browser executes — serving one
+from a signed URL would be a stored-XSS primitive. A type that cannot be mapped to one of four extensions is
+refused again, so the stored filename always agrees with what was declared. *Office formats are not permitted:
+adding them would mean editing the bucket 0104 was told to preserve, so that remains an owner decision.*
+
+**There are no attachment-only messages.** 0014's `messages_text_has_body` requires 1–5,000 characters and is
+not modified, so a message always has text and an attachment is something added to one that already exists.
+Nothing in 0104 creates a message; the only way to get one is still 5-E's writer.
+
+**A blocked pair gains nothing, and the first draft of this increment was wrong about why.** The reasoning that
+failed was: attaching requires a message, `tg_messages_block_rule` refuses the insert that would create one,
+therefore 0103 already covers this. It does not — a message that *already exists* needs no insert, so after a
+block the blocked party could still attach a **new** file to an old message of their own and watch it appear in
+a thread somebody had blocked. Both writers now consult `is_blocked_between` against every other live
+participant and answer `blocked`. The **readers** deliberately do not: attachments on existing messages stay
+readable to both parties, which is 0103's own rule that historical conversations remain readable.
+
+**Retention is the cascade and nothing else.** 0014's foreign key is `on delete cascade`, so an attachment lives
+as long as its message; no sweeper, no scheduled job, no separate lifetime. **Catch-up is not a separate path**:
+5-F polls the same endpoint a page load uses, so one sibling reader —
+`app_private.messaging_message_attachments`, keyed on the page's own message ids and re-applying the participant
+test itself — serves both, and `messaging_conversation_messages` keeps its exact shape.
+
+**Two new problem codes, and deliberately only two.** `MESSAGE_ATTACHMENT_LIMIT_REACHED` (send another message
+and attach to that one) and `MESSAGE_ATTACHMENT_OBJECT_MISSING` (upload the bytes again), which mirrors
+`SUPPORT_ATTACHMENT_OBJECT_MISSING`. A blocked pair reuses `MESSAGING_BLOCKED` rather than adding a third name
+for the same refusal. **No permission key is added**, and so there is no staff attachment console: a thread's
+files are the two participants' and nobody else's.
+
+**What this increment does not do, recorded rather than implied.** There is **no virus or content scanning**
+anywhere in this platform. A private bucket plus a ten-minute signed URL limits exposure to the two
+participants, and that is a mitigation rather than a substitute. There is no thumbnailing or transcoding, and
+0014's `width` and `height` stay **null** because nothing in this repository inspects an image and a guess would
+be worse than nothing. No moderation of attachments, no public media origin, and no change to 0103's blocking or
+to 5-D/5-E/5-F's authorization semantics beyond the attachment data itself.
+
+
+#### `btrim(x)` trims spaces only, and two surfaces proved it (0105)
+
+`btrim(x)` with no character set removes spaces. Tabs, carriage returns and newlines survive it. This platform
+used that loose form in **97 CHECK constraints and 258 places across 96 `app_private` functions**, in nearly
+every case to decide whether a required value was present — so a value made entirely of tabs passed a check
+whose whole purpose was to refuse an empty one. Five places used the explicit set (0096 once, 0100 twice, 0103
+twice). Everything else did not, and whether a given field was exploitable came down to whether somebody had
+remembered `.trim()` in a request schema.
+
+**Two instances were proved reachable by execution before the migration was written, and neither is theory.**
+
+**A whitespace-only category name reached the public, unauthenticated catalogue.** Three layers admitted it in
+turn: `z.string().min(1)`, which one tab satisfies; `category_translation_save_for_staff`, which stored `p_name`
+as given; and `category_translations_name_length`, whose `length(btrim(name)) >= 1` saw a non-empty string.
+`app_private.public_categories('en')` then returned it, so the public navigation, the category feed, the
+breadcrumbs and the sitemap would each have rendered a blank name.
+
+**A report could be closed on a whitespace-only resolution note.** `app_private.resolve_report` raises *"a report
+is never closed without a reason"* when `length(btrim(coalesce(p_resolution_note, ''))) = 0`. Two tabs passed
+that test, `reports_resolved_has_note` passed it too, `ResolutionNoteSchema` did not trim, and the report closed
+as `actioned` with `resolved_at` set. **The invariant the function names in its own error message was defeatable
+over HTTP.**
+
+**All three layers are fixed, not only the reachable one.** 64 constraints, 92 function definitions and six
+request schemas. The reason is the one the two cases share: the *authoritative* layer did not hold the invariant
+it claimed, and a platform where that is true is one where the next field's exposure is a coin toss. The
+character set is exactly `E' \t\r\n'`, matching the five places that already had it.
+
+**The migration will not harden a database that holds a row it would then reject.** It opens with a preflight of
+64 counts — one per constraint, each evaluating the **new** predicate against the existing rows — and aborts
+naming every table, constraint and count if any row would fail:
+
+```
+whitespace preflight failed: 1 column(s) hold values that are not empty but contain only whitespace.
+Nothing has been changed. Decide what each should become, then re-run.
+Affected: public.category_translations (category_translations_name_length): 1 row(s)
+```
+
+Nothing has run at that point, so an abort leaves the database exactly as it was and the offending row intact
+for somebody to decide about. **No row is mutated, nulled or deleted, and no constraint is added `NOT VALID`**:
+the migration either leaves the invariant fully enforced or leaves nothing changed. The last thing it does is
+re-read its own work through `app_private.whitespace_contract_problems()` and abort if anything in scope is still
+loose, so it cannot half-apply and report success.
+
+**The twelfth contract checker, and the policy gate that outlives it.**
+`app_private.whitespace_contract_problems()` joins the eleven existing checkers and must stay empty; it lives in
+`app_private` rather than `public` because it reads `prosrc` of every definer function. Alongside it,
+`scripts/policy/migrations.mjs` rejects any migration from **0106 onward** that writes `btrim()` without a
+character set, so the class cannot return quietly. Both detectors match the name on a word boundary and tolerate
+whitespace before the parenthesis — a gate that refuses a legitimate migration is as much a defect as one that
+admits a bad one.
+
+> **The request layer trims; the database refuses.** They are not the same job and 0105 did not merge them.
+> `.trim()` in a schema turns a blank into a clean 400 and normalises what is stored, so a name cannot arrive
+> padded. The constraint refuses a blank whatever reaches it. Most writers check a trimmed copy and store the
+> value they were given, which is why the pgTAP suite asserts the stored value is **verbatim** — this increment
+> refuses an empty value, it does not reformat text, and **interior whitespace is never touched**. One schema
+> was deliberately left alone: `UpdateAttributeDefinitionRequestSchema.unit` replaces the whole row, so an empty
+> string there means *clear the unit*; `attribute_definition_update_for_staff` stores
+> `nullif(btrim(coalesce(p_unit, ''), E' \t\r\n'), '')` and turns any whitespace-only unit into null. A password
+> is never trimmed anywhere, which `packages/contracts/test/whitespace-trim.test.ts` pins — trimming a
+> credential would let two different strings authenticate one account.
+
+> **33 constraints on 27 financial tables and 4 financial functions keep the loose form, on purpose.**
+> `cancellation_policies`, `checkout_charges`, `checkout_tax_lines`, `commission_rules`, `commissions`,
+> `coupon_usage`, `coupons`, `dispute_evidence`, `dispute_messages`, `disputes`, `order_cancellations`,
+> `payment_providers`, `payout_destinations`, `payout_providers`, `payout_reversals`, `promotion_packages`,
+> `promotion_ranking_settings`, `promotion_refund_policies`, `provider_settlement_items`,
+> `provider_settlements`, `refunds`, `service_deliveries`, `shipping_profiles`, `shipping_rates`,
+> `shipping_zones`, `tax_rules` and `withdrawals`; and `apply_coupon`,
+> `dispute_message_post_for_staff`, `dispute_resolve_for_staff` and `resolve_dispute`. Every one of them sits
+> behind a blocker that is still open and `finance.settlement_posting_enabled = FALSE`, and none is reachable by
+> any surface this platform currently serves. They are listed as data inside the checker, not in a comment, and
+> `supabase/tests/0105_whitespace_normalisation.test.sql` asserts the counts both ways: the checker is silent
+> about exactly those and speaks about anything else. **This is deferred work, not a decision that they are
+> fine.** It belongs with the financial increment that first makes one of those tables writable.
+
+> **Unicode whitespace is a separate question, deliberately not answered here.** A non-breaking space (U+00A0)
+> or a zero-width space (U+200B) still passes every constraint in this platform, because the set is four ASCII
+> characters and widening it needs a decision about which code points count — including whether a zero-width
+> space is whitespace at all, and what that would mean for Arabic text. JavaScript's `String.prototype.trim`
+> *does* remove U+00A0, so the request layer is currently stricter than the database on that one character. The
+> asymmetry is asserted in both test suites rather than smoothed over, so whoever takes the decision finds the
+> tests that encode it. **The error-page robots question (A2) is also untouched here**, as is every closed
+> increment: 0103's blocking and 0104's attachments are unchanged, and no analytics, SEO, email, banner, setting
+> or financial path was altered.
+
+
+#### The probe row that nine readers ate (0106)
+
+This API answers *"is there another page?"* without a count. It asks the database for `limit + 1` rows and
+treats the extra row as the answer: `const hasMore = rows.length > limit`. Nine `app_private` readers clamped
+`p_limit` at **exactly** the contract's public maximum, so at the maximum page size the clamp removed the probe
+row and the caller was told the list had ended.
+
+Sixty rows in `public.user_blocks`, through `app_private.buyer_blocks`:
+
+```
+API asks reader for 51 (client max 50)  : 50 rows returned
+API computes hasMore = rows > 50        : false     <- ten rows unreachable
+API asks reader for 50 (client 49)      : 50 rows returned
+API computes hasMore = rows > 49        : true
+```
+
+No error, no log, no sign. `nextCursor` comes back null on a page that has more behind it, and the caller is
+told confidently that it has seen everything. `limit` is client-supplied and the web BFF passes
+`params.get('limit')` straight through, so `?limit=50` reaches this from a browser.
+
+**The codebase already knew the answer.** Twenty-eight readers written from 0069 onward clamp at
+`contract maximum + 1` and accommodate the probe row explicitly. Nine written earlier clamp at the maximum
+itself and were never revisited. The convention existed; these nine predate it.
+
+**Nine ceilings moved by one, and nothing else moved.** Each function was dumped from the live catalogue rather
+than retyped, one integer was replaced, and the verification block at the end of the migration re-reads its own
+work:
+
+| reader | from | contract constant | ceiling |
+| --- | --- | --- | --- |
+| `messaging_inbox` | 0053 | `MESSAGING_INBOX_MAX_LIMIT` | 50 → 51 |
+| `messaging_conversation_messages` | 0053 | `MESSAGING_MESSAGES_MAX_LIMIT` | 100 → 101 |
+| `notifications_inbox` | 0066 | `NOTIFICATIONS_MAX_LIMIT` | 50 → 51 |
+| `buyer_favorites` | 0067 | `ACCOUNT_MAX_LIMIT` | 50 → 51 |
+| `buyer_saved_searches` | 0067 | `ACCOUNT_MAX_LIMIT` | 50 → 51 |
+| `buyer_blocks` | 0103 | `BLOCKS_MAX_LIMIT` | 50 → 51 |
+| `seller_listings` | 0061 | `SELLER_LISTINGS_MAX_LIMIT` | 50 → 51 |
+| `seller_services` | 0062 | `SELLER_SERVICES_MAX_LIMIT` | 50 → 51 |
+| `listing_analytics_page` | 0102 | `LISTING_ANALYTICS_MAX_LIMIT` | 100 → 101 |
+
+**The migration will not apply to a schema it does not recognise.** It opens with one assertion per reader
+checking that the live ceiling is the old value, and aborts naming every reader if not — so a second
+application is refused rather than silently repeated:
+
+```
+pagination preflight failed: 9 reader(s) are not in the state this migration was written against.
+Nothing has been changed. Check whether 0106 has already been applied, or whether a later change moved
+a ceiling. Affected: app_private.messaging_inbox: expected a ceiling of 50, found 51; ...
+```
+
+**The test that would have caught this is a cursor walk, not a row count.** `supabase/tests/0106_pagination_probe_row.test.sql`
+pages each of three readers — a `(timestamp, uuid)` cursor, a `(timestamp, text)` cursor and a bare sequence
+number — from the first page to the last at the maximum page size, and requires the walk to visit every row
+exactly once. Before 0106 each walk stopped after one page. The suite then **puts the defect back** inside a
+savepoint, reading the body from `pg_get_functiondef` and replacing the one integer so what is restored is the
+real previous behaviour, and asserts the walk fails: one page, fifty of sixty rows. A regression test that
+cannot fail is not a regression test.
+
+> **No public maximum moved and no default page size moved** (owner decision 5). A caller may still ask for
+> fifty. The ceiling is the database's bound on a parameter it does not trust; the extra row is the API's own
+> business, and raising the bound by one is what lets each do its job. Nothing a client can observe changed
+> except that the page after the fiftieth row now exists. The pgTAP suite asserts each reader's default
+> explicitly — a null limit still returns 20, or 50, or 25 — and asserts that 100 000 still returns only
+> maximum + 1, so the fix did not turn a ceiling into no ceiling. **No response shape, no cursor format and no
+> problem code changed** (owner decision 6).
+
+> **A third pagination convention exists in this platform on purpose.** `seller_orders`, `seller_reviews` and
+> `seller_promotions` are driven by `apps/api/src/sellers/seller-read.service.ts`, which sends the reader
+> `limit: size` — no probe row — and decides there is another page from `rows.length === size`. That **loses no
+> rows**: its cost is one wasted request when the total is an exact multiple of the page size, which returns an
+> empty page. Their readers therefore still clamp at exactly 50, which is the shape corrected everywhere else,
+> and here it takes nothing away. Unifying them would change when `nextCursor` is null on that boundary, which
+> is a cursor-semantics change this increment was not permitted to make (owner decision 3). The three are named
+> in `PAGINATION_CEILING_EXEMPT`, and the check reports the exemption as **stale** if one of them ever stops
+> clamping at a maximum, so the list cannot outlive its reason.
+
+> **Thirty-seven readers impose no ceiling at all, and that is correct.** `blog_posts_for_public`,
+> `public_listings`, `public_search`, `cms_pages_for_staff`, the sitemap readers and the rest write
+> `limit greatest(coalesce(p_limit, 20), 1)` with no `least(...)`: they return exactly what they were asked for,
+> so the probe row was never at risk. This was worth checking rather than assuming — the nine-reader inventory
+> came from one regular expression, and thirty-seven readers it did not match had to be read before the scope
+> could be called complete. **The structural check is written to that finding:** it does not require a ceiling,
+> it objects only to a ceiling that collides with a published `*_MAX_LIMIT`, which is the one shape that
+> destroys the probe row. `dispute_messages_for_staff` keeps 201 against a maximum of 50 (owner decision 2).
+
+**What stops a tenth reader.** `paginationCeilingProblems` in `scripts/policy/migrations.mjs` reads every
+`*_MAX_LIMIT` out of `packages/contracts/src` and every reader ceiling out of `supabase/migrations`, latest
+definition winning exactly as the database resolves it, and fails the policy job when a ceiling equals a
+published maximum. It runs in `check:policy` with no database. `scripts/db/db-tooling.test.mjs` tests it in both
+directions — a ceiling of 48, 50, 96 or 100 is rejected, 49, 97 and 101 pass, a floor-only reader and a 201
+ceiling are not reported, a later correction supersedes an earlier bad ceiling, and a later *regression* is
+caught rather than masked by an earlier fix.
+
+> **Two findings recorded rather than fixed here.** 0105's `btrim` gate is deliberately blind to context — its
+> own suite asserts that a call inside a comment still counts, because a check clever enough to skip comments
+> can be fooled by one. The practical consequence, met while writing 0106: a migration cannot spell the loose
+> form in its prose, even to explain it. 0106 describes it in words instead. Separately, the other corrective
+> findings from the 0106 proposal — the registration phone pattern, the country-code casing, the three
+> character-length refines, the saved-search size bound and the analytics de-duplication key — are **not**
+> touched here (owner decision 8) and remain recorded for their own increments.
+
+
+#### Sixteen comments said `event_id`; the index said `(event_id, occurred_at)` (0107)
+
+Analytics delivery is at-least-once, and sixteen comments across this repository — including the published
+OpenAPI description — promised it was safe because the database de-duplicates on `event_id`. Eleven of them
+named `event_id`. The index was on `(event_id, occurred_at)`.
+
+**That was not a choice.** `public.listing_events` is `partition by range (occurred_at)`, and PostgreSQL refuses
+a unique index on a partitioned table that omits a partitioning column:
+
+```
+ERROR:  unique constraint on partitioned table must include all partitioning columns
+DETAIL:  UNIQUE constraint on table "listing_events" lacks column "occurred_at"
+```
+
+So the key de-duplicated only when a redelivery carried a byte-identical `occurred_at` — and `occurred_at` is
+not a property of the event. `ListingEventIngestionService.occurredAt` replaces the client's value with a fresh
+`Date.now()` when it is **missing, in the future, or older than seven days**, and the writer added a second
+`now()` fallback when the key was absent. Two deliveries, separate transactions, `occurred_at` omitted:
+
+```
+delivery 1 inserted: 1
+delivery 2 inserted: 1
+rows for that one event_id: 2
+listing_analytics.clicks = 2        <- one click, counted twice, on a seller's own screen
+```
+
+**The test could not see it.** The same two deliveries inside one transaction insert one row, because `now()` is
+transaction-stable — and every pgTAP file runs in one transaction. Three de-duplication assertions in this suite
+(0013, 0025, 0101) passed for exactly that reason. The defect survived four increments behind green tests.
+
+**The fix is a ledger keyed on `event_id` alone**, consulted inside the writer:
+
+1. the batch is collapsed on `event_id`, first occurrence winning;
+2. the ids go into `public.listing_event_ids` with `on conflict do nothing`, and the winners come back;
+3. only the winners produce event rows.
+
+All three are one statement, so the ledger entry and the event row commit or roll back together. There is no
+window in which an id is claimed and its event is missing — the one failure mode that would be worse than the
+defect, since it would swallow that event on every retry for ninety days. `supabase/tests/0107_…` proves it:
+a batch whose event insert raises leaves no ledger entry, and the good event beside it is still deliverable.
+
+Because the key is `event_id` and nothing else, de-duplication no longer depends on `occurred_at` at all. Ten
+deliveries with ten different timestamps produce one row.
+
+> **`distinct on` is not decoration.** Without it, a batch carrying the same `event_id` twice inserts **one**
+> ledger row and **two** event rows, because the single winner joins to both copies. Measured while writing the
+> migration, before it shipped:
+>
+> ```
+> ledger rows: 1
+> event rows : 2  -> first copy + second copy
+> ```
+>
+> A client may legitimately send the same event twice in one flush, so the guarantee has to hold inside a batch
+> as well as between batches.
+
+**What the ledger is, and is not.** Readless and private: no grant to any role, RLS enabled, no policy, and no
+reader anywhere — the only code that touches it is two writers and two pruners, all `security definer`. **Not
+partitioned**, which is load-bearing rather than incidental: partitioning by `first_seen_at` would force that
+column into the unique key and reproduce the defect the table exists to fix.
+
+> **No append-only trigger, and that is a decision.** An `event_id` cannot be amended, so an update-rejecting
+> trigger looked right. `public.append_only_problems()` is bidirectional: a table carrying any `tg_%reject%`
+> trigger **must** be named in `app_private.append_only_contract`, and that contract means "refuses UPDATE *and*
+> DELETE" — untrue of a table its own retention deletes from. Entering it would assert something false, and
+> renaming the trigger to slip past the pattern would be gaming the check. So the protection is the absence of
+> reach rather than a trigger: nothing in either application can issue any statement against these tables, which
+> the migration's verification block asserts. The attempt and its rejection are recorded in the migration:
+> `public.listing_event_ids | the table refuses writes but the contract does not name it`.
+
+**Retention is ninety days**, matching 0101's event retention so an id outlives the event it identifies. A
+bounded batch, oldest first, following 7-J's `purge_due_payment_information` rather than inventing a second
+shape; reached through the scheduled-job contract, the dispatcher and pg_cron at 04:40 and 04:45, after 0101's
+partition drop at 04:25. The window is the **guarantee** window, and the suite says so out loud: once an id ages
+out, a redelivery is accepted again.
+
+**`record_promotion_events` carried the identical defect and is fixed here too** (owner decision 3) — same
+`coalesce(..., now())`, same conflict target, same partitioning. It has no application caller anywhere, so it
+was latent rather than reachable; leaving a known defect because nothing currently reaches it is how it gets
+rediscovered by whoever builds the surface that does. One asymmetry is recorded rather than smoothed over:
+`listing_events` has a partition-dropping retention job and `promotion_events` has none, so a promotion event
+redelivered after ninety days could duplicate even though its partitions are still there.
+
+> **The rollup is unchanged** (owner decision 5). `count(*)` stays, and it is now correct because the rows it
+> counts are unique before they arrive. `count(distinct event_id)` was rejected as **incomplete**, not merely
+> weaker — two deliveries straddling midnight land on different days, and a per-day distinct count reports one
+> each and still totals two:
+>
+> ```
+> day 2026-10-03: count(*)=1  count(distinct event_id)=1
+> day 2026-10-04: count(*)=1  count(distinct event_id)=1
+> so per-day distinct counting still totals 2 for one event
+> ```
+>
+> **`occurredAt` stays optional** (owner decision 4): no contract, route, response-shape or cursor change
+> anywhere. **The 503 stays** (owner decision 7) — when the stream publish fails and the degraded insert fails
+> too, the API still says so. The point is that the retry it invites is now safe, not that a visible failure
+> becomes silent loss. **No backfill and no row preflight** (owner decision 6): nothing is deployed, so there
+> are no duplicates to repair.
+
+**What stops the next vacuous test.** `eventDedupClockProblems` in `scripts/policy/migrations.mjs` reads every
+pgTAP file that calls an event writer and fails the policy job when the same `event_id` literal is delivered
+more than once with the *same frozen timestamp* — bare `now()`, or `occurred_at` omitted, which takes the
+writer's `now()` fallback. It runs in `check:policy` with no database.
+
+The rule is narrow on purpose, and three attempts were needed to make it so. "Frozen" alone is not the defect:
+`now()` and `now() - interval '2 days'` are both transaction-stable but genuinely differ, so only the *same*
+expression twice is reported. A single delivery using `now()` is never reported — five such inserts exist in
+0101's suite and reporting them would have made the check unusable. And the expression is matched as a grammar
+rather than as a window of text, because an earlier version captured eighty characters, dragged the surrounding
+assertion text in, and therefore read two identical `now()::text` values as different ones and reported nothing.
+`scripts/db/db-tooling.test.mjs` tests all of it in both directions.
+
+The check found three vacuous assertions, in 0013, 0025 and 0101. Each is **narrowed, not deleted**: the
+invariant each protected — a redelivery inserts nothing — is unchanged, and each now carries a timestamp that
+differs between deliveries, so it fails if de-duplication breaks. 0025's was an in-batch duplicate, which is why
+the writer's `distinct on` is what collapses it.
+
+> **One finding recorded rather than acted on.** The unparseable-timestamp branch of `occurredAt()` is **not
+> reachable through the route**: `z.string().datetime()` refuses such a value with 400 before the service is
+> called. The inspection listed it as one of four re-stamping cases; the API test proves it is three, and the
+> fourth branch is defensive depth for a non-HTTP caller. The test asserts the refusal rather than pretending
+> the branch is reachable.
+
 ### Visibility, media and search
 
 A listing's public surface follows one decision, `public.listing_is_visible()`, which combines listing
@@ -1044,6 +1819,16 @@ Realtime topics are added by 0028, which extends `can_join_realtime_topic()`; ti
 event references only (UB7) and topic versioning there is open until Phase 5. The promoted-result
 ranking formula and slot merge are Phase 9 decisions.
 
+### Corrective increment candidates
+
+Defects found while building something else, recorded here rather than fixed in place: a closed increment is
+not reopened by the increment that happens to notice it, and each of these is owner-reviewable on its own.
+
+| Where | What | Found during |
+| --- | --- | --- |
+| `0079_seller_status_management.sql`, `app_private.admin_seller_status_set` | The suspension reason is normalised with `nullif(btrim(coalesce(p_reason, '')), '')`. `btrim` with no character set trims **spaces only**, so a reason consisting of tabs or newlines survives it and is stored as though somebody had written one — the `reason_required` refusal does not fire for it. The fix is the explicit set used elsewhere, `btrim(…, E' \t\r\n')`, as 0096 and 0100 do. Behaviour otherwise unaffected; no data is lost and nothing financial is involved. | 0100, whose own suite caught the same class of defect in its own writers before it shipped |
+| `apps/web`: the catalogue index pages (`/`, `/listings`, `/marketplace`) and the blog index (`/blog`) | When their data read fails, each renders its unavailable region at HTTP `200` while still emitting `<meta name="robots" content="index, follow">`, so a crawler can index an error page as the page's content. The CMS pages already do the right thing — they switch to `noindex, nofollow` when the content could not be read — so this is an inconsistency rather than a design choice, and that is the pattern to follow. Changing it touches the closed Phase 4-A/4-B robots policy, so it is recorded rather than fixed here. Nothing financial is involved. | the deployment-readiness increment, measured against both built apps with `API_BASE_URL` pointing at a closed port |
+
 ### Running the schema locally
 
 - With Docker: `pnpm run supabase start` applies the migrations, and `pnpm run supabase test db --local`
@@ -1060,7 +1845,7 @@ ranking formula and slot merge are Phase 9 decisions.
 
 ## CI (GitHub Actions, Phase 1 Step 9)
 
-The repository and its workflows are created and run by the owner; nothing here has been executed on GitHub yet. **TOOL-3, TOOL-7, B10-local and Gate B stay pending until real GitHub Actions runs provide the evidence.**
+The repository and its workflows are created and run by the owner; nothing here has been executed on GitHub yet. **TOOL-3, TOOL-7, B10-local and Gate B stay pending until real GitHub Actions runs provide the evidence.** A Playwright run performed in the development sandbox is not that evidence and never becomes it (see *The status of the local Playwright run*); the authoritative end-to-end verification happens once, at Final QA, against the deployed targets.
 
 Workflows (`.github/workflows/`), all on `ubuntu-24.04`, with `permissions: {}` at the top and `contents: read` per job, no GitHub Environments, no `pull_request_target` or `workflow_run`, `persist-credentials: false`, a timeout on every job and no automatic test retries. Every job starts with `actions/setup-node` for Node.js 24.21.0 and then checks that `node --version` prints `v24.21.0` (I2). pnpm comes from `pnpm/action-setup` (the `packageManager` field) and is checked to be 12.4.2. All actions are pinned to full commit SHAs (`toolchain/github-actions.json`): actions/checkout v7.0.1, actions/setup-node v7.0.0, pnpm/action-setup v6.1.0, actions/cache v6.1.0 (restore/save), actions/upload-artifact v7.0.1. The only GitHub Actions secret any workflow may reference is the one registered in `policy/ci-secrets.json` (see "B10-hosted"); every other `secrets.` reference fails the check. `pnpm run check:policy` enforces all of this.
 
@@ -1071,7 +1856,7 @@ Workflows (`.github/workflows/`), all on `ubuntu-24.04`, with `permissions: {}` 
   - `build-test`: redis-server from Ubuntu 24.04 apt (must report 7.0.15; the tests start and stop their own servers, so no service container), uncached build, dependency boundaries (TOOL-6), generated-file drift (TOOL-2), client-bundle environment check, all tests (unit, Supertest API, Redis-down, TOOL-5), tooling tests, TOOL-4 negative control, unchanged dependency files and tracked files.
   - `tool1` (web and admin): TOOL-1 with the pinned Deno and the deny-all proxy, on every pull request.
   - `supabase-local`: starts the local stack with the approved images and exclusions, then TOOL-3, B10-local and TOOL-7 pgTAP, then stops it. It fails until the owner approves the image lock.
-  - `e2e`: TOOL-7 Playwright smoke tests (Chromium only) against the built apps.
+  - `e2e`: TOOL-7 Playwright smoke tests (Chromium only) against the built apps. The same specs run against a deployed target when `E2E_WEB_URL` / `E2E_ADMIN_URL` are set, which is how a Netlify deploy is verified at Final QA; they assert what holds whether or not the API behind the target can be reached. Not yet executed on GitHub Actions.
   - `b10-hosted` (manual only): migrations and verification against the non-production hosted Supabase project (see "B10-hosted").
 - `supabase-images-record.yml` (manual only): discovery for owner review (below). It never changes the repository.
 - `scheduled-security.yml` (weekly on main, and manual): gitleaks, osv-scanner and the package-age check. Scanning only.
@@ -1094,7 +1879,7 @@ These v5.2 pipeline stages need outputs that Phase 1 intentionally does not have
 | Kysely type drift | Owner decision S17 | Phase 2 |
 | Idempotency tests | No business operations | With the first idempotent operation |
 | OpenAPI breaking-change detection | Only the health contract exists (owner decision E20) | With the first real `/v1` API |
-| Playwright critical E2E flows | Phase 1 has only the smoke surface | With the flows (later phases) |
+| Playwright critical E2E flows | The suite covers the public catalogue, the crawl documents and the signed-out console; a flow needing a session needs a live API | With the flows (later phases) |
 
 ### B10-hosted (non-production Supabase)
 

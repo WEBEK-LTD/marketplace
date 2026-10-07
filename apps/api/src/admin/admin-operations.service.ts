@@ -23,6 +23,8 @@ import type {
   SellerStatusChangeResponse,
   SellerStatus,
   SellerVerificationStatus,
+  StaffGrantableRole,
+  StaffRoleWriteResponse,
 } from '@repo/contracts';
 import { isAal2 } from '../auth/access-token-claims.js';
 import { StaffConsoleService } from './staff-console.service.js';
@@ -35,6 +37,7 @@ import {
   RecoveryNeedsAnotherPersonError,
   RecoveryNotInStateError,
   SellerStatusRefusedError,
+  StaffRoleRefusedError,
 } from './admin-operations.errors.js';
 import {
   decodeAdminAuditCursor,
@@ -117,6 +120,8 @@ export const AUDIT_READ = 'audit.read';
  * the whole reason this is a second key rather than the read key with a stronger check.
  */
 export const SELLERS_PROFILE_MANAGE = 'sellers.profile.manage';
+/** 0033 has seeded this since the beginning; 0100 is the first thing that can reach it. */
+export const USERS_ROLE_MANAGE = 'users.role.manage';
 
 /* ------------------------------------------------------------------------------------------------ */
 /* The rows each reader returns                                                                      */
@@ -220,6 +225,21 @@ export interface AdminRoleCatalogueRow {
   readonly isAssignable: boolean;
   readonly permissionCount: number;
   readonly holderCount: number;
+}
+
+/** One row of `app_private.staff_role_grantable` (0100). The database's own answer, not a filtered catalogue. */
+export interface StaffGrantableRoleRow {
+  readonly roleKey: string;
+  readonly nameEn: string;
+  readonly nameAr: string;
+  readonly requiresMfa: boolean;
+  readonly isAdminConsole: boolean;
+}
+
+/** What `app_private.staff_role_grant` and `staff_role_revoke` answer (0100). */
+export interface StaffRoleWriteRow {
+  readonly outcome: string;
+  readonly roleKey: string | null;
 }
 
 /** One row of `app_private.admin_account_security_timeline`. */
@@ -357,6 +377,31 @@ export interface AdminOperationsStore {
     userId: string;
     isAal2: boolean;
   }): Promise<readonly AdminRoleCatalogueRow[]>;
+
+  /** 0100. The roles this caller may grant, as the database computes them. */
+  staffRoleGrantable(input: {
+    userId: string;
+    isAal2: boolean;
+  }): Promise<readonly StaffGrantableRoleRow[]>;
+
+  /** 0100. The first writer public.user_roles has ever had. */
+  staffRoleGrant(input: {
+    userId: string;
+    isAal2: boolean;
+    targetUserId: string;
+    roleKey: string;
+    reason: string;
+    expiresAt: Date | null;
+  }): Promise<StaffRoleWriteRow>;
+
+  /** 0100. An update that sets revoked_at and revoked_by. Never a delete. */
+  staffRoleRevoke(input: {
+    userId: string;
+    isAal2: boolean;
+    targetUserId: string;
+    roleKey: string;
+    reason: string;
+  }): Promise<StaffRoleWriteRow>;
 
   adminAccountSecurityTimeline(input: {
     userId: string;
@@ -714,8 +759,9 @@ export class AdminOperationsService {
    * moderator and a support agent can reach the account and not this. A caller without it gets an empty
    * list, identical to an account that holds no role.
    *
-   * There is no method beside this one that changes a grant, and there is no writer for `user_roles` in this
-   * repository for one to call.
+   * **This reader is unchanged by 0100** (owner decision 8): it still reports no actor and no reason, so who
+   * granted or withdrew a role is recorded on the row and nowhere a response can reach. The two methods that
+   * change a grant are below, behind a different key.
    */
   async userRoles(input: {
     accessToken: string;
@@ -747,6 +793,106 @@ export class AdminOperationsService {
       isEffective: row.isEffective,
       permissionCount: row.permissionCount,
     }));
+  }
+
+  /**
+   * The roles this caller may grant (0100).
+   *
+   * Read from the database, which is the point: the set is computed from the caller's own effective roles by
+   * the same three tests the writer applies, so a console cannot offer a grant that would be refused and
+   * cannot be made to offer one by a crafted request. Behind the manage key, not the read key — a colleague
+   * who may only read roles is offered nothing to grant.
+   *
+   * An empty list is the answer for a caller without the key, so it is indistinguishable from a caller whose
+   * ceiling happens to admit nothing.
+   */
+  async grantableRoles(input: { accessToken: string }): Promise<readonly StaffGrantableRole[]> {
+    const staff = await this.#staff(input.accessToken, USERS_ROLE_MANAGE);
+
+    let rows: readonly StaffGrantableRoleRow[];
+    try {
+      rows = await this.store.staffRoleGrantable({ userId: staff.id, isAal2: staff.isAal2 });
+    } catch (error) {
+      this.logger.error('The grantable roles could not be read.');
+      throw new AdminOperationsUnavailableError(error);
+    }
+
+    return rows.map((row) => ({
+      roleKey: row.roleKey,
+      nameEn: row.nameEn,
+      nameAr: row.nameAr,
+      requiresMfa: row.requiresMfa,
+      isAdminConsole: row.isAdminConsole,
+    }));
+  }
+
+  /**
+   * Grants a role, or reinstates one that was withdrawn (0100).
+   *
+   * **Nothing is decided here.** The ceiling, `super_admin`, `roles.is_assignable`, the self rule, the reason
+   * and the expiry are all applied by the database writer against the caller's own effective roles; this
+   * method carries the request and reports the refusal. Checking any of it twice would create a second rule
+   * that could disagree with the first.
+   */
+  async grantRole(input: {
+    accessToken: string;
+    userId: string;
+    roleKey: string;
+    reason: string;
+    expiresAt: string | null;
+  }): Promise<StaffRoleWriteResponse> {
+    const staff = await this.#staff(input.accessToken, USERS_ROLE_MANAGE);
+
+    let row: StaffRoleWriteRow;
+    try {
+      row = await this.store.staffRoleGrant({
+        userId: staff.id,
+        isAal2: staff.isAal2,
+        targetUserId: input.userId,
+        roleKey: input.roleKey,
+        reason: input.reason,
+        expiresAt: input.expiresAt === null ? null : new Date(input.expiresAt),
+      });
+    } catch (error) {
+      this.logger.error('A role grant could not be recorded.');
+      throw new AdminOperationsUnavailableError(error);
+    }
+
+    if (row.outcome !== 'granted') this.#refusal(row.outcome);
+    return { outcome: 'granted', roleKey: row.roleKey ?? input.roleKey };
+  }
+
+  /**
+   * Withdraws a role (0100).
+   *
+   * An update, never a delete: the grant and its withdrawal stay on one row. The withdrawal takes effect when
+   * the permission predicates are next evaluated, which is the target's next request — nothing in this
+   * platform ends a session, and this method does not pretend otherwise.
+   */
+  async revokeRole(input: {
+    accessToken: string;
+    userId: string;
+    roleKey: string;
+    reason: string;
+  }): Promise<StaffRoleWriteResponse> {
+    const staff = await this.#staff(input.accessToken, USERS_ROLE_MANAGE);
+
+    let row: StaffRoleWriteRow;
+    try {
+      row = await this.store.staffRoleRevoke({
+        userId: staff.id,
+        isAal2: staff.isAal2,
+        targetUserId: input.userId,
+        roleKey: input.roleKey,
+        reason: input.reason,
+      });
+    } catch (error) {
+      this.logger.error('A role withdrawal could not be recorded.');
+      throw new AdminOperationsUnavailableError(error);
+    }
+
+    if (row.outcome !== 'revoked') this.#refusal(row.outcome);
+    return { outcome: 'revoked', roleKey: row.roleKey ?? input.roleKey };
   }
 
   /** The role catalogue. Reference data behind the same key. */
@@ -1149,6 +1295,15 @@ export class AdminOperationsService {
     if (outcome === 'already_verified') {
       throw new SellerStatusRefusedError('SELLER_STATUS_ALREADY_VERIFIED');
     }
+    // 0100. Every one of these is a boundary the database decided, reported with the name of the boundary.
+    if (outcome === 'role_is_self') throw new StaffRoleRefusedError('STAFF_ROLE_IS_SELF');
+    if (outcome === 'role_above_ceiling') throw new StaffRoleRefusedError('STAFF_ROLE_ABOVE_CEILING');
+    if (outcome === 'role_not_grantable') throw new StaffRoleRefusedError('STAFF_ROLE_NOT_GRANTABLE');
+    if (outcome === 'role_not_revocable') throw new StaffRoleRefusedError('STAFF_ROLE_NOT_REVOCABLE');
+    if (outcome === 'role_not_assignable') throw new StaffRoleRefusedError('STAFF_ROLE_NOT_ASSIGNABLE');
+    if (outcome === 'role_already_revoked') throw new StaffRoleRefusedError('STAFF_ROLE_ALREADY_REVOKED');
+    if (outcome === 'role_expiry_invalid') throw new StaffRoleRefusedError('STAFF_ROLE_EXPIRY_INVALID');
+    if (outcome === 'role_reason_required') throw new StaffRoleRefusedError('STAFF_ROLE_REASON_REQUIRED');
     this.logger.error('An admin operation returned an outcome this service does not understand.');
     throw new AdminOperationsUnavailableError(new Error('unexpected outcome'));
   }

@@ -1,4 +1,5 @@
 import type { SearchResult } from '@repo/contracts';
+import { ListingClickBeacon } from './listing-beacon';
 import { ListingCard, type ListingCardLabels } from './listing-views';
 import { ServiceCard, type ServiceLabels } from './service-views';
 
@@ -31,25 +32,28 @@ export function SearchResultList({
   readonly labels: SearchLabels;
 }) {
   return (
-    <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {results.map((result) =>
-        result.type === 'service' ? (
-          <ServiceCard
-            key={`service-${result.id}`}
-            service={result}
-            href={serviceHref(result.slug)}
-            labels={labels.service}
-          />
-        ) : (
-          <ListingCard
-            key={`listing-${result.id}`}
-            listing={result}
-            href={listingHref(result.slug)}
-            labels={labels.listing}
-          />
-        ),
-      )}
-    </ul>
+    // 0101: one listener for the whole list, emitting a click for whichever listing was opened from here.
+    <ListingClickBeacon source="search">
+      <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {results.map((result) =>
+          result.type === 'service' ? (
+            <ServiceCard
+              key={`service-${result.id}`}
+              service={result}
+              href={serviceHref(result.slug)}
+              labels={labels.service}
+            />
+          ) : (
+            <ListingCard
+              key={`listing-${result.id}`}
+              listing={result}
+              href={listingHref(result.slug)}
+              labels={labels.listing}
+            />
+          ),
+        )}
+      </ul>
+    </ListingClickBeacon>
   );
 }
 

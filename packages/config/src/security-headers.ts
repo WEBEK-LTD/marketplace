@@ -1,8 +1,40 @@
 /**
- * Approved browser security policy for the Next.js apps (Phase 1 Step 5).
+ * Approved browser security policy for the Next.js app (Phase 1 Step 5).
  * Turnstile and Realtime sources are added in their later phases.
  */
+
+/**
+ * Which **surface** of the single application a response belongs to.
+ *
+ * It was a choice of application until 0108, when the console moved from its own origin to `/admin` on the public
+ * one. The name is kept because renaming it would churn twenty call sites for no behavioural gain, but it now
+ * names a surface: `web` is the public marketplace at `/`, `admin` is the staff console at `/admin`, and both are
+ * served by one Next.js runtime.
+ */
 export type AppKind = 'web' | 'admin';
+
+/**
+ * Where the staff console is mounted on the public origin (0108, owner-approved topology revision).
+ *
+ * `www.example.com` → marketplace, `www.example.com/admin` → console. There is no `admin.` hostname.
+ *
+ * **This is the single definition of the mount point.** The proxy, the robots policy, the navigation policy and the
+ * served-route reservation all read it, so none of them can come to disagree with the others about which paths
+ * belong to the console — and moving the console would be one edit here rather than four that must be kept in step.
+ */
+export const ADMIN_SURFACE_PREFIX = '/admin';
+
+/**
+ * Whether `pathname` belongs to the staff console.
+ *
+ * Whole-segment matching, exactly as every other path predicate in this file: `/administrator` is not the console,
+ * and neither is `/ar/admin` — the console has no locale prefix, because its language comes from the reader's own
+ * profile rather than from the URL.
+ */
+export function isAdminSurfacePath(pathname: string): boolean {
+  if (typeof pathname !== 'string') return false;
+  return pathname === ADMIN_SURFACE_PREFIX || pathname.startsWith(`${ADMIN_SURFACE_PREFIX}/`);
+}
 
 export interface HeaderEntry {
   readonly key: string;
@@ -52,13 +84,43 @@ export function buildContentSecurityPolicy(nonce: string): string {
  */
 export function staticSecurityHeaders(app: AppKind): readonly HeaderEntry[] {
   return Object.freeze([
-    { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
-    { key: 'X-Content-Type-Options', value: 'nosniff' },
-    { key: 'Referrer-Policy', value: app === 'admin' ? 'no-referrer' : 'strict-origin-when-cross-origin' },
-    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+    ...sharedSecurityHeaders(),
+    referrerPolicyFor(app),
     ...(app === 'admin' ? [{ key: 'X-Robots-Tag', value: 'noindex' }] : []),
   ]);
+}
+
+/**
+ * The headers whose value is identical on every surface, and which may therefore be declared once for the whole
+ * origin in `next.config.ts` (0108).
+ *
+ * The split exists because the two surfaces now share an origin. `Referrer-Policy` and `X-Robots-Tag` differ
+ * between them, and a Next.js `headers()` entry scoped to `/admin/:path*` would be applied *in addition to* the
+ * site-wide one rather than instead of it — leaving two conflicting values of the same key on every console
+ * response. Those two are emitted from the proxy, which decides per request; these four are emitted from the
+ * config, which cannot get them wrong because there is nothing to decide.
+ *
+ * `Strict-Transport-Security` is deliberately among them: it is a property of the host, and the host is now one.
+ */
+export function sharedSecurityHeaders(): readonly HeaderEntry[] {
+  return Object.freeze([
+    { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+    { key: 'X-Content-Type-Options', value: 'nosniff' },
+    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  ]);
+}
+
+/**
+ * The `Referrer-Policy` for one surface — `no-referrer` for the console, the approved public value otherwise.
+ *
+ * Both values are the specification's own (Phase 1 Step 5). What 0108 changes is only where they are emitted.
+ */
+export function referrerPolicyFor(app: AppKind): HeaderEntry {
+  return Object.freeze({
+    key: 'Referrer-Policy',
+    value: app === 'admin' ? 'no-referrer' : 'strict-origin-when-cross-origin',
+  });
 }
 
 /** Locale prefixes the public web serves. English sits at the root, Arabic under `/ar`. */
@@ -350,6 +412,12 @@ export function publicServicePath(locale: PublicLocale, slug: string): string {
  * a search index — not an admin console that leaked into one.
  */
 export function isPublicCatalogRoute(pathname: string): boolean {
+  // The staff console is never a public catalogue route (0108). It already was not one — `/admin` is not a CMS slug
+  // and `/admin/users` matches no parser — but the answer arrived by omission, and an administrator authoring a CMS
+  // page whose slug happened to be `admin` would have flipped it. Stated outright, it cannot be flipped: the console
+  // keeps its blanket `noindex` whatever else is ever added below.
+  if (isAdminSurfacePath(pathname)) return false;
+
   // The home page (0093, owner decision E). Its own metadata decides whether it may be indexed, exactly as a CMS
   // static page's does, so it must not carry the blanket header — a blanket `noindex` is the most restrictive
   // directive on the response and would silently override the page's own answer.
@@ -425,6 +493,12 @@ export const ACCOUNT_AREA_PREFIXES = Object.freeze([
  */
 export function rendersSiteNavigation(pathname: string): boolean {
   if (typeof pathname !== 'string' || !pathname.startsWith('/')) return false;
+
+  // The staff console carries its own chrome and never the marketplace's (0108). Stated here rather than added to
+  // ACCOUNT_AREA_PREFIXES, which is about the account and authentication area and would be the wrong home for it:
+  // the console is not an account surface, it is a different surface of the application altogether. Without this the
+  // deny-by-default below would answer `true` and put editorial header and footer links across the console.
+  if (isAdminSurfacePath(pathname)) return false;
 
   const trimmed = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   const rest = trimmed === '/ar' ? '/' : trimmed.startsWith('/ar/') ? trimmed.slice(3) : trimmed;

@@ -2,12 +2,19 @@ import { expect, test, type Page, type Response } from '@playwright/test';
 import { WEB_URL } from '../urls.js';
 
 /**
- * The F4 settings screen, in a real browser.
+ * The F4 settings screen, in a real browser — now a **protected** screen.
  *
- * The smoke servers run with an API address that refuses connections and with no session cookie, so what
- * this exercises is the browser half: the page hydrates, the form validates, and a request made without
- * a session is refused by the BFF without anything being stored. A signed-in run belongs to a live
- * environment, which this one is not.
+ * This spec originally navigated straight to `/dashboard/settings` and exercised the phone-change form there: at
+ * the time the smoke servers had no session and the page still rendered. Dashboard protection changed that, and
+ * a signed-out navigation now gets a real `307` to the sign-in page. The four assertions about the form were
+ * therefore describing a surface a signed-out browser can no longer reach, and they had gone unnoticed because
+ * Playwright has never been runnable in the sandbox this repository is developed in.
+ *
+ * So what is asserted here is what a browser can actually establish without a session, and what it adds over
+ * `apps/web/test/dashboard-protection.test.ts` (which already proves the status line and the empty body on the
+ * wire): that the redirect is **followed to a page that renders and hydrates**, in both locales, and that
+ * nothing is left behind in the browser on the way — no cookie, no storage, nothing about a challenge or a code
+ * in the URL. The signed-in half of the form belongs to an environment with a live API, which this is not.
  */
 
 function collectConsoleErrors(page: Page): string[] {
@@ -33,51 +40,51 @@ async function expectEveryScriptToUse(page: Page, nonce: string): Promise<void> 
   for (const value of nonces) expect(value).toBe(nonce);
 }
 
-test.describe('phone contact change', () => {
-  test('the settings page renders, hydrates and carries the nonce on every script', async ({ page }) => {
+test.describe('the protected settings screen', () => {
+  test('a signed-out visit lands on a sign-in page that renders and carries the nonce', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     const response = await page.goto(`${WEB_URL}/dashboard/settings`);
+
+    // Playwright follows the 307, so this is the sign-in page's own response.
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 2, name: 'Phone number' })).toBeVisible();
-    await expect(page.getByLabel('New phone number')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe('/login');
+    await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
     await expectEveryScriptToUse(page, await nonceFrom(response));
     await page.waitForLoadState('networkidle');
     expect(errors).toEqual([]);
   });
 
-  test('asks for the number before it sends anything', async ({ page }) => {
+  test('the settings form is not reachable, in any part', async ({ page }) => {
     await page.goto(`${WEB_URL}/dashboard/settings`);
-    await page.getByRole('button', { name: 'Send code' }).click();
-    await expect(page.getByRole('status')).toHaveText('Fill in this field to continue.');
+
+    // None of the phone-change surface exists on the page a signed-out visitor is given.
+    await expect(page.getByRole('heading', { level: 2, name: 'Phone number' })).toHaveCount(0);
+    await expect(page.getByLabel('New phone number')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send code' })).toHaveCount(0);
+    await expect(page.getByLabel('Six-digit code')).toHaveCount(0);
   });
 
-  test('without a session the request is refused, and nothing is stored', async ({ page, context }) => {
+  test('nothing is stored and nothing about a challenge reaches the URL', async ({ page, context }) => {
     await page.goto(`${WEB_URL}/dashboard/settings`);
-    await page.getByLabel('New phone number').fill('+201555000111');
-    await page.getByRole('button', { name: 'Send code' }).click();
 
-    // No __Host-mp_access cookie exists here, so the BFF refuses before the API is called.
-    await expect(page.getByRole('status')).toHaveText('Please sign in again to change your phone number.');
     expect(await context.cookies()).toEqual([]);
     const stored = await page.evaluate(() => ({
       local: Object.keys(globalThis.localStorage).length,
       session: Object.keys(globalThis.sessionStorage).length,
     }));
     expect(stored).toEqual({ local: 0, session: 0 });
-    // The code step is not reachable without a challenge.
-    await expect(page.getByLabel('Six-digit code')).toHaveCount(0);
-    // And nothing about a challenge is ever in the URL: it lives in an HttpOnly cookie the page cannot
-    // read, so a browser that has one still cannot see it.
+
+    // A challenge lives in an HttpOnly cookie the page cannot read, and never in a URL — so a redirect away
+    // from a protected page cannot carry one either.
     expect(page.url()).not.toContain('challenge');
     expect(page.url()).not.toContain('otp');
   });
 
-  test('is available in Arabic, right-to-left', async ({ page }) => {
+  test('is protected in Arabic too, and keeps the locale through the redirect', async ({ page }) => {
     const response = await page.goto(`${WEB_URL}/ar/dashboard/settings`);
     expect(response?.status()).toBe(200);
+    expect(new URL(page.url()).pathname).toBe('/ar/login');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page.getByRole('heading', { level: 1, name: 'الإعدادات' })).toBeVisible();
-    await expect(page.getByLabel('رقم الهاتف الجديد')).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
   });
 });

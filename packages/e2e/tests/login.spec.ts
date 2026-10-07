@@ -79,7 +79,7 @@ test.describe('web sign-in', () => {
 });
 
 test.describe('admin sign-in', () => {
-  test('renders and hydrates on its own origin', async ({ page }) => {
+  test('renders and hydrates on the console surface', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     const response = await page.goto(`${ADMIN_URL}/login`);
     expect(response?.status()).toBe(200);

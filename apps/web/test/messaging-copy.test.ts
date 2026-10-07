@@ -56,11 +56,25 @@ describe('the copy', () => {
     expect(Object.keys(ar.Messages).sort()).toEqual(Object.keys(en.Messages).sort());
   });
 
+  /**
+   * One documented exception, added by 0104.
+   *
+   * `attachmentTypePdf` is "PDF" in both languages because PDF is the format's own name, not a word: the Arabic
+   * reader sees "PDF" on the file too, and inventing an Arabic rendering of it would make the label disagree
+   * with what is actually being opened. Every other key must still differ, which is the rule this one exception
+   * proves rather than weakens — an untranslated label that is not a format name still fails here.
+   */
+  const SAME_IN_BOTH_LANGUAGES = new Set(['attachmentTypePdf']);
+
   it('has a distinct, non-empty Arabic value for every English one', () => {
     for (const key of Object.keys(en.Messages) as Array<keyof typeof en.Messages>) {
       const english = en.Messages[key];
       const arabic = (ar.Messages as Record<string, string>)[key];
       expect(arabic, key).toBeTruthy();
+      if (SAME_IN_BOTH_LANGUAGES.has(key)) {
+        expect(arabic, key).toBe(english);
+        continue;
+      }
       expect(arabic, key).not.toBe(english);
     }
   });
@@ -94,8 +108,20 @@ describe('the copy', () => {
 
   it('offers no wording for an operation that does not exist', () => {
     const values = JSON.stringify(en.Messages).toLowerCase();
-    for (const absent of ['reopen', 'edit message', 'delete message', 'attach']) {
+    // `attach` left this list in 0104, which built the operation. Editing, deleting and reopening a sent
+    // message still do not exist anywhere in the stack, so no wording for them may exist either.
+    for (const absent of ['reopen', 'edit message', 'delete message']) {
       expect(values, absent).not.toContain(absent);
     }
+  });
+
+  /** And the attachment copy says what the limits are, so nobody meets them by surprise. */
+  it('names the attachment limits in words a person can act on', () => {
+    expect(M.attachTooLarge).toContain('10 MB');
+    expect(M.attachTooMany).toContain('5');
+    expect(M.attachWrongType).toContain('PDF');
+    // Never SVG, in either direction: it is not offered and not named as refused by extension.
+    expect(JSON.stringify(en.Messages).toLowerCase()).not.toContain('svg');
+    expect(JSON.stringify(ar.Messages).toLowerCase()).not.toContain('svg');
   });
 });

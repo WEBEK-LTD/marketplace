@@ -1,5 +1,7 @@
 import 'server-only';
 import {
+  LISTING_ANALYTICS_DEFAULT_DAYS,
+  LISTING_ANALYTICS_MAX_DAYS,
   PROBLEM_JSON_MEDIA_TYPE,
   SESSION_TOKEN_HEADER,
   SELLER_ANALYTICS_DEFAULT_DAYS,
@@ -8,11 +10,13 @@ import {
   SELLER_READ_MAX_LIMIT,
   SellerAnalyticsResponseSchema,
   SellerEarningsResponseSchema,
+  SellerListingAnalyticsResponseSchema,
   SellerOrdersResponseSchema,
   SellerPromotionsResponseSchema,
   SellerReviewsResponseSchema,
   type SellerAnalyticsResponse,
   type SellerBalance,
+  type SellerListingAnalyticsResponse,
   type SellerOrder,
   type SellerPromotion,
   type SellerReview,
@@ -389,6 +393,58 @@ export async function handleSellerAnalytics(
     request,
     (search) => `/v1/sellers/me/analytics?${windowQuery(intOrUndefined(search.get('days')))}`,
     parseAnalytics,
+    options,
+  );
+}
+
+/* ---------------------------------------------------------------------------------------------------- *
+ * Listing analytics (0102)
+ *
+ * A sibling of the promotion analytics above rather than a change to it: 6-J's reader, its parse and its
+ * response shape are untouched. The window is clamped here as well as upstream, so a page cannot ask for
+ * more than the contract allows even by accident.
+ * ---------------------------------------------------------------------------------------------------- */
+
+/** Its own window bounds, which happen to match 6-J's and are read from this increment's own constants. */
+function listingWindowQuery(days: number | undefined): string {
+  const query = new URLSearchParams();
+  query.set(
+    'days',
+    String(
+      Math.min(
+        Math.max(Math.trunc(days ?? LISTING_ANALYTICS_DEFAULT_DAYS), 1),
+        LISTING_ANALYTICS_MAX_DAYS,
+      ),
+    ),
+  );
+  return query.toString();
+}
+
+const parseListingAnalytics = (payload: unknown): SellerListingAnalyticsResponse | null => {
+  const parsed = SellerListingAnalyticsResponseSchema.safeParse(payload);
+  return parsed.success ? { days: parsed.data.days, listings: parsed.data.listings } : null;
+};
+
+export async function readSellerListingAnalytics(
+  options: SellerReadHandlerOptions & { readonly days?: number } = {},
+): Promise<SellerReadLookup<SellerListingAnalyticsResponse>> {
+  return readUpstream(
+    `/v1/sellers/me/listing-analytics?${listingWindowQuery(options.days)}`,
+    parseListingAnalytics,
+    options,
+  );
+}
+
+/** `GET /api/sellers/me/listing-analytics`. */
+export async function handleSellerListingAnalytics(
+  request: Request,
+  options: SellerReadHandlerOptions = {},
+): Promise<Response> {
+  return handleRead(
+    request,
+    (search) =>
+      `/v1/sellers/me/listing-analytics?${listingWindowQuery(intOrUndefined(search.get('days')))}`,
+    parseListingAnalytics,
     options,
   );
 }

@@ -7,6 +7,7 @@ import {
   BUYER_ACCOUNT_STORE,
   type AddressRow,
   type BuyerProfileRow,
+  type BlockRow,
   type BuyerSettingsRow,
   type FavoriteRow,
   type SavedSearchRow,
@@ -166,6 +167,9 @@ interface Doubles {
   readonly addressDelete?: boolean;
   readonly profileUpdate?: 'updated' | 'not_found' | 'invalid_locale' | 'invalid_timezone';
   readonly settingsUpdate?: boolean;
+  readonly blocks?: BlockRow[];
+  readonly blockAdd?: 'blocked' | 'exists' | 'not_found';
+  readonly blockRemove?: boolean;
   readonly throws?: boolean;
   readonly tokenFails?: boolean;
 }
@@ -206,6 +210,9 @@ async function start(doubles: Doubles = {}): Promise<Recorded> {
         record('saved-search-update', input, doubles.savedSearchUpdate ?? 'updated'),
       buyerSavedSearchDelete: async (input: unknown) =>
         record('saved-search-delete', input, doubles.savedSearchDelete ?? true),
+      buyerBlocks: async (input: unknown) => record('blocks', input, doubles.blocks ?? []),
+      buyerBlockAdd: async (input: unknown) => record('block-add', input, doubles.blockAdd ?? 'blocked'),
+      buyerBlockRemove: async (input: unknown) => record('block-remove', input, doubles.blockRemove ?? true),
       buyerAddresses: async (input: unknown) => record('addresses', input, doubles.addresses ?? []),
       buyerAddressCreate: async (input: unknown) =>
         record('address-create', input, doubles.addressCreate ?? { outcome: 'created', id: ADDRESS_A }),
@@ -287,6 +294,9 @@ describe('7-E authority', () => {
     ['POST', '/users/me/saved-searches', { name: 'Sofas', query: {} }],
     ['PATCH', `/users/me/saved-searches/${SAVED_A}`, { name: 'Sofas', query: {} }],
     ['DELETE', `/users/me/saved-searches/${SAVED_A}`, undefined],
+    ['GET', '/users/me/blocks', undefined],
+    ['POST', '/users/me/blocks', { sellerSlug: 'good-shop' }],
+    ['DELETE', '/users/me/blocks/YnIxfG5vdC1yZWFs', undefined],
     ['GET', '/users/me/addresses', undefined],
     ['POST', '/users/me/addresses', ADDRESS_BODY],
     ['PATCH', `/users/me/addresses/${ADDRESS_A}`, ADDRESS_BODY],
@@ -333,6 +343,8 @@ describe('7-E authority', () => {
     await call('GET', `/users/me/favorites?userId=${OTHER_USER}`);
     await call('POST', '/users/me/favorites', { listingId: LISTING_A, userId: OTHER_USER });
     await call('PATCH', '/users/me/profile', { displayName: 'X', userId: OTHER_USER });
+    await call('GET', `/users/me/blocks?userId=${OTHER_USER}`);
+    await call('POST', '/users/me/blocks', { sellerSlug: 'good-shop', userId: OTHER_USER });
 
     for (const args of recorded.args) {
       if ('userId' in args) expect(args['userId']).toBe(USER);

@@ -693,18 +693,22 @@ select is(
         or p.prosrc like '%audit_logs%')),
   0, 'and writes no security event, no outbox event and no audit row of its own');
 
--- Role management is still a gap, and 0079 did not quietly close it.
+-- Role management has its own writers in 0100 now, and 0079 is still not one of them.
 select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  (select coalesce(array_agg(p.proname::text order by p.proname), array[]::text[])
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and (p.prosrc ~* 'insert\s+into\s+public\.user_roles'
         or p.prosrc ~* 'update\s+public\.user_roles'
         or p.prosrc ~* 'delete\s+from\s+public\.user_roles')),
-  0, 'no app_private function writes public.user_roles — role management remains the deferred gap');
+  array['staff_role_grant', 'staff_role_revoke'],
+  'public.user_roles is written only by 0100''s two named writers, and 0079 is still not one of them');
 select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  (select coalesce(array_agg(p.proname::text order by p.proname), array[]::text[])
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private' and p.prosrc like '%users.role.manage%'),
-  0, 'and users.role.manage is consumed by nothing in the database');
+  array['staff_role_can_manage'],
+  'and users.role.manage is consumed by exactly one predicate, 0100''s — never by anything in this file');
 
 -- ---------------------------------------------------------------------------------------------------
 -- 15. 0009's own behaviour is preserved

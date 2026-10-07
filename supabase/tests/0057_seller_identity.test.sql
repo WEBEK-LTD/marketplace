@@ -369,7 +369,9 @@ select is(
      join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and p.proname like 'seller_%'),
-  'seller_create_profile,seller_earnings,seller_identity,seller_listing_archive,'
+  'seller_create_profile,seller_earnings,seller_identity,'
+    -- 0102's listing analytics reader, which sorts here.
+    'seller_listing_analytics,seller_listing_archive,'
     || 'seller_listing_attribute_options,seller_listing_attributes,seller_listing_attributes_save,'
     || 'seller_listing_create_draft,'
     || 'seller_listing_submit,seller_listing_tag_choices,seller_listing_tags_save,'
@@ -382,7 +384,7 @@ select is(
     || 'seller_verification,seller_verification_document_attach,'
     || 'seller_verification_document_remove,seller_verification_document_target,'
     || 'seller_verification_start,seller_verification_submit',
-  'app_private holds exactly thirty-two seller_% functions: this reader, 6-C''s writer, 6-D''s editor, 6-E''s two media functions, 6-F''s five approved listing functions, 6-G''s four approved service functions, 6-I''s six approved verification functions 6-J''s six approved read-only surfaces and 8-C''s six listing attribute and tag functions'
+  'app_private holds exactly thirty-three seller_% functions: this reader, 6-C''s writer, 6-D''s editor, 6-E''s two media functions, 6-F''s five approved listing functions, 6-G''s four approved service functions, 6-I''s six approved verification functions 6-J''s six approved read-only surfaces 8-C''s six listing attribute and tag functions and 0102''s listing analytics reader'
 );
 
 -- Narrowed again in 6-D, which added the approved editor. What still holds in full is the half that keeps

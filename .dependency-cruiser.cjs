@@ -37,17 +37,59 @@ module.exports = {
       to: { path: "^apps/", pathNot: "^apps/$1/" }
     },
     {
+      // 0108 replaced a boundary the filesystem used to enforce. While the console was `apps/admin`, the rule
+      // above kept the two surfaces from reaching into each other; now that both live in `apps/web`, that rule
+      // is silent about them and these two take its place. They are the "component boundaries" half of the
+      // owner's isolation requirement, stated as something a build can refuse rather than something a reviewer
+      // has to notice.
+      //
+      // `src/admin/paths.ts` is deliberately NOT exempt in either direction: the console imports the mount point
+      // from `@repo/config`, and the public surface has no reason to know where the console is mounted.
+      //
+      // **Exactly two files may cross, and both are singletons Next.js imposes.** `src/app/layout.tsx` is the one
+      // root layout an application may have, and `src/i18n/request.ts` is the one next-intl request config — so
+      // each has to answer for both surfaces and each branches on the surface header to do it. Nothing else has
+      // that excuse. A third entry appearing in this list is the signal that something leaked, which is the whole
+      // reason the list is written out rather than expressed as a prefix.
+      name: "no-public-surface-into-console",
+      severity: "error",
+      comment: "The public marketplace surface must not import the admin console's code (0108).",
+      from: {
+        path: "^apps/web/src/",
+        pathNot: "^apps/web/src/(admin/|app/admin/|app/layout\\.tsx$|i18n/request\\.ts$)"
+      },
+      to: { path: "^apps/web/src/(admin/|app/admin/)" }
+    },
+    {
+      // The reverse, and the more important of the two: the console must not render marketplace chrome, read
+      // marketplace BFF helpers or mint marketplace session cookies. The scanner tests assert the cookie half by
+      // name; this asserts the whole of it by dependency.
+      // `src/server/config.ts` is the one exception, and it is one on principle: the environment belongs to the
+      // deployment, not to a surface. There is one Netlify site, one process and one set of variables, so there is
+      // one reader of them, and `src/admin/server/config.ts` re-exports it rather than reading the environment a
+      // second time. Nothing else under `src/server/` may be reached — least of all the marketplace's BFF or its
+      // session cookies.
+      name: "no-console-into-public-surface",
+      severity: "error",
+      comment: "The admin console must not import the public marketplace surface's code (0108).",
+      from: { path: "^apps/web/src/(admin/|app/admin/)" },
+      to: {
+        path: "^apps/web/src/(components/|server/|i18n/routing)",
+        pathNot: "^apps/web/src/(admin/|server/config\\.ts$)"
+      }
+    },
+    {
       name: "db-server-only",
       severity: "error",
-      comment: "The database package is server-only: the web and admin apps, ui and contracts must not import it.",
-      from: { path: "^(apps/(web|admin)|packages/(ui|contracts))/" },
+      comment: "The database package is server-only: the web app (both surfaces), ui and contracts must not import it.",
+      from: { path: "^(apps/web|packages/(ui|contracts))/" },
       to: { path: "(^packages/db/|(^|/)node_modules/@repo/db/)" }
     },
     {
       name: "server-config-server-only",
       severity: "error",
-      comment: "Server configuration is server-only: ui and contracts must not import it, and web/admin only from their server runtime code.",
-      from: { path: "^(apps/(web|admin)|packages/(ui|contracts))/", pathNot: "^apps/(web|admin)/(src/server/|src/instrumentation\\.ts$|test/)" },
+      comment: "Server configuration is server-only: ui and contracts must not import it, and the web app only from its server runtime code — on either surface.",
+      from: { path: "^(apps/web|packages/(ui|contracts))/", pathNot: "^apps/web/(src/server/|src/admin/server/|src/instrumentation\\.ts$|test/)" },
       to: { path: "(^packages/server-config/|(^|/)node_modules/@repo/server-config/)" }
     },
     {
@@ -60,8 +102,8 @@ module.exports = {
     {
       name: "telemetry-server-only",
       severity: "error",
-      comment: "Telemetry is server-only: ui and contracts must not import it, and web/admin only from instrumentation.ts, server code and tests.",
-      from: { path: "^(apps/(web|admin)|packages/(ui|contracts))/", pathNot: "^apps/(web|admin)/(src/server/|src/instrumentation\\.ts$|test/)" },
+      comment: "Telemetry is server-only: ui and contracts must not import it, and the web app only from instrumentation.ts, server code (either surface) and tests.",
+      from: { path: "^(apps/web|packages/(ui|contracts))/", pathNot: "^apps/web/(src/server/|src/admin/server/|src/instrumentation\\.ts$|test/)" },
       to: { path: "(^packages/telemetry/|(^|/)node_modules/@repo/telemetry/)" }
     },
     {
@@ -102,8 +144,8 @@ module.exports = {
     {
       name: "db-driver-server-only",
       severity: "error",
-      comment: "Database drivers must not be imported by the web and admin apps, ui or contracts.",
-      from: { path: "^(apps/(web|admin)|packages/(ui|contracts))/" },
+      comment: "Database drivers must not be imported by the web app (both surfaces), ui or contracts.",
+      from: { path: "^(apps/web|packages/(ui|contracts))/" },
       to: { path: "(^|node_modules/)(kysely|pg|pg-[a-z-]+)(/|$)" }
     },
     {

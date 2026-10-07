@@ -340,6 +340,45 @@ describe('signing a read', () => {
     expect(JSON.parse(seen[0]!.body ?? '{}')).toEqual({ expiresIn: 120 });
   });
 
+  /**
+   * The per-call lifetime 0104 added.
+   *
+   * It exists so conversation attachments can be read for ten minutes without lengthening the four closed
+   * surfaces that read for two — and the default above is the assertion that they did not change. A second
+   * adapter instance with its own expiry would have been a second storage client, which 0104 was told not to
+   * introduce.
+   */
+  it('asks for the lifetime it was given, when it was given one', async () => {
+    const seen: Seen[] = [];
+    const signed = await client(
+      responder(200, { url: '/object/sign/message-attachments/x?token=abc' }, seen),
+    ).signDownload('message-attachments', VERIFICATION_PATH, 600);
+
+    expect(JSON.parse(seen[0]!.body ?? '{}')).toEqual({ expiresIn: 600 });
+    // And `expiresAt` reflects the lifetime that was actually requested, not the default.
+    expect(signed.expiresAt.getTime() - Date.now()).toBeGreaterThan(590_000);
+  });
+
+  it('ignores a lifetime that is not a positive finite number of seconds', async () => {
+    for (const value of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const seen: Seen[] = [];
+      await client(
+        responder(200, { url: '/object/sign/verification-documents/x?token=abc' }, seen),
+      ).signDownload('verification-documents', VERIFICATION_PATH, value);
+
+      expect(JSON.parse(seen[0]!.body ?? '{}'), String(value)).toEqual({ expiresIn: 120 });
+    }
+  });
+
+  it('floors a fractional lifetime rather than sending one', async () => {
+    const seen: Seen[] = [];
+    await client(
+      responder(200, { url: '/object/sign/verification-documents/x?token=abc' }, seen),
+    ).signDownload('verification-documents', VERIFICATION_PATH, 600.7);
+
+    expect(JSON.parse(seen[0]!.body ?? '{}')).toEqual({ expiresIn: 600 });
+  });
+
   it('accepts a relative URL and resolves it against the storage base', async () => {
     const seen: Seen[] = [];
     const signed = await client(

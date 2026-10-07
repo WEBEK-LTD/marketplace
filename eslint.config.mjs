@@ -27,13 +27,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}', 'apps/admin/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
+    files: ['apps/web/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
     ...reactHooks.configs.flat.recommended,
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}', 'apps/admin/**/*.{ts,tsx}'],
+    files: ['apps/web/**/*.{ts,tsx}'],
     plugins: { '@next/next': nextPlugin },
-    settings: { next: { rootDir: ['apps/web/', 'apps/admin/'] } },
+    settings: { next: { rootDir: ['apps/web/'] } },
     rules: { ...nextPlugin.configs.recommended.rules, ...nextPlugin.configs['core-web-vitals'].rules },
   },
 );

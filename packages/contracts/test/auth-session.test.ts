@@ -95,6 +95,8 @@ describe('the documented operations', () => {
       '/v1/users/me',
       '/v1/users/me/addresses',
       '/v1/users/me/addresses/{addressId}',
+      '/v1/users/me/blocks',
+      '/v1/users/me/blocks/{reference}',
       '/v1/users/me/contact/phone/start',
       '/v1/users/me/contact/phone/verify',
       '/v1/users/me/favorites',
@@ -112,6 +114,11 @@ describe('the documented operations', () => {
     const parameters = userPaths.flatMap((path) => path.match(/\{[^}]+\}/g) ?? []);
     expect(parameters).toEqual([
       '{addressId}',
+      // 0103's `{reference}` is an opaque token the API minted over a row it had just returned to this
+      // caller, not an identifier for anything — which is the whole point of it: `public.user_blocks` has no
+      // surrogate key, so the only thing that names one of its rows is the blocked account, and that is
+      // exactly the value this rule keeps out of a URL.
+      '{reference}',
       '{listingId}',
       '{savedSearchId}',
     ]);

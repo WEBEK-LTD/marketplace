@@ -47,11 +47,35 @@ export function guardProblems({ app, appDir, repoRoot, context, gitPresent, exis
     problems.push(`repositoryRoot is ${context.repositoryRoot ?? 'missing'}, expected ${repoRoot}`);
   }
 
-  // 4. Build command: the package-scoped app build, never the root workspace build.
-  const expectedCommand = `pnpm --filter @repo/${app} run build`;
-  if (!context.buildCommands.includes(expectedCommand)) problems.push(`the build log does not show \`${expectedCommand}\``);
+  // 4. Build command: the package-scoped app build *with its dependencies*, never the root workspace build.
+  //
+  //    The `...` suffix is the whole point of this check now. Every workspace package exports only `dist/`,
+  //    `dist/` is gitignored, and nothing has a `postinstall` or `prepare` script — so on a fresh Netlify
+  //    checkout `--filter @repo/<app>` alone builds no dependency and `next build` dies loading
+  //    `next.config.ts`, which imports `@repo/config`. This guard used to require that exact dependency-less
+  //    string, so it would have passed the configuration that cannot build. It was blind to the defect
+  //    because CI builds the graph itself first (`turbo run build --filter="@repo/<app>..."`) and TOOL-1
+  //    therefore always ran against a tree where every `dist/` already existed.
+  //
+  //    Matched as a pattern rather than one literal string: the quoting Netlify echoes for a shell-glob
+  //    argument is the builder's business, not this repository's, so `"@repo/web..."` and `@repo/web...` are
+  //    both accepted. What is not accepted is the dependency-less form, or the root workspace build.
+  const scoped = new RegExp(`^pnpm --filter ["']?@repo/${app}\\.\\.\\.["']? run build$`);
+  const dependencyLess = new RegExp(`^pnpm --filter ["']?@repo/${app}["']? run build$`);
+
+  if (!context.buildCommands.some((command) => scoped.test(command))) {
+    problems.push(`the build log does not show \`pnpm --filter "@repo/${app}..." run build\``);
+  }
   for (const command of context.buildCommands) {
-    if (/^turbo run build\b/.test(command) || /^pnpm run build$/.test(command)) problems.push(`the build ran the root workspace command \`${command}\``);
+    if (/^turbo run build\b/.test(command) || /^pnpm run build$/.test(command)) {
+      problems.push(`the build ran the root workspace command \`${command}\``);
+    }
+    if (dependencyLess.test(command)) {
+      problems.push(
+        `the build ran \`${command}\`, which builds no workspace dependency: on a clean checkout there is no ` +
+          `dist/ for @repo/config and next.config.ts cannot load. Use the \`...\` form.`,
+      );
+    }
   }
   return problems;
 }

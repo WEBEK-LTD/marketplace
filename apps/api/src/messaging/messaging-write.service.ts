@@ -297,6 +297,10 @@ export class MessagingWriteService {
       createdAt: row.createdAt.toISOString(),
       editedAt: row.editedAt === null ? null : row.editedAt.toISOString(),
       deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
+      // 0104. Always empty here, and that is correct rather than a gap: a message cannot be created with an
+      // attachment (owner decision 5 keeps `messages_text_has_body` and adds nothing to the send path), so a
+      // message that has just committed has none. The first attachment arrives in its own later request.
+      attachments: [],
     };
   }
 }

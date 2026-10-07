@@ -7,6 +7,8 @@ import {
   RecoveryReviewRequestSchema,
   SESSION_TOKEN_HEADER,
   SellerStatusChangeRequestSchema,
+  StaffRoleGrantRequestSchema,
+  StaffRoleRevokeRequestSchema,
   parseMessagingLimit,
   type AdminRoleCatalogueResponse,
   type AdminSecurityEventsResponse,
@@ -27,6 +29,10 @@ import {
   type RecoveryReviewResponse,
   type SellerStatusChangeRequest,
   type SellerStatusChangeResponse,
+  type StaffGrantableRolesResponse,
+  type StaffRoleGrantRequest,
+  type StaffRoleRevokeRequest,
+  type StaffRoleWriteResponse,
 } from '@repo/contracts';
 import { AuthenticationRequiredError } from '../auth/auth-errors.js';
 import { AdminOperationsService } from '../admin/admin-operations.service.js';
@@ -196,10 +202,11 @@ export class AdminOperationsController {
   /**
    * What roles one account holds.
    *
-   * A GET and nothing else. There is no POST or DELETE beside it, because no authoritative writer for
-   * `user_roles` exists in this repository and the rules for one — which roles a holder of
-   * `users.role.manage` may grant, whether self-grant is refused, what revocation does to live sessions —
-   * are not defined. That gap is reported rather than filled with a guess.
+   * Behind `users.role.read`, and **unchanged by 0100**: it reports no actor and no reason, so who granted or
+   * withdrew a role is on the row and in no response. The two writers that change a grant are below, behind
+   * `users.role.manage`, and the questions this comment used to list as undefined are now owner decisions
+   * applied in the database: the ceiling is `roles.sort_order`, a self-grant is refused, and a withdrawal
+   * takes effect on the target's next request because nothing in this platform ends a session.
    */
   @Get('users/:userId/roles')
   async userRoles(
@@ -211,6 +218,70 @@ export class AdminOperationsController {
       userId: this.identifier(userId, 'userId'),
     });
     return { items: [...items] };
+  }
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Roles — the writers (0100)                                                                      */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  /**
+   * The roles this caller may grant.
+   *
+   * Behind `users.role.manage`, and computed in the database from the caller's own effective roles. A console
+   * renders this list; it does not filter a catalogue, because a filter in a client is a convention and this
+   * is a privilege boundary.
+   */
+  @Get('roles/grantable')
+  async grantableRoles(
+    @Req() request: AdminOperationsRequestContext,
+  ): Promise<StaffGrantableRolesResponse> {
+    const items = await this.operations.grantableRoles({ accessToken: this.token(request) });
+    return { items: [...items] };
+  }
+
+  /**
+   * Grants a role to one account, or reinstates one that was withdrawn.
+   *
+   * The account is named by the path and never by the body. Every boundary — the ceiling, `super_admin`,
+   * assignability, the self rule, the reason and the expiry — is applied by the database against this
+   * caller's own effective roles.
+   */
+  @Post('users/:userId/roles')
+  @HttpCode(200)
+  async grantRole(
+    @Req() request: AdminOperationsRequestContext,
+    @Param('userId') userId: string,
+    @Body(new ZodValidationPipe(StaffRoleGrantRequestSchema)) body: StaffRoleGrantRequest,
+  ): Promise<StaffRoleWriteResponse> {
+    return this.operations.grantRole({
+      accessToken: this.token(request),
+      userId: this.identifier(userId, 'userId'),
+      roleKey: body.roleKey,
+      reason: body.reason,
+      expiresAt: body.expiresAt ?? null,
+    });
+  }
+
+  /**
+   * Withdraws a role from one account.
+   *
+   * A `POST` to its own address rather than a `DELETE` on the grant, because the row is not deleted: the
+   * withdrawal is recorded on it, with who did it and why, and the grant it withdraws stays beside it. Every
+   * write on this surface is a POST, and this is one.
+   */
+  @Post('users/:userId/roles/revoke')
+  @HttpCode(200)
+  async revokeRole(
+    @Req() request: AdminOperationsRequestContext,
+    @Param('userId') userId: string,
+    @Body(new ZodValidationPipe(StaffRoleRevokeRequestSchema)) body: StaffRoleRevokeRequest,
+  ): Promise<StaffRoleWriteResponse> {
+    return this.operations.revokeRole({
+      accessToken: this.token(request),
+      userId: this.identifier(userId, 'userId'),
+      roleKey: body.roleKey,
+      reason: body.reason,
+    });
   }
 
   @Get('users/:userId/security-events')

@@ -391,11 +391,24 @@ describe('a cover image reaches this app and is rendered by nothing (0099)', () 
     expect(page.html).not.toContain('<img');
   });
 
-  it('has no source file in this app that so much as names a cover or the bucket', () => {
+  /**
+   * **Re-rooted in 0108, not weakened.**
+   *
+   * The rule is that the *public* surface never names a cover image or the media bucket: a CMS static page renders
+   * its authored text and nothing else, so nothing on the public side should be able to reach for one. Until 0108
+   * "this app" and "the public surface" were the same directory. The console now lives in the same application, and
+   * naming covers and the media bucket is exactly its job — it is where an administrator uploads them — so scanning
+   * all of `src/` would report the console's own correct code and prove nothing about the public pages.
+   *
+   * The roots below are therefore the public surface's, and the console's two subtrees are excluded by name.
+   */
+  it('has no source file on the public surface that so much as names a cover or the bucket', () => {
     const root = join(import.meta.dirname, '..', 'src');
+    const consoleRoots = [join(root, 'admin'), join(root, 'app', 'admin')];
     const offenders: string[] = [];
 
     const walk = (dir: string): void => {
+      if (consoleRoots.some((excluded) => dir === excluded)) return;
       for (const entry of readdirSync(dir)) {
         const full = join(dir, entry);
         if (statSync(full).isDirectory()) {

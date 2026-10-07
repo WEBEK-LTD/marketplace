@@ -163,6 +163,10 @@ describe('client bundles', () => {
     expect(css).toContain('--token-color-brand-primary');
     expect(css).toContain('--token-color-brand-secondary');
     expect(css).not.toMatch(/--color-(red|blue|purple|indigo|violet|pink|green)-\d/);
-    expect(css.toLowerCase()).not.toContain('gradient');
+    // Gradient *values*, not the substring. Tailwind's own `transition` shorthand lists
+    // `--tw-gradient-from` among the properties it animates, so the bare word appears in the sheet as a property
+    // name the moment anything uses `transition` — which says nothing about the palette. What this rule is about is
+    // a colour that did not come from a token, so it is the gradient functions that must be absent.
+    expect(css.toLowerCase()).not.toMatch(/(linear|radial|conic)-gradient\(/);
   });
 });

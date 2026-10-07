@@ -1,10 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  LISTING_ANALYTICS_DEFAULT_DAYS,
+  LISTING_ANALYTICS_MAX_DAYS,
   SELLER_ANALYTICS_DEFAULT_DAYS,
   SELLER_ANALYTICS_MAX_DAYS,
   SELLER_READ_DEFAULT_LIMIT,
   SELLER_READ_MAX_LIMIT,
   type SellerAnalyticsResponse,
+  type SellerListingAnalyticsResponse,
+  type SellerListingPerformance,
   type SellerBalance,
   type SellerOrder,
   type SellerOrderItem,
@@ -169,6 +173,25 @@ export interface SellerPromotionPerformanceRow {
   readonly clicks: string | null;
 }
 
+/**
+ * One of the caller's listings, as `app_private.seller_listing_analytics` returns it (0102).
+ *
+ * The counts arrive as text because they are `bigint` sums. They are **counts, not money**: no currency, no
+ * decimal places and nothing from the money package is involved anywhere on this path.
+ */
+export interface SellerListingPerformanceRow {
+  readonly outcome: string;
+  readonly listingSlug: string | null;
+  readonly listingTitle: string | null;
+  readonly listingStatus: string | null;
+  readonly firstDay: Date | string | null;
+  readonly lastDay: Date | string | null;
+  readonly clicks: string | null;
+  readonly contacts: string | null;
+  readonly favorites: string | null;
+  readonly shares: string | null;
+}
+
 export interface SellerReadStore {
   /** `app_private.seller_orders(...)` (0064). */
   sellerOrders(query: SellerOrdersQuery): Promise<readonly SellerOrderRow[]>;
@@ -185,6 +208,11 @@ export interface SellerReadStore {
     userId: string,
     days: number,
   ): Promise<readonly SellerPromotionPerformanceRow[]>;
+  /** `app_private.seller_listing_analytics(uuid, integer)` (0102). */
+  sellerListingAnalytics(
+    userId: string,
+    days: number,
+  ): Promise<readonly SellerListingPerformanceRow[]>;
 }
 
 export const SELLER_READ_STORE = Symbol('SELLER_READ_STORE');
@@ -202,6 +230,19 @@ function toDay(value: Date | string): string {
   return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
 }
 
+/**
+ * The page size for orders, reviews and promotions.
+ *
+ * **These three page differently from every other list here, deliberately (0106, owner decision 3).** They send
+ * the reader `limit: size` — no probe row — and decide there is another page from `rows.length === size`. That
+ * loses no rows; its cost is one wasted request when the total is an exact multiple of the page size, which
+ * returns an empty page. Everywhere else in this API asks for `limit + 1` instead and reads the extra row.
+ *
+ * It was left as it is on purpose: unifying it would change when `nextCursor` is null on that boundary, which
+ * is a cursor-semantics change 0106 was not permitted to make. Their readers therefore clamp at exactly the
+ * public maximum, and the three are named in `PAGINATION_CEILING_EXEMPT` so the structural check that enforces
+ * the probe-row contract everywhere else expects this shape here.
+ */
 function clampLimit(limit: number | undefined): number {
   if (limit === undefined || !Number.isFinite(limit)) return SELLER_READ_DEFAULT_LIMIT;
   return Math.min(Math.max(Math.trunc(limit), 1), SELLER_READ_MAX_LIMIT);
@@ -421,6 +462,63 @@ export class SellerReadService {
             impressions: row.impressions,
             views: row.views,
             clicks: row.clicks,
+          };
+        }),
+    };
+  }
+
+  /**
+   * The rollup's totals for the caller's own listings (0102).
+   *
+   * A sibling of `analytics` above rather than a field added to it: 6-J's response shape is closed and stays as
+   * it is. Four counts, every one of them the rollup's. **No impressions and no views** — 0101 ingests neither —
+   * and no rate, ratio or click-through, because none of them has a denominator in this schema.
+   */
+  async listingAnalytics(userId: string, days: number | undefined): Promise<SellerListingAnalyticsResponse> {
+    const window =
+      days === undefined || !Number.isFinite(days)
+        ? LISTING_ANALYTICS_DEFAULT_DAYS
+        : Math.min(Math.max(Math.trunc(days), 1), LISTING_ANALYTICS_MAX_DAYS);
+
+    let rows: readonly SellerListingPerformanceRow[];
+    try {
+      rows = await this.store.sellerListingAnalytics(userId, window);
+    } catch (error) {
+      this.logger.error('Seller listing analytics could not be read.');
+      throw new SellerIdentityUnavailableError(error);
+    }
+
+    this.#assertFound(rows, 'listing analytics');
+    return {
+      days: window,
+      listings: rows
+        .filter((row) => row.outcome === 'found')
+        .map((row) => {
+          if (
+            row.listingSlug === null ||
+            row.listingTitle === null ||
+            row.listingStatus === null ||
+            row.firstDay === null ||
+            row.lastDay === null ||
+            row.clicks === null ||
+            row.contacts === null ||
+            row.favorites === null ||
+            row.shares === null
+          ) {
+            this.logger.error('A listing performance row came back incomplete.');
+            throw new SellerIdentityUnavailableError(new Error('incomplete performance row'));
+          }
+          // The rollup's four totals, and nothing derived from them.
+          return {
+            listingSlug: row.listingSlug,
+            listingTitle: row.listingTitle,
+            listingStatus: row.listingStatus as SellerListingPerformance['listingStatus'],
+            firstDay: toDay(row.firstDay),
+            lastDay: toDay(row.lastDay),
+            clicks: row.clicks,
+            contacts: row.contacts,
+            favorites: row.favorites,
+            shares: row.shares,
           };
         }),
     };

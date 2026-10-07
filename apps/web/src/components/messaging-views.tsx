@@ -1,4 +1,4 @@
-import type { InboxItem, MessageItem } from '@repo/contracts';
+import type { InboxItem, MessageAttachment, MessageItem } from '@repo/contracts';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -193,11 +193,30 @@ export function ConversationListSkeleton({ label }: { readonly label: string }) 
 }
 
 /**
+ * A byte count as a short human string.
+ *
+ * The value is a decimal string because it is a `bigint` at the contract boundary, and it is parsed here with
+ * `Number` rather than `BigInt` because a file size that does not fit in a double would be larger than any
+ * bucket in this platform permits — and a size that fails to parse renders as nothing rather than as `NaN`.
+ */
+function formatBytes(value: string, labels: Pick<MessageLabels, 'kilobytes' | 'megabytes'>): string {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} ${labels.megabytes}`;
+  return `${Math.max(1, Math.round(bytes / 1024))} ${labels.kilobytes}`;
+}
+
+/**
  * What a rendered message needs. `MessageItem` satisfies it structurally.
  *
  * No `senderUserId`, no `conversationId`, no `referenceId`: attribution is "You" or "Other participant"
  * and the reference card renders a title, so none of those is read here — and 5-F's client thread must
  * not ship them to a browser it does not print them on.
+ *
+ * `attachments` (0104) is here because the thread is a client component and the catch-up poll replaces these
+ * rows wholesale, so an attachment that lived only in server markup would vanish on the first poll. What it
+ * carries is an id, a type and a size: **no object path and no filename**, because the download is reached by
+ * id and 0014 stores no name. There is nothing in it a browser should not have.
  */
 export interface RenderableMessage {
   readonly id: string;
@@ -206,9 +225,16 @@ export interface RenderableMessage {
   readonly messageType: MessageItem['messageType'];
   readonly body: string | null;
   readonly createdAt: string;
+  readonly attachments: readonly MessageAttachment[];
 }
 
 export interface MessageLabels {
+  /** 0104. The accessible name of a message's attachment list, and how each file is described. */
+  readonly attachments: string;
+  /** One word per permitted content type. A type with no label renders as itself rather than as nothing. */
+  readonly attachmentTypes: Readonly<Record<string, string>>;
+  readonly kilobytes: string;
+  readonly megabytes: string;
   readonly noMessages: string;
   readonly closed: string;
   readonly closedHint: string;
@@ -228,6 +254,7 @@ export function renderableMessage(item: MessageItem): RenderableMessage {
     messageType: item.messageType,
     body: item.body,
     createdAt: item.createdAt,
+    attachments: item.attachments,
   };
 }
 
@@ -262,12 +289,20 @@ export function MessageRow({
   referenceTitle,
   labels,
   action,
+  attachmentAction,
 }: {
   readonly message: RenderableMessage;
   readonly referenceTitle: string | null;
   readonly labels: MessageLabels;
   /** A per-message control, when the surface has one. 5-H's report action is the only caller. */
   readonly action?: ReactNode;
+  /**
+   * A per-attachment control, when the surface has one. 0104's download link is the only caller.
+   *
+   * A function rather than a node so each file gets its own, and optional so a surface that only lists
+   * attachments — a future digest, say — does not have to supply one.
+   */
+  readonly attachmentAction?: (attachment: MessageAttachment) => ReactNode;
 }) {
   if (message.messageType === 'system') {
     return (
@@ -297,6 +332,19 @@ export function MessageRow({
       {message.messageType === 'reference' ? (
         <MessageReferenceCard title={referenceTitle} labels={labels} />
       ) : null}
+      {message.attachments.length === 0 ? null : (
+        <ul className="mt-2 space-y-1" aria-label={labels.attachments}>
+          {message.attachments.map((attachment) => (
+            <li key={attachment.id} className="text-xs text-neutral-700">
+              <span>{labels.attachmentTypes[attachment.contentType] ?? attachment.contentType}</span>
+              <span className="ms-2 text-neutral-500">{formatBytes(attachment.byteSize, labels)}</span>
+              {attachmentAction === undefined ? null : (
+                <span className="ms-2">{attachmentAction(attachment)}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {action}
     </li>
   );
@@ -320,6 +368,7 @@ export function ConversationThread({
   olderHref,
   labels,
   actionFor,
+  attachmentActionFor,
 }: {
   readonly messages: readonly RenderableMessage[];
   readonly referenceTitle: string | null;
@@ -331,6 +380,8 @@ export function ConversationThread({
    * its own: 5-H's report action is per message, and one shared node would report one message everywhere.
    */
   readonly actionFor?: (message: RenderableMessage) => ReactNode;
+  /** The per-attachment control, if the surface offers one. 0104's download link is the only caller. */
+  readonly attachmentActionFor?: (attachment: MessageAttachment) => ReactNode;
 }) {
   return (
     <div className="mt-8">
@@ -356,6 +407,7 @@ export function ConversationThread({
               referenceTitle={referenceTitle}
               labels={labels}
               action={actionFor === undefined ? undefined : actionFor(message)}
+              {...(attachmentActionFor === undefined ? {} : { attachmentAction: attachmentActionFor })}
             />
           ))}
         </ul>

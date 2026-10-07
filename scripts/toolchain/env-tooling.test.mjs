@@ -5,8 +5,12 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { ENV_INVENTORY, variablesFor } from '../../packages/server-config/dist/index.js';
 import {
+  DEPLOY_SURFACES,
   DOC_END,
   DOC_START,
+  MANIFEST_END,
+  MANIFEST_START,
+  deployManifestTables,
   envBoundaryViolations,
   envExampleProblems,
   findEnvAccess,
@@ -14,6 +18,7 @@ import {
   inventoryTable,
   scanClientBundles,
   withGeneratedDocs,
+  withGeneratedManifest,
 } from './env-tooling.mjs';
 
 const kinds = (code, file = 'apps/api/src/x.ts') => findEnvAccess(file, code).map((u) => `${u.kind}${u.name ? ` ${u.name}` : ''}`);
@@ -105,11 +110,63 @@ test('R3: the inventory table is deterministic and contains no secret values', (
   assert.throws(() => withGeneratedDocs('no markers', ENV_INVENTORY), /markers/);
 });
 
+test('the deployment manifest lists exactly what each surface reads, and nothing else', () => {
+  const manifest = deployManifestTables(ENV_INVENTORY);
+  assert.equal(manifest, deployManifestTables(ENV_INVENTORY));
+
+  // One section per deployable surface, each naming exactly that surface's inventory entries. The point of
+  // generating it is that somebody provisions a site from it: a manifest that has drifted is worse than none.
+  for (const surface of DEPLOY_SURFACES) {
+    const section = manifest.slice(manifest.indexOf(`#### ${surface.title} `));
+    const body = section.slice(0, section.indexOf('\n\n####') === -1 ? undefined : section.indexOf('\n\n####'));
+    const listed = [...body.matchAll(/^\| `([A-Z0-9_]+)`/gm)].map((match) => match[1]);
+    assert.deepEqual(listed, variablesFor(surface.app).map((entry) => entry.name), surface.app);
+  }
+
+  // No value ever reaches the manifest: a secret's default is null by construction, and the table has no
+  // column that could carry one.
+  for (const entry of ENV_INVENTORY.filter((e) => e.secret)) assert.equal(entry.default, null);
+
+  const readme = `before\n${MANIFEST_START}\nold\n${MANIFEST_END}\nafter\n`;
+  const updated = withGeneratedManifest(readme, ENV_INVENTORY);
+  assert.equal(withGeneratedManifest(updated, ENV_INVENTORY), updated);
+  assert.throws(() => withGeneratedManifest('no markers', ENV_INVENTORY), /markers/);
+});
+
+test('the manifest says which surfaces have a deployment target and which do not', () => {
+  const hosted = DEPLOY_SURFACES.filter((surface) => surface.hosted).map((surface) => surface.app);
+  // One Netlify site since 0108: the console is a surface of the web deployment at `/admin`, not a deployable of
+  // its own. The API and worker have no hosting decision yet (O-8), which is the whole reason the site must be
+  // deployable without them.
+  assert.deepEqual(hosted, ['web']);
+  // And the console must not reappear as a surface by accident: a row for it would mean a second environment to
+  // provision, which is exactly what the topology revision removed.
+  assert.deepEqual(DEPLOY_SURFACES.map((surface) => surface.app), ['web', 'api', 'worker']);
+  const manifest = deployManifestTables(ENV_INVENTORY);
+  assert.match(manifest, /#### API service — service environment \(no deployment target yet\)/);
+  assert.match(manifest, /#### Worker service — service environment \(no deployment target yet\)/);
+  assert.doesNotMatch(manifest, /#### Web site[^\n]*no deployment target/);
+});
+
+test('the one Netlify site needs the three variables the deployment runbook names', () => {
+  // The relationship the manifest exists to record: the site presents the internal credential to the API,
+  // addresses it through API_BASE_URL, and has an origin of its own for the sitemap and robots documents.
+  // One list covers both surfaces, because one deployment serves both (0108).
+  assert.deepEqual(
+    variablesFor('web').map((entry) => entry.name),
+    ['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'PUBLIC_WEB_ORIGIN'],
+  );
+  // The console is no longer an app in the inventory, so asking for its variables asks for nothing. That is the
+  // assertion, not an omission: a row keyed to it would be a second environment nobody provisions.
+  assert.deepEqual(variablesFor('admin').map((entry) => entry.name), []);
+});
+
 test('R3: the committed README table and .env.example files are current', () => {
   const root = new URL('../../', import.meta.url);
   const readme = readFileSync(new URL('README.md', root), 'utf8');
   assert.equal(withGeneratedDocs(readme, ENV_INVENTORY), readme);
-  for (const app of ['api', 'worker', 'web', 'admin']) {
+  assert.equal(withGeneratedManifest(readme, ENV_INVENTORY), readme);
+  for (const app of ['api', 'worker', 'web']) {
     const text = readFileSync(new URL(`apps/${app}/.env.example`, root), 'utf8');
     assert.deepEqual(envExampleProblems(app, text, variablesFor(app).map((e) => e.name)), []);
   }
@@ -137,20 +194,18 @@ test('R5: client-bundle scan uses the inventory, honours only the NODE_ENV excep
   }
 });
 
-test('the Playwright smoke run supplies every required web/admin server variable', () => {
-  // TOOL-7 starts the built apps, and both validate their whole configuration at start-up (R4-B).
+test('the Playwright smoke run supplies every required server variable', () => {
+  // TOOL-7 starts the built app, which validates its whole configuration at start-up (R4-B).
   // A required variable missing from the Playwright `env` block does not fail a check — it makes the
   // server refuse to start, and the run dies as a 60s webServer timeout with the cause buried in
-  // stderr. This asserts the invariant directly: whatever the inventory requires of web and admin,
-  // the smoke configuration provides.
+  // stderr. This asserts the invariant directly: whatever the inventory requires of the web deployment,
+  // the smoke configuration provides. One server since 0108, serving both surfaces.
   const config = readFileSync(new URL('../../packages/e2e/playwright.config.ts', import.meta.url), 'utf8');
   const env = /env:\s*\{([\s\S]*?)\}/.exec(config);
   assert.ok(env, 'playwright.config.ts declares an env block for the servers');
   const supplied = new Set([...env[1].matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*:/gm)].map((m) => m[1]));
-  for (const app of ['web', 'admin']) {
-    for (const entry of variablesFor(app).filter((e) => e.required)) {
-      assert.ok(supplied.has(entry.name), `playwright.config.ts must supply ${entry.name} for ${app}`);
-    }
+  for (const entry of variablesFor('web').filter((e) => e.required)) {
+    assert.ok(supplied.has(entry.name), `playwright.config.ts must supply ${entry.name}`);
   }
   // The credential is generated per run, never a literal: no committed value, and nothing to leak.
   assert.match(config, /randomBytes\(32\)\.toString\('base64url'\)/);

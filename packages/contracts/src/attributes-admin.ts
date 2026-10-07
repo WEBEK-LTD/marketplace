@@ -157,7 +157,8 @@ export const CreateAttributeDefinitionRequestSchema = z
     dataType: AttributeDataTypeSchema,
     nameEn: LabelSchema,
     nameAr: LabelSchema,
-    unit: z.string().min(1).max(ATTRIBUTE_UNIT_MAX).optional(),
+    // 0105. Trimmed, so a unit of one tab is refused here rather than stored as whitespace.
+    unit: z.string().trim().min(1).max(ATTRIBUTE_UNIT_MAX).optional(),
     isFilterable: z.boolean().optional(),
     sortOrder: SortOrderSchema.optional(),
   })

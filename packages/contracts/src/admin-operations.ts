@@ -339,6 +339,87 @@ export const AdminRoleCatalogueResponseSchema = z
   .openapi('AdminRoleCatalogueResponse');
 
 /* ------------------------------------------------------------------------------------------------ */
+/* Role assignment and revocation (0100)                                                             */
+/* ------------------------------------------------------------------------------------------------ */
+
+/**
+ * How long a reason may be. `public.user_roles.reason` is unconstrained text in 0003, so this is the API's
+ * own bound rather than a database rule restated: long enough for a sentence explaining the change, short
+ * enough that it cannot be used as a store.
+ */
+export const STAFF_ROLE_REASON_MAX = 500;
+
+/**
+ * A reason, required on both operations (owner decision 7).
+ *
+ * `trim().min(1)` is the strict rule: a value of spaces, tabs or newlines is not a reason and is refused
+ * here with a 400 rather than travelling to the database to be refused there. The writer applies the same
+ * test against the same whitespace set, so this is the path and that is the floor.
+ */
+export const StaffRoleReasonSchema = z.string().trim().min(1).max(STAFF_ROLE_REASON_MAX);
+
+/**
+ * Granting a role to one account.
+ *
+ * **There is no field here that could widen what the caller may grant.** The role key is a name; which names
+ * are acceptable is decided in the database from the caller's own effective roles — never from anything in
+ * this body. `expiresAt` is optional and must be in the future; absent means a grant that does not expire.
+ *
+ * The account is named by the path, not by the body, so a request cannot be aimed at one account and act on
+ * another.
+ */
+export const StaffRoleGrantRequestSchema = z
+  .object({
+    roleKey: z.string().trim().min(1).max(64),
+    reason: StaffRoleReasonSchema,
+    expiresAt: z.string().datetime().nullable().optional(),
+  })
+  .strict()
+  .openapi('StaffRoleGrantRequest');
+
+/** Withdrawing a role. A reason and nothing else: there is no field that could turn this into a deletion. */
+export const StaffRoleRevokeRequestSchema = z
+  .object({
+    roleKey: z.string().trim().min(1).max(64),
+    reason: StaffRoleReasonSchema,
+  })
+  .strict()
+  .openapi('StaffRoleRevokeRequest');
+
+/** What a completed grant or revocation answers. The role it acted on, and which of the two it was. */
+export const StaffRoleWriteResponseSchema = z
+  .object({
+    outcome: z.enum(['granted', 'revoked']),
+    roleKey: z.string(),
+  })
+  .strict()
+  .openapi('StaffRoleWriteResponse');
+
+/**
+ * One role this caller may grant, as the **database** computed it (owner decision: the grantable set is never
+ * merely hidden in the client).
+ *
+ * The console renders exactly this list. A role absent from it is a role the writer would refuse, and a role
+ * present in it is one the writer would accept — the same three tests, applied once, in the one place that
+ * cannot be bypassed by a crafted request.
+ */
+export const StaffGrantableRoleSchema = z
+  .object({
+    roleKey: z.string(),
+    nameEn: z.string(),
+    nameAr: z.string(),
+    requiresMfa: z.boolean(),
+    isAdminConsole: z.boolean(),
+  })
+  .strict()
+  .openapi('StaffGrantableRole');
+
+export const StaffGrantableRolesResponseSchema = z
+  .object({ items: z.array(StaffGrantableRoleSchema) })
+  .strict()
+  .openapi('StaffGrantableRolesResponse');
+
+/* ------------------------------------------------------------------------------------------------ */
 /* One account's security timeline                                                                   */
 /* ------------------------------------------------------------------------------------------------ */
 
@@ -682,6 +763,11 @@ export type AdminUserDetailResponse = z.infer<typeof AdminUserDetailResponseSche
 export type AdminUserRole = z.infer<typeof AdminUserRoleSchema>;
 export type AdminUserRolesResponse = z.infer<typeof AdminUserRolesResponseSchema>;
 export type AdminRoleCatalogueEntry = z.infer<typeof AdminRoleCatalogueEntrySchema>;
+export type StaffRoleGrantRequest = z.infer<typeof StaffRoleGrantRequestSchema>;
+export type StaffRoleRevokeRequest = z.infer<typeof StaffRoleRevokeRequestSchema>;
+export type StaffRoleWriteResponse = z.infer<typeof StaffRoleWriteResponseSchema>;
+export type StaffGrantableRole = z.infer<typeof StaffGrantableRoleSchema>;
+export type StaffGrantableRolesResponse = z.infer<typeof StaffGrantableRolesResponseSchema>;
 export type AdminRoleCatalogueResponse = z.infer<typeof AdminRoleCatalogueResponseSchema>;
 export type AdminSecurityEvent = z.infer<typeof AdminSecurityEventSchema>;
 export type AdminSecurityEventsResponse = z.infer<typeof AdminSecurityEventsResponseSchema>;

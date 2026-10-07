@@ -5,6 +5,9 @@ import {
   AddressInputSchema,
   AddressMutationResponseSchema,
   AddressesResponseSchema,
+  BlockMutationResponseSchema,
+  BlockRequestSchema,
+  BlocksResponseSchema,
   BuyerProfileMutationResponseSchema,
   BuyerProfileResponseSchema,
   BuyerSettingsMutationResponseSchema,
@@ -22,6 +25,7 @@ import {
   UpdateBuyerSettingsRequestSchema,
   type AddressInput,
   type AddressesResponse,
+  type BlocksResponse,
   type BuyerProfileResponse,
   type BuyerSettingsResponse,
   type CountriesResponse,
@@ -212,6 +216,20 @@ export async function readSavedSearches(
   return await read(`/v1/users/me/saved-searches${query(input)}`, SavedSearchesResponseSchema, options);
 }
 
+/**
+ * The caller's own block list (0103).
+ *
+ * The response carries an opaque `reference` per row and no account identifier, and the contract schema is
+ * `.strict()`, so an API that started sending one would make this a clean failure rather than a page that
+ * renders it.
+ */
+export async function readBlocks(
+  input: { limit?: string | null; cursor?: string | null } = {},
+  options: AccountHandlerOptions = {},
+): Promise<AccountResult<BlocksResponse>> {
+  return await read(`/v1/users/me/blocks${query(input)}`, BlocksResponseSchema, options);
+}
+
 export async function readAddresses(
   options: AccountHandlerOptions = {},
 ): Promise<AccountResult<AddressesResponse>> {
@@ -338,6 +356,19 @@ function identifier(value: string | undefined): string | null {
   return typeof value === 'string' && UUID_PATTERN.test(value) ? value.toLowerCase() : null;
 }
 
+/**
+ * An opaque token a browser supplied, checked for carriage rather than for meaning.
+ *
+ * base64url and bounded, which is enough to know it can sit in a URL path unescaped and cannot be long
+ * enough to be an attack on a buffer. Its case is preserved, unlike an identifier's, because base64url is
+ * case-significant and lowering it would break a token this layer is not supposed to understand.
+ */
+const OPAQUE_PATTERN = /^[A-Za-z0-9_-]{1,512}$/;
+
+function opaqueReference(value: string | undefined): string | null {
+  return typeof value === 'string' && OPAQUE_PATTERN.test(value) ? value : null;
+}
+
 /** `POST /api/account/favorites` — save a listing. */
 export async function handleAddFavorite(
   request: Request,
@@ -372,6 +403,62 @@ export async function handleRemoveFavorite(
     await callWrite('DELETE', `/v1/users/me/favorites/${id}`, accepted.accessToken, undefined, options),
     200,
     FavoriteMutationResponseSchema,
+  );
+}
+
+/**
+ * `POST /api/account/blocks` — block somebody.
+ *
+ * The body is rebuilt from the contract union, so exactly one handle leaves this origin and a page that
+ * tried to send both, neither, or an account identifier is refused here before the hop. Nothing about who
+ * is being blocked is logged: the handle is a conversation or a slug, and both name a person.
+ */
+export async function handleAddBlock(
+  request: Request,
+  options: AccountHandlerOptions = {},
+): Promise<Response> {
+  const accepted = await acceptWrite(request, options);
+  if ('refusal' in accepted) return accepted.refusal;
+
+  const validated = BlockRequestSchema.safeParse(accepted.body);
+  if (!validated.success) return VALIDATION_FAILED();
+
+  const body =
+    'conversationId' in validated.data
+      ? { conversationId: validated.data.conversationId, reason: validated.data.reason ?? null }
+      : { sellerSlug: validated.data.sellerSlug, reason: validated.data.reason ?? null };
+
+  return await writeOutcome(
+    await callWrite('POST', '/v1/users/me/blocks', accepted.accessToken, body, options),
+    200,
+    BlockMutationResponseSchema,
+  );
+}
+
+/**
+ * `DELETE /api/account/blocks/[reference]` — unblock somebody.
+ *
+ * The reference is **not** put through `identifier`: it is an opaque token rather than a UUID, and the API
+ * is the only layer that understands it. What is checked here is that it is safe to place in a URL path —
+ * base64url and bounded — which is this layer's own job and not a second copy of the API's decode. A
+ * reference that fails that check is refused here; one that passes but means nothing reports that nothing
+ * changed, which is the same answer an unmatched one gets.
+ */
+export async function handleRemoveBlock(
+  request: Request,
+  reference: string | undefined,
+  options: AccountHandlerOptions = {},
+): Promise<Response> {
+  const accepted = await acceptWrite(request, options);
+  if ('refusal' in accepted) return accepted.refusal;
+
+  const token = opaqueReference(reference);
+  if (token === null) return VALIDATION_FAILED();
+
+  return await writeOutcome(
+    await callWrite('DELETE', `/v1/users/me/blocks/${token}`, accepted.accessToken, undefined, options),
+    200,
+    BlockMutationResponseSchema,
   );
 }
 

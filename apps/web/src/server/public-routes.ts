@@ -22,6 +22,20 @@ import 'server-only';
  * ways a path can 404 stay separate and both reach the map.
  */
 
+/**
+ * **The staff console is reserved, not served** (0108).
+ *
+ * `/admin` is deliberately absent from both sets below, and that absence is now stated rather than left to be
+ * inferred. The proxy returns for a console path before this function is ever consulted, which is the control that
+ * matters; this is the second statement of the same fact, so that the two cannot drift apart silently.
+ *
+ * Why it matters that the answer is "not served" rather than "unknown": a path this function refuses is a path the
+ * proxy would hand to the SEO redirect map, and 0030's `redirects_from_path_is_relative` admits any
+ * `^/[A-Za-z0-9/_\-.%]*$` — `/admin/users` among them. An operator-authored entry could then shadow a live console
+ * page. The proxy's early return makes that unreachable; `publicWebServes` saying so too means a future change that
+ * removed the early return would fail a test rather than ship a hijackable console.
+ */
+
 /** The locale prefix the Arabic site carries. English is served at the root. */
 const ARABIC_PREFIX = '/ar';
 
@@ -47,6 +61,7 @@ const SERVED_EXACT: ReadonlySet<string> = new Set([
   '/cookies',
   '/dashboard',
   '/dashboard/addresses',
+  '/dashboard/blocks',
   '/dashboard/favorites',
   '/dashboard/messages',
   '/dashboard/notifications',

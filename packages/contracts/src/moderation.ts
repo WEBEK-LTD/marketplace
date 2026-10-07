@@ -130,10 +130,18 @@ export const ReportResolutionRecordedSchema = z
   .openapi('ReportResolutionRecorded');
 
 /** `moderation_actions_reason_length` and `listing_moderation_actions_reason_length`: 1 to 500. */
-export const ModerationReasonSchema = z.string().min(1).max(500);
+/** 0105: trimmed, so a reason of one tab is refused rather than recorded against a moderation action. */
+export const ModerationReasonSchema = z.string().trim().min(1).max(500);
 
 /** `reports_resolved_has_note` requires one on every close; the column itself is unbounded text. */
-export const ResolutionNoteSchema = z.string().min(1).max(4000);
+/**
+ * 0105: trimmed.
+ *
+ * Without it, two tabs satisfied `min(1)`, `resolve_report`'s own guard, and `reports_resolved_has_note` — so a
+ * report closed as `actioned` with `resolved_at` set and a note of pure whitespace, defeating the invariant that
+ * function states in its own error message: *a report is never closed without a reason*.
+ */
+export const ResolutionNoteSchema = z.string().trim().min(1).max(4000);
 
 /* ------------------------------------------------------------------------------------------------ */
 /* The report queue and one report                                                                   */

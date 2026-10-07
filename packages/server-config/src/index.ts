@@ -8,6 +8,15 @@ export {
   type VariableStatus,
 } from './inventory.js';
 export {
+  ANALYTICS_SESSION_BYTES,
+  ANALYTICS_SESSION_COOKIE_NAME,
+  ANALYTICS_SESSION_DOMAIN,
+  MIN_ANALYTICS_SESSION_KEY_LENGTH,
+  analyticsSessionHash,
+  isAnalyticsSessionId,
+  newAnalyticsSessionId,
+} from './analytics-session.js';
+export {
   DEVICE_ID_BYTES,
   DEVICE_ID_COOKIE_NAME,
   DEVICE_ID_DOMAIN,
@@ -31,7 +40,6 @@ export {
   InventoryDriftError,
   NEXT_SERVER_FIELDS,
   readEnv,
-  readNextServerConfig,
   readWebServerConfig,
   WEB_SERVER_FIELDS,
   type EnvValues,

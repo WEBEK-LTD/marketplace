@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   handleSellerAnalytics,
   handleSellerEarnings,
+  handleSellerListingAnalytics,
   handleSellerOrders,
   handleSellerPromotions,
   handleSellerReviews,
   readSellerAnalytics,
   readSellerEarnings,
+  readSellerListingAnalytics,
   readSellerOrders,
   readSellerPromotions,
   readSellerReviews,
@@ -137,6 +139,19 @@ const PERFORMANCE = {
   clicks: '75',
 };
 
+/** 0102's rollup totals. Counts, not money: no currency and no minor unit anywhere in the shape. */
+const LISTING_PERFORMANCE = {
+  listingSlug: 'a-chair',
+  listingTitle: 'A Chair',
+  listingStatus: 'active',
+  firstDay: '2026-05-03',
+  lastDay: '2026-05-04',
+  clicks: '4294967296',
+  contacts: '17',
+  favorites: '0',
+  shares: '0',
+};
+
 interface Seen {
   readonly url: string;
   readonly method: string | undefined;
@@ -223,6 +238,15 @@ const SURFACES = [
     local: '/api/sellers/me/analytics',
     remote: '/v1/sellers/me/analytics',
     payload: { days: 30, promotions: [PERFORMANCE] },
+    paged: false,
+  },
+  {
+    name: 'listing analytics',
+    handler: handleSellerListingAnalytics,
+    reader: readSellerListingAnalytics,
+    local: '/api/sellers/me/listing-analytics',
+    remote: '/v1/sellers/me/listing-analytics',
+    payload: { days: 30, listings: [LISTING_PERFORMANCE] },
     paged: false,
   },
 ] as const;
@@ -440,17 +464,21 @@ describe('the page size and the window are clamped here too', () => {
 });
 
 describe('the module exports no write path', () => {
-  it('exports exactly five handlers and five readers, and nothing that mutates', async () => {
+  // Six and six since 0102 added the listing analytics pair. The invariant is the one that matters and is
+  // unchanged: the module is a closed list of reads, and nothing in it is named for a write.
+  it('exports exactly six handlers and six readers, and nothing that mutates', async () => {
     const surface = (await import('../src/server/bff/seller-read')) as Record<string, unknown>;
     const exported = Object.keys(surface).sort();
     expect(exported).toEqual([
       'handleSellerAnalytics',
       'handleSellerEarnings',
+      'handleSellerListingAnalytics',
       'handleSellerOrders',
       'handleSellerPromotions',
       'handleSellerReviews',
       'readSellerAnalytics',
       'readSellerEarnings',
+      'readSellerListingAnalytics',
       'readSellerOrders',
       'readSellerPromotions',
       'readSellerReviews',
@@ -459,5 +487,76 @@ describe('the module exports no write path', () => {
     for (const name of exported) {
       expect(name).not.toMatch(/create|update|delete|cancel|refund|withdraw|payout|moderate|reply/i);
     }
+  });
+});
+
+describe('the listing analytics surface (0102)', () => {
+  const local = '/api/sellers/me/listing-analytics';
+  const remote = '/v1/sellers/me/listing-analytics';
+  const payload = { days: 30, listings: [LISTING_PERFORMANCE] };
+
+  it('is its own path, and does not reach 6-J’s operation', async () => {
+    const seen: Seen[] = [];
+    await handleSellerListingAnalytics(read(local), { env: ENV, fetch: upstream(200, payload, seen) });
+    expect(seen[0]?.url.startsWith(`${ENV.API_BASE_URL}${remote}`)).toBe(true);
+    expect(seen[0]?.url).not.toContain('/v1/sellers/me/analytics?');
+  });
+
+  it('clamps the window before it leaves, so a page cannot ask for more than the contract allows', async () => {
+    for (const [asked, expected] of [
+      ['', 'days=30'],
+      ['?days=7', 'days=7'],
+      ['?days=0', 'days=1'],
+      ['?days=-5', 'days=1'],
+      ['?days=100000', 'days=365'],
+      ['?days=soon', 'days=30'],
+    ] as const) {
+      const seen: Seen[] = [];
+      await handleSellerListingAnalytics(read(`${local}${asked}`), {
+        env: ENV,
+        fetch: upstream(200, payload, seen),
+      });
+      expect(seen[0]?.url, asked).toContain(expected);
+    }
+  });
+
+  it('never sends a pagination parameter: a seller reads their own listings whole', async () => {
+    const seen: Seen[] = [];
+    await handleSellerListingAnalytics(read(`${local}?limit=5&cursor=abc`), {
+      env: ENV,
+      fetch: upstream(200, payload, seen),
+    });
+    expect(seen[0]?.url).not.toContain('limit');
+    expect(seen[0]?.url).not.toContain('cursor');
+  });
+
+  /** Owner correction: a count is not money, and nothing on this path says otherwise. */
+  it('carries the counts through with no currency anywhere', async () => {
+    const response = await handleSellerListingAnalytics(read(local), {
+      env: ENV,
+      fetch: upstream(200, payload, []),
+    });
+    const body = await response.text();
+    expect(JSON.parse(body)).toEqual(payload);
+    for (const forbidden of ['currency', 'Minor', 'minor', 'amount', 'price']) {
+      expect(body, forbidden).not.toContain(forbidden);
+    }
+  });
+
+  it('drops a field the contract does not name, however the upstream drifts', async () => {
+    const response = await handleSellerListingAnalytics(read(local), {
+      env: ENV,
+      fetch: upstream(
+        200,
+        { days: 30, listings: [{ ...LISTING_PERFORMANCE, sellerUserId: 'x', impressions: '9', listingId: 'y' }] },
+        [],
+      ),
+    });
+    const body = await response.text();
+    // The contract is strict, so a drifted upstream fails the parse rather than leaking: the handler reports
+    // the failure instead of passing an unknown field along.
+    expect(body).not.toContain('sellerUserId');
+    expect(body).not.toContain('impressions');
+    expect(body).not.toContain('listingId');
   });
 });

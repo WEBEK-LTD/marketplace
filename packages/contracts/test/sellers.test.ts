@@ -1235,7 +1235,12 @@ describe('the seller read surfaces', () => {
     expect(prose).toMatch(/publishes, hides, removes, replies to and moderates nothing/);
     expect(prose).toMatch(/creates, schedules, pays for, pauses, cancels and refunds nothing/);
     expect(prose).toMatch(/no withdrawal, payout or transfer operation anywhere in this API/);
-    expect(prose).toMatch(/no listing-level analytics operation/);
+    // Narrowed by 0102, which added the listing-level operation this once said did not exist. The denial
+    // that belongs to 6-J is the one about **views and impressions**, which that operation still cannot
+    // report because 0101 ingests neither — the part of the original sentence that was never about the
+    // operation's existence.
+    expect(prose).toMatch(/no listing-level views or impressions/);
+    expect(prose).toMatch(/inventing what a view is and how to de-duplicate a session/);
   });
 
   it('carries every money amount as a decimal string beside its own currency', () => {

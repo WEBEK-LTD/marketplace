@@ -38,7 +38,19 @@ export default async function DashboardPage({
 }: {
   readonly params: Promise<{ readonly locale: Locale }>;
 }) {
-  const [{ locale }, t, messages, notifications, favorites, savedSearches, addresses, profile, settings, security] =
+  const [
+    { locale },
+    t,
+    messages,
+    notifications,
+    favorites,
+    savedSearches,
+    addresses,
+    blocks,
+    profile,
+    settings,
+    security,
+  ] =
     await Promise.all([
       params,
       getTranslations('Account'),
@@ -47,6 +59,7 @@ export default async function DashboardPage({
       getTranslations('Favorites'),
       getTranslations('SavedSearches'),
       getTranslations('Addresses'),
+      getTranslations('Blocks'),
       getTranslations('Profile'),
       getTranslations('Settings'),
       getTranslations('Security'),
@@ -57,6 +70,7 @@ export default async function DashboardPage({
     { href: `${prefix}/dashboard/favorites`, title: favorites('title'), body: t('favoritesCard') },
     { href: `${prefix}/dashboard/saved-searches`, title: savedSearches('title'), body: t('savedSearchesCard') },
     { href: `${prefix}/dashboard/addresses`, title: addresses('title'), body: t('addressesCard') },
+    { href: `${prefix}/dashboard/blocks`, title: blocks('title'), body: t('blocksCard') },
     { href: `${prefix}/dashboard/profile`, title: profile('title'), body: t('profileCard') },
     { href: `${prefix}/dashboard/settings`, title: settings('title'), body: t('settingsCard') },
     { href: `${prefix}/dashboard/security`, title: security('title'), body: t('securityCard') },

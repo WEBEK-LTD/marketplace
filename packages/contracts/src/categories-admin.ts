@@ -171,7 +171,14 @@ export type CategoryStateRequest = z.infer<typeof CategoryStateRequestSchema>;
  */
 export const SaveCategoryTranslationRequestSchema = z
   .object({
-    name: z.string().min(1).max(CATEGORY_NAME_MAX),
+    /**
+     * 0105. `.trim()` added: without it a name of one tab satisfied `min(1)`, the writer stored it raw, and
+     * `category_translations_name_length` admitted it because its `btrim` trimmed spaces only — so the public
+     * navigation, the category feed and the sitemap rendered a blank category name. The database now refuses
+     * it as well; this makes the request a clean 400 rather than a constraint violation, and normalises what
+     * is stored so a name cannot arrive padded.
+     */
+    name: z.string().trim().min(1).max(CATEGORY_NAME_MAX),
     description: z.string().max(CATEGORY_DESCRIPTION_MAX).optional(),
     metaTitle: z.string().max(CATEGORY_META_TITLE_MAX).optional(),
     metaDescription: z.string().max(CATEGORY_META_DESCRIPTION_MAX).optional(),

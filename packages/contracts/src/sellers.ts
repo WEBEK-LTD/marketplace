@@ -447,6 +447,14 @@ export const ListingDescriptionSchema = z
  */
 export const ListingPriceMinorSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 
+/**
+ * The seller listing page sizes.
+ *
+ * This is the **public** maximum and it is the authority. The reader behind it clamps at this number
+ * **plus one**, because the API asks for `limit + 1` to learn whether another page exists; a ceiling
+ * equal to the maximum would eat that probe row and report no next page (0106). This figure must not
+ * move without moving that ceiling with it.
+ */
 export const SELLER_LISTINGS_DEFAULT_LIMIT = 20;
 export const SELLER_LISTINGS_MAX_LIMIT = 50;
 
@@ -617,7 +625,14 @@ export const SellerServicePricingModelSchema = z
 export const ServiceDeliveryDaysSchema = z.number().int().min(1).max(365);
 /** Its own floor. Zero revisions is a fact a seller may state, not an absence. */
 export const ServiceRevisionsSchema = z.number().int().min(0).max(32_767);
-/** Its own ceiling. */
+/**
+ * Its own ceiling.
+ *
+ * This is the **public** maximum and it is the authority. The reader behind it clamps at this number
+ * **plus one**, because the API asks for `limit + 1` to learn whether another page exists; a ceiling
+ * equal to the maximum would eat that probe row and report no next page (0106). This figure must not
+ * move without moving that ceiling with it.
+ */
 export const SERVICE_SCOPE_MAX_LENGTH = 5000;
 
 export const SELLER_SERVICES_DEFAULT_LIMIT = 20;
@@ -1001,6 +1016,21 @@ export type SellerVerificationDocumentCountResponse = z.infer<
  * reused for the analytics totals, which are `bigint` sums.
  * -------------------------------------------------------------------------------------------------------- */
 
+/**
+ * The seller read surfaces: orders, reviews and promotions.
+ *
+ * **These three page differently from everything else in this platform, on purpose (0106, owner decision 3).**
+ * `apps/api/src/sellers/seller-read.service.ts` asks the reader for `limit: size` — no probe row — and decides
+ * there is another page from `rows.length === size`. So their readers clamp at exactly this maximum, which is
+ * the shape 0106 corrected everywhere else, and here it takes nothing away: no row is ever lost. The cost is
+ * one wasted request when the total is an exact multiple of the page size, which returns an empty page.
+ *
+ * It was left alone deliberately rather than overlooked. Unifying it would change when `nextCursor` is null on
+ * that boundary, which is a cursor-semantics change 0106 was not permitted to make. The three readers are
+ * named in `PAGINATION_CEILING_EXEMPT` in `scripts/policy/migrations.mjs`, so the structural check that
+ * enforces the probe-row contract everywhere else knows to expect this shape here — and reports the exemption
+ * as stale if it ever stops being true.
+ */
 export const SELLER_READ_DEFAULT_LIMIT = 20;
 export const SELLER_READ_MAX_LIMIT = 50;
 

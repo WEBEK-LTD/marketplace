@@ -137,11 +137,11 @@ export const NEXT_SERVER_FIELDS = Object.freeze({
 });
 
 /**
- * Fields of the public web server runtime.
+ * Fields of the Next.js server runtime — the one deployment, serving the marketplace and the console (0108).
  *
- * The admin console has no public origin and no sitemap — it is never indexed — so `PUBLIC_WEB_ORIGIN`
- * belongs to one app rather than both. `readEnv` checks the field map against the inventory for the app it
- * is given, so this split is what keeps the admin console from being asked for a variable it has no use for.
+ * This is the only complete field map for that runtime, and {@link NEXT_SERVER_FIELDS} above is the pair every
+ * Next.js BFF needs whatever else it reads. The split was a split between two applications until 0108; it is now
+ * simply a base and the full map, and `readEnv` checks the full map against the inventory.
  *
  * `PUBLIC_WEB_ORIGIN` is **optional** while the production domain is undecided, and the validator is the strict
  * one all the same. The two are separate questions: whether a value must be present, which the inventory
@@ -172,10 +172,18 @@ export interface WebServerConfig extends NextServerConfig {
   readonly publicWebOrigin: string | null;
 }
 
-export function readNextServerConfig(app: 'admin', source: Readonly<Record<string, string | undefined>>): NextServerConfig {
-  const values = readEnv(app, NEXT_SERVER_FIELDS, source);
-  return Object.freeze({ apiBaseUrl: values.API_BASE_URL, internalBffCredential: values.INTERNAL_BFF_CREDENTIAL });
-}
+/*
+ * `readNextServerConfig` was removed in 0108, and deliberately rather than deprecated.
+ *
+ * It read {@link NEXT_SERVER_FIELDS} — the two variables — for a given app, and `readEnv` cross-checks a field map
+ * against the inventory for that app. Its only caller was the admin console, the only app whose inventory was
+ * exactly those two. With one Next.js deployment, the inventory for `web` lists three, so there is no argument for
+ * which this function could succeed: every call would throw `InventoryDriftError`. A reader that cannot be called
+ * is worse than no reader, because the next person to reach for it finds a signature that promises otherwise.
+ *
+ * {@link readWebServerConfig} is the reader. {@link NEXT_SERVER_FIELDS} stays, because it is what
+ * {@link WEB_SERVER_FIELDS} is built from and it still states which two variables every Next.js BFF needs.
+ */
 
 export function readWebServerConfig(source: Readonly<Record<string, string | undefined>>): WebServerConfig {
   const values = readEnv('web', WEB_SERVER_FIELDS, source);

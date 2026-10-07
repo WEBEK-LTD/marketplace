@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { Address, FavoriteItem, SavedSearch } from '@repo/contracts';
+import type { Address, BlockedPerson, FavoriteItem, SavedSearch } from '@repo/contracts';
 import { ListingPrice, type ListingPriceLabels } from './listing-price';
 import { RemoveFavorite } from './account-actions';
 
@@ -260,6 +260,56 @@ export function AddressSummary({
         {address.phoneE164}
       </address>
       <p className="mt-1 text-xs text-neutral-500">{copy.purpose[address.purpose] ?? address.purpose}</p>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Blocks                                                                                            */
+/* ------------------------------------------------------------------------------------------------ */
+
+export interface BlockCopy {
+  readonly listLabel: string;
+  readonly unnamed: string;
+  readonly storefront: string;
+  readonly reasonLabel: string;
+  readonly blockedOn: string;
+}
+
+/**
+ * One blocked person, read-only (0103).
+ *
+ * **There is nothing here to identify them by.** A display name when they set one, a storefront slug when
+ * they have one, and `copy.unnamed` when they have neither — which is the honest rendering of somebody
+ * reached through a conversation who never filled in a profile, not a gap to fill with an identifier.
+ *
+ * The slug is shown as text rather than as a link to the storefront. Blocking somebody does not hide their
+ * listings, so the storefront is still there to visit; putting a link on this list would make it a way to
+ * go and look at them, which is not what this screen is for.
+ */
+export function BlockedPersonSummary({
+  person,
+  copy,
+}: {
+  readonly person: BlockedPerson;
+  readonly copy: BlockCopy;
+}) {
+  return (
+    <>
+      <p className="text-base font-medium text-neutral-900">{person.displayName ?? copy.unnamed}</p>
+      {person.sellerSlug !== null && (
+        <p className="mt-1 text-sm text-neutral-600">
+          {copy.storefront}: {person.sellerSlug}
+        </p>
+      )}
+      {person.reason !== null && (
+        <p className="mt-1 text-sm text-neutral-600">
+          {copy.reasonLabel}: {person.reason}
+        </p>
+      )}
+      <p className="mt-1 text-xs text-neutral-500">
+        {copy.blockedOn}: {person.blockedAt.slice(0, 10)}
+      </p>
     </>
   );
 }

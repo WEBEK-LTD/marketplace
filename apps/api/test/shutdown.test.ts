@@ -65,6 +65,7 @@ describe('graceful shutdown', () => {
         API_PORT: '38123',
         APP_SYSTEM_DATABASE_URL: `postgresql://app_system:${DB_PASSWORD}@db.invalid:5432/marketplace`,
         DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+        ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
         OTP_PEPPER: PEPPER,
         PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
         WAABEK_BASE_URL: 'https://waabek.invalid',
@@ -82,7 +83,7 @@ describe('graceful shutdown', () => {
     const configLine = result.stdout.split('\n').find((line) => line.includes('"config_loaded"'));
     expect(configLine).toBeDefined();
     const event = JSON.parse(configLine ?? '{}') as Record<string, unknown>;
-    expect(event).toMatchObject({ event: 'config_loaded', component: 'api', variablesValidated: 16 });
+    expect(event).toMatchObject({ event: 'config_loaded', component: 'api', variablesValidated: 17 });
     for (const forbidden of ['38123', '127.0.0.1', 'production', 'API_PORT', 'API_HOST', 'NODE_ENV']) {
       expect(configLine).not.toContain(forbidden);
     }
@@ -106,6 +107,7 @@ describe('graceful shutdown', () => {
       API_PORT: secret,
       APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
   DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+  ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
   OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
   PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
   WAABEK_BASE_URL: 'https://waabek.invalid',

@@ -1,16 +1,20 @@
 // `pnpm run check:client-env` (owner decisions R5, R5-a): fails if any inventory variable name (other than
-// the documented NODE_ENV exception) or any NEXT_PUBLIC_ name appears in the web/admin client bundles.
-// Run after building web and admin.
+// the documented NODE_ENV exception) or any NEXT_PUBLIC_ name appears in the client bundles.
+// Run after building the web app.
+//
+// One build directory since 0108. That is a tightening rather than a reduction: the staff console's client bundles
+// now land in `apps/web/.next/static` alongside the marketplace's, so one scan covers both surfaces and neither can
+// be built without being scanned.
 import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ENV_INVENTORY } from '../packages/server-config/dist/index.js';
 import { REPO_ROOT } from './toolchain/deno.mjs';
 import { scanClientBundles } from './toolchain/env-tooling.mjs';
 
-const dirs = ['web', 'admin'].map((app) => join(REPO_ROOT, 'apps', app, '.next', 'static'));
+const dirs = [join(REPO_ROOT, 'apps', 'web', '.next', 'static')];
 const missing = dirs.filter((dir) => !existsSync(dir));
 if (missing.length > 0) {
-  console.error(`check:client-env failed: build web and admin first (missing ${missing.map((d) => relative(REPO_ROOT, d)).join(', ')})`);
+  console.error(`check:client-env failed: build the web app first (missing ${missing.map((d) => relative(REPO_ROOT, d)).join(', ')})`);
   process.exit(1);
 }
 const result = scanClientBundles(dirs, ENV_INVENTORY);

@@ -8,6 +8,7 @@ const valid = {
   API_PORT: '8080',
   APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
   DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+  ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
   OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
   PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
   WAABEK_BASE_URL: 'https://waabek.invalid',
@@ -39,6 +40,7 @@ describe('environment validation', () => {
       logLevel: 'info',
       appSystemDatabaseUrl: 'postgresql://app_system@db.invalid:5432/marketplace',
       appSystemDatabaseMaxConnections: 10,
+      analyticsSessionKey: 'test-analytics-session-key-not-a-real-secret-01',
       deviceIdentityKey: 'test-device-identity-key-not-a-real-secret-0123',
       otpPepper: 'test-otp-pepper-value-not-a-real-secret-0123456789',
       pseudonymousUserIdKey: 'test-pseudonymous-user-id-key-not-a-real-secret',
@@ -56,6 +58,7 @@ describe('environment validation', () => {
 
   it('requires NODE_ENV, API_HOST, API_PORT and APP_SYSTEM_DATABASE_URL with no defaults', () => {
     expect(errorOf({}).variables).toEqual([
+      'ANALYTICS_SESSION_KEY',
       'API_HOST',
       'API_PORT',
       'APP_SYSTEM_DATABASE_URL',
@@ -136,6 +139,6 @@ describe('environment validation', () => {
   });
 
   it('describes the loaded configuration without values or names', () => {
-    expect(apiConfigLoadedEvent()).toEqual({ event: 'config_loaded', component: 'api', variablesValidated: 16 });
+    expect(apiConfigLoadedEvent()).toEqual({ event: 'config_loaded', component: 'api', variablesValidated: 17 });
   });
 });

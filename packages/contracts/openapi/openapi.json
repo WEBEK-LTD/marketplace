@@ -118,6 +118,8 @@
           "MESSAGING_BLOCKED",
           "MESSAGING_SELLER_NOT_CONTACTABLE",
           "MESSAGING_REPORT_TARGET_NOT_FOUND",
+          "MESSAGE_ATTACHMENT_LIMIT_REACHED",
+          "MESSAGE_ATTACHMENT_OBJECT_MISSING",
           "SELLER_PROFILE_EXISTS",
           "SELLER_SLUG_TAKEN",
           "SELLER_PROFILE_NOT_EDITABLE",
@@ -175,6 +177,14 @@
           "SELLER_STATUS_REASON_REQUIRED",
           "SELLER_STATUS_NOT_VERIFIED",
           "SELLER_STATUS_ALREADY_VERIFIED",
+          "STAFF_ROLE_IS_SELF",
+          "STAFF_ROLE_ABOVE_CEILING",
+          "STAFF_ROLE_NOT_GRANTABLE",
+          "STAFF_ROLE_NOT_REVOCABLE",
+          "STAFF_ROLE_NOT_ASSIGNABLE",
+          "STAFF_ROLE_ALREADY_REVOKED",
+          "STAFF_ROLE_EXPIRY_INVALID",
+          "STAFF_ROLE_REASON_REQUIRED",
           "REVIEW_IS_PARTY",
           "REVIEW_REASON_REQUIRED",
           "DISPUTE_IS_PARTY",
@@ -212,7 +222,8 @@
           "SEO_SETTINGS_MEDIA_MISSING",
           "CMS_MEDIA_NOT_ALLOWED",
           "CMS_MEDIA_OBJECT_MISSING",
-          "CMS_MEDIA_PATH_TAKEN"
+          "CMS_MEDIA_PATH_TAKEN",
+          "LISTING_ANALYTICS_CURSOR_INVALID"
         ]
       },
       "ValidationIssue": {
@@ -3579,6 +3590,94 @@
         ],
         "additionalProperties": false
       },
+      "SellerListingAnalyticsResponse": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "listings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SellerListingPerformance"
+            }
+          }
+        },
+        "required": [
+          "days",
+          "listings"
+        ],
+        "additionalProperties": false
+      },
+      "SellerListingPerformance": {
+        "type": "object",
+        "properties": {
+          "listingSlug": {
+            "type": "string",
+            "minLength": 1
+          },
+          "listingTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "listingStatus": {
+            "$ref": "#/components/schemas/ListingStatus"
+          },
+          "firstDay": {
+            "type": "string",
+            "minLength": 1
+          },
+          "lastDay": {
+            "type": "string",
+            "minLength": 1
+          },
+          "clicks": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "contacts": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "favorites": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "shares": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          }
+        },
+        "required": [
+          "listingSlug",
+          "listingTitle",
+          "listingStatus",
+          "firstDay",
+          "lastDay",
+          "clicks",
+          "contacts",
+          "favorites",
+          "shares"
+        ],
+        "additionalProperties": false
+      },
+      "ListingStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "pending_review",
+          "approved",
+          "active",
+          "sold",
+          "expired",
+          "archived",
+          "rejected",
+          "suspended",
+          "deleted"
+        ]
+      },
+      "AnalyticsCount": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]*)$"
+      },
       "MessagingInboxResponse": {
         "type": "object",
         "properties": {
@@ -3825,6 +3924,12 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageAttachment"
+            }
           }
         },
         "required": [
@@ -3839,7 +3944,8 @@
           "referenceId",
           "createdAt",
           "editedAt",
-          "deletedAt"
+          "deletedAt",
+          "attachments"
         ],
         "additionalProperties": false
       },
@@ -3855,6 +3961,37 @@
           "service_quote",
           "order",
           null
+        ]
+      },
+      "MessageAttachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contentType": {
+            "$ref": "#/components/schemas/MessageAttachmentContentType"
+          },
+          "byteSize": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          }
+        },
+        "required": [
+          "id",
+          "contentType",
+          "byteSize"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentContentType": {
+        "type": "string",
+        "enum": [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "application/pdf"
         ]
       },
       "UnreadCountResponse": {
@@ -4118,6 +4255,125 @@
           "subjectType",
           "subjectId",
           "reasonCode"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentUploadResponse": {
+        "type": "object",
+        "properties": {
+          "upload": {
+            "$ref": "#/components/schemas/MessageAttachmentUpload"
+          }
+        },
+        "required": [
+          "upload"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentUpload": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "objectPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxByteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "uploadUrl",
+          "objectPath",
+          "expiresAt",
+          "maxByteSize"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentUploadRequest": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "$ref": "#/components/schemas/MessageAttachmentContentType"
+          },
+          "byteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 10485760
+          }
+        },
+        "required": [
+          "contentType",
+          "byteSize"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentRecordResponse": {
+        "type": "object",
+        "properties": {
+          "attachmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachmentCount": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "attachmentId",
+          "attachmentCount"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentRecordRequest": {
+        "type": "object",
+        "properties": {
+          "objectPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "contentType": {
+            "$ref": "#/components/schemas/MessageAttachmentContentType"
+          },
+          "byteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 10485760
+          }
+        },
+        "required": [
+          "objectPath",
+          "contentType",
+          "byteSize"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAttachmentLinkResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
         ],
         "additionalProperties": false
       },
@@ -4728,6 +4984,128 @@
         },
         "required": [
           "changed"
+        ],
+        "additionalProperties": false
+      },
+      "BlocksResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlockedPerson"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "BlockedPerson": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerSlug": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "blockedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "reference",
+          "displayName",
+          "sellerSlug",
+          "reason",
+          "blockedAt"
+        ],
+        "additionalProperties": false
+      },
+      "BlockMutationResponse": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "changed"
+        ],
+        "additionalProperties": false
+      },
+      "BlockRequest": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/BlockByConversationRequest"
+          },
+          {
+            "$ref": "#/components/schemas/BlockBySellerRequest"
+          }
+        ]
+      },
+      "BlockByConversationRequest": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "conversationId"
+        ],
+        "additionalProperties": false
+      },
+      "BlockBySellerRequest": {
+        "type": "object",
+        "properties": {
+          "sellerSlug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "sellerSlug"
         ],
         "additionalProperties": false
       },
@@ -8216,7 +8594,17 @@
             ]
           },
           "subjectStatus": {
-            "$ref": "#/components/schemas/ListingStatus"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingStatus"
+              },
+              {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            ]
           },
           "subjectIsResolvable": {
             "type": "boolean"
@@ -8308,25 +8696,6 @@
           "updatedAt"
         ],
         "additionalProperties": false
-      },
-      "ListingStatus": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "enum": [
-          "draft",
-          "pending_review",
-          "approved",
-          "active",
-          "sold",
-          "expired",
-          "archived",
-          "rejected",
-          "suspended",
-          "deleted",
-          null
-        ]
       },
       "ReportResolutionRecorded": {
         "type": [
@@ -9306,6 +9675,205 @@
           "revokedAt",
           "isEffective",
           "permissionCount"
+        ],
+        "additionalProperties": false
+      },
+      "TrackResponse": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "accepted"
+        ],
+        "additionalProperties": false
+      },
+      "TrackRequest": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackEvent"
+            },
+            "minItems": 1,
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "additionalProperties": false
+      },
+      "TrackEvent": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "click",
+              "contact",
+              "favorite",
+              "share"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "search",
+              "category",
+              "listing",
+              "seller",
+              "home",
+              "external"
+            ]
+          },
+          "referrerHost": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "promotionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "eventId",
+          "listingId",
+          "eventType"
+        ],
+        "additionalProperties": false
+      },
+      "StaffGrantableRolesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffGrantableRole"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "StaffGrantableRole": {
+        "type": "object",
+        "properties": {
+          "roleKey": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "nameAr": {
+            "type": "string"
+          },
+          "requiresMfa": {
+            "type": "boolean"
+          },
+          "isAdminConsole": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "roleKey",
+          "nameEn",
+          "nameAr",
+          "requiresMfa",
+          "isAdminConsole"
+        ],
+        "additionalProperties": false
+      },
+      "StaffRoleWriteResponse": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "granted",
+              "revoked"
+            ]
+          },
+          "roleKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome",
+          "roleKey"
+        ],
+        "additionalProperties": false
+      },
+      "StaffRoleGrantRequest": {
+        "type": "object",
+        "properties": {
+          "roleKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "roleKey",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "StaffRoleRevokeRequest": {
+        "type": "object",
+        "properties": {
+          "roleKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "roleKey",
+          "reason"
         ],
         "additionalProperties": false
       },
@@ -12670,6 +13238,91 @@
             "maxLength": 300
           }
         },
+        "additionalProperties": false
+      },
+      "ListingAnalyticsResponse": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingAnalyticsRow"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
+        },
+        "required": [
+          "days",
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "ListingAnalyticsRow": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "minLength": 1
+          },
+          "listingSlug": {
+            "type": "string",
+            "minLength": 1
+          },
+          "listingTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "listingStatus": {
+            "$ref": "#/components/schemas/ListingStatus"
+          },
+          "sellerSlug": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "clicks": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "contacts": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "favorites": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "shares": {
+            "$ref": "#/components/schemas/AnalyticsCount"
+          },
+          "computedAt": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "day",
+          "listingSlug",
+          "listingTitle",
+          "listingStatus",
+          "sellerSlug",
+          "clicks",
+          "contacts",
+          "favorites",
+          "shares",
+          "computedAt"
+        ],
         "additionalProperties": false
       }
     },
@@ -17154,7 +17807,7 @@
       "get": {
         "operationId": "getV1SellersMeAnalytics",
         "summary": "The caller’s own promotion performance",
-        "description": "Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. It is therefore the whole of the analytics available to a seller — **there is no listing-level analytics operation**, because no authoritative listing-level rollup exists in this schema, and counting raw listing events into \"views per listing\" would mean inventing what a view is and how to de-duplicate a session. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.",
+        "description": "Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. A seller’s listing-level analytics is a **separate operation**, `GET /v1/sellers/me/listing-analytics`, added by 0102 over its own rollup; this one’s shape is unchanged by it. That operation reports **no listing-level views or impressions**, for the reason this one was first written with: counting raw listing events into \"views per listing\" would mean inventing what a view is and how to de-duplicate a session, and 0101 deliberately ingests neither. The impressions and views here are the promotion stream’s own, which 0025 has always collected. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.",
         "parameters": [
           {
             "schema": {
@@ -17184,6 +17837,97 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SellerAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The caller has no storefront. Distinct from an empty list, which is what a storefront with nothing yet receives.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sellers/me/listing-analytics": {
+      "get": {
+        "operationId": "getV1SellersMeListingAnalytics",
+        "summary": "The caller’s own listing performance",
+        "description": "Requires the internal BFF credential and the caller’s session. The clicks, contacts, favourites and shares the `listing_analytics` rollup has already computed for the caller’s own listings, summed over a recent window and grouped per listing. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw event. There are no impressions and no views, because 0101 ingests neither and their definitions are a later decision; there is no unique-visitor or unique-session count, because an absent session digest is stored as a zero-length value and a distinct count would report all anonymous traffic as one visitor. `favourites` and `shares` read zero until a control on some surface fires them. The totals are `bigint` counts and travel as decimal integer strings — counts, not money, and carrying no currency. An empty list means no listing of the caller’s has been rolled up yet.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "How many days back to sum. Defaults to 30; a larger value is clamped to 365. It selects rows and decides nothing about them."
+            },
+            "required": false,
+            "description": "How many days back to sum. Defaults to 30; a larger value is clamped to 365. It selects rows and decides nothing about them.",
+            "name": "days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The rollup’s totals per listing over the resolved window. An empty list means no listing of the caller’s has been rolled up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SellerListingAnalyticsResponse"
                 }
               }
             }
@@ -18292,6 +19036,385 @@
           },
           "429": {
             "description": "The approved messaging rate limits rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/messaging/conversations/{conversationId}/messages/{messageId}/attachments/uploads": {
+      "post": {
+        "operationId": "postV1MessagingAttachmentUpload",
+        "summary": "Authorize one conversation attachment upload",
+        "description": "Requires the internal BFF credential and the caller’s session. Authorizes a single upload into the **private** `message-attachments` bucket and returns the one object path it may go to. **The request carries no path**: the bucket, the conversation, the message and a fresh random file name are all composed in the database from rows the caller was found to own, so another conversation’s namespace or a traversal is unrepresentable rather than merely refused. **Nothing is written** — a client that asks and never uploads leaves no trace, which is what stops a row ever pointing at nothing. Only the message’s **sender** may attach, and only while they are still a live participant. At most 5 attachments per message and 10485760 bytes each, which are technical safety limits rather than business rules; the ceiling reported is the tighter of that figure and the bucket’s own. The permitted types are three image formats and PDF — **SVG is refused**, because it is XML a browser executes and serving one from a signed URL would be a stored-XSS primitive.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "A conversation the caller is in."
+            },
+            "required": true,
+            "description": "A conversation the caller is in.",
+            "name": "conversationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "One of the caller’s own messages on it."
+            },
+            "required": true,
+            "description": "One of the caller’s own messages on it.",
+            "name": "messageId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageAttachmentUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A short-lived upload authorization for exactly one object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageAttachmentUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such message or attachment for this caller. One answer for a message that does not exist, one in a conversation they are not in, and one the other party sent — so asking cannot reveal which.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Either party has blocked the other, so the conversation takes nothing new. A **new attachment on an existing message is new content**, which is why this refusal exists on a path that inserts no message. Attachments already there stay readable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/messaging/conversations/{conversationId}/messages/{messageId}/attachments": {
+      "post": {
+        "operationId": "postV1MessagingAttachments",
+        "summary": "Record a conversation attachment that was uploaded",
+        "description": "Requires the internal BFF credential and the caller’s session. Records the path the previous operation issued, **after** the API has confirmed with the storage provider that the object is actually there — which is why the row cannot describe a file that never arrived. The expected prefix is rebuilt in the database from the caller’s own conversation and message, and the remainder must be one plain file name of the shape the authorization issues, so a path for another message, another conversation, another bucket, with a traversal in it, or with an extension that disagrees with the declared type cannot be recorded. A path already recorded is refused rather than stored twice, so a retrying client records the file once. No event, no notification and no audit row is written.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "A conversation the caller is in."
+            },
+            "required": true,
+            "description": "A conversation the caller is in.",
+            "name": "conversationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "One of the caller’s own messages on it."
+            },
+            "required": true,
+            "description": "One of the caller’s own messages on it.",
+            "name": "messageId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageAttachmentRecordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The attachment that now exists, and how many that message carries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageAttachmentRecordResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such message or attachment for this caller. One answer for a message that does not exist, one in a conversation they are not in, and one the other party sent — so asking cannot reveal which.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The message already holds as many attachments as it may, or the file has not finished uploading. Two distinct codes, because the remedies differ: send another message, or upload the bytes again. A blocked pair answers here too.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/messaging/conversations/{conversationId}/attachments/{attachmentId}/link": {
+      "get": {
+        "operationId": "getV1MessagingAttachmentLink",
+        "summary": "A short-lived link to one conversation attachment",
+        "description": "Requires the internal BFF credential and the caller’s session. Returns a signed URL for exactly one object, for ten minutes. **The caller names an attachment; the path comes from the row**: no operation on this surface accepts a storage path for reading, and the database requires the attachment, its message’s conversation and the conversation in the route to agree, so an identifier cannot be spent against another conversation. **Either participant may ask, including after a block and after leaving** — a thread that is readable stays readable, and blocking takes away the next thing sent rather than the record of the last one. The bucket stays private and this URL is the only authorization that ever reaches a browser.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "A conversation the caller is in."
+            },
+            "required": true,
+            "description": "A conversation the caller is in.",
+            "name": "conversationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "An attachment on one of its messages."
+            },
+            "required": true,
+            "description": "An attachment on one of its messages.",
+            "name": "attachmentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A signed URL for one object, and when it stops working.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageAttachmentLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such message or attachment for this caller. One answer for a message that does not exist, one in a conversation they are not in, and one the other party sent — so asking cannot reveal which.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19890,6 +21013,287 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/me/blocks": {
+      "get": {
+        "operationId": "getV1UsersMeBlocks",
+        "summary": "The people the caller has blocked",
+        "description": "Requires the internal BFF credential and the caller’s session. One page of the caller’s own blocks, newest first, keyed on when the block was made with the blocked row as a tie-breaker so the page boundary is total. Each row names the person by **display name and storefront slug only**, both of which may be null, and carries an opaque `reference` for the unblock. **No account identifier is returned**, here or anywhere on this surface. There is no corresponding operation for the other direction: nothing in this API answers who has blocked the caller.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "How many rows to return. Defaults to 20; a larger value is clamped to 50."
+            },
+            "required": false,
+            "description": "How many rows to return. Defaults to 20; a larger value is clamped to 50.",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client."
+            },
+            "required": false,
+            "description": "An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the caller’s blocks, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlocksResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The cursor is malformed, altered or from a version this API no longer reads. One answer for all three: the remedy is to start again without it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postV1UsersMeBlocks",
+        "summary": "Block somebody",
+        "description": "Requires the internal BFF credential and the caller’s session. Blocks the person on the other side of a conversation the caller is in, or of a public storefront slug — **exactly one of the two per request**, which is why the body is a union rather than one object with optional fields. **No account identifier is accepted**: there is no field in either shape that could carry one. The effect is symmetric, because the predicate six existing operations already consult tests both directions: after this, neither person can start a conversation with the other, send a message into one they already share, make or counter an offer, open a service request or quote one. Nothing historical is touched — no conversation is deleted, closed, muted or hidden, no message is altered, and no offer or service request changes state. The blocked person is **not notified**, and the blocked seller’s catalogue listings stay exactly as visible as before. **Idempotent**: blocking somebody already blocked reports `changed: false`, refreshes the stored reason and still succeeds. A conversation that does not exist, one the caller is not in, an unknown slug, a storefront that is not publicly visible and the caller themselves all answer 404 — one answer for all five, so this operation cannot be used to find out which threads or storefronts exist. No second factor is required: blocking is a safety action, and a step-up challenge in front of it would be the wrong trade.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Whether this request was the one that created the block.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such row for this account. Identical to the answer for a row that belongs to somebody else, so asking cannot reveal that one exists.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/me/blocks/{reference}": {
+      "delete": {
+        "operationId": "deleteV1UsersMeBlock",
+        "summary": "Unblock somebody",
+        "description": "Requires the internal BFF credential and the caller’s session. Removes one block, named by the opaque `reference` a previous list response carried. The reference is **not** an account identifier and must not be constructed or parsed by a client. **Idempotent, and deliberately silent about failure**: a reference this API cannot read and a reference naming somebody the caller never blocked both report `changed: false` and succeed, so trying references cannot reveal whose blocks exist. The writer is scoped to the caller in its own statement, so a reference from another person’s list removes nothing. Unblocking restores contact rather than merely recording it: the operations refused while the block stood work again immediately.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The opaque reference from a blocks list response."
+            },
+            "required": true,
+            "description": "The opaque reference from a blocks list response.",
+            "name": "reference",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether this request was the one that removed a block.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockMutationResponse"
                 }
               }
             }
@@ -27584,7 +28988,7 @@
       "get": {
         "operationId": "getV1AdminUserRoles",
         "summary": "The roles one account holds",
-        "description": "Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it. **Strictly read-only**: there is no operation in this API that creates, changes or removes a role assignment, because no authoritative writer for `user_roles` exists in this repository and the rules for one are not defined. That gap is reported rather than filled.",
+        "description": "Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it, and that is unchanged by the writers below: who acted and why is recorded on the row and reported in no response. The operations that change a grant are `POST /v1/admin/users/{userId}/roles` and `POST /v1/admin/users/{userId}/roles/revoke`, both behind `users.role.manage` rather than this key, so a colleague who may read roles can change none.",
         "parameters": [
           {
             "schema": {
@@ -27639,6 +29043,401 @@
           },
           "403": {
             "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postV1AdminUserRole",
+        "summary": "Grant a role to one account",
+        "description": "Requires the internal BFF credential and `users.role.manage` in an aal2 session. A `reason` is always required, and a value of whitespace is not one. `expiresAt` is optional and must be in the future; absent means a grant that does not expire, and a later grant of the same role is the only way to change an expiry. Granting a role the account already holds refreshes that single grant rather than adding a second, and granting one that was withdrawn reinstates it with a fresh actor, moment and reason — there is no operation anywhere that clears a withdrawal on its own. **Every boundary is applied in the database against the caller’s own effective roles**: a self-grant is refused, `super_admin` is never grantable, a role the role table marks unassignable is refused, and a role above the caller’s own highest effective role is refused. Nothing in the request body can widen any of that. A caller without the key, an account that does not exist and a role key that names no role are one indistinguishable 404.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffRoleGrantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The role was granted, or a withdrawn grant was reinstated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffRoleWriteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing here for this caller. One code and one sentence for a row that does not exist and for a caller who does not hold the required key at aal2, so neither can be told from the other and there is no forbidden on any of these surfaces.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The role was not changed, and every code names which boundary stopped it. `STAFF_ROLE_IS_SELF` — the caller is the target; granting and withdrawing are both refused, so nobody promotes or demotes themselves. `STAFF_ROLE_ABOVE_CEILING` — the role sits above the caller’s own highest effective role, or they effectively hold none; the remedy is somebody more senior. `STAFF_ROLE_NOT_GRANTABLE` and `STAFF_ROLE_NOT_REVOCABLE` — `super_admin`, from either side: this console neither creates nor destroys one. `STAFF_ROLE_NOT_ASSIGNABLE` — the role table marks that role unassignable, which is reference data rather than a state. `STAFF_ROLE_ALREADY_REVOKED` — the grant was already withdrawn, which is what a repeat and the loser of two colleagues acting at once receive. `STAFF_ROLE_EXPIRY_INVALID` — an expiry that is not in the future. `STAFF_ROLE_REASON_REQUIRED` — a blank reason, which the request schema refuses first. Nothing is changed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/track": {
+      "post": {
+        "operationId": "postV1Track",
+        "summary": "Batched listing analytics ingestion",
+        "description": "Requires the internal BFF credential, like every `/v1` route, and **no session** — a signed-out visitor browsing the catalogue is the normal case, so the account is optional and its absence simply means the events have none. A session token, when the caller has one, is the **only** source of the account: the request body has no `userId` field and the schema is strict, so a caller cannot claim to be somebody. The session digest stored with each event is computed server-side from an opaque identifier under a dedicated domain-separated key, so a caller cannot choose it either. At most fifty events per request, refused whole rather than truncated. Only four event types are ingested — `click`, `contact`, `favorite`, `share`; `impression` and `view` are refused, because the impression definition is a Phase 9 decision. A dedicated rate limit applies per address and **fails closed**: if no counter can answer, the request is refused. `accepted` is how many events the server took responsibility for, not how many rows were written — de-duplication happens downstream on the event id alone, through a database identity ledger, so a retried batch legitimately writes none whatever timestamp it carries, and a client has no use for the row count. Nothing in the response reveals whether a listing exists.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The events were accepted for ingestion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Over the ingestion rate limit. The limit fails closed: a request is also refused when no counter can answer, so an attacker who takes Redis down does not thereby remove the limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/roles/grantable": {
+      "get": {
+        "operationId": "getV1AdminGrantableRoles",
+        "summary": "The roles this caller may grant",
+        "description": "Requires the internal BFF credential and `users.role.manage` in an aal2 session. **The set is computed in the database** from the caller’s own effective roles, by the same three tests the grant writer applies: the role must be assignable, it must not be `super_admin`, and its position in the role order must not be above the caller’s own highest effective role. So a console renders this list rather than filtering a catalogue — a filter in a client is a convention, and this is a privilege boundary. An empty list is also the answer for a caller who does not hold the key, so the two are indistinguishable. `admin` is the highest role this endpoint ever returns, to anybody.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The roles this caller may grant, in the platform’s own role order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffGrantableRolesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/users/{userId}/roles/revoke": {
+      "post": {
+        "operationId": "postV1AdminUserRoleRevoke",
+        "summary": "Withdraw a role from one account",
+        "description": "Requires the internal BFF credential and `users.role.manage` in an aal2 session, and a `reason` as the grant does. **The row is never deleted**: the withdrawal is recorded on it with who did it and why, beside the grant it withdraws, so the history of an assignment survives its removal. Reinstatement is a fresh grant through the other operation. A self-withdrawal is refused, `super_admin` cannot be withdrawn here any more than it can be granted, and a role above the caller’s own highest effective role is refused. **The withdrawal takes effect on the target’s next request**, when the permission predicates are next evaluated: nothing in this platform terminates a session, and this operation does not claim to. Withdrawing a grant that is already withdrawn is refused rather than recorded twice, which is also what the second of two colleagues acting at once receives.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffRoleRevokeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The role was withdrawn.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffRoleWriteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing here for this caller. One code and one sentence for a row that does not exist and for a caller who does not hold the required key at aal2, so neither can be told from the other and there is no forbidden on any of these surfaces.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The role was not changed, and every code names which boundary stopped it. `STAFF_ROLE_IS_SELF` — the caller is the target; granting and withdrawing are both refused, so nobody promotes or demotes themselves. `STAFF_ROLE_ABOVE_CEILING` — the role sits above the caller’s own highest effective role, or they effectively hold none; the remedy is somebody more senior. `STAFF_ROLE_NOT_GRANTABLE` and `STAFF_ROLE_NOT_REVOCABLE` — `super_admin`, from either side: this console neither creates nor destroys one. `STAFF_ROLE_NOT_ASSIGNABLE` — the role table marks that role unassignable, which is reference data rather than a state. `STAFF_ROLE_ALREADY_REVOKED` — the grant was already withdrawn, which is what a repeat and the loser of two colleagues acting at once receive. `STAFF_ROLE_EXPIRY_INVALID` — an expiry that is not in the future. `STAFF_ROLE_REASON_REQUIRED` — a blank reason, which the request schema refuses first. Nothing is changed.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -43563,6 +45362,117 @@
           },
           "409": {
             "description": "The category exists and the change was refused by a rule migration 0010 owns: a fourth level, a move that would make a category its own ancestor or re-depth one that has children, a slug already in use, showing a category nobody has named, or removing the last locale of one that is shown.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/analytics/listings": {
+      "get": {
+        "operationId": "getV1AdminAnalyticsListings",
+        "summary": "Listing analytics, by day",
+        "description": "Requires the internal BFF credential and `analytics.listing.read` in an aal2 session. One page of the `listing_analytics` rollup, newest day first, across every seller: the clicks, contacts, favourites and shares a scheduled job computed for each listing on each UTC day. **Every number is the rollup’s.** This operation defines no metric, computes no rate, ratio or click-through, reads no raw event, and reports neither impressions nor views, because 0101 ingests neither and their definitions are a later decision. There is no unique-visitor or unique-session count, because an absent session digest is stored as a zero-length value and a distinct count would report all anonymous traffic as one visitor. A seller is named by their storefront’s public slug and never by an account identifier; nothing derived from a session digest or a signed-in account appears anywhere in a row. The counts are `bigint` and travel as decimal integer strings — counts, not money, carrying no currency. A caller who does not hold the key at aal2 receives an empty page, which is the same answer as a window with nothing in it.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "How many rows to return. Defaults to 20; a larger value is clamped to 50."
+            },
+            "required": false,
+            "description": "How many rows to return. Defaults to 20; a larger value is clamped to 50.",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client."
+            },
+            "required": false,
+            "description": "An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "How many days back to cover. Defaults to 30; a larger value is clamped to 365."
+            },
+            "required": false,
+            "description": "How many days back to cover. Defaults to 30; a larger value is clamped to 365.",
+            "name": "days",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the rollup, newest day first. An empty page means nothing in the window, or a caller who may not read it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
             "content": {
               "application/problem+json": {
                 "schema": {

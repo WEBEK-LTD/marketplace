@@ -76,6 +76,18 @@ import {
   SUPABASE_AUTH_CLIENT,
 } from './login.service.js';
 import { RedisThrottleCounter } from './redis-throttle.counter.js';
+import {
+  ListingEventIngestionService,
+  LISTING_EVENT_STORE,
+} from '../analytics/listing-events.service.js';
+import {
+  ListingAnalyticsService,
+  LISTING_ANALYTICS_STORE,
+} from '../analytics/listing-analytics.service.js';
+import {
+  LISTING_EVENT_STREAM_PORT,
+  RedisListingEventStream,
+} from '../analytics/listing-events.stream.js';
 import { SupabaseAuthClient } from './supabase-auth.client.js';
 import { OtpPepper } from './otp/otp-digest.js';
 import { OTP_CHALLENGE_STORE, OTP_PEPPER, OtpService } from './otp/otp.service.js';
@@ -86,6 +98,10 @@ import { CONTACT_CHANGE_STORE, ContactChangeService } from '../users/contact-cha
 import { CURRENT_USER_STORE, CurrentUserService } from '../users/current-user.service.js';
 import { MESSAGING_STORE, MessagingService } from '../messaging/messaging.service.js';
 import { MESSAGING_WRITE_STORE, MessagingWriteService } from '../messaging/messaging-write.service.js';
+import {
+  MESSAGE_ATTACHMENT_STORE,
+  MessageAttachmentsService,
+} from '../messaging/message-attachments.service.js';
 import { NOTIFICATIONS_STORE, NotificationsService } from '../notifications/notifications.service.js';
 import { BUYER_ACCOUNT_STORE, BuyerAccountService } from '../account/buyer-account.service.js';
 import { STAFF_CONSOLE_STORE, StaffConsoleService } from '../admin/staff-console.service.js';
@@ -190,6 +206,10 @@ export class AuthModule {
         { provide: MESSAGING_STORE, useExisting: AppSystemStore },
         // Phase 5-E: and the six writers of migration 0054.
         { provide: MESSAGING_WRITE_STORE, useExisting: AppSystemStore },
+        // 0104: and the three attachment operations of migration 0104. It reuses SELLER_MEDIA_STORAGE below
+        // for the private message-attachments bucket rather than introducing a second client, exactly as 6-I,
+        // 7-G, 7-K and the CMS media surface do.
+        { provide: MESSAGE_ATTACHMENT_STORE, useExisting: AppSystemStore },
         // Phase 7-C: the notification read surface, through the same one gateway.
         { provide: NOTIFICATIONS_STORE, useExisting: AppSystemStore },
         // Phase 7-E: the buyer account surfaces, through the same one gateway as every other.
@@ -310,6 +330,20 @@ export class AuthModule {
             new SupabaseStorageClient({ url: env.supabaseUrl, secretKey: env.supabaseSecretKey }),
         },
         { provide: SEARCH_PORT, useExisting: AppSystemStore },
+        // 0101. The degraded direct path writes through the same store as everything else; the stream is a
+        // port so a deployment without Redis still ingests, durably, through that path.
+        { provide: LISTING_EVENT_STORE, useExisting: AppSystemStore },
+        // 0102. The rollup's two readers go through the same one gateway; the rollup itself is granted to
+        // nobody and runs only through the scheduled-job dispatcher, so nothing here can write one.
+        { provide: LISTING_ANALYTICS_STORE, useExisting: AppSystemStore },
+        {
+          provide: LISTING_EVENT_STREAM_PORT,
+          useFactory: () => RedisListingEventStream.fromUrl(env.redisUrl),
+        },
+        // Its own key, never one of the other two (0101 owner decision 4).
+        { provide: 'ANALYTICS_SESSION_KEY', useValue: env.analyticsSessionKey },
+        ListingEventIngestionService,
+        ListingAnalyticsService,
         { provide: WEB_PUBLIC_ORIGIN, useValue: env.webPublicOrigin },
         { provide: OTP_PEPPER, useFactory: () => new OtpPepper(env.otpPepper) },
         // C-13: one key per environment, shared with the worker, so the same person reads the same in
@@ -341,6 +375,7 @@ export class AuthModule {
         MessagingService,
         MessagingThrottleService,
         MessagingWriteService,
+        MessageAttachmentsService,
         NotificationsService,
         BuyerAccountService,
         StaffConsoleService,
@@ -424,6 +459,8 @@ export class AuthModule {
         SELLER_READ_STORE,
         SELLER_MEDIA_STORAGE,
         SEARCH_PORT,
+        ListingEventIngestionService,
+        ListingAnalyticsService,
         LoginEnforcementService,
         LoginService,
         OtpService,
@@ -437,6 +474,7 @@ export class AuthModule {
         CurrentUserService,
         MessagingService,
         MessagingWriteService,
+        MessageAttachmentsService,
         NotificationsService,
         BuyerAccountService,
         StaffConsoleService,

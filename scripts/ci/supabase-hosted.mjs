@@ -200,6 +200,12 @@ function verifyDatabase(env) {
     problems: Number(scalar(`select count(*) from public.${name}()`, env)),
   }));
   const contract = Number(scalar(`select count(*) from app_private.assert_security_contract()`, env));
+  // 0105's twelfth checker. It lives in `app_private` rather than `public` because it reads `prosrc` of every
+  // definer function, which is not something a public reader should be able to ask for, so it is counted here
+  // beside the security contract rather than in GUARD_FUNCTIONS above.
+  const whitespaceProblems = Number(
+    scalar(`select count(*) from app_private.whitespace_contract_problems()`, env),
+  );
   const definerWithoutSearchPath = Number(
     scalar(
       `select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -232,6 +238,7 @@ function verifyDatabase(env) {
     guards,
     guardsClean: guards.every((guard) => guard.problems === 0),
     securityContractProblems: contract,
+    whitespaceContractProblems: whitespaceProblems,
     definerWithoutSearchPath,
     publicExecute,
     tablesWithoutRls,
@@ -240,6 +247,7 @@ function verifyDatabase(env) {
       schemas.length === 2 &&
       guards.every((guard) => guard.problems === 0) &&
       contract === 0 &&
+      whitespaceProblems === 0 &&
       definerWithoutSearchPath === 0 &&
       publicExecute === 0 &&
       tablesWithoutRls === 0,

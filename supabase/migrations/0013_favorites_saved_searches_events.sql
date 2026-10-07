@@ -2,8 +2,13 @@
 --
 -- Favorites and saved searches are durable user data. `listing_events` is the analytics stream: the API
 -- writes through Redis to a worker consumer group that inserts in batches, and inserts directly into
--- PostgreSQL while Redis is unavailable. Delivery is at-least-once, so every event carries an `event_id`
--- and the unique key on it makes a repeated insert a no-op rather than a double count.
+-- PostgreSQL while Redis is unavailable. Delivery is at-least-once, so every event carries an `event_id`.
+--
+-- **The unique index below is `(event_id, occurred_at)`, not `event_id`, and that is not enough.** A
+-- partitioned table's unique key must contain its partition key, so `occurred_at` had to be in it — and a
+-- redelivery whose `occurred_at` was re-stamped therefore did not match. 0107 moved the guarantee into
+-- `public.listing_event_ids`, keyed on `event_id` alone, which the writer consults before any event row is
+-- written. Read 0107 for what is actually guaranteed; the index here is a secondary constraint now.
 --
 -- `listing_events` is partitioned by month (v5.2 "Monthly partitions") and append-only. The generic
 -- partition helper introduced here is reused by `promotion_events` in 0025.
@@ -108,9 +113,10 @@ create table public.listing_events (
   constraint listing_events_referrer_host_length check (referrer_host is null or length(referrer_host) <= 255)
 ) partition by range (occurred_at);
 comment on table public.listing_events is
-  'At-least-once analytics stream, deduplicated by `event_id`. Carries identifiers and a hashed session only — never an IP address or a raw session id.';
+  'At-least-once analytics stream. De-duplication is on event_id alone and lives in public.listing_event_ids (0107); the unique index here is on (event_id, occurred_at), which a partitioned table requires and which a re-stamped timestamp defeats on its own. Carries identifiers and a hashed session only — never an IP address or a raw session id.';
 
--- Deduplication: the partition key must be part of the unique key on a partitioned table.
+-- The partition key must be part of the unique key on a partitioned table, which is why `occurred_at` is here.
+-- This is **not** the de-duplication guarantee — see the header and 0107.
 create unique index listing_events_event_id on public.listing_events (event_id, occurred_at);
 create index listing_events_listing on public.listing_events (listing_id, occurred_at desc);
 create index listing_events_seller on public.listing_events (seller_user_id, occurred_at desc);

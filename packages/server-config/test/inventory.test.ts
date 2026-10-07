@@ -49,6 +49,8 @@ describe('environment inventory', () => {
       'APP_SYSTEM_DATABASE_URL',
       'APP_SYSTEM_DATABASE_MAX_CONNECTIONS',
       'DEVICE_IDENTITY_KEY',
+      // 0101: its own key, next to the other two and never one of them.
+      'ANALYTICS_SESSION_KEY',
       'OTP_PEPPER',
       'WAABEK_BASE_URL',
       'WAABEK_API_KEY',
@@ -66,9 +68,12 @@ describe('environment inventory', () => {
       // is the handler registry's decision, and the staleness threshold is the database function's own.
       'OUTBOX_RELAY_INTERVAL_MS', 'OUTBOX_SWEEPER_INTERVAL_MS',
     ]);
-    // The public origin is the public web's alone: the admin console is never indexed and has no sitemap.
+    // One Next.js deployment since 0108, serving the marketplace at `/` and the staff console at `/admin`. Its
+    // three variables cover both surfaces: the internal credential, the API address, and the public origin the
+    // sitemap and robots documents are built from.
     expect(variablesFor('web').map((e) => e.name)).toEqual(['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'PUBLIC_WEB_ORIGIN']);
-    expect(variablesFor('admin').map((e) => e.name)).toEqual(['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL']);
+    // And the console is not an app of its own in the inventory. That is the assertion, not an omission: a row
+    // keyed to it would describe a second environment that nobody provisions and no process reads.
   });
 
   it('contains no variables for features that are not built yet (R13)', () => {
@@ -156,7 +161,9 @@ describe('environment inventory', () => {
     expect(entry?.required).toBe(true);
     // Both sides of the C-2d boundary: the API enforces it, web and admin present it from their server
     // runtimes. It is declared for no other application, and never for a browser.
-    expect(entry?.apps).toEqual(['api', 'web', 'admin']);
+    // One Next.js deployment since 0108: the API enforces the boundary, and the single BFF runtime presents the
+    // credential on behalf of both of its surfaces.
+    expect(entry?.apps).toEqual(['api', 'web']);
     expect(entry?.apps).not.toContain('tooling');
     expect(entry?.apps).not.toContain('worker');
     // No client-bundle excuse, and never a NEXT_PUBLIC_ name: check:client-env scans every inventory
@@ -165,13 +172,11 @@ describe('environment inventory', () => {
     expect(entry?.name.startsWith('NEXT_PUBLIC_')).toBe(false);
   });
 
-  it('gives web and admin no variable that is not server-only', () => {
-    // Neither Next.js app may hold a variable a browser could read: both are BFF runtimes.
-    for (const app of ['web', 'admin'] as const) {
-      for (const entry of variablesFor(app)) {
-        expect(entry.name.startsWith('NEXT_PUBLIC_'), `${app}/${entry.name}`).toBe(false);
-        expect(entry.clientBundleException, `${app}/${entry.name}`).toBeUndefined();
-      }
+  it('gives the Next.js deployment no variable that is not server-only', () => {
+    // The Next.js runtime may hold no variable a browser could read: it is a BFF, on both of its surfaces.
+    for (const entry of variablesFor('web')) {
+      expect(entry.name.startsWith('NEXT_PUBLIC_'), entry.name).toBe(false);
+      expect(entry.clientBundleException, entry.name).toBeUndefined();
     }
   });
 

@@ -127,7 +127,8 @@ describe('7-D application boundaries', () => {
   });
 
   it('is not reachable from any browser application', () => {
-    for (const app of ['apps/web/src', 'apps/admin/src']) {
+    // One Next.js app since 0108; `apps/web/src` contains both the public marketplace and the staff console.
+    for (const app of ['apps/web/src']) {
       for (const file of sourcesUnder(app)) {
         const text = readFileSync(file, 'utf8');
         expect(text).not.toContain('@repo/worker');

@@ -70,13 +70,21 @@ select is(
   'a batch of events is inserted'
 );
 
+-- Narrowed by 0107. The invariant is unchanged and still the point: an at-least-once redelivery must insert
+-- nothing. What changed is that this can now observe it.
+--
+-- Both deliveries used to omit `occurred_at`, which takes the writer's `now()` fallback — and `now()` is
+-- transaction-stable inside a pgTAP file, so both landed on one timestamp and matched the old
+-- `(event_id, occurred_at)` key. The assertion passed while two *real* deliveries, in two real transactions,
+-- produced two rows. `clock_timestamp()` advances within the transaction, so the redelivery below genuinely
+-- carries a different timestamp and this assertion now fails unless de-duplication is on `event_id` alone.
 select is(
   app_private.record_listing_events(jsonb_build_array(
     jsonb_build_object('event_id', '11111111-2222-4222-8222-111111111111', 'listing_id', '99999999-aaaa-4aaa-8aaa-999999999999',
-                       'event_type', 'view')
+                       'event_type', 'view', 'occurred_at', clock_timestamp() + interval '2 seconds')
   )),
   0,
-  'an at-least-once redelivery is dropped by event id'
+  'an at-least-once redelivery is dropped by event id, even with a different occurred_at'
 );
 
 select throws_ok(

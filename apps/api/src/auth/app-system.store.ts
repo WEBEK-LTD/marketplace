@@ -157,6 +157,7 @@ import type {
 } from '../sellers/seller-verification.service.js';
 import type {
   SellerBalanceRow,
+  SellerListingPerformanceRow,
   SellerOrderRow,
   SellerOrdersQuery,
   SellerPromotionPerformanceRow,
@@ -167,11 +168,26 @@ import type {
   SellerReviewSummaryRow,
   SellerReviewsQuery,
 } from '../sellers/seller-read.service.js';
+import type {
+  ListingAnalyticsDbRow,
+  ListingAnalyticsStore,
+} from '../analytics/listing-analytics.service.js';
 import type { SearchPort, SearchRow } from '../catalog/search.service.js';
 import type { KnownDeviceStore, LoginIdentityStore } from './login.service.js';
 import type { ContactChangeStore } from '../users/contact-change.service.js';
 import type { CurrentUserStore } from '../users/current-user.service.js';
-import type { InboxRow, MessageRow, MessagingStore } from '../messaging/messaging.service.js';
+import type {
+  InboxRow,
+  MessageAttachmentRow,
+  MessageRow,
+  MessagingStore,
+} from '../messaging/messaging.service.js';
+import type {
+  MessageAttachmentAttachRow,
+  MessageAttachmentObjectRow,
+  MessageAttachmentStore,
+  MessageAttachmentTargetRow,
+} from '../messaging/message-attachments.service.js';
 import type { MessagingWriteStore } from '../messaging/messaging-write.service.js';
 import type { RecoveryStore } from './password-reset/recovery.service.js';
 import type { RegistrationStore } from './registration.service.js';
@@ -253,6 +269,8 @@ import type {
   RecoveryRequestDetailDbRow,
   RecoveryWriteRow,
   SellerStatusWriteRow,
+  StaffGrantableRoleRow,
+  StaffRoleWriteRow,
 } from '../admin/admin-operations.service.js';
 import type {
   ReviewActionDbRow,
@@ -287,6 +305,7 @@ import type {
 } from '../admin/verification-review.service.js';
 import type {
   AddressRow,
+  BlockRow,
   BuyerAccountStore,
   BuyerProfileRow,
   BuyerSettingsRow,
@@ -438,6 +457,7 @@ export class AppSystemStore
     KnownDeviceStore,
     MessagingStore,
     MessagingWriteStore,
+    MessageAttachmentStore,
     CategoryStore,
     CmsPagesStore,
     CmsPublicStore,
@@ -470,6 +490,7 @@ export class AppSystemStore
     SellerVerificationStore,
     SellerReadStore,
     SearchPort,
+    ListingAnalyticsStore,
     OnApplicationShutdown
 {
   private readonly logger = new Logger(AppSystemStore.name);
@@ -1893,6 +1914,129 @@ export class AppSystemStore
   }
 
   /** `app_private.messaging_conversation_messages(...)` — one page of a conversation (Phase 5-C). */
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Message attachments (0104)                                                                      */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  /**
+   * `app_private.messaging_message_attachments` (0104).
+   *
+   * A sibling of the message reader, keyed on the page's own ids. The function re-applies the participant test
+   * itself, so the ids filter and never grant, and it returns no object path.
+   */
+  async messagingMessageAttachments(input: {
+    userId: string;
+    conversationId: string;
+    messageIds: readonly string[];
+  }): Promise<readonly MessageAttachmentRow[]> {
+    const result = await sql<Record<string, unknown>>`
+      select id, message_id, content_type, byte_size, created_at
+        from app_private.messaging_message_attachments(
+          ${input.userId}::uuid,
+          ${input.conversationId}::uuid,
+          ${[...input.messageIds]}::uuid[]
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      id: row['id'] as string,
+      messageId: row['message_id'] as string,
+      contentType: row['content_type'] as string,
+      byteSize: String(row['byte_size']),
+      createdAt: row['created_at'] as Date,
+    }));
+  }
+
+  /** `app_private.message_attachment_target` (0104). Authorizes an upload and writes nothing. */
+  async messageAttachmentTarget(input: {
+    userId: string;
+    conversationId: string;
+    messageId: string;
+    contentType: string;
+    byteSize: number;
+  }): Promise<MessageAttachmentTargetRow> {
+    const result = await sql<Record<string, unknown>>`
+      select outcome, bucket_id, object_path, max_byte_size
+        from app_private.message_attachment_target(
+          ${input.userId}::uuid,
+          ${input.conversationId}::uuid,
+          ${input.messageId}::uuid,
+          ${input.contentType}::text,
+          ${input.byteSize}::bigint
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Authorizing an attachment returned no row.');
+    return {
+      outcome: row['outcome'] as MessageAttachmentTargetRow['outcome'],
+      bucketId: (row['bucket_id'] as string | null) ?? null,
+      objectPath: (row['object_path'] as string | null) ?? null,
+      maxByteSize:
+        row['max_byte_size'] === null || row['max_byte_size'] === undefined
+          ? null
+          : Number(row['max_byte_size']),
+    };
+  }
+
+  /** `app_private.message_attachment_attach` (0104). Called only after the object is confirmed to exist. */
+  async messageAttachmentAttach(input: {
+    userId: string;
+    conversationId: string;
+    messageId: string;
+    objectPath: string;
+    contentType: string;
+    byteSize: number;
+  }): Promise<MessageAttachmentAttachRow> {
+    const result = await sql<Record<string, unknown>>`
+      select outcome, attachment_id, attachment_count
+        from app_private.message_attachment_attach(
+          ${input.userId}::uuid,
+          ${input.conversationId}::uuid,
+          ${input.messageId}::uuid,
+          ${input.objectPath}::text,
+          ${input.contentType}::text,
+          ${input.byteSize}::bigint
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Recording an attachment returned no row.');
+    return {
+      outcome: row['outcome'] as MessageAttachmentAttachRow['outcome'],
+      attachmentId: (row['attachment_id'] as string | null) ?? null,
+      attachmentCount:
+        row['attachment_count'] === null || row['attachment_count'] === undefined
+          ? null
+          : Number(row['attachment_count']),
+    };
+  }
+
+  /** `app_private.message_attachment_for_participant` (0104). The object a signed read should target. */
+  async messageAttachmentForParticipant(input: {
+    userId: string;
+    conversationId: string;
+    attachmentId: string;
+  }): Promise<MessageAttachmentObjectRow> {
+    const result = await sql<Record<string, unknown>>`
+      select outcome, bucket_id, object_path, content_type
+        from app_private.message_attachment_for_participant(
+          ${input.userId}::uuid,
+          ${input.conversationId}::uuid,
+          ${input.attachmentId}::uuid
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Resolving an attachment returned no row.');
+    return {
+      outcome: row['outcome'] as MessageAttachmentObjectRow['outcome'],
+      bucketId: (row['bucket_id'] as string | null) ?? null,
+      objectPath: (row['object_path'] as string | null) ?? null,
+      contentType: (row['content_type'] as string | null) ?? null,
+    };
+  }
+
   async messagingConversationMessages(input: {
     userId: string;
     conversationId: string;
@@ -2560,6 +2704,106 @@ export class AppSystemStore
     }));
   }
 
+  /* ---------------------------------------------------------------------------------------------- */
+  /* 0102 — listing analytics: the rollup's two readers                                              */
+  /*                                                                                                 */
+  /* Two calls, both to named SECURITY DEFINER functions, and neither of them to the rollup itself:   */
+  /* `rollup_listing_analytics` is granted to nobody and runs only through the scheduled-job          */
+  /* dispatcher, so there is no method here that could write a rollup row.                            */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  /** `app_private.seller_listing_analytics(uuid, integer)` (0102). Ownership-scoped; no permission key. */
+  async sellerListingAnalytics(
+    userId: string,
+    days: number,
+  ): Promise<readonly SellerListingPerformanceRow[]> {
+    const result = await sql<{
+      outcome: string;
+      listing_slug: string | null;
+      listing_title: string | null;
+      listing_status: string | null;
+      first_day: Date | string | null;
+      last_day: Date | string | null;
+      clicks: string | null;
+      contacts: string | null;
+      favorites: string | null;
+      shares: string | null;
+    }>`
+      select outcome, listing_slug, listing_title, listing_status, first_day, last_day,
+             clicks, contacts, favorites, shares
+        from app_private.seller_listing_analytics(${userId}::uuid, ${days}::integer)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      outcome: row.outcome,
+      listingSlug: row.listing_slug ?? null,
+      listingTitle: row.listing_title ?? null,
+      listingStatus: row.listing_status ?? null,
+      firstDay: row.first_day ?? null,
+      lastDay: row.last_day ?? null,
+      clicks: row.clicks ?? null,
+      contacts: row.contacts ?? null,
+      favorites: row.favorites ?? null,
+      shares: row.shares ?? null,
+    }));
+  }
+
+  /**
+   * `app_private.listing_analytics_page(uuid, boolean, integer, integer, date, uuid)` (0102).
+   *
+   * The permission and the assurance level are **parameters**, so the function decides and this gateway does
+   * not: a caller who may not read receives no rows, which is the same answer as an empty window.
+   */
+  async listingAnalyticsPage(input: {
+    userId: string;
+    isAal2: boolean;
+    days: number;
+    limit: number;
+    cursorDay: string | null;
+    cursorListingId: string | null;
+  }): Promise<readonly ListingAnalyticsDbRow[]> {
+    const result = await sql<{
+      day: Date | string;
+      listing_slug: string;
+      listing_title: string;
+      listing_status: string;
+      seller_slug: string | null;
+      clicks: string;
+      contacts: string;
+      favorites: string;
+      shares: string;
+      computed_at: Date | string;
+      cursor_day: Date | string;
+      cursor_listing_id: string;
+    }>`
+      select day, listing_slug, listing_title, listing_status, seller_slug,
+             clicks, contacts, favorites, shares, computed_at, cursor_day, cursor_listing_id
+        from app_private.listing_analytics_page(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.days}::integer,
+          ${input.limit}::integer,
+          ${input.cursorDay}::date,
+          ${input.cursorListingId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      day: row.day,
+      listingSlug: row.listing_slug,
+      listingTitle: row.listing_title,
+      listingStatus: row.listing_status,
+      sellerSlug: row.seller_slug ?? null,
+      clicks: row.clicks,
+      contacts: row.contacts,
+      favorites: row.favorites,
+      shares: row.shares,
+      computedAt: row.computed_at,
+      cursorDay: row.cursor_day,
+      cursorListingId: row.cursor_listing_id,
+    }));
+  }
+
 
   /* ---------------------------------------------------------------------------------------------- */
   /* Phase 7-E — the buyer account surfaces (migration 0067)                                          */
@@ -2628,6 +2872,79 @@ export class AppSystemStore
 
     const row = result.rows[0];
     if (row === undefined) throw new Error('Removing a favorite returned no row.');
+    return row.removed === true;
+  }
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Blocking (0103)                                                                                 */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  /**
+   * `app_private.buyer_blocks` (0103).
+   *
+   * Scoped to the caller inside the function, so a row belonging to anybody else is never matched rather
+   * than refused. `blocked_user_id` comes back here and the service turns it into an opaque reference; it
+   * reaches no response.
+   */
+  async buyerBlocks(input: {
+    userId: string;
+    limit: number;
+    cursorCreatedAt: Date | null;
+    cursorBlockedId: string | null;
+  }): Promise<readonly BlockRow[]> {
+    const result = await sql<Record<string, unknown>>`
+      select blocked_user_id, display_name, seller_slug, reason, created_at
+        from app_private.buyer_blocks(
+          ${input.userId}::uuid,
+          ${input.limit}::integer,
+          ${input.cursorCreatedAt}::timestamptz,
+          ${input.cursorBlockedId}::uuid
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      blockedUserId: row['blocked_user_id'] as string,
+      displayName: (row['display_name'] as string | null) ?? null,
+      sellerSlug: (row['seller_slug'] as string | null) ?? null,
+      reason: (row['reason'] as string | null) ?? null,
+      createdAt: row['created_at'] as Date,
+    }));
+  }
+
+  /**
+   * `app_private.buyer_block_add` (0103).
+   *
+   * Both handles are passed as parameters and exactly one of them is non-null; the function refuses a call
+   * carrying both. `not_found` is the single answer for every handle that resolves to nobody.
+   */
+  async buyerBlockAdd(input: {
+    userId: string;
+    conversationId: string | null;
+    sellerSlug: string | null;
+    reason: string | null;
+  }): Promise<'blocked' | 'exists' | 'not_found'> {
+    const result = await sql<{ outcome: 'blocked' | 'exists' | 'not_found' }>`
+      select app_private.buyer_block_add(
+        ${input.userId}::uuid,
+        ${input.conversationId}::uuid,
+        ${input.sellerSlug}::text,
+        ${input.reason}::text
+      ) as outcome
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Creating a block returned no row.');
+    return row.outcome;
+  }
+
+  /** `app_private.buyer_block_remove` (0103). False when there was nothing to remove. */
+  async buyerBlockRemove(input: { userId: string; blockedUserId: string }): Promise<boolean> {
+    const result = await sql<{ removed: boolean }>`
+      select app_private.buyer_block_remove(${input.userId}::uuid, ${input.blockedUserId}::uuid) as removed
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Removing a block returned no row.');
     return row.removed === true;
   }
 
@@ -5203,6 +5520,96 @@ export class AppSystemStore
     const row = result.rows[0];
     if (row === undefined) throw new Error('Changing a storefront status returned no row.');
     return { outcome: row.outcome, status: row.status ?? null };
+  }
+
+  /**
+   * `app_private.record_listing_events(jsonb)` (0013). The degraded direct path O-21 approves.
+   *
+   * Answers how many rows were inserted, which is not how many were sent: the writer de-duplicates on the
+   * event id alone, through 0107's identity ledger, so a retried batch legitimately inserts none whatever its
+   * `occurred_at` says. Ingestion does not report this number onward.
+   */
+  async recordListingEvents(rows: readonly Record<string, unknown>[]): Promise<number> {
+    const result = await sql<{ inserted: number }>`
+      select app_private.record_listing_events(${JSON.stringify(rows)}::jsonb) as inserted
+    `.execute(this.db);
+
+    return result.rows[0]?.inserted ?? 0;
+  }
+
+  /**
+   * `app_private.staff_role_grantable(uuid, boolean)` (0100).
+   *
+   * The roles this caller may grant, computed in the database from their own effective roles. No row for a
+   * caller without `users.role.manage` at the required assurance level.
+   */
+  async staffRoleGrantable(input: {
+    userId: string;
+    isAal2: boolean;
+  }): Promise<readonly StaffGrantableRoleRow[]> {
+    const result = await sql<StaffGrantableRoleRow>`
+      select role_key as "roleKey",
+             name_en as "nameEn",
+             name_ar as "nameAr",
+             requires_mfa as "requiresMfa",
+             is_admin_console as "isAdminConsole"
+        from app_private.staff_role_grantable(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean
+        )
+    `.execute(this.db);
+
+    return result.rows;
+  }
+
+  /** `app_private.staff_role_grant(uuid, boolean, uuid, text, text, timestamptz)` (0100). */
+  async staffRoleGrant(input: {
+    userId: string;
+    isAal2: boolean;
+    targetUserId: string;
+    roleKey: string;
+    reason: string;
+    expiresAt: Date | null;
+  }): Promise<StaffRoleWriteRow> {
+    const result = await sql<{ outcome: string; roleKey: string | null }>`
+      select outcome, role_key as "roleKey"
+        from app_private.staff_role_grant(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.targetUserId}::uuid,
+          ${input.roleKey}::text,
+          ${input.reason}::text,
+          ${input.expiresAt}::timestamptz
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Granting a role returned no row.');
+    return { outcome: row.outcome, roleKey: row.roleKey ?? null };
+  }
+
+  /** `app_private.staff_role_revoke(uuid, boolean, uuid, text, text)` (0100). */
+  async staffRoleRevoke(input: {
+    userId: string;
+    isAal2: boolean;
+    targetUserId: string;
+    roleKey: string;
+    reason: string;
+  }): Promise<StaffRoleWriteRow> {
+    const result = await sql<{ outcome: string; roleKey: string | null }>`
+      select outcome, role_key as "roleKey"
+        from app_private.staff_role_revoke(
+          ${input.userId}::uuid,
+          ${input.isAal2}::boolean,
+          ${input.targetUserId}::uuid,
+          ${input.roleKey}::text,
+          ${input.reason}::text
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Withdrawing a role returned no row.');
+    return { outcome: row.outcome, roleKey: row.roleKey ?? null };
   }
 
   /** `app_private.admin_user_page(uuid, boolean, integer, text, timestamptz, uuid)` (0078). */

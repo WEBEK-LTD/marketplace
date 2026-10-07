@@ -212,6 +212,9 @@ const HANDLED = 'listing.published';
 const UNHANDLED = 'payment.succeeded';
 const TEST_QUEUE = 'test-handler';
 
+/** The queues this increment owns. Anything else in the registry belongs to another increment's suite. */
+const OUTBOX_OWNED = new Set([OUTBOX_RELAY_QUEUE, OUTBOX_SWEEPER_QUEUE, TEST_QUEUE]);
+
 function registry(handle: (e: OutboxEventView) => Promise<void> = async () => undefined) {
   return new OutboxHandlerRegistry([{ eventType: HANDLED, queue: TEST_QUEUE, jobName: 'handle', handle }]);
 }
@@ -262,10 +265,12 @@ describe('the worker registers nothing while the registry is empty', () => {
     LOG_LEVEL: 'debug',
   };
 
-  it('builds no queue at all and says so, exactly as 7-D does for email', () => {
+  it('builds no outbox queue at all and says so, exactly as 7-D does for email', () => {
     const { logger, logs } = silentLogger();
     const definitions = buildQueueDefinitions(loadEnv(base), logger);
-    expect(definitions).toEqual([]);
+    // Narrowed by 0101, which registers its own consumer unconditionally: this invariant is about the
+    // outbox, so it is asserted over the outbox's own queues rather than over the whole registry.
+    expect(definitions.map((d) => d.name).filter((name) => OUTBOX_OWNED.has(name))).toEqual([]);
     const events = logs().map((line) => line.event);
     expect(events).toContain('email_relay_not_registered');
     expect(events).toContain('outbox_relay_not_registered');
@@ -275,7 +280,11 @@ describe('the worker registers nothing while the registry is empty', () => {
     const { logger } = silentLogger();
     const store = new FakeStore([]);
     const definitions = buildQueueDefinitions(loadEnv(base), logger, null, registry(), store);
-    expect(definitions.map((d) => d.name)).toEqual([OUTBOX_RELAY_QUEUE, OUTBOX_SWEEPER_QUEUE, TEST_QUEUE]);
+    expect(definitions.map((d) => d.name).filter((name) => OUTBOX_OWNED.has(name))).toEqual([
+      OUTBOX_RELAY_QUEUE,
+      OUTBOX_SWEEPER_QUEUE,
+      TEST_QUEUE,
+    ]);
   });
 
   it('carries the settled values without restating them anywhere else', () => {

@@ -73,7 +73,8 @@ export const ReportSubjectSlugSchema = z
   .regex(/^[a-z0-9](?:[a-z0-9-]{1,118}[a-z0-9])$/u);
 
 /** `reports_details_length`: absent, or one to four thousand characters once trimmed. */
-export const ReportDetailsSchema = z.string().min(1).max(4000);
+/** 0105: trimmed, so whitespace-only detail is refused rather than filed as a report's explanation. */
+export const ReportDetailsSchema = z.string().trim().min(1).max(4000);
 
 export const FileReportRequestSchema = z
   .object({

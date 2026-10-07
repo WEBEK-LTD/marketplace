@@ -213,7 +213,9 @@ select is(
   (select array_to_string(array_agg(p.proname order by p.proname), ',') from pg_proc p
      join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private' and p.proname like 'seller\_%'),
-  'seller_create_profile,seller_earnings,seller_identity,seller_listing_archive,'
+  'seller_create_profile,seller_earnings,seller_identity,'
+    -- 0102's listing analytics reader, which sorts here.
+    'seller_listing_analytics,seller_listing_archive,'
     || 'seller_listing_attribute_options,seller_listing_attributes,seller_listing_attributes_save,'
     || 'seller_listing_create_draft,'
     || 'seller_listing_submit,seller_listing_tag_choices,seller_listing_tags_save,'
@@ -226,7 +228,7 @@ select is(
     || 'seller_verification,seller_verification_document_attach,'
     || 'seller_verification_document_remove,seller_verification_document_target,'
     || 'seller_verification_start,seller_verification_submit',
-  'exactly thirty-two seller_ functions exist: the 6-A reader, the 6-C writer, this editor, 6-E''s two media functions, 6-F''s five approved listing functions, 6-G''s four approved service functions, 6-I''s six approved verification functions 6-J''s six approved read-only surfaces and 8-C''s six listing attribute and tag functions');
+  'exactly thirty-three seller_ functions exist: the 6-A reader, the 6-C writer, this editor, 6-E''s two media functions, 6-F''s five approved listing functions, 6-G''s four approved service functions, 6-I''s six approved verification functions 6-J''s six approved read-only surfaces 8-C''s six listing attribute and tag functions and 0102''s listing analytics reader');
 
 select lives_ok(
   $$ select app_private.assert_security_contract() $$,

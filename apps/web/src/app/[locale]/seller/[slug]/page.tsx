@@ -8,6 +8,8 @@ import { ListingMessage } from '../../../../components/listing-views';
 import { SellerProfileView } from '../../../../components/seller-profile';
 import { ReportForm } from '../../../../components/report-form';
 import { reportCopy } from '../../../../components/report-copy';
+import { BlockPerson } from '../../../../components/account-actions';
+import { blockCopy } from '../../../../components/block-copy';
 import { StartConversationButton } from '../../../../components/start-conversation';
 import { startConversationLabels } from '../../../../components/start-conversation-labels';
 import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
@@ -95,6 +97,7 @@ export default async function SellerPage({ params }: PageParams) {
     getTranslations({ locale, namespace: 'Session' }),
   ]);
   const report = await getTranslations({ locale, namespace: 'Report' });
+  const blocks = await getTranslations({ locale, namespace: 'Blocks' });
 
   if (await alreadyNotFound()) {
     return (
@@ -156,6 +159,26 @@ export default async function SellerPage({ params }: PageParams) {
               })}
             />
           </div>
+        ) : null}
+
+        {/*
+          0103. Blocking this seller, offered on a trading profile for the same reason the contact action is:
+          0103's resolver requires a publicly visible storefront, so offering it on a suspended one would be
+          offering something that always refuses. The seller travels as the slug already in this page's URL —
+          the profile contract has no identifier in it, and this control needs none.
+
+          No session is read to decide whether to draw it. This is a cached public catalogue page and
+          personalising it would change that caching, so the control is drawn for everyone and a visitor who
+          turns out not to be signed in is offered the way in instead.
+        */}
+        {found.availability === 'available' ? (
+          <p className="mt-4">
+            <BlockPerson
+              handle={{ sellerSlug: found.seller.slug }}
+              loginPath={`${prefix}/login`}
+              copy={blockCopy(blocks)}
+            />
+          </p>
         ) : null}
 
         {/*

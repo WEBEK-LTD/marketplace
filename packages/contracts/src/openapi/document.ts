@@ -235,6 +235,13 @@ import {
   StartConversationRequestSchema,
   StartConversationResponseSchema,
   UnreadCountResponseSchema,
+  MESSAGE_ATTACHMENT_MAX_BYTES,
+  MESSAGE_ATTACHMENT_MAX_PER_MESSAGE,
+  MessageAttachmentLinkResponseSchema,
+  MessageAttachmentRecordRequestSchema,
+  MessageAttachmentRecordResponseSchema,
+  MessageAttachmentUploadRequestSchema,
+  MessageAttachmentUploadResponseSchema,
 } from '../messaging.js';
 import {
   LISTINGS_DEFAULT_LIMIT,
@@ -289,6 +296,12 @@ import {
   SellerReviewsResponseSchema,
 } from '../sellers.js';
 import {
+  LISTING_ANALYTICS_DEFAULT_DAYS,
+  LISTING_ANALYTICS_MAX_DAYS,
+  ListingAnalyticsResponseSchema,
+  SellerListingAnalyticsResponseSchema,
+} from '../analytics.js';
+import {
   SERVICES_DEFAULT_LIMIT,
   SERVICES_MAX_LIMIT,
   ServiceDetailResponseSchema,
@@ -316,6 +329,13 @@ import {
   UpdateBuyerProfileRequestSchema,
   UpdateBuyerSettingsRequestSchema,
 } from '../buyer-account.js';
+import {
+  BLOCKS_DEFAULT_LIMIT,
+  BLOCKS_MAX_LIMIT,
+  BlockMutationResponseSchema,
+  BlockRequestSchema,
+  BlocksResponseSchema,
+} from '../blocks.js';
 import { AdminSessionResponseSchema } from '../admin-session.js';
 import {
   CounterOfferRequestSchema,
@@ -422,8 +442,13 @@ import {
   RecoveryReviewRequestSchema,
   RecoveryReviewResponseSchema,
   SellerStatusChangeRequestSchema,
+  StaffGrantableRolesResponseSchema,
+  StaffRoleGrantRequestSchema,
+  StaffRoleRevokeRequestSchema,
+  StaffRoleWriteResponseSchema,
   SellerStatusChangeResponseSchema,
 } from '../admin-operations.js';
+import { TrackRequestSchema, TrackResponseSchema } from '../track.js';
 import {
   ModerateReviewRequestSchema,
   ModerateReviewResponseSchema,
@@ -2081,7 +2106,7 @@ function buildRegistry(): OpenAPIRegistry {
     operationId: 'getV1SellersMeAnalytics',
     summary: 'The caller’s own promotion performance',
     description:
-      'Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. It is therefore the whole of the analytics available to a seller — **there is no listing-level analytics operation**, because no authoritative listing-level rollup exists in this schema, and counting raw listing events into "views per listing" would mean inventing what a view is and how to de-duplicate a session. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.',
+      'Requires the internal BFF credential and the caller’s session. The impressions, views and clicks the `promotion_analytics` rollup has already computed for the caller’s own promotions, summed over a recent window and grouped per promotion. **Every number here is the rollup’s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw events. A seller’s listing-level analytics is a **separate operation**, `GET /v1/sellers/me/listing-analytics`, added by 0102 over its own rollup; this one’s shape is unchanged by it. That operation reports **no listing-level views or impressions**, for the reason this one was first written with: counting raw listing events into "views per listing" would mean inventing what a view is and how to de-duplicate a session, and 0101 deliberately ingests neither. The impressions and views here are the promotion stream’s own, which 0025 has always collected. The totals are `bigint` sums and travel as decimal strings. An empty list means the caller has run no promotion that the rollup has covered.',
     request: {
       ...sessionHeader,
       query: z.object({
@@ -2098,6 +2123,38 @@ function buildRegistry(): OpenAPIRegistry {
         description:
           'The rollup’s totals per promotion over the resolved window. An empty list means no promotion of the caller’s has been rolled up.',
         content: { 'application/json': { schema: SellerAnalyticsResponseSchema } },
+      },
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: sellerReadMissing,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/sellers/me/listing-analytics',
+    operationId: 'getV1SellersMeListingAnalytics',
+    summary: 'The caller\u2019s own listing performance',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. The clicks, contacts, favourites and shares the `listing_analytics` rollup has already computed for the caller\u2019s own listings, summed over a recent window and grouped per listing. **Every number here is the rollup\u2019s**, produced by a scheduled job: this operation defines no metric, computes no rate, ratio or click-through, and reads no raw event. There are no impressions and no views, because 0101 ingests neither and their definitions are a later decision; there is no unique-visitor or unique-session count, because an absent session digest is stored as a zero-length value and a distinct count would report all anonymous traffic as one visitor. `favourites` and `shares` read zero until a control on some surface fires them. The totals are `bigint` counts and travel as decimal integer strings \u2014 counts, not money, and carrying no currency. An empty list means no listing of the caller\u2019s has been rolled up yet.',
+    request: {
+      ...sessionHeader,
+      query: z.object({
+        days: z
+          .string()
+          .optional()
+          .openapi({
+            description: `How many days back to sum. Defaults to ${LISTING_ANALYTICS_DEFAULT_DAYS}; a larger value is clamped to ${LISTING_ANALYTICS_MAX_DAYS}. It selects rows and decides nothing about them.`,
+          }),
+      }),
+    },
+    responses: {
+      200: {
+        description:
+          'The rollup\u2019s totals per listing over the resolved window. An empty list means no listing of the caller\u2019s has been rolled up.',
+        content: { 'application/json': { schema: SellerListingAnalyticsResponseSchema } },
       },
       401: authenticationRequired,
       403: credentialRejected,
@@ -2413,6 +2470,121 @@ function buildRegistry(): OpenAPIRegistry {
         content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
       },
       429: messagingThrottled,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Conversation attachments (0104)                                                                 */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  const attachmentMessageParams = {
+    params: z.object({
+      conversationId: z.string().uuid().openapi({ description: 'A conversation the caller is in.' }),
+      messageId: z.string().uuid().openapi({ description: 'One of the caller\u2019s own messages on it.' }),
+    }),
+  } as const;
+
+  const attachmentBlocked = {
+    description:
+      'Either party has blocked the other, so the conversation takes nothing new. A **new attachment on an existing message is new content**, which is why this refusal exists on a path that inserts no message. Attachments already there stay readable.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+
+  const attachmentNotFound = {
+    description:
+      'There is no such message or attachment for this caller. One answer for a message that does not exist, one in a conversation they are not in, and one the other party sent \u2014 so asking cannot reveal which.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/messaging/conversations/{conversationId}/messages/{messageId}/attachments/uploads',
+    operationId: 'postV1MessagingAttachmentUpload',
+    summary: 'Authorize one conversation attachment upload',
+    description:
+      `Requires the internal BFF credential and the caller\u2019s session. Authorizes a single upload into the **private** \`message-attachments\` bucket and returns the one object path it may go to. **The request carries no path**: the bucket, the conversation, the message and a fresh random file name are all composed in the database from rows the caller was found to own, so another conversation\u2019s namespace or a traversal is unrepresentable rather than merely refused. **Nothing is written** \u2014 a client that asks and never uploads leaves no trace, which is what stops a row ever pointing at nothing. Only the message\u2019s **sender** may attach, and only while they are still a live participant. At most ${MESSAGE_ATTACHMENT_MAX_PER_MESSAGE} attachments per message and ${MESSAGE_ATTACHMENT_MAX_BYTES} bytes each, which are technical safety limits rather than business rules; the ceiling reported is the tighter of that figure and the bucket\u2019s own. The permitted types are three image formats and PDF \u2014 **SVG is refused**, because it is XML a browser executes and serving one from a signed URL would be a stored-XSS primitive.`,
+    request: {
+      ...sessionHeader,
+      ...attachmentMessageParams,
+      body: {
+        content: { 'application/json': { schema: MessageAttachmentUploadRequestSchema } },
+        required: true,
+      },
+    },
+    responses: {
+      200: {
+        description: 'A short-lived upload authorization for exactly one object.',
+        content: { 'application/json': { schema: MessageAttachmentUploadResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: attachmentNotFound,
+      409: attachmentBlocked,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/messaging/conversations/{conversationId}/messages/{messageId}/attachments',
+    operationId: 'postV1MessagingAttachments',
+    summary: 'Record a conversation attachment that was uploaded',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Records the path the previous operation issued, **after** the API has confirmed with the storage provider that the object is actually there \u2014 which is why the row cannot describe a file that never arrived. The expected prefix is rebuilt in the database from the caller\u2019s own conversation and message, and the remainder must be one plain file name of the shape the authorization issues, so a path for another message, another conversation, another bucket, with a traversal in it, or with an extension that disagrees with the declared type cannot be recorded. A path already recorded is refused rather than stored twice, so a retrying client records the file once. No event, no notification and no audit row is written.',
+    request: {
+      ...sessionHeader,
+      ...attachmentMessageParams,
+      body: {
+        content: { 'application/json': { schema: MessageAttachmentRecordRequestSchema } },
+        required: true,
+      },
+    },
+    responses: {
+      201: {
+        description: 'The attachment that now exists, and how many that message carries.',
+        content: { 'application/json': { schema: MessageAttachmentRecordResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: attachmentNotFound,
+      409: {
+        description:
+          'The message already holds as many attachments as it may, or the file has not finished uploading. Two distinct codes, because the remedies differ: send another message, or upload the bytes again. A blocked pair answers here too.',
+        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+      },
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/messaging/conversations/{conversationId}/attachments/{attachmentId}/link',
+    operationId: 'getV1MessagingAttachmentLink',
+    summary: 'A short-lived link to one conversation attachment',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Returns a signed URL for exactly one object, for ten minutes. **The caller names an attachment; the path comes from the row**: no operation on this surface accepts a storage path for reading, and the database requires the attachment, its message\u2019s conversation and the conversation in the route to agree, so an identifier cannot be spent against another conversation. **Either participant may ask, including after a block and after leaving** \u2014 a thread that is readable stays readable, and blocking takes away the next thing sent rather than the record of the last one. The bucket stays private and this URL is the only authorization that ever reaches a browser.',
+    request: {
+      ...sessionHeader,
+      params: z.object({
+        conversationId: z.string().uuid().openapi({ description: 'A conversation the caller is in.' }),
+        attachmentId: z.string().uuid().openapi({ description: 'An attachment on one of its messages.' }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'A signed URL for one object, and when it stops working.',
+        content: { 'application/json': { schema: MessageAttachmentLinkResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: attachmentNotFound,
       503: unavailable,
       500: internalError,
     },
@@ -2901,6 +3073,101 @@ function buildRegistry(): OpenAPIRegistry {
         content: { 'application/json': { schema: SavedSearchMutationResponseSchema } },
       },
       400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Blocking (0103)                                                                                 */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  const blocksListQuery = {
+    query: z.object({
+      limit: z
+        .string()
+        .optional()
+        .openapi({
+          description: `How many rows to return. Defaults to ${BLOCKS_DEFAULT_LIMIT}; a larger value is clamped to ${BLOCKS_MAX_LIMIT}.`,
+        }),
+      cursor: z
+        .string()
+        .optional()
+        .openapi({
+          description:
+            'An opaque cursor from a previous response\u2019s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.',
+        }),
+    }),
+  } as const;
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/users/me/blocks',
+    operationId: 'getV1UsersMeBlocks',
+    summary: 'The people the caller has blocked',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. One page of the caller\u2019s own blocks, newest first, keyed on when the block was made with the blocked row as a tie-breaker so the page boundary is total. Each row names the person by **display name and storefront slug only**, both of which may be null, and carries an opaque `reference` for the unblock. **No account identifier is returned**, here or anywhere on this surface. There is no corresponding operation for the other direction: nothing in this API answers who has blocked the caller.',
+    request: { ...sessionHeader, ...blocksListQuery },
+    responses: {
+      200: {
+        description: 'One page of the caller\u2019s blocks, newest first.',
+        content: { 'application/json': { schema: BlocksResponseSchema } },
+      },
+      400: accountCursorRefused,
+      401: authenticationRequired,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/users/me/blocks',
+    operationId: 'postV1UsersMeBlocks',
+    summary: 'Block somebody',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Blocks the person on the other side of a conversation the caller is in, or of a public storefront slug \u2014 **exactly one of the two per request**, which is why the body is a union rather than one object with optional fields. **No account identifier is accepted**: there is no field in either shape that could carry one. The effect is symmetric, because the predicate six existing operations already consult tests both directions: after this, neither person can start a conversation with the other, send a message into one they already share, make or counter an offer, open a service request or quote one. Nothing historical is touched \u2014 no conversation is deleted, closed, muted or hidden, no message is altered, and no offer or service request changes state. The blocked person is **not notified**, and the blocked seller\u2019s catalogue listings stay exactly as visible as before. **Idempotent**: blocking somebody already blocked reports `changed: false`, refreshes the stored reason and still succeeds. A conversation that does not exist, one the caller is not in, an unknown slug, a storefront that is not publicly visible and the caller themselves all answer 404 \u2014 one answer for all five, so this operation cannot be used to find out which threads or storefronts exist. No second factor is required: blocking is a safety action, and a step-up challenge in front of it would be the wrong trade.',
+    request: {
+      ...sessionHeader,
+      body: { content: { 'application/json': { schema: BlockRequestSchema } }, required: true },
+    },
+    responses: {
+      200: {
+        description: 'Whether this request was the one that created the block.',
+        content: { 'application/json': { schema: BlockMutationResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: accountNotFound,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/users/me/blocks/{reference}',
+    operationId: 'deleteV1UsersMeBlock',
+    summary: 'Unblock somebody',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Removes one block, named by the opaque `reference` a previous list response carried. The reference is **not** an account identifier and must not be constructed or parsed by a client. **Idempotent, and deliberately silent about failure**: a reference this API cannot read and a reference naming somebody the caller never blocked both report `changed: false` and succeed, so trying references cannot reveal whose blocks exist. The writer is scoped to the caller in its own statement, so a reference from another person\u2019s list removes nothing. Unblocking restores contact rather than merely recording it: the operations refused while the block stood work again immediately.',
+    request: {
+      ...sessionHeader,
+      params: z.object({
+        reference: z
+          .string()
+          .openapi({ description: 'The opaque reference from a blocks list response.' }),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Whether this request was the one that removed a block.',
+        content: { 'application/json': { schema: BlockMutationResponseSchema } },
+      },
       401: authenticationRequired,
       403: credentialRejected,
       503: unavailable,
@@ -5012,6 +5279,12 @@ function buildRegistry(): OpenAPIRegistry {
     content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
   } as const;
 
+  const staffRoleRefused = {
+    description:
+      'The role was not changed, and every code names which boundary stopped it. `STAFF_ROLE_IS_SELF` \u2014 the caller is the target; granting and withdrawing are both refused, so nobody promotes or demotes themselves. `STAFF_ROLE_ABOVE_CEILING` \u2014 the role sits above the caller\u2019s own highest effective role, or they effectively hold none; the remedy is somebody more senior. `STAFF_ROLE_NOT_GRANTABLE` and `STAFF_ROLE_NOT_REVOCABLE` \u2014 `super_admin`, from either side: this console neither creates nor destroys one. `STAFF_ROLE_NOT_ASSIGNABLE` \u2014 the role table marks that role unassignable, which is reference data rather than a state. `STAFF_ROLE_ALREADY_REVOKED` \u2014 the grant was already withdrawn, which is what a repeat and the loser of two colleagues acting at once receive. `STAFF_ROLE_EXPIRY_INVALID` \u2014 an expiry that is not in the future. `STAFF_ROLE_REASON_REQUIRED` \u2014 a blank reason, which the request schema refuses first. Nothing is changed.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+
   const recoveryRefused = {
     description:
       'The step was not recorded. `RECOVERY_IS_OWN` — it is the caller’s own account, which the writer refuses at every step. `RECOVERY_NEEDS_ANOTHER_PERSON` — the caller reviewed this request, and the approver must be somebody else; the two-person rule. `RECOVERY_NOT_REVIEWABLE`, `RECOVERY_NOT_DECIDABLE`, `RECOVERY_NOT_COMPLETABLE` — the request is not in a state for that step, which is also what a repeat and the loser of two colleagues acting at once receive. Nothing is changed.',
@@ -5137,7 +5410,7 @@ function buildRegistry(): OpenAPIRegistry {
     operationId: 'getV1AdminUserRoles',
     summary: 'The roles one account holds',
     description:
-      'Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it. **Strictly read-only**: there is no operation in this API that creates, changes or removes a role assignment, because no authoritative writer for `user_roles` exists in this repository and the rules for one are not defined. That gap is reported rather than filled.',
+      'Requires the internal BFF credential and `users.role.read` in an aal2 session — a **different key** from the account read, which is what the existing policy gates this table on, and one that neither a moderator nor a support agent holds. Each grant says whether it is currently effective under the roles table’s own rule: not revoked, not expired. It names nobody who granted or revoked it, and that is unchanged by the writers below: who acted and why is recorded on the row and reported in no response. The operations that change a grant are `POST /v1/admin/users/{userId}/roles` and `POST /v1/admin/users/{userId}/roles/revoke`, both behind `users.role.manage` rather than this key, so a colleague who may read roles can change none.',
     request: { ...sessionHeader, ...adminUserIdParam },
     responses: {
       200: {
@@ -5147,6 +5420,108 @@ function buildRegistry(): OpenAPIRegistry {
       400: validationFailed,
       401: authenticationRequired,
       403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/track',
+    operationId: 'postV1Track',
+    summary: 'Batched listing analytics ingestion',
+    description:
+      'Requires the internal BFF credential, like every `/v1` route, and **no session** — a signed-out visitor browsing the catalogue is the normal case, so the account is optional and its absence simply means the events have none. A session token, when the caller has one, is the **only** source of the account: the request body has no `userId` field and the schema is strict, so a caller cannot claim to be somebody. The session digest stored with each event is computed server-side from an opaque identifier under a dedicated domain-separated key, so a caller cannot choose it either. At most fifty events per request, refused whole rather than truncated. Only four event types are ingested — `click`, `contact`, `favorite`, `share`; `impression` and `view` are refused, because the impression definition is a Phase 9 decision. A dedicated rate limit applies per address and **fails closed**: if no counter can answer, the request is refused. `accepted` is how many events the server took responsibility for, not how many rows were written — de-duplication happens downstream on the event id alone, through a database identity ledger, so a retried batch legitimately writes none whatever timestamp it carries, and a client has no use for the row count. Nothing in the response reveals whether a listing exists.',
+    request: {
+      body: { content: { 'application/json': { schema: TrackRequestSchema } } },
+    },
+    responses: {
+      202: {
+        description: 'The events were accepted for ingestion.',
+        content: { 'application/json': { schema: TrackResponseSchema } },
+      },
+      400: validationFailed,
+      403: credentialRejected,
+      429: {
+        description:
+          'Over the ingestion rate limit. The limit fails closed: a request is also refused when no counter can answer, so an attacker who takes Redis down does not thereby remove the limit.',
+        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+      },
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/roles/grantable',
+    operationId: 'getV1AdminGrantableRoles',
+    summary: 'The roles this caller may grant',
+    description:
+      'Requires the internal BFF credential and `users.role.manage` in an aal2 session. **The set is computed in the database** from the caller’s own effective roles, by the same three tests the grant writer applies: the role must be assignable, it must not be `super_admin`, and its position in the role order must not be above the caller’s own highest effective role. So a console renders this list rather than filtering a catalogue — a filter in a client is a convention, and this is a privilege boundary. An empty list is also the answer for a caller who does not hold the key, so the two are indistinguishable. `admin` is the highest role this endpoint ever returns, to anybody.',
+    request: { ...sessionHeader },
+    responses: {
+      200: {
+        description: 'The roles this caller may grant, in the platform’s own role order.',
+        content: { 'application/json': { schema: StaffGrantableRolesResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/users/{userId}/roles',
+    operationId: 'postV1AdminUserRole',
+    summary: 'Grant a role to one account',
+    description:
+      'Requires the internal BFF credential and `users.role.manage` in an aal2 session. A `reason` is always required, and a value of whitespace is not one. `expiresAt` is optional and must be in the future; absent means a grant that does not expire, and a later grant of the same role is the only way to change an expiry. Granting a role the account already holds refreshes that single grant rather than adding a second, and granting one that was withdrawn reinstates it with a fresh actor, moment and reason — there is no operation anywhere that clears a withdrawal on its own. **Every boundary is applied in the database against the caller’s own effective roles**: a self-grant is refused, `super_admin` is never grantable, a role the role table marks unassignable is refused, and a role above the caller’s own highest effective role is refused. Nothing in the request body can widen any of that. A caller without the key, an account that does not exist and a role key that names no role are one indistinguishable 404.',
+    request: {
+      ...sessionHeader,
+      ...adminUserIdParam,
+      body: { content: { 'application/json': { schema: StaffRoleGrantRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The role was granted, or a withdrawn grant was reinstated.',
+        content: { 'application/json': { schema: StaffRoleWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: adminOpsNotFound,
+      409: staffRoleRefused,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/admin/users/{userId}/roles/revoke',
+    operationId: 'postV1AdminUserRoleRevoke',
+    summary: 'Withdraw a role from one account',
+    description:
+      'Requires the internal BFF credential and `users.role.manage` in an aal2 session, and a `reason` as the grant does. **The row is never deleted**: the withdrawal is recorded on it with who did it and why, beside the grant it withdraws, so the history of an assignment survives its removal. Reinstatement is a fresh grant through the other operation. A self-withdrawal is refused, `super_admin` cannot be withdrawn here any more than it can be granted, and a role above the caller’s own highest effective role is refused. **The withdrawal takes effect on the target’s next request**, when the permission predicates are next evaluated: nothing in this platform terminates a session, and this operation does not claim to. Withdrawing a grant that is already withdrawn is refused rather than recorded twice, which is also what the second of two colleagues acting at once receives.',
+    request: {
+      ...sessionHeader,
+      ...adminUserIdParam,
+      body: { content: { 'application/json': { schema: StaffRoleRevokeRequestSchema } } },
+    },
+    responses: {
+      200: {
+        description: 'The role was withdrawn.',
+        content: { 'application/json': { schema: StaffRoleWriteResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: adminOpsNotFound,
+      409: staffRoleRefused,
       503: unavailable,
       500: internalError,
     },
@@ -8285,6 +8660,46 @@ function buildRegistry(): OpenAPIRegistry {
       definitionId: z.string().uuid().openapi({ description: 'The attribute definition’s identifier.' }),
     }),
   } as const;
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Listing analytics (0102)                                                                        */
+  /*                                                                                                  */
+  /* One operation: a page of the daily rollup. There is no write here and none anywhere in 0102 — a  */
+  /* day is corrected by re-running the scheduled job for it, not by a console. `analytics.listing.read`*/
+  /* has been seeded since 0033 and is consumed for the first time by this surface.                    */
+  /* ---------------------------------------------------------------------------------------------- */
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/admin/analytics/listings',
+    operationId: 'getV1AdminAnalyticsListings',
+    summary: 'Listing analytics, by day',
+    description:
+      'Requires the internal BFF credential and `analytics.listing.read` in an aal2 session. One page of the `listing_analytics` rollup, newest day first, across every seller: the clicks, contacts, favourites and shares a scheduled job computed for each listing on each UTC day. **Every number is the rollup\u2019s.** This operation defines no metric, computes no rate, ratio or click-through, reads no raw event, and reports neither impressions nor views, because 0101 ingests neither and their definitions are a later decision. There is no unique-visitor or unique-session count, because an absent session digest is stored as a zero-length value and a distinct count would report all anonymous traffic as one visitor. A seller is named by their storefront\u2019s public slug and never by an account identifier; nothing derived from a session digest or a signed-in account appears anywhere in a row. The counts are `bigint` and travel as decimal integer strings \u2014 counts, not money, carrying no currency. A caller who does not hold the key at aal2 receives an empty page, which is the same answer as a window with nothing in it.',
+    request: {
+      ...sessionHeader,
+      query: z.object({
+        ...adminOpsPaging,
+        days: z
+          .string()
+          .optional()
+          .openapi({
+            description: `How many days back to cover. Defaults to ${LISTING_ANALYTICS_DEFAULT_DAYS}; a larger value is clamped to ${LISTING_ANALYTICS_MAX_DAYS}.`,
+          }),
+      }),
+    },
+    responses: {
+      200: {
+        description:
+          'One page of the rollup, newest day first. An empty page means nothing in the window, or a caller who may not read it.',
+        content: { 'application/json': { schema: ListingAnalyticsResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      503: unavailable,
+      500: internalError,
+    },
+  });
 
   registry.registerPath({
     method: 'get',

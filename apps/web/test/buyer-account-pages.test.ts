@@ -90,6 +90,26 @@ const ADDRESS = {
   updatedAt: '2026-09-01T10:00:00.000Z',
 };
 
+const BLOCKED = {
+  reference: 'YnIxfDIyMjIyMjIyLTIyMjItNDIyMi04MjIyLTIyMjIyMjIyMjIyMg',
+  displayName: 'Sally Seller',
+  sellerSlug: 'good-shop',
+  reason: 'rude',
+  blockedAt: '2026-10-03T10:00:00.000Z',
+};
+
+/** Somebody reached through a conversation who set no name and runs no storefront. */
+const BLOCKED_NAMELESS = {
+  reference: 'YnIxfDMzMzMzMzMzLTMzMzMtNDMzMy04MzMzLTMzMzMzMzMzMzMzMw',
+  displayName: null,
+  sellerSlug: null,
+  reason: null,
+  blockedAt: '2026-10-01T10:00:00.000Z',
+};
+
+/** The account identifier the API must never send, used as a canary in the leak assertions. */
+const BLOCKED_ACCOUNT = '22222222-2222-4222-8222-222222222222';
+
 const PROFILE = {
   id: IDENTITY.user.id,
   displayName: 'Nadia',
@@ -144,6 +164,7 @@ function apiServes(
     favorites?: Mode | 'paged';
     savedSearches?: Mode;
     addresses?: Mode;
+    blocks?: Mode;
     profile?: Mode;
     settings?: Mode;
     countries?: Mode;
@@ -154,6 +175,7 @@ function apiServes(
     favorites = 'ok',
     savedSearches = 'ok',
     addresses = 'ok',
+    blocks = 'ok',
     profile = 'ok',
     settings = 'ok',
     countries = 'ok',
@@ -179,6 +201,12 @@ function apiServes(
       if (savedSearches === 'fails') return problem(response, 503, 'SERVICE_UNAVAILABLE');
       if (savedSearches === 'empty') return json(response, { items: [], nextCursor: null });
       return json(response, { items: [SAVED_SEARCH], nextCursor: null });
+    }
+
+    if (path === '/v1/users/me/blocks') {
+      if (blocks === 'fails') return problem(response, 503, 'SERVICE_UNAVAILABLE');
+      if (blocks === 'empty') return json(response, { items: [], nextCursor: null });
+      return json(response, { items: [BLOCKED, BLOCKED_NAMELESS], nextCursor: null });
     }
 
     if (path === '/v1/users/me/addresses') {
@@ -211,11 +239,27 @@ async function get(path: string, cookie = SESSION): Promise<{ status: number; ht
   return { status: response.status, html: await response.text() };
 }
 
+/**
+ * The page's own prose, removed before searching the markup for a forbidden word.
+ *
+ * Several sentences on the blocks page exist precisely to say that something is *not* there, so they
+ * contain the words those assertions look for. Stripping the known copy first is what makes the search a
+ * test of the page's data rather than of its reassurances.
+ */
+function withoutOwnCopy(html: string): string {
+  let text = html.toLowerCase();
+  for (const copy of [EN.Blocks.intro, EN.Blocks.effect, EN.Blocks.emptyHint, EN.Blocks.title]) {
+    text = text.split(copy.toLowerCase()).join(' ');
+  }
+  return text;
+}
+
 const SURFACES = [
   '/dashboard',
   '/dashboard/favorites',
   '/dashboard/saved-searches',
   '/dashboard/addresses',
+  '/dashboard/blocks',
   '/dashboard/profile',
   '/dashboard/settings',
   '/dashboard/security',
@@ -237,7 +281,7 @@ describe('the dashboard shell', () => {
     apiServes();
     const { html } = await get('/dashboard');
 
-    for (const path of ['/dashboard/favorites', '/dashboard/saved-searches', '/dashboard/addresses', '/dashboard/profile', '/dashboard/settings', '/dashboard/security', '/dashboard/messages', '/dashboard/notifications']) {
+    for (const path of ['/dashboard/favorites', '/dashboard/saved-searches', '/dashboard/addresses', '/dashboard/blocks', '/dashboard/profile', '/dashboard/settings', '/dashboard/security', '/dashboard/messages', '/dashboard/notifications']) {
       expect(html, path).toContain(`href="${path}"`);
     }
     expect(html).not.toContain('href="/dashboard/seller"');
@@ -342,6 +386,87 @@ describe('saved searches', () => {
     const failed = await get('/dashboard/saved-searches');
     expect(failed.html).toContain(EN.SavedSearches.error);
     expect(failed.html).not.toContain(EN.SavedSearches.empty);
+  });
+});
+
+describe('blocked people (0103)', () => {
+  it('names each person by display name and storefront, and nobody by an identifier', async () => {
+    apiServes();
+    const { status, html } = await get('/dashboard/blocks');
+
+    expect(status).toBe(200);
+    expect(html).toContain('Sally Seller');
+    expect(html).toContain('good-shop');
+    expect(html).not.toContain(BLOCKED_ACCOUNT);
+  });
+
+  /**
+   * The RSC payload is the whole reason this file runs against the built app: a client component's props
+   * travel in it whether or not the component renders them, so the unblock button is the one place a
+   * drifted design would have put an account identifier.
+   */
+  it('puts no account identifier in the flight data either', async () => {
+    apiServes();
+    const { html } = await get('/dashboard/blocks');
+
+    expect(html).not.toContain(BLOCKED_ACCOUNT);
+    expect(html).not.toContain('blockedUserId');
+    expect(html).not.toContain('blockedId');
+    // The opaque reference is there, because the unblock button needs it.
+    expect(html).toContain(BLOCKED.reference);
+  });
+
+  it('renders somebody with no name and no storefront without inventing one', async () => {
+    apiServes();
+    const { html } = await get('/dashboard/blocks');
+    expect(html).toContain(EN.Blocks.unnamed);
+  });
+
+  /** Somebody using this screen is trying to make something stop; the page says exactly what stopped. */
+  it('says what blocking does and does not do, rather than leaving it to be discovered', async () => {
+    apiServes();
+    const { html } = await get('/dashboard/blocks');
+    expect(html).toContain(EN.Blocks.intro);
+    expect(html).toContain(EN.Blocks.effect);
+  });
+
+  it('renders the empty and error states, and never an outage as an empty list', async () => {
+    apiServes({ blocks: 'empty' });
+    const empty = await get('/dashboard/blocks');
+    expect(empty.html).toContain(EN.Blocks.empty);
+
+    apiServes({ blocks: 'fails' });
+    const failed = await get('/dashboard/blocks');
+    expect(failed.html).toContain(EN.Blocks.error);
+    expect(failed.html).not.toContain(EN.Blocks.empty);
+  });
+
+  it('offers an unblock and nothing else — no report, no suspension, no message', async () => {
+    apiServes();
+    const { html } = await get('/dashboard/blocks');
+
+    expect(html).toContain(EN.Blocks.unblock);
+    expect(html).not.toContain(EN.Report.action);
+    for (const word of ['suspend', 'moderat', 'blockedBy', 'blockedUserId']) {
+      expect(withoutOwnCopy(html), word).not.toContain(word.toLowerCase());
+    }
+  });
+
+  /**
+   * The absence this increment is most careful about, asserted on the page most likely to show it.
+   *
+   * The page's own copy is stripped first, because the sentence that **promises** nothing here reveals who
+   * blocked the reader contains the words a naive search would match — the reasoning that caught the same
+   * trap in 0102's seller analytics copy.
+   */
+  it('never says who has blocked the reader', async () => {
+    apiServes();
+    const { html } = await get('/dashboard/blocks');
+    const stripped = withoutOwnCopy(html);
+
+    for (const phrase of ['blocked you', 'blocked-by', 'blockers', 'has blocked']) {
+      expect(stripped, phrase).not.toContain(phrase);
+    }
   });
 });
 
@@ -527,6 +652,7 @@ describe('both languages', () => {
       ['/ar/dashboard/favorites', AR.Favorites.title],
       ['/ar/dashboard/saved-searches', AR.SavedSearches.title],
       ['/ar/dashboard/addresses', AR.Addresses.title],
+      ['/ar/dashboard/blocks', AR.Blocks.title],
       ['/ar/dashboard/profile', AR.Profile.title],
       ['/ar/dashboard/settings', AR.Settings.title],
       ['/ar/dashboard/security', AR.Security.title],

@@ -330,7 +330,9 @@ test('audit attribution: no application code names the channel or its setter (Ph
   // issued `set_config('app.audit_actor_id', …)` of its own would be choosing an actor rather than
   // carrying one. The database guard (`audit_attribution_problems`) polices the schema side; this
   // polices the repository side, so the two together leave no way in.
-  const roots = ['apps/api/src', 'apps/worker/src', 'apps/web/src', 'apps/admin/src', 'packages'];
+  // One Next.js app since 0108: `apps/web/src` covers the public marketplace and the staff console under
+  // `src/admin/` and `src/app/admin/`, so the console is still walked — by the root that now contains it.
+  const roots = ['apps/api/src', 'apps/worker/src', 'apps/web/src', 'packages'];
   const forbidden = ['app.audit_actor_id', 'set_audit_actor', 'audit_actor('];
   const offenders = [];
   const walk = (dir) => {

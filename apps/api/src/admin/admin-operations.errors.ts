@@ -144,6 +144,43 @@ export class SellerStatusRefusedError extends Error {
   }
 }
 
+/**
+ * A role grant or withdrawal the database refused (0100).
+ *
+ * Eight codes, each naming a different boundary, and **none of them is a "forbidden"**: a caller who does not
+ * hold `users.role.manage`, an account that does not exist and a role nobody holds all become
+ * {@link AdminOperationsNotFoundError} instead, exactly as every other operation in this console behaves.
+ * What reaches here is a refusal of a change by somebody entitled to attempt it, which tells them nothing they
+ * did not already have the right to know:
+ *
+ *   * `STAFF_ROLE_IS_SELF` — they are the target. Granting and withdrawing are both refused.
+ *   * `STAFF_ROLE_ABOVE_CEILING` — the role sits above their own highest effective role.
+ *   * `STAFF_ROLE_NOT_GRANTABLE` / `STAFF_ROLE_NOT_REVOCABLE` — `super_admin`, from either side.
+ *   * `STAFF_ROLE_NOT_ASSIGNABLE` — `roles.is_assignable` is false for it.
+ *   * `STAFF_ROLE_ALREADY_REVOKED` — what a repeat, and a race, look like.
+ *   * `STAFF_ROLE_EXPIRY_INVALID` — an expiry that is not in the future.
+ *   * `STAFF_ROLE_REASON_REQUIRED` — the floor under the contract's own required reason.
+ */
+export class StaffRoleRefusedError extends Error {
+  readonly problem: { readonly status: number; readonly code: ProblemCode };
+
+  constructor(
+    code:
+      | 'STAFF_ROLE_IS_SELF'
+      | 'STAFF_ROLE_ABOVE_CEILING'
+      | 'STAFF_ROLE_NOT_GRANTABLE'
+      | 'STAFF_ROLE_NOT_REVOCABLE'
+      | 'STAFF_ROLE_NOT_ASSIGNABLE'
+      | 'STAFF_ROLE_ALREADY_REVOKED'
+      | 'STAFF_ROLE_EXPIRY_INVALID'
+      | 'STAFF_ROLE_REASON_REQUIRED',
+  ) {
+    super('That role change was refused.');
+    this.name = 'StaffRoleRefusedError';
+    this.problem = { status: 409, code };
+  }
+}
+
 /** An unusable page cursor. One code for every way a cursor can fail to be one. */
 export class AdminOperationsCursorInvalidError extends Error {
   readonly problem: { readonly status: number; readonly code: ProblemCode } = {

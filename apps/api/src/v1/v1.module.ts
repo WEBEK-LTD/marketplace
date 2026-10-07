@@ -1,6 +1,8 @@
 import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from '../auth/auth.module.js';
+import { TrackController } from './track.controller.js';
+import { ListingAnalyticsController } from './listing-analytics.controller.js';
 import type { ApiEnv } from '../config/env.js';
 import { CategoriesService } from '../catalog/categories.service.js';
 import { ListingsService } from '../catalog/listings.service.js';
@@ -141,6 +143,8 @@ export class V1Module {
         SellerReadController,
         SellersController,
         SearchController,
+        TrackController,
+        ListingAnalyticsController,
       ],
       providers: [
         { provide: APP_GUARD, useFactory: () => new InternalCredentialGuard(env.internalBffCredentials) },

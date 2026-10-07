@@ -287,7 +287,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [web, admin]
+        app: [web]
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -531,8 +531,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify dependency-defining files are unchanged
         run: node scripts/policy/integrity.mjs verify "$RUNNER_TEMP/integrity.json"
-      - name: Build web and admin
-        run: pnpm exec turbo run build --filter=@repo/web --filter=@repo/admin
+      - name: Build the web app (both surfaces)
+        run: pnpm exec turbo run build --filter=@repo/web
       - name: Verify the pinned Chromium build
         run: node scripts/ci/checks.mjs playwright-browser
       - name: Install Chromium for Playwright 1.62.1

@@ -146,11 +146,15 @@ const env = loadEnv({
 
 describe('7-D job registration', () => {
   it('registers the email relay only when a transport is configured', () => {
-    expect(buildQueueDefinitions(env, silent())).toEqual([]);
+    // Narrowed by 0101, which registers its own consumer unconditionally: 7-D's invariant is about the
+    // email relay, so it is asserted over the email queue rather than over the whole registry.
+    const withoutTransport = buildQueueDefinitions(env, silent()).map((definition) => definition.name);
+    expect(withoutTransport).not.toContain(EMAIL_DELIVERY_QUEUE);
 
     const definitions = buildQueueDefinitions(env, silent(), new RecordingTransport(() => ({ status: 'sent', providerMessageId: null })));
-    expect(definitions).toHaveLength(1);
-    expect(definitions[0]?.name).toBe(EMAIL_DELIVERY_QUEUE);
+    expect(definitions.map((definition) => definition.name).filter((name) => name === EMAIL_DELIVERY_QUEUE)).toEqual([
+      EMAIL_DELIVERY_QUEUE,
+    ]);
   });
 
   it('says so, without naming a provider, when no transport is configured', () => {

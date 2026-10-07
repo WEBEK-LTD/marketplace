@@ -86,8 +86,12 @@ const AUDIT = 'audit.read';
 const SELLERS_MANAGE = 'sellers.profile.manage';
 const ALL_KEYS = [SELLERS, USERS, ROLES, SECURITY, RECOVERY, AUDIT, SELLERS_MANAGE] as const;
 
-/** The one key this increment still consumes nowhere, because role assignment has no writer. */
-const UNUSED_KEYS = ['users.role.manage'] as const;
+/**
+ * The management key on its own. Since 0100 it opens the two role writers and the grantable set — and still
+ * opens none of the read surfaces below, which is what the test using it asserts.
+ */
+const ROLE_MANAGE_ONLY = ['users.role.manage'] as const;
+const ROLE_MANAGE = 'users.role.manage';
 
 const SELLER_ROW = {
   slug: SLUG,
@@ -159,6 +163,15 @@ const ROLE_ROW = {
 };
 
 const CATALOGUE_ROW = { ...ROLE_ROW, isAssignable: true, holderCount: 2 };
+
+/** One row of `app_private.staff_role_grantable` (0100): the database's own answer, never a filtered list. */
+const GRANTABLE_ROW = {
+  roleKey: 'moderator',
+  nameEn: 'Moderator',
+  nameAr: 'مشرف',
+  requiresMfa: true,
+  isAdminConsole: true,
+};
 
 const EVENT_ROW = {
   id: 42,
@@ -236,6 +249,9 @@ interface Doubles {
   readonly writeOutcome?: string;
   readonly completionOutcome?: string;
   readonly sellerStatusOutcome?: string;
+  /** 0100. The outcome the role writers report, and the grantable set the database would answer. */
+  readonly roleWriteOutcome?: string;
+  readonly grantableRows?: readonly unknown[];
   readonly storeThrows?: boolean;
   readonly unauthenticated?: boolean;
   readonly sellerRows?: readonly unknown[];
@@ -287,6 +303,20 @@ async function start(doubles: Doubles = {}): Promise<Seen[]> {
     adminRoleCatalogue: async (input: Record<string, unknown>) => {
       note('roleCatalogue')(input);
       return [CATALOGUE_ROW];
+    },
+    staffRoleGrantable: async (input: Record<string, unknown>) => {
+      note('roleGrantable')(input);
+      return doubles.grantableRows ?? [GRANTABLE_ROW];
+    },
+    staffRoleGrant: async (input: Record<string, unknown>) => {
+      note('roleGrant')(input);
+      const outcome = doubles.roleWriteOutcome ?? 'granted';
+      return { outcome, roleKey: outcome === 'granted' ? 'moderator' : null };
+    },
+    staffRoleRevoke: async (input: Record<string, unknown>) => {
+      note('roleRevoke')(input);
+      const outcome = doubles.roleWriteOutcome ?? 'revoked';
+      return { outcome, roleKey: outcome === 'revoked' ? 'moderator' : null };
     },
     adminAccountSecurityTimeline: async (input: Record<string, unknown>) => {
       note('securityTimeline')(input);
@@ -651,9 +681,12 @@ describe('each route requires exactly one key, and the right one', () => {
     expect((await call('GET', '/audit')).status).toBe(404);
   });
 
-  /** The two keys with no writer behind them unlock nothing here. */
-  it('admits nobody anywhere on the strength of a management key', async () => {
-    await start({ permissions: UNUSED_KEYS });
+  /**
+   * The management key opens the role writers and nothing else. Every route in `ROUTES` is a read or a
+   * recovery step behind a different key, and holding `users.role.manage` is not holding any of them.
+   */
+  it('admits nobody to these surfaces on the strength of the role management key', async () => {
+    await start({ permissions: ROLE_MANAGE_ONLY });
     for (const route of ROUTES) {
       const result = await call(route.method ?? 'GET', route.path, { body: route.body });
       expect(result.status, route.path).toBe(404);
@@ -1211,5 +1244,184 @@ describe('paging', () => {
     for (const limit of ['0', '-1', 'ten', '1.5', '999999999999']) {
       expect((await call('GET', `/sellers?limit=${limit}`)).status, limit).toBe(400);
     }
+  });
+});
+
+describe('role assignment and revocation (0100)', () => {
+  const REASON = 'Joining the trust and safety rota';
+  const BOTH = [ROLES, ROLE_MANAGE];
+
+  it('offers the grantable set behind the manage key, asking the database for it', async () => {
+    const seen = await start({ permissions: BOTH });
+    const result = await call('GET', '/roles/grantable');
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({
+      items: [
+        {
+          roleKey: 'moderator',
+          nameEn: 'Moderator',
+          nameAr: 'مشرف',
+          requiresMfa: true,
+          isAdminConsole: true,
+        },
+      ],
+    });
+    const asked = seen.find((entry) => entry.name === 'roleGrantable');
+    expect(asked).toBeDefined();
+    expect(asked?.input['isAal2']).toBe(true);
+  });
+
+  it('is a 404 on the grantable set for a caller holding only the read key', async () => {
+    const seen = await start({ permissions: [ROLES] });
+    expect((await call('GET', '/roles/grantable')).status).toBe(404);
+    expect(seen.some((entry) => entry.name === 'roleGrantable')).toBe(false);
+  });
+
+  it('grants a role, forwarding only what the contract carries', async () => {
+    const seen = await start({ permissions: BOTH });
+    const result = await call('POST', `/users/${TARGET}/roles`, {
+      body: { roleKey: 'moderator', reason: REASON },
+    });
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ outcome: 'granted', roleKey: 'moderator' });
+    const input = seen.find((entry) => entry.name === 'roleGrant')?.input as Record<string, unknown>;
+    expect(input['targetUserId']).toBe(TARGET);
+    expect(input['roleKey']).toBe('moderator');
+    expect(input['reason']).toBe(REASON);
+    expect(input['expiresAt']).toBeNull();
+  });
+
+  it('forwards an expiry as a date, and null when there is none', async () => {
+    const seen = await start({ permissions: BOTH });
+    await call('POST', `/users/${TARGET}/roles`, {
+      body: { roleKey: 'moderator', reason: REASON, expiresAt: '2027-01-01T00:00:00.000Z' },
+    });
+    const input = seen.find((entry) => entry.name === 'roleGrant')?.input as Record<string, unknown>;
+    expect(input['expiresAt']).toBeInstanceOf(Date);
+    expect((input['expiresAt'] as Date).toISOString()).toBe('2027-01-01T00:00:00.000Z');
+  });
+
+  it('refuses a grant with no reason, an empty one, or whitespace alone', async () => {
+    const seen = await start({ permissions: BOTH });
+    for (const body of [
+      { roleKey: 'moderator' },
+      { roleKey: 'moderator', reason: '' },
+      { roleKey: 'moderator', reason: '   ' },
+      { roleKey: 'moderator', reason: '\t\n ' },
+    ]) {
+      const result = await call('POST', `/users/${TARGET}/roles`, { body });
+      expect(result.status, JSON.stringify(body)).toBe(400);
+    }
+    expect(seen.some((entry) => entry.name === 'roleGrant')).toBe(false);
+  });
+
+  it('refuses any field the contract does not carry, so nothing in a body can widen the request', async () => {
+    const seen = await start({ permissions: BOTH });
+    for (const body of [
+      { roleKey: 'moderator', reason: REASON, userId: TARGET },
+      { roleKey: 'moderator', reason: REASON, grantedBy: TARGET },
+      { roleKey: 'moderator', reason: REASON, sortOrder: 7 },
+      { roleKey: 'moderator', reason: REASON, revokedAt: null },
+      { reason: REASON },
+    ]) {
+      const result = await call('POST', `/users/${TARGET}/roles`, { body });
+      expect(result.status, JSON.stringify(body)).toBe(400);
+    }
+    expect(seen.some((entry) => entry.name === 'roleGrant')).toBe(false);
+  });
+
+  it('withdraws a role, naming the account by the path and not the body', async () => {
+    const seen = await start({ permissions: BOTH });
+    const result = await call('POST', `/users/${TARGET}/roles/revoke`, {
+      body: { roleKey: 'moderator', reason: 'Left the rota' },
+    });
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ outcome: 'revoked', roleKey: 'moderator' });
+    const input = seen.find((entry) => entry.name === 'roleRevoke')?.input as Record<string, unknown>;
+    expect(input['targetUserId']).toBe(TARGET);
+    expect(input['reason']).toBe('Left the rota');
+  });
+
+  it('requires a reason to withdraw as well', async () => {
+    const seen = await start({ permissions: BOTH });
+    const result = await call('POST', `/users/${TARGET}/roles/revoke`, {
+      body: { roleKey: 'moderator' },
+    });
+    expect(result.status).toBe(400);
+    expect(seen.some((entry) => entry.name === 'roleRevoke')).toBe(false);
+  });
+
+  it('is a 404 on both writers for a caller holding only users.role.read', async () => {
+    const seen = await start({ permissions: [ROLES] });
+    const granted = await call('POST', `/users/${TARGET}/roles`, {
+      body: { roleKey: 'moderator', reason: REASON },
+    });
+    const revoked = await call('POST', `/users/${TARGET}/roles/revoke`, {
+      body: { roleKey: 'moderator', reason: REASON },
+    });
+    expect(granted.status).toBe(404);
+    expect(revoked.status).toBe(404);
+    expect(seen.some((entry) => entry.name === 'roleGrant')).toBe(false);
+    expect(seen.some((entry) => entry.name === 'roleRevoke')).toBe(false);
+  });
+
+  it('maps every refusal the database reports to its own 409 code', async () => {
+    const cases = [
+      ['role_is_self', 'STAFF_ROLE_IS_SELF'],
+      ['role_above_ceiling', 'STAFF_ROLE_ABOVE_CEILING'],
+      ['role_not_grantable', 'STAFF_ROLE_NOT_GRANTABLE'],
+      ['role_not_revocable', 'STAFF_ROLE_NOT_REVOCABLE'],
+      ['role_not_assignable', 'STAFF_ROLE_NOT_ASSIGNABLE'],
+      ['role_already_revoked', 'STAFF_ROLE_ALREADY_REVOKED'],
+      ['role_expiry_invalid', 'STAFF_ROLE_EXPIRY_INVALID'],
+      ['role_reason_required', 'STAFF_ROLE_REASON_REQUIRED'],
+    ] as const;
+
+    for (const [outcome, code] of cases) {
+      await start({ permissions: BOTH, roleWriteOutcome: outcome });
+      const result = await call('POST', `/users/${TARGET}/roles`, {
+        body: { roleKey: 'moderator', reason: REASON },
+      });
+      expect(result.status, outcome).toBe(409);
+      expect(result.body['code'], outcome).toBe(code);
+      await app?.close();
+      app = undefined;
+    }
+  });
+
+  it('turns the database’s own absence into a 404, so a refusal cannot be told from one', async () => {
+    await start({ permissions: BOTH, roleWriteOutcome: 'not_found' });
+    const result = await call('POST', `/users/${TARGET}/roles`, {
+      body: { roleKey: 'moderator', reason: REASON },
+    });
+    expect(result.status).toBe(404);
+  });
+
+  it('refuses an account identifier that is not a uuid before any write', async () => {
+    const seen = await start({ permissions: BOTH });
+    const result = await call('POST', '/users/not-a-uuid/roles', {
+      body: { roleKey: 'moderator', reason: REASON },
+    });
+    expect(result.status).toBe(400);
+    expect(seen.some((entry) => entry.name === 'roleGrant')).toBe(false);
+  });
+
+  it('refuses both writers at aal1, where every role carrying the key requires MFA', async () => {
+    const seen = await start({ permissions: BOTH });
+    const result = await call('POST', `/users/${TARGET}/roles`, {
+      body: { roleKey: 'moderator', reason: REASON },
+      headers: { [SESSION_TOKEN_HEADER]: AAL1_TOKEN },
+    });
+    expect(result.status).toBe(404);
+    expect(seen.some((entry) => entry.name === 'roleGrant')).toBe(false);
+  });
+
+  it('leaves the role reader reporting no actor and no reason (owner decision 8)', async () => {
+    await start({ permissions: BOTH });
+    const result = await call('GET', `/users/${TARGET}/roles`);
+    expect(result.status).toBe(200);
+    expect(result.raw).not.toContain('grantedBy');
+    expect(result.raw).not.toContain('revokedBy');
+    expect(result.raw).not.toContain('reason');
   });
 });

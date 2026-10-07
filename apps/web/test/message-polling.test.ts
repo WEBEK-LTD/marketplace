@@ -399,6 +399,9 @@ function message(seq: number, overrides: Partial<RenderableMessage> = {}): Rende
     messageType: 'text',
     body: `Message ${seq}`,
     createdAt: `2026-09-24T18:0${seq}:00.000Z`,
+    // 0104. Always present, usually empty: a message with no files is not the same as a response that lost
+    // the field, and the projection keeps the two apart by never making this optional.
+    attachments: [],
     ...overrides,
   };
 }

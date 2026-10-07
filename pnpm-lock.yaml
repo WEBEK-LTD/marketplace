@@ -208,67 +208,6 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
 
-  apps/admin:
-    dependencies:
-      '@opentelemetry/api':
-        specifier: 1.9.1
-        version: 1.9.1
-      '@repo/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@repo/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@repo/server-config':
-        specifier: workspace:*
-        version: link:../../packages/server-config
-      '@repo/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
-      '@repo/telemetry':
-        specifier: workspace:*
-        version: link:../../packages/telemetry
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      lucide-react:
-        specifier: 1.39.0
-        version: 1.39.0(react@19.2.8)
-      next:
-        specifier: 16.3.4
-        version: 16.3.4(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      next-intl:
-        specifier: 4.14.2
-        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: 19.2.8
-        version: 19.2.8
-      react-dom:
-        specifier: 19.2.8
-        version: 19.2.8(react@19.2.8)
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-    devDependencies:
-      '@netlify/plugin-nextjs':
-        specifier: 5.15.13
-        version: 5.15.13
-      '@tailwindcss/postcss':
-        specifier: 4.3.3
-        version: 4.3.3
-      '@types/react':
-        specifier: 19.2.18
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: 19.2.5
-        version: 19.2.5(@types/react@19.2.18)
-      postcss:
-        specifier: 8.5.26
-        version: 8.5.26
-      tailwindcss:
-        specifier: 4.3.3
-        version: 4.3.3
-
   apps/api:
     dependencies:
       '@fastify/helmet':
@@ -443,6 +382,7 @@ importers:
         specifier: 1.5.11
         version: 1.5.11(@swc/core@1.16.1(@swc/helpers@0.5.23))(esbuild@0.28.2)(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
 
+  packages/compliance: {}
   packages/config: {}
 
   packages/contracts:
@@ -482,6 +422,7 @@ importers:
 
   packages/money: {}
 
+  packages/provider-ports: {}
   packages/server-config: {}
 
   packages/shared-types: {}

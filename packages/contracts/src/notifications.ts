@@ -133,7 +133,14 @@ export const NotificationsUnreadCountResponseSchema = z
   .strict()
   .openapi('NotificationsUnreadCountResponse');
 
-/** The page sizes, matching the messaging inbox's: the same kind of list, read the same way. */
+/**
+ * The page sizes, matching the messaging inbox's: the same kind of list, read the same way.
+ *
+ * This is the **public** maximum and it is the authority. The reader behind it clamps at this number
+ * **plus one**, because the API asks for `limit + 1` to learn whether another page exists; a ceiling
+ * equal to the maximum would eat that probe row and report no next page (0106). This figure must not
+ * move without moving that ceiling with it.
+ */
 export const NOTIFICATIONS_DEFAULT_LIMIT = 20;
 export const NOTIFICATIONS_MAX_LIMIT = 50;
 

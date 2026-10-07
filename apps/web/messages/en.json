@@ -14,7 +14,8 @@
     "settingsCard": "How we notify you, and how numbers are shown.",
     "securityCard": "Your phone number and how you sign in.",
     "messagesCard": "Conversations with sellers.",
-    "notificationsCard": "What has happened on your account."
+    "notificationsCard": "What has happened on your account.",
+    "blocksCard": "Blocked people you can unblock at any time."
   },
   "Addresses": {
     "title": "Addresses",
@@ -60,6 +61,31 @@
     "missing": "That address is no longer there.",
     "signedOut": "Your session ended. Sign in again.",
     "notShippable": "We do not deliver to that country. Choose another, or keep this address for billing only."
+  },
+  "Blocks": {
+    "title": "Blocked people",
+    "intro": "People you have blocked. Blocking is private: nobody is told, and nothing here says who has blocked you.",
+    "effect": "A block stops contact both ways — no new messages, offers or service requests in either direction. Conversations you already have stay readable, and the listings of a blocked seller are still in the catalogue.",
+    "listLabel": "Blocked people",
+    "empty": "You have not blocked anyone",
+    "emptyHint": "You can block someone from a conversation or from a seller’s page.",
+    "error": "Your blocked list could not be loaded.",
+    "retry": "Try again",
+    "older": "Older",
+    "unnamed": "A blocked account",
+    "storefront": "Shop",
+    "reasonLabel": "Your note",
+    "blockedOn": "Blocked on",
+    "unblock": "Unblock",
+    "working": "Working…",
+    "failed": "That did not work. Try again.",
+    "block": "Block",
+    "blockConfirm": "Yes, block",
+    "blockCancel": "Cancel",
+    "blockExplain": "They will not be able to contact you, and you will not be able to contact them.",
+    "blockDone": "Blocked.",
+    "blockFailed": "That did not work. Try again.",
+    "signIn": "Sign in"
   },
   "Blog": {
     "backToIndex": "Back to the blog",
@@ -282,7 +308,23 @@
     "reportConfirm": "Send report",
     "reportCancel": "Cancel",
     "reportDone": "Reported. Our team will review it.",
-    "reportFailed": "The report could not be sent. Try again."
+    "reportFailed": "The report could not be sent. Try again.",
+    "attachments": "Files",
+    "attachmentTypeImage": "Image",
+    "attachmentTypePdf": "PDF",
+    "kilobytes": "KB",
+    "megabytes": "MB",
+    "download": "Open",
+    "opening": "Opening…",
+    "downloadFailed": "That file could not be opened. Try again.",
+    "attach": "Attach a file",
+    "uploading": "Uploading…",
+    "attached": "File attached.",
+    "attachTooLarge": "That file is larger than 10 MB.",
+    "attachWrongType": "Only JPEG, PNG, WebP and PDF files can be attached.",
+    "attachTooMany": "That message already has 5 files. Send another message to attach more.",
+    "attachFailed": "That file could not be attached. Try again.",
+    "attachBlocked": "This conversation cannot take anything new."
   },
   "NotFound": {
     "title": "Page not found",
@@ -657,7 +699,7 @@
   },
   "SellerAnalytics": {
     "title": "Analytics",
-    "intro": "How your promotions have performed. This page is read-only.",
+    "intro": "How your promotions and your listings have performed. This page is read-only.",
     "empty": "There is no promotion performance to show yet.",
     "window": "Last {days} days",
     "listing": "Listing",
@@ -666,8 +708,14 @@
     "views": "Views",
     "clicks": "Clicks",
     "period": "Covering",
-    "listingNote": "Per-listing analytics are not available yet. This page shows promotion performance only.",
-    "errorUnavailable": "Analytics unavailable"
+    "listingNote": "Listing activity counts clicks, contacts, favourites and shares. Impressions and views are not counted for listings, because what counts as one has not been settled — a count nobody agreed would be worse than none.",
+    "errorUnavailable": "Analytics unavailable",
+    "promotionsHeading": "Promotions",
+    "listingsHeading": "Listings",
+    "listingsEmpty": "There is no listing activity to show yet.",
+    "contacts": "Contacts",
+    "favorites": "Favourites",
+    "shares": "Shares"
   },
   "SellerDashboard": {
     "title": "Seller dashboard",

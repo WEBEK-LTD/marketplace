@@ -2,6 +2,7 @@ import { Controller, Get, Query, Req } from '@nestjs/common';
 import {
   SESSION_TOKEN_HEADER,
   type SellerAnalyticsResponse,
+  type SellerListingAnalyticsResponse,
   type SellerEarningsResponse,
   type SellerOrdersResponse,
   type SellerPromotionsResponse,
@@ -121,8 +122,7 @@ export class SellerReadController {
   /**
    * `GET /v1/sellers/me/analytics` — the rollup's totals for the caller's own promotions.
    *
-   * The whole of the analytics available to a seller: there is no listing-level route, because no
-   * authoritative listing-level rollup exists to read.
+   * 0102 added a sibling route for listing-level analytics below. This one's shape is unchanged by it.
    */
   @Get('me/analytics')
   async analytics(
@@ -132,6 +132,22 @@ export class SellerReadController {
     const userId = await this.caller(request);
     const result = await this.read.analytics(userId, asInteger(days));
     return { days: result.days, promotions: [...result.promotions] };
+  }
+
+  /**
+   * `GET /v1/sellers/me/listing-analytics` — the rollup's totals for the caller's own listings (0102).
+   *
+   * A separate route rather than a field on the one above, so 6-J's closed response shape stays as it is. Four
+   * counts, every one of them the rollup's: no impressions, no views, no rate and nothing derived.
+   */
+  @Get('me/listing-analytics')
+  async listingAnalytics(
+    @Req() request: SellerReadRequestContext,
+    @Query('days') days?: string,
+  ): Promise<SellerListingAnalyticsResponse> {
+    const userId = await this.caller(request);
+    const result = await this.read.listingAnalytics(userId, asInteger(days));
+    return { days: result.days, listings: [...result.listings] };
   }
 
   /** The caller, from their own token. No route here accepts an identifier from anywhere else. */

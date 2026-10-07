@@ -50,6 +50,7 @@ const MESSAGE = {
   createdAt: '2026-09-24T18:30:00.000Z',
   editedAt: null,
   deletedAt: null,
+  attachments: [],
 };
 
 interface Seen {

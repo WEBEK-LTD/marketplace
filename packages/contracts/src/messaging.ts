@@ -17,9 +17,13 @@ import { z } from './zod.js';
  * can plausibly have, so it is a number, and the API refuses a value that is not a safe integer rather
  * than truncating one.
  *
- * **There is no attachment field.** 0014 has a `message_attachments` table and 0053 deliberately does
- * not read it; these contracts deliberately cannot describe it. Attachments are a later increment and
- * adding the shape now would be the first half of building them.
+ * **Attachments arrived in 0104, and the shape is deliberately thin.** 0014 created
+ * `message_attachments` and 0053 left it unread; these contracts could not describe it until the increment
+ * that built the operations. What a message now carries is a list of `{ id, contentType, byteSize }` and
+ * nothing more: **no object path**, because a path is not something a browser needs when the download is
+ * reached by id, and no filename, because 0014 stores none. A byte size is a decimal string for the same
+ * reason `seq` is — it is a `bigint` in the database and a JSON number would be a quiet promise that it
+ * fits in a double.
  *
  * **A listing reference is two shapes, not one optional shape.** N8 says an unavailable listing keeps
  * its identity and loses everything else, and a discriminated union is how that becomes impossible to
@@ -27,7 +31,15 @@ import { z } from './zod.js';
  * caller can leak them by forgetting a conditional.
  */
 
-/** Page sizes, as migration 0053 clamps them. Restated here so the API refuses before the database does. */
+/**
+ * Page sizes. Restated here so the API refuses before the database does.
+ *
+ * These are the **public** maxima and they are the authority: a caller may ask for fifty conversations or a
+ * hundred messages, and no more. Migration 0053 clamped `p_limit` at exactly these figures, which 0106
+ * corrected — the API asks the database for `limit + 1` to learn whether another page exists, and a ceiling
+ * equal to the maximum removed that probe row, so a caller asking for the maximum was told the list had ended
+ * when it had not. The reader's ceiling is now `maximum + 1`; the numbers below did not move and must not.
+ */
 export const MESSAGING_INBOX_DEFAULT_LIMIT = 20;
 export const MESSAGING_INBOX_MAX_LIMIT = 50;
 export const MESSAGING_MESSAGES_DEFAULT_LIMIT = 50;
@@ -121,6 +133,118 @@ export const MessagingInboxResponseSchema = z
  * 0053 does not mask anything on that basis; what a surface does with it is a decision neither this
  * contract nor that reader pre-empts.
  */
+/* ------------------------------------------------------------------------------------------------ */
+/* Attachments (0104)                                                                                */
+/* ------------------------------------------------------------------------------------------------ */
+
+/**
+ * The technical safety limits, restated where a form can act on them.
+ *
+ * Migration 0104 is the authority and applies the tighter of its own figure and the bucket's; these exist so a
+ * browser can refuse a file before spending a minute uploading it, not so a second opinion can disagree.
+ */
+export const MESSAGE_ATTACHMENT_MAX_PER_MESSAGE = 5;
+export const MESSAGE_ATTACHMENT_MAX_BYTES = 10_485_760;
+
+/**
+ * The content types a conversation attachment may have.
+ *
+ * Three image types and PDF, which is the list the private `message-attachments` bucket itself permits.
+ * **SVG is absent deliberately, not by oversight**: an SVG is XML a browser executes, so serving one from a
+ * signed URL would be a stored-XSS primitive. A closed enum rather than a string means a client cannot name
+ * anything else, and the database refuses it again regardless.
+ */
+export const MESSAGE_ATTACHMENT_CONTENT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+] as const;
+
+export const MessageAttachmentContentTypeSchema = z
+  .enum(MESSAGE_ATTACHMENT_CONTENT_TYPES)
+  .openapi('MessageAttachmentContentType');
+
+/**
+ * One attachment on a message, as a participant sees it.
+ *
+ * Three fields. The download is reached by `id` through its own operation, which mints a short-lived signed
+ * URL for exactly the object the row names — so no path is here, and nothing a browser holds can be turned
+ * into a reference to another object.
+ */
+export const MessageAttachmentSchema = z
+  .object({
+    id: z.string().uuid(),
+    contentType: MessageAttachmentContentTypeSchema,
+    byteSize: MessageSequenceSchema,
+  })
+  .strict()
+  .openapi('MessageAttachment');
+
+/** Authorizing one upload. The client names the file it has, never where it goes. */
+export const MessageAttachmentUploadRequestSchema = z
+  .object({
+    contentType: MessageAttachmentContentTypeSchema,
+    byteSize: z.number().int().positive().max(MESSAGE_ATTACHMENT_MAX_BYTES),
+  })
+  .strict()
+  .openapi('MessageAttachmentUploadRequest');
+
+/**
+ * What an authorization is.
+ *
+ * `objectPath` is the one place a path is disclosed, and it is disclosed because the client sends it back to
+ * confirm the upload. The client chose no part of it: the bucket, the conversation, the message and a fresh
+ * uuid are all the database's, and the confirmation step re-derives the prefix rather than trusting it.
+ */
+export const MessageAttachmentUploadSchema = z
+  .object({
+    uploadUrl: z.string().url(),
+    objectPath: z.string().min(1),
+    expiresAt: z.string().datetime(),
+    maxByteSize: z.number().int().positive(),
+  })
+  .strict()
+  .openapi('MessageAttachmentUpload');
+
+export const MessageAttachmentUploadResponseSchema = z
+  .object({ upload: MessageAttachmentUploadSchema })
+  .strict()
+  .openapi('MessageAttachmentUploadResponse');
+
+/** Confirming an upload that happened. The path is the one the server issued, sent back unchanged. */
+export const MessageAttachmentRecordRequestSchema = z
+  .object({
+    objectPath: z.string().min(1).max(512),
+    contentType: MessageAttachmentContentTypeSchema,
+    byteSize: z.number().int().positive().max(MESSAGE_ATTACHMENT_MAX_BYTES),
+  })
+  .strict()
+  .openapi('MessageAttachmentRecordRequest');
+
+/** What confirming answers: the attachment, and how many that message now carries. Never a path. */
+export const MessageAttachmentRecordResponseSchema = z
+  .object({
+    attachmentId: z.string().uuid(),
+    attachmentCount: z.number().int().positive().max(MESSAGE_ATTACHMENT_MAX_PER_MESSAGE),
+  })
+  .strict()
+  .openapi('MessageAttachmentRecordResponse');
+
+/**
+ * A signed read of one attachment.
+ *
+ * Ten minutes (owner decision 6), and `expiresAt` says when rather than leaving a client to guess. The URL is
+ * for one object and is not a capability for anything else.
+ */
+export const MessageAttachmentLinkResponseSchema = z
+  .object({
+    url: z.string().url(),
+    expiresAt: z.string().datetime(),
+  })
+  .strict()
+  .openapi('MessageAttachmentLinkResponse');
+
 export const MessageItemSchema = z
   .object({
     id: z.string().uuid(),
@@ -135,6 +259,11 @@ export const MessageItemSchema = z
     createdAt: z.string().datetime(),
     editedAt: z.string().datetime().nullable(),
     deletedAt: z.string().datetime().nullable(),
+    /**
+     * 0104. Always present and usually empty, rather than optional: a surface that had to distinguish
+     * "no attachments" from "this response predates attachments" would be a surface with two empty states.
+     */
+    attachments: z.array(MessageAttachmentSchema),
   })
   .strict()
   .openapi('MessageItem');
@@ -301,7 +430,8 @@ export const MESSAGE_BODY_MAX_LENGTH = 5000;
 
 export const SendMessageRequestSchema = z
   .object({
-    body: z.string().min(1).max(MESSAGE_BODY_MAX_LENGTH),
+    // 0105. Trimmed, so the 1..5000 bound applies to the text `messages_text_has_body` will measure.
+    body: z.string().trim().min(1).max(MESSAGE_BODY_MAX_LENGTH),
   })
   .strict()
   .openapi('SendMessageRequest');
@@ -437,3 +567,13 @@ export type MessagingReportSubject = z.infer<typeof MessagingReportSubjectSchema
 export type ReportReasonCode = z.infer<typeof ReportReasonCodeSchema>;
 export type FileMessagingReportRequest = z.infer<typeof FileMessagingReportRequestSchema>;
 export type FileMessagingReportResponse = z.infer<typeof FileMessagingReportResponseSchema>;
+
+/* Attachments (0104). */
+export type MessageAttachmentContentType = z.infer<typeof MessageAttachmentContentTypeSchema>;
+export type MessageAttachment = z.infer<typeof MessageAttachmentSchema>;
+export type MessageAttachmentUploadRequest = z.infer<typeof MessageAttachmentUploadRequestSchema>;
+export type MessageAttachmentUpload = z.infer<typeof MessageAttachmentUploadSchema>;
+export type MessageAttachmentUploadResponse = z.infer<typeof MessageAttachmentUploadResponseSchema>;
+export type MessageAttachmentRecordRequest = z.infer<typeof MessageAttachmentRecordRequestSchema>;
+export type MessageAttachmentRecordResponse = z.infer<typeof MessageAttachmentRecordResponseSchema>;
+export type MessageAttachmentLinkResponse = z.infer<typeof MessageAttachmentLinkResponseSchema>;

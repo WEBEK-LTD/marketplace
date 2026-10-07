@@ -5,6 +5,11 @@ import {
   ConversationMessagesResponseSchema,
   LeaveConversationResponseSchema,
   MarkReadResponseSchema,
+  MessageAttachmentLinkResponseSchema,
+  MessageAttachmentRecordRequestSchema,
+  MessageAttachmentRecordResponseSchema,
+  MessageAttachmentUploadRequestSchema,
+  MessageAttachmentUploadResponseSchema,
   MessagingInboxResponseSchema,
   PROBLEM_JSON_MEDIA_TYPE,
   SESSION_TOKEN_HEADER,
@@ -547,5 +552,163 @@ export async function handleFileReport(
   return await writeOutcome(upstream, 200, (payload) => {
     const parsed = FileMessagingReportResponseSchema.safeParse(payload);
     return parsed.success ? parsed.data : null;
+  });
+}
+
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Attachments (0104)                                                                                */
+/* ------------------------------------------------------------------------------------------------ */
+
+/** A route segment a browser supplied. Checked here so nothing but an identifier reaches a URL. */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function identifier(value: string | undefined): string | null {
+  return typeof value === 'string' && UUID_PATTERN.test(value) ? value.toLowerCase() : null;
+}
+
+/**
+ * `POST /api/messaging/conversations/:conversationId/messages/:messageId/attachments/uploads`
+ *
+ * **The body is rebuilt from exactly the two fields the contract names**, so a page that added an
+ * `objectPath`, a `bucket` or a filename has them dropped before the request leaves this origin. The path is
+ * the server's to compose and this layer never sees one on the way in.
+ */
+export async function handleAuthorizeMessageAttachment(
+  request: Request,
+  conversationId: string | undefined,
+  messageId: string | undefined,
+  options: MessagingHandlerOptions = {},
+): Promise<Response> {
+  const accepted = await acceptWrite(request, options);
+  if ('refusal' in accepted) return accepted.refusal;
+
+  const conversation = identifier(conversationId);
+  const message = identifier(messageId);
+  if (conversation === null || message === null) {
+    return problemResponse(400, 'Bad Request', 'VALIDATION_FAILED', 'The request is invalid.');
+  }
+
+  const fields = (accepted.body ?? {}) as Record<string, unknown>;
+  const validated = MessageAttachmentUploadRequestSchema.safeParse({
+    contentType: fields['contentType'],
+    byteSize: fields['byteSize'],
+  });
+  if (!validated.success) {
+    return problemResponse(400, 'Bad Request', 'VALIDATION_FAILED', 'The request is invalid.');
+  }
+
+  const upstream = await callWrite(
+    `/v1/messaging/conversations/${encodeURIComponent(conversation)}/messages/${encodeURIComponent(message)}/attachments/uploads`,
+    'POST',
+    accepted.accessToken,
+    validated.data,
+    options,
+  );
+  return await writeOutcome(upstream, 200, (payload) => {
+    const parsed = MessageAttachmentUploadResponseSchema.safeParse(payload);
+    return parsed.success ? parsed.data : null;
+  });
+}
+
+/**
+ * `POST /api/messaging/conversations/:conversationId/messages/:messageId/attachments`
+ *
+ * The `objectPath` that crosses here is the one the previous call returned, sent back unchanged. This layer
+ * does not build it, shorten it, normalise it or check it against a namespace — the database rebuilds the
+ * expected prefix from the caller's own rows and refuses anything else, which is the only check that can be
+ * right. Validating its *shape* here would be a second, weaker copy of that.
+ */
+export async function handleRecordMessageAttachment(
+  request: Request,
+  conversationId: string | undefined,
+  messageId: string | undefined,
+  options: MessagingHandlerOptions = {},
+): Promise<Response> {
+  const accepted = await acceptWrite(request, options);
+  if ('refusal' in accepted) return accepted.refusal;
+
+  const conversation = identifier(conversationId);
+  const message = identifier(messageId);
+  if (conversation === null || message === null) {
+    return problemResponse(400, 'Bad Request', 'VALIDATION_FAILED', 'The request is invalid.');
+  }
+
+  const fields = (accepted.body ?? {}) as Record<string, unknown>;
+  const validated = MessageAttachmentRecordRequestSchema.safeParse({
+    objectPath: fields['objectPath'],
+    contentType: fields['contentType'],
+    byteSize: fields['byteSize'],
+  });
+  if (!validated.success) {
+    return problemResponse(400, 'Bad Request', 'VALIDATION_FAILED', 'The request is invalid.');
+  }
+
+  const upstream = await callWrite(
+    `/v1/messaging/conversations/${encodeURIComponent(conversation)}/messages/${encodeURIComponent(message)}/attachments`,
+    'POST',
+    accepted.accessToken,
+    validated.data,
+    options,
+  );
+  return await writeOutcome(upstream, 201, (payload) => {
+    const parsed = MessageAttachmentRecordResponseSchema.safeParse(payload);
+    return parsed.success ? parsed.data : null;
+  });
+}
+
+/**
+ * `GET /api/messaging/conversations/:conversationId/attachments/:attachmentId/link`
+ *
+ * A read behind a route rather than a server component call, because a page cannot hold a link: it expires in
+ * ten minutes and a person clicks when they click. It is a `GET`, so there is no Origin check to make — the
+ * session cookie is `SameSite` and the API decides — and it forwards the API's own problem so a thread can say
+ * a file is no longer there rather than silently doing nothing.
+ */
+export async function handleMessageAttachmentLink(
+  request: Request,
+  conversationId: string | undefined,
+  attachmentId: string | undefined,
+  options: MessagingHandlerOptions = {},
+): Promise<Response> {
+  const accessToken = readAccessToken(options.cookieHeader ?? request.headers.get('cookie'));
+  if (accessToken === null) return SESSION_REQUIRED();
+
+  const conversation = identifier(conversationId);
+  const attachment = identifier(attachmentId);
+  if (conversation === null || attachment === null) {
+    return problemResponse(400, 'Bad Request', 'VALIDATION_FAILED', 'The request is invalid.');
+  }
+
+  const upstream = await call(
+    `/v1/messaging/conversations/${encodeURIComponent(conversation)}/attachments/${encodeURIComponent(attachment)}/link`,
+    accessToken,
+    options,
+  );
+  if (upstream === null) return UNAVAILABLE();
+
+  const text = await upstream.text();
+  if (upstream.status !== 200) {
+    if (!WRITE_PROBLEM_STATUSES.has(upstream.status)) return UNAVAILABLE();
+    return new Response(text, {
+      status: upstream.status,
+      headers: { 'content-type': PROBLEM_JSON_MEDIA_TYPE, 'cache-control': 'no-store' },
+    });
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return UNAVAILABLE();
+  }
+  const validated = MessageAttachmentLinkResponseSchema.safeParse(parsed);
+  if (!validated.success) return UNAVAILABLE();
+
+  // Never cached, anywhere: a signed URL is a short-lived authorization and a cache is a place it outlives
+  // the page that asked for it.
+  return new Response(JSON.stringify(validated.data), {
+    status: 200,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 }

@@ -241,7 +241,9 @@ select is(
       -- 8-C's listing attribute and tag functions share the prefix and are inventoried by their own suite.
       and p.proname not like 'seller\_listing\_attribute%'
       and p.proname not like 'seller\_listing\_tag%'
-      and p.proname not like 'seller\_listing\_vocabulary%'),
+      and p.proname not like 'seller\_listing\_vocabulary%'
+      -- 0102's listing analytics reader shares the prefix and is inventoried by its own suite.
+      and p.proname <> 'seller_listing_analytics'),
   5::bigint,
   '6-F''s five listing functions are still exactly five: none was replaced or overloaded');
 select ok(

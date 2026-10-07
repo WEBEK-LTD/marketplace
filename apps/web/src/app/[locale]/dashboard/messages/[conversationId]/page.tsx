@@ -10,6 +10,9 @@ import {
   type ComposerLabels,
   type ControlLabels,
 } from '../../../../../components/messaging-composer';
+import { BlockPerson } from '../../../../../components/account-actions';
+import { blockCopy } from '../../../../../components/block-copy';
+import { type AttachmentCopy } from '../../../../../components/messaging-attachments';
 import { LiveThread } from '../../../../../components/messaging-live';
 import { ReportAction, type ReportCopy } from '../../../../../components/messaging-report';
 import {
@@ -66,11 +69,12 @@ export default async function ConversationPage({
   readonly params: Promise<{ readonly locale: Locale; readonly conversationId: string }>;
   readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ locale, conversationId }, query, t, session] = await Promise.all([
+  const [{ locale, conversationId }, query, t, session, blocks] = await Promise.all([
     params,
     searchParams,
     getTranslations('Messages'),
     getTranslations('Session'),
+    getTranslations('Blocks'),
   ]);
   const cursor = typeof query['cursor'] === 'string' ? query['cursor'] : null;
   const prefix = locale === 'ar' ? '/ar' : '';
@@ -78,6 +82,16 @@ export default async function ConversationPage({
   const cookieHeader = (await headers()).get('cookie');
 
   const labels: MessageLabels = {
+    // 0104. One word per permitted type, so a file reads as "Image" rather than as its MIME string.
+    attachments: t('attachments'),
+    attachmentTypes: {
+      'image/jpeg': t('attachmentTypeImage'),
+      'image/png': t('attachmentTypeImage'),
+      'image/webp': t('attachmentTypeImage'),
+      'application/pdf': t('attachmentTypePdf'),
+    },
+    kilobytes: t('kilobytes'),
+    megabytes: t('megabytes'),
     noMessages: t('noMessages'),
     closed: t('closed'),
     closedHint: t('closedHint'),
@@ -162,6 +176,26 @@ export default async function ConversationPage({
     done: t('reportDone'),
   };
 
+  // 0103. The conversation is the handle: this control names the thread, and which participant that
+  // resolves to is decided inside one database function. No account identifier is in these props.
+  const blockLabels = blockCopy(blocks);
+
+  // 0104. The words the two attachment controls need, assembled once: a download button per file and an attach
+  // button per message of the caller's own. Nothing about a file crosses into either beyond its id and type.
+  const attachmentCopy: AttachmentCopy = {
+    download: t('download'),
+    opening: t('opening'),
+    downloadFailed: t('downloadFailed'),
+    attach: t('attach'),
+    uploading: t('uploading'),
+    attached: t('attached'),
+    tooLarge: t('attachTooLarge'),
+    wrongType: t('attachWrongType'),
+    tooMany: t('attachTooMany'),
+    attachFailed: t('attachFailed'),
+    blocked: t('attachBlocked'),
+  };
+
   const controlLabels: ControlLabels = {
     invalid: t('actionFailed'),
     signedOut: session('expiredBody'),
@@ -208,6 +242,7 @@ export default async function ConversationPage({
               </h2>
               <LiveThread
                 conversationId={conversationId}
+                attachmentCopy={attachmentCopy}
                 initialMessages={thread.data.items.map(renderableMessage)}
                 referenceTitle={conversation?.listingTitleSnapshot ?? null}
                 isClosed={isClosed}
@@ -241,6 +276,16 @@ export default async function ConversationPage({
                 subject={{ kind: 'conversation', conversationId }}
                 copy={conversationReportCopy}
               />
+
+              {/*
+                0103. Blocking sits beside reporting because the two are what somebody reaches for when a
+                conversation has gone wrong, and they do different things: a report asks staff to look, a
+                block stops contact now and tells nobody. Both stay available on a closed or left thread,
+                because that is exactly when somebody may still be being contacted elsewhere.
+              */}
+              <p className="mt-4">
+                <BlockPerson handle={{ conversationId }} copy={blockLabels} />
+              </p>
 
               <MessageComposer
                 conversationId={conversationId}

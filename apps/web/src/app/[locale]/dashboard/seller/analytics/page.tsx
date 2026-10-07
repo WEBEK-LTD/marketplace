@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { SellerFact, SellerReadSurface } from '../../../../../components/seller-read-surface';
-import { readSellerAnalytics } from '../../../../../server/bff';
+import { readSellerAnalytics, readSellerListingAnalytics } from '../../../../../server/bff';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('SellerAnalytics');
@@ -18,9 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
  * guessed formula, no click-through rate, no conversion rate and no trend line, because none of those has an
  * established business definition in this repository and inventing one would be inventing a KPI.
  *
- * **Per-listing analytics is absent, and the page says so.** The raw listing events exist but no rollup
- * covers them, so counting them would mean deciding what a view is and how to de-duplicate a session. A
- * truthful sentence is better than a fabricated number.
+ * **Per-listing analytics arrived with 0102**, as a second section over its own rollup: clicks, contacts,
+ * favourites and shares. Impressions and views are still absent for listings, and the page still says so,
+ * because counting them would mean deciding what a view is and how to de-duplicate a session. The two
+ * sections read two separate operations; neither one's shape depends on the other.
+ *
+ * **The two reads are independent.** A listing rollup that cannot be read must not take the promotion
+ * section down with it, so each section renders or reports its own absence.
  */
 export default async function SellerAnalyticsPage({
   params,
@@ -39,7 +43,10 @@ export default async function SellerAnalyticsPage({
   ]);
 
   const cookieHeader = (await headers()).get('cookie');
-  const lookup = await readSellerAnalytics({ cookieHeader });
+  const [lookup, listings] = await Promise.all([
+    readSellerAnalytics({ cookieHeader }),
+    readSellerListingAnalytics({ cookieHeader }),
+  ]);
 
   const statusLabel = (status: string): string => {
     const labels: Record<string, string> = {
@@ -75,6 +82,8 @@ export default async function SellerAnalyticsPage({
             {t('window', { days: lookup.data.days })}
           </p>
 
+          <h2 className="mt-8 text-lg font-medium text-neutral-900">{t('promotionsHeading')}</h2>
+
           {lookup.data.promotions.length === 0 ? (
             <p role="status" className="mt-2 text-neutral-600">
               {t('empty')}
@@ -107,7 +116,41 @@ export default async function SellerAnalyticsPage({
             </ul>
           )}
 
-          {/* The honest statement about what is not here, rather than a fabricated per-listing chart. */}
+          <h2 className="mt-10 text-lg font-medium text-neutral-900">{t('listingsHeading')}</h2>
+
+          {listings.kind !== 'ok' ? (
+            // Its own failure, reported where it happened: the promotion section above still rendered.
+            <p role="status" className="mt-2 text-neutral-600">
+              {t('errorUnavailable')}
+            </p>
+          ) : listings.data.listings.length === 0 ? (
+            <p role="status" className="mt-2 text-neutral-600">
+              {t('listingsEmpty')}
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-4">
+              {listings.data.listings.map((row) => (
+                <li
+                  key={`${row.listingSlug}-${row.firstDay}`}
+                  className="rounded-lg border border-neutral-200 p-4"
+                >
+                  <p className="text-sm">
+                    <span className="text-neutral-500">{t('listing')} </span>
+                    <span className="font-medium">{row.listingTitle}</span>
+                  </p>
+                  <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    <SellerFact label={t('clicks')} value={row.clicks} />
+                    <SellerFact label={t('contacts')} value={row.contacts} />
+                    <SellerFact label={t('favorites')} value={row.favorites} />
+                    <SellerFact label={t('shares')} value={row.shares} />
+                    <SellerFact label={t('period')} value={`${row.firstDay} — ${row.lastDay}`} />
+                  </dl>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* What is still not here, said plainly rather than filled in with a number nobody agreed. */}
           <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('listingNote')}</p>
         </>
       )}

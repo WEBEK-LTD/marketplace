@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { cmsPageSlugs, indexableExactRoutes, isAdminSurfacePath } from '@repo/config';
 import {
   PUBLIC_SERVED_EXACT_PATHS,
   PUBLIC_SERVED_ONE_SEGMENT_PREFIXES,
@@ -144,5 +145,45 @@ describe('publicWebServes', () => {
   it('refuses something that is not a path at all', () => {
     expect(publicWebServes('about')).toBe(false);
     expect(publicWebServes('')).toBe(false);
+  });
+
+  /**
+   * The staff console is reserved, not served (0108).
+   *
+   * The proxy returns for a console path before `publicWebServes` is consulted, so in production this answer is
+   * never read. It is asserted anyway, because of what it would mean if it changed: a path this function calls
+   * served is a path the proxy would NOT hand to the SEO redirect map, and a path it calls unserved is one it
+   * would. 0030 admits `/admin/users` as a storable `from_path`, so if the proxy's early return were ever removed,
+   * an operator-authored redirect could shadow a live console page. This keeps the second line of that defence
+   * stated rather than accidental.
+   */
+  it('reserves the console surface, so no console path is ever a public address', () => {
+    for (const path of ['/admin', '/admin/', '/admin/login', '/admin/users', '/admin/api/faqs', '/ar/admin', '/ar/admin/users']) {
+      expect(publicWebServes(path), path).toBe(false);
+    }
+    // And `isAdminSurfacePath` agrees about the same paths, so the proxy's branch and this reservation cannot
+    // disagree about where the console begins. Whole segments only: `/administrator` is a public 404, not a console.
+    for (const path of ['/admin', '/admin/login', '/admin/api/faqs']) {
+      expect(isAdminSurfacePath(path), path).toBe(true);
+    }
+    for (const path of ['/administrator', '/ar/admin', '/adminish/x', '/']) {
+      expect(isAdminSurfacePath(path), path).toBe(false);
+    }
+  });
+
+  /** No public surface may ever come to occupy the console's address. */
+  it('declares no public route, CMS slug or sitemap entry under the console prefix', () => {
+    for (const path of PUBLIC_SERVED_EXACT_PATHS) {
+      expect(isAdminSurfacePath(path), path).toBe(false);
+    }
+    for (const prefix of PUBLIC_SERVED_ONE_SEGMENT_PREFIXES) {
+      expect(isAdminSurfacePath(prefix.replace(/\/$/, '')), prefix).toBe(false);
+    }
+    for (const slug of cmsPageSlugs) {
+      expect(slug, slug).not.toBe('admin');
+    }
+    for (const route of indexableExactRoutes) {
+      expect(isAdminSurfacePath(route), route).toBe(false);
+    }
   });
 });

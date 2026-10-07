@@ -12,10 +12,21 @@
  * fixed pair of typed values or to nothing at all, and those values are bound as query parameters by the
  * store. No branch below builds a SQL fragment, a column name or an ordering direction from its content.
  *
- * **Versioned per kind, and there are two kinds.** `fv1` names a position in the favorites list and
- * `ss1` a position in the saved searches, so one cannot be spent on the other even though both are a
- * timestamp and an identifier. A favorites cursor decoded as a saved-search position would silently name
- * a row that does not exist; refusing it is the only honest answer.
+ * **Versioned per kind, and there are three kinds.** `fv1` names a position in the favorites list, `ss1`
+ * a position in the saved searches and `bl1` a position in the block list, so one cannot be spent on
+ * another even though all three are a timestamp and an identifier. A favorites cursor decoded as a
+ * saved-search position would silently name a row that does not exist; refusing it is the only honest
+ * answer.
+ *
+ * **One value here is not a cursor.** A block reference (`br1`, added by 0103) names a *row* rather than a
+ * position, and it exists for a reason the other three do not share: `public.user_blocks` has no surrogate
+ * key, so the only thing that identifies one of its rows is the blocked account — and that is exactly the
+ * value this platform has decided must never cross the boundary. The reference is the row's name without
+ * being the account's name. It is still not a credential: the remover re-applies `blocker_id = <caller>`
+ * inside its own statement, so a reference lifted from another person's list matches nothing and answers
+ * exactly as a reference for a block that was never there. It lives in this file because the reasoning
+ * above — strict decoding, no interpolation, a version tag that cannot be spent elsewhere — is the same
+ * reasoning, and keeping it beside the cursors is what stops it being reinvented less carefully.
  *
  * **Total.** Both orders are `created_at desc, <id> desc`, both `created_at` columns are `not null`, and
  * both identifiers are unique, so the pair identifies exactly one row. Rows created in one transaction
@@ -28,6 +39,8 @@
 
 export const FAVORITES_CURSOR_VERSION = 'fv1';
 export const SAVED_SEARCHES_CURSOR_VERSION = 'ss1';
+export const BLOCKS_CURSOR_VERSION = 'bl1';
+export const BLOCK_REFERENCE_VERSION = 'br1';
 
 const SEPARATOR = '|';
 
@@ -108,3 +121,40 @@ export const encodeSavedSearchesCursor = (position: AccountPosition): string =>
 
 export const decodeSavedSearchesCursor = (cursor: string): AccountPosition | null =>
   decodeFor(SAVED_SEARCHES_CURSOR_VERSION, cursor);
+
+/**
+ * A position in the block list: when the block was created, and which blocked account it names.
+ *
+ * The order is `created_at desc, blocked_id desc`, and `(blocker_id, blocked_id)` is the table's primary
+ * key, so within one blocker the pair identifies exactly one row. Blocks made in one transaction share a
+ * timestamp to the microsecond, and a cursor made of the timestamp alone would skip or repeat them.
+ */
+export const encodeBlocksCursor = (position: AccountPosition): string =>
+  encodeFor(BLOCKS_CURSOR_VERSION, position);
+
+export const decodeBlocksCursor = (cursor: string): AccountPosition | null =>
+  decodeFor(BLOCKS_CURSOR_VERSION, cursor);
+
+/**
+ * The opaque name of one block, for the unblock to take.
+ *
+ * Two fields rather than three: a row, not a position, so there is no timestamp to carry. The decode is
+ * the same strict one — alphabet, round trip, tag, field count, identifier shape — and a reference that
+ * fails any of those returns null, which the caller turns into the same answer a block that is not there
+ * gets. That is deliberate: a malformed reference and an unmatched one are indistinguishable, so trying
+ * references cannot be used to find out whose blocks exist.
+ */
+export function encodeBlockReference(blockedUserId: string): string {
+  return encode([BLOCK_REFERENCE_VERSION, blockedUserId].join(SEPARATOR));
+}
+
+export function decodeBlockReference(reference: string): string | null {
+  const text = decode(reference);
+  if (text === null) return null;
+
+  const parts = text.split(SEPARATOR);
+  if (parts.length !== 2) return null;
+  const [tag, id] = parts as [string, string];
+  if (tag !== BLOCK_REFERENCE_VERSION) return null;
+  return UUID_PATTERN.test(id) ? id : null;
+}

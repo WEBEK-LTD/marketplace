@@ -460,15 +460,49 @@ describe('sending a message', () => {
         createdAt: AT.toISOString(),
         editedAt: null,
         deletedAt: null,
+        // 0104. Always empty on a read-back, and correct rather than a gap: a message cannot be created with
+        // an attachment — owner decision 5 keeps `messages_text_has_body` and adds nothing to the send path —
+        // so one that has just committed has none. The first file arrives in its own later request.
+        attachments: [],
       },
     });
-    // The body reaches the store exactly as sent; the trimming rule is the database's.
+    // The body reaches the store exactly as the **contract** parsed it: this layer adds nothing and removes
+    // nothing of its own, which is the invariant this assertion has always been for.
+    //
+    // 0105 narrowed what that means. The padded body used to arrive at the store padded, because the only
+    // trimming was the database's and `btrim(x)` there trimmed spaces only — so a body of one tab passed
+    // `messages_text_has_body`, whose whole purpose was to refuse an empty one. `SendMessageRequestSchema` now
+    // carries `.trim()`, so the ends are gone before this layer sees the value, and the database refuses a
+    // whitespace-only body independently. What is still asserted here is that nothing between the schema and
+    // the store touches the body.
     expect(recorded.sends).toEqual([
-      { userId: CALLER, conversationId: CONVERSATION, body: '  Still available?  ' },
+      { userId: CALLER, conversationId: CONVERSATION, body: 'Still available?' },
     ]);
     expect(recorded.readBacks).toEqual([
       { userId: CALLER, conversationId: CONVERSATION, limit: 1, cursorSeq: null },
     ]);
+  });
+
+  // 0105's other half. Refusing a blank body must not become reformatting a real one, so the interior of the
+  // text is asserted to survive untouched — and a body that is nothing but whitespace is refused here, which
+  // before 0105 reached the store and committed.
+  it('keeps the interior of a body and refuses one made only of whitespace', async () => {
+    const recorded = await start();
+    const response = await send('POST', `/v1/messaging/conversations/${CONVERSATION}/messages`, {
+      body: '\tIs  this\nstill available? \r\n',
+    });
+
+    expect(response.status).toBe(201);
+    expect(recorded.sends).toEqual([
+      { userId: CALLER, conversationId: CONVERSATION, body: 'Is  this\nstill available?' },
+    ]);
+
+    for (const body of ['   ', '\t', '\t\t', '\n', '\r', ' \t\r\n \t']) {
+      const refused = await send('POST', `/v1/messaging/conversations/${CONVERSATION}/messages`, { body });
+      expect(refused.status).toBe(400);
+    }
+    // One send, six refusals: not one of the blanks reached the store.
+    expect(recorded.sends).toHaveLength(1);
   });
 
   it('refuses an empty body, a body over the limit, and a body that is not a string', async () => {

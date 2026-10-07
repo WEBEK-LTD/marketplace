@@ -37,6 +37,7 @@ const MESSAGE = {
   createdAt: '2026-09-24T18:30:00.000Z',
   editedAt: null,
   deletedAt: null,
+  attachments: [],
 };
 
 const INBOX_ITEM = {
@@ -222,7 +223,85 @@ describe('the latest messages', () => {
       messageType: 'text',
       body: 'Still available?',
       createdAt: '2026-09-24T18:30:00.000Z',
+      // 0104. Carried across, unlike every identifier: an attachment is something the thread prints, and what
+      // it holds — an id, a type and a size — has no path and names nobody.
+      attachments: [],
     });
+  });
+
+  /* 0104 ---------------------------------------------------------------------------------------- */
+
+  it('carries attachments across, and drops one it cannot read rather than the message', async () => {
+    const good = { id: 'b2000000-0000-4000-8000-000000000001', contentType: 'image/png', byteSize: '1000' };
+    const { fetcher } = recorder({
+      status: 200,
+      body: {
+        items: [
+          {
+            ...MESSAGE,
+            attachments: [
+              good,
+              // Each of these fails one check, and each must cost its own row and nothing more.
+              { ...good, id: 42 },
+              { ...good, contentType: 'image/svg+xml' },
+              { ...good, byteSize: 'lots' },
+              { ...good, byteSize: '-1' },
+              'not an object',
+              null,
+            ],
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+    const result = await fetchLatestMessages(CONVERSATION, fetcher);
+    const message = result.kind === 'ok' ? result.data[0] : undefined;
+
+    expect(message?.body).toBe('Still available?');
+    expect(message?.attachments).toEqual([good]);
+  });
+
+  /** A response that lost the field renders a message with no files, not a parse failure. */
+  it('treats an absent or non-array attachments field as none', async () => {
+    for (const attachments of [undefined, null, 'x', 42, {}]) {
+      const { fetcher } = recorder({
+        status: 200,
+        body: { items: [{ ...MESSAGE, attachments }], nextCursor: null },
+      });
+      const result = await fetchLatestMessages(CONVERSATION, fetcher);
+      const message = result.kind === 'ok' ? result.data[0] : undefined;
+      expect(message?.attachments, JSON.stringify(attachments)).toEqual([]);
+      expect(message?.body, JSON.stringify(attachments)).toBe('Still available?');
+    }
+  });
+
+  it('never carries an object path out of a polled attachment', async () => {
+    const { fetcher } = recorder({
+      status: 200,
+      body: {
+        items: [
+          {
+            ...MESSAGE,
+            attachments: [
+              {
+                id: 'b2000000-0000-4000-8000-000000000001',
+                contentType: 'image/png',
+                byteSize: '1000',
+                objectPath: 'message-attachments/a/b/c.png',
+              },
+            ],
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+    const result = await fetchLatestMessages(CONVERSATION, fetcher);
+    const message = result.kind === 'ok' ? result.data[0] : undefined;
+
+    expect(JSON.stringify(message)).not.toContain('message-attachments');
+    expect(message?.attachments).toEqual([
+      { id: 'b2000000-0000-4000-8000-000000000001', contentType: 'image/png', byteSize: '1000' },
+    ]);
   });
 
   it('keeps `seq` a digit string, so a large sequence cannot lose precision', async () => {

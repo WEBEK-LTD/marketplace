@@ -218,13 +218,19 @@ select is(
                        'listing_id', '99999999-aaaa-4aaa-8aaa-999999999999',
                        'seller_user_id', 'aaaaaaaa-1111-4111-8111-111111111111',
                        'event_type', 'click', 'placement', 'search_results'),
+    -- Narrowed by 0107: the repeat now carries a *different* timestamp. All three copies used to omit
+    -- `occurred_at`, taking the writer's `now()` fallback, which is one value inside a pgTAP transaction — so
+    -- the repeat was dropped by the old `(event_id, occurred_at)` key and this could not tell that apart from
+    -- being dropped by `event_id`. With the timestamps differing, only de-duplication on `event_id` collapses
+    -- it, which is the invariant the assertion was always about.
     jsonb_build_object('event_id', '00000000-0000-4000-8000-000000000001',
                        'promotion_id', (select id from public.promotions),
                        'listing_id', '99999999-aaaa-4aaa-8aaa-999999999999',
-                       'event_type', 'impression')
+                       'event_type', 'impression',
+                       'occurred_at', clock_timestamp() + interval '4 seconds')
   )),
   2,
-  'the event stream drops the repeat by event id'
+  'the event stream drops the repeat by event id, even with a different occurred_at'
 );
 select throws_ok(
   $$update public.promotion_events set event_type = 'click'$$,

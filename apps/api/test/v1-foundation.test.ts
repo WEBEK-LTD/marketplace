@@ -28,6 +28,7 @@ const baseEnv = {
   LOG_LEVEL: 'info',
   APP_SYSTEM_DATABASE_URL: 'postgresql://app_system@db.invalid:5432/marketplace',
   DEVICE_IDENTITY_KEY: 'test-device-identity-key-not-a-real-secret-0123',
+  ANALYTICS_SESSION_KEY: 'test-analytics-session-key-not-a-real-secret-01',
   OTP_PEPPER: 'test-otp-pepper-value-not-a-real-secret-0123456789',
   PSEUDONYMOUS_USER_ID_KEY: 'test-pseudonymous-user-id-key-not-a-real-secret',
   WAABEK_BASE_URL: 'https://waabek.invalid',

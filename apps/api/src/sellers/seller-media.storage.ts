@@ -65,7 +65,7 @@ export interface SellerMediaStoragePort {
    * always for the one object that row points at. The bucket stays private; this issues a URL for a
    * single object and a few minutes, and nothing else in the system changes.
    */
-  signDownload(bucket: string, objectPath: string): Promise<SignedDownload>;
+  signDownload(bucket: string, objectPath: string, expiresInSeconds?: number): Promise<SignedDownload>;
 }
 
 export const SELLER_MEDIA_STORAGE = Symbol('SELLER_MEDIA_STORAGE');
@@ -156,14 +156,31 @@ export class SupabaseStorageClient implements SellerMediaStoragePort {
    * the same defensive parse: the documented field plus the two spellings the Storage API has used,
    * resolved against the storage base when it comes back relative. A shape this client does not
    * understand is unavailable — a reviewer sees "could not be loaded" rather than a broken link.
+   *
+   * **`expiresInSeconds` was added by 0104, and it is optional so that nothing else changes.** Conversation
+   * attachments are read for ten minutes (owner decision 6) while every surface that existed before reads for
+   * this adapter's configured default. The alternative — a second adapter instance with its own expiry — would
+   * have been a second storage client, which 0104 was told not to introduce, and raising the shared default
+   * would have silently lengthened four closed surfaces' signed URLs. So the lifetime becomes an argument of
+   * the one call that varies, and every existing caller passes nothing and gets exactly what it got before.
+   * A non-positive or non-finite value is ignored rather than sent, because a provider asked for a nonsense
+   * lifetime may well choose its own.
    */
-  async signDownload(bucket: string, objectPath: string): Promise<SignedDownload> {
+  async signDownload(
+    bucket: string,
+    objectPath: string,
+    expiresInSeconds?: number,
+  ): Promise<SignedDownload> {
     const base = `${this.config.url}/storage/v1`;
     const target = `${base}/object/sign/${encodeURIComponent(bucket)}/${encodePath(objectPath)}`;
+    const expiresIn =
+      expiresInSeconds !== undefined && Number.isFinite(expiresInSeconds) && expiresInSeconds > 0
+        ? Math.floor(expiresInSeconds)
+        : this.expirySeconds;
 
     const body = await this.call(target, {
       method: 'POST',
-      body: JSON.stringify({ expiresIn: this.expirySeconds }),
+      body: JSON.stringify({ expiresIn }),
     });
 
     const url = readSignedUrl(body, `${base}/`);
@@ -171,7 +188,7 @@ export class SupabaseStorageClient implements SellerMediaStoragePort {
       this.logger.error('Supabase Storage returned a read authorization this client does not understand.');
       throw new SellerMediaStorageUnavailableError(new Error('unexpected provider payload'));
     }
-    return { url, expiresAt: new Date(Date.now() + this.expirySeconds * 1000) };
+    return { url, expiresAt: new Date(Date.now() + expiresIn * 1000) };
   }
 
   /** Whether the object is there. A 404 is an answer, not a failure. */

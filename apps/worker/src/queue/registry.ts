@@ -1,6 +1,12 @@
 import type { WorkerEnv } from '../config/env.js';
 import { EmailDeliveryQueue } from '../email/email-delivery.queue.js';
 import { AppWorkerStore } from '../email/email-outbox.store.js';
+import {
+  LISTING_EVENT_DRAIN_INTERVAL_MS,
+  ListingEventConsumerQueue,
+} from '../analytics/listing-events.consumer.js';
+import { AppWorkerListingEventStore } from '../analytics/listing-events.store.js';
+import { createRedisConnection } from '../redis/connection.js';
 import type { EmailTransport } from '../email/email-transport.js';
 import type { WorkerLogger } from '../logging/logger.js';
 import { OutboxEventQueue } from '../outbox/outbox-event.queue.js';
@@ -48,6 +54,20 @@ export function buildQueueDefinitions(
     const store = AppWorkerStore.fromConnectionString(env.appWorkerDatabaseUrl, env.appWorkerDatabaseMaxConnections);
     definitions.push(new EmailDeliveryQueue(store, transport, logger, env.emailRelayIntervalMs));
   }
+
+  // 0101. Registered before the outbox early-return below, because ingestion does not depend on an outbox
+  // handler being present: a deployment that relays no events still collects them.
+  definitions.push(
+    new ListingEventConsumerQueue(
+      createRedisConnection(env.redisUrl, logger),
+      AppWorkerListingEventStore.fromConnectionString(
+        env.appWorkerDatabaseUrl,
+        env.appWorkerDatabaseMaxConnections,
+      ),
+      logger,
+      LISTING_EVENT_DRAIN_INTERVAL_MS,
+    ),
+  );
 
   if (outboxHandlers.isEmpty) {
     logger.info(

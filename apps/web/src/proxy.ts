@@ -1,6 +1,9 @@
 import {
+  type AppKind,
   buildContentSecurityPolicy,
   createNonce,
+  isAdminSurfacePath,
+  referrerPolicyFor,
   parsePublicCategoryPath,
   parsePublicBlogPostPath,
   parsePublicCmsPagePath,
@@ -22,7 +25,14 @@ import { readRedirect } from './server/bff/seo-redirects';
 import { readBlogPost } from './server/bff/blog';
 import { readSeller } from './server/bff/sellers';
 import { readService } from './server/bff/services';
-import { SITE_CHROME_HEADER, SITE_CHROME_NAVIGATION, SITE_CHROME_PLAIN } from './proxy-headers';
+import {
+  SITE_CHROME_HEADER,
+  SITE_CHROME_NAVIGATION,
+  SITE_CHROME_PLAIN,
+  SURFACE_ADMIN,
+  SURFACE_HEADER,
+  SURFACE_PUBLIC,
+} from './proxy-headers';
 import { SESSION_COOKIES } from './server/bff/session-cookies';
 import { publicWebServes } from './server/public-routes';
 
@@ -100,6 +110,26 @@ function hasRefreshCookie(request: NextRequest): boolean {
 }
 
 /**
+ * Stamps the two headers every response carries whatever else it is: the per-request CSP, and the surface's
+ * `Referrer-Policy`.
+ *
+ * `Referrer-Policy` moved here from `next.config.ts` in 0108. The two surfaces disagree about its value and now
+ * share an origin, and a Next.js `headers()` entry scoped to `/admin/:path*` is applied *in addition to* a
+ * site-wide one rather than instead of it — which would leave two conflicting values on every console response.
+ * Emitting it from the one place that knows which surface is answering makes that impossible rather than unlikely.
+ *
+ * `X-Robots-Tag` is deliberately **not** stamped here. Its value is a per-response decision — absent on a public
+ * catalogue route so the page's own metadata answers, and explicitly `noindex` on a redirect and a 404 — so each
+ * caller still states its own, and a blanket value cannot creep in and override page metadata the way it once did.
+ */
+function seal(response: NextResponse, csp: string, surface: AppKind): NextResponse {
+  response.headers.set('content-security-policy', csp);
+  const referrer = referrerPolicyFor(surface);
+  response.headers.set(referrer.key, referrer.value);
+  return response;
+}
+
+/**
  * Locale routing, a per-request CSP nonce, and the per-request robots policy. Never authorization (v5.2).
  * Runs for every path except Next.js build assets, so every HTML response carries both headers.
  *
@@ -135,11 +165,48 @@ export default async function proxy(request: NextRequest) {
   // Never trust an inbound copy: these headers are ours to set, so any value the client sent is dropped.
   request.headers.delete(CATALOG_OUTCOME_HEADER);
   request.headers.delete(SITE_CHROME_HEADER);
+  request.headers.delete(SURFACE_HEADER);
   // Next.js reads the nonce from the request's CSP header while rendering.
   request.headers.set('x-nonce', nonce);
   request.headers.set('content-security-policy', csp);
   // `/api/listings/<slug>` is dynamic, so it is matched by prefix rather than by exact path.
   const path = request.nextUrl.pathname;
+
+  // ------------------------------------------------------------------------------------------------
+  // The staff console at `/admin` (0108) — before every public routing stage, deliberately
+  // ------------------------------------------------------------------------------------------------
+  // The console moved from its own origin onto this one, and this branch is what keeps the move from making it a
+  // participant in public routing. It returns here, which means `/admin/*` never reaches:
+  //
+  //   * **next-intl.** `handleLocale` would rewrite `/admin/api/users` to `/en/admin/api/users`, which no route
+  //     handler serves — so all 78 console handlers would answer 404. The console has no locale prefix at all;
+  //     its language comes from the reader's profile, resolved in the next-intl request config.
+  //   * **the catalogue readers.** A console path is not a listing, service, category, seller, post or CMS page,
+  //     and resolving it as one would cost an internal API round-trip on every console navigation.
+  //   * **the SEO redirect map.** This is the one that matters most. 0030's `redirects_from_path_is_relative`
+  //     admits any `^/[A-Za-z0-9/_\-.%]*$`, so `/admin/users` is a storable `from_path`. Reaching `readRedirect`
+  //     would let an operator-authored entry shadow a live console page — the exact inverse of the LIVE PAGE WINS
+  //     precedence the map is built around. Returning above it makes that unreachable rather than merely unlikely.
+  //   * **`publicWebServes`.** A console path is not a public address, and the reservation in `public-routes.ts`
+  //     says so explicitly rather than leaving it to be inferred from an absence.
+  //
+  // **`Referrer-Policy` and `X-Robots-Tag` are set here, not in `next.config.ts`.** They are the only two headers
+  // whose value differs between the surfaces, and one origin cannot carry two values of either: a config entry
+  // scoped to `/admin/:path*` would be applied *in addition to* the site-wide entry, leaving two conflicting values
+  // on every console response. Emitting each differing key in exactly one place is what makes that impossible.
+  //
+  // This branch decides nothing about authority. It is routing, not authorization — C22 — and every console
+  // operation is still gated server-side in the API by token, `aal2`, role, permission and RLS.
+  if (isAdminSurfacePath(path)) {
+    request.headers.set(SURFACE_HEADER, SURFACE_ADMIN);
+    // The console carries its own chrome. Set explicitly so the root layout's deny-by-default is never the reason.
+    request.headers.set(SITE_CHROME_HEADER, SITE_CHROME_PLAIN);
+    const consoleResponse = seal(NextResponse.next({ request: { headers: request.headers } }), csp, 'admin');
+    consoleResponse.headers.set('x-robots-tag', robotsHeaderFor('admin', path) ?? 'noindex');
+    return consoleResponse;
+  }
+
+  request.headers.set(SURFACE_HEADER, SURFACE_PUBLIC);
   // Which chrome the surface carries (0094, owner decision 2). Decided here because this is where the path is
   // known and where the account area is already defined, and the root layout reads the answer rather than
   // guessing at a pathname it cannot see. Set for every request this proxy sees, including the BFF routes and the
@@ -170,7 +237,7 @@ export default async function proxy(request: NextRequest) {
   if (protectedSurface !== null && !hasRefreshCookie(request)) {
     const login = new URL(protectedSurface.locale === 'ar' ? '/ar/login' : '/login', request.url);
     const redirect = NextResponse.redirect(login, 307);
-    redirect.headers.set('content-security-policy', csp);
+    seal(redirect, csp, 'web');
     redirect.headers.set('x-robots-tag', 'noindex');
     return redirect;
   }
@@ -216,7 +283,7 @@ export default async function proxy(request: NextRequest) {
     // arrived in, so an Arabic reader following an old Arabic address is not moved to the English site.
     const target = new URL(publicCmsPagePath(staticPage.locale, pageOutcome.movedTo), request.url);
     const redirect = NextResponse.redirect(target, 301);
-    redirect.headers.set('content-security-policy', csp);
+    seal(redirect, csp, 'web');
     return redirect;
   }
 
@@ -226,7 +293,7 @@ export default async function proxy(request: NextRequest) {
     // an Arabic reader following an old Arabic address is not moved to the English site.
     const target = new URL(publicBlogPostPath(blogPost.locale, blogOutcome.movedTo), request.url);
     const redirect = NextResponse.redirect(target, 301);
-    redirect.headers.set('content-security-policy', csp);
+    seal(redirect, csp, 'web');
     return redirect;
   }
 
@@ -239,7 +306,7 @@ export default async function proxy(request: NextRequest) {
       request.url,
     );
     const redirect = NextResponse.redirect(target, 301);
-    redirect.headers.set('content-security-policy', csp);
+    seal(redirect, csp, 'web');
     return redirect;
   }
 
@@ -280,7 +347,7 @@ export default async function proxy(request: NextRequest) {
       // code is the one the operator stored; this issues it and chooses nothing.
       const target = new URL(mapped.toPath, request.url);
       const redirect = NextResponse.redirect(target, mapped.statusCode);
-      redirect.headers.set('content-security-policy', csp);
+      seal(redirect, csp, 'web');
       return redirect;
     }
   }
@@ -296,7 +363,7 @@ export default async function proxy(request: NextRequest) {
     request.headers.set(CATALOG_OUTCOME_HEADER, 'not_found');
     const localized = handleLocale(request);
     const missing = new NextResponse(null, { status: 404, headers: localized.headers });
-    missing.headers.set('content-security-policy', csp);
+    seal(missing, csp, 'web');
     missing.headers.set('x-robots-tag', 'noindex');
     return missing;
   }
@@ -304,7 +371,7 @@ export default async function proxy(request: NextRequest) {
   const response = isBff
     ? NextResponse.next({ request: { headers: request.headers } })
     : handleLocale(request);
-  response.headers.set('content-security-policy', csp);
+  seal(response, csp, 'web');
   const robots = robotsHeaderFor('web', path);
   if (robots !== null) response.headers.set('x-robots-tag', robots);
   return response;

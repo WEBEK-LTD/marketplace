@@ -129,9 +129,25 @@ describe('a listing card', () => {
     const html = renderToStaticMarkup(
       <ListingCard listing={SUMMARY} href="/listing/a-listing" labels={LABELS} />,
     );
-    // The card's own identifiers are not printed, and neither is the listing type code.
-    expect(html).not.toContain(SUMMARY.id);
+    // The internal listing type code is not printed, and neither is anything else 6-J did not approve.
     expect(html).not.toContain('product');
+    expect(html).not.toContain('250000');
+  });
+
+  /**
+   * Narrowed by 0101: the card now carries its listing identifier in one data attribute so a single
+   * capture handler can tell which card was clicked (`ListingClickBeacon`). The identifier is the public
+   * catalogue key the beacon contract already names, and the invariant it replaces still holds — it is a
+   * machine-readable attribute, never visible text, and it is the only identifier in the markup.
+   */
+  it('carries its listing identifier only as the beacon attribute, never as text', () => {
+    const html = renderToStaticMarkup(
+      <ListingCard listing={SUMMARY} href="/listing/a-listing" labels={LABELS} />,
+    );
+    expect(html).toContain(`data-listing-id="${SUMMARY.id}"`);
+    expect(html.split(SUMMARY.id)).toHaveLength(2);
+    expect(html.replace(`data-listing-id="${SUMMARY.id}"`, '')).not.toContain(SUMMARY.id);
+    expect(html).not.toContain(`>${SUMMARY.id}`);
   });
 });
 

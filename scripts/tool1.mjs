@@ -32,8 +32,8 @@ const reviewOf = (attempt) => REVIEWED_BLOCKED_FETCHES.find((entry) => entry.mat
 
 const app = process.argv[2];
 const keepOutput = process.argv.includes('--keep-output');
-if (app !== 'web' && app !== 'admin') {
-  console.error('Usage: node scripts/tool1.mjs <web|admin> [--keep-output]');
+if (app !== 'web') {
+  console.error('Usage: node scripts/tool1.mjs web [--keep-output]');
   process.exit(2);
 }
 const appDir = join(REPO_ROOT, 'apps', app);

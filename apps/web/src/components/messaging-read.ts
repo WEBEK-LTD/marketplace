@@ -91,7 +91,35 @@ export function toRenderableMessage(value: unknown): RenderableMessage | null {
   if (createdAt === null || body === undefined) return null;
 
   // `senderUserId` is present in the response and deliberately not carried across.
-  return { id, seq, messageType, isOwnMessage, createdAt, body };
+  return { id, seq, messageType, isOwnMessage, createdAt, body, attachments: attachmentsOf(row) };
+}
+
+/** The four types 0104 permits. Hand-written for the same reason the rest of this file is: no schema import. */
+const ATTACHMENT_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const;
+
+/**
+ * The attachments on one polled message (0104).
+ *
+ * A row this parser cannot read contributes nothing rather than failing the whole message: losing an
+ * attachment from a poll is recoverable by reloading, and dropping the message it hung from would take the
+ * text with it. An absent `attachments` field is an empty list, so a response from before 0104 — or one that
+ * lost the field — renders as a message with no files rather than as a parse failure.
+ */
+function attachmentsOf(row: Record<string, unknown>): RenderableMessage['attachments'] {
+  const raw = row['attachments'];
+  if (!Array.isArray(raw)) return [];
+
+  const parsed: Array<RenderableMessage['attachments'][number]> = [];
+  for (const entry of raw) {
+    const item = record(entry);
+    if (item === null) continue;
+    const id = text(item['id']);
+    const contentType = oneOf(item['contentType'], ATTACHMENT_CONTENT_TYPES);
+    const byteSize = digits(item['byteSize']);
+    if (id === null || contentType === null || byteSize === null) continue;
+    parsed.push({ id, contentType, byteSize });
+  }
+  return parsed;
 }
 
 /** One conversation, reduced to what a row renders. */

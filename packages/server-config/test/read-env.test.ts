@@ -9,7 +9,6 @@ import {
   InventoryDriftError,
   NEXT_SERVER_FIELDS,
   readEnv,
-  readNextServerConfig,
   readWebServerConfig,
   WEB_SERVER_FIELDS,
   type FieldValidator,
@@ -30,6 +29,7 @@ const apiFields = {
   APP_SYSTEM_DATABASE_URL: text,
   APP_SYSTEM_DATABASE_MAX_CONNECTIONS: port,
   DEVICE_IDENTITY_KEY: text,
+  ANALYTICS_SESSION_KEY: text,
   OTP_PEPPER: text,
   WAABEK_BASE_URL: text,
   WAABEK_API_KEY: text,
@@ -41,6 +41,7 @@ const apiFields = {
 };
 const OTP_SECRETS = {
   DEVICE_IDENTITY_KEY: 'device-identity-key-not-a-real-secret-0123456789',
+  ANALYTICS_SESSION_KEY: 'analytics-session-key-not-a-real-secret-012345',
   PSEUDONYMOUS_USER_ID_KEY: 'pseudonymous-key-not-a-real-secret-0123456789',
   OTP_PEPPER: 'pepper',
   WAABEK_BASE_URL: 'https://w.invalid',
@@ -67,8 +68,8 @@ describe('readEnv', () => {
       throw new Error('expected failure');
     } catch (error) {
       expect(error).toBeInstanceOf(EnvValidationError);
-      expect((error as EnvValidationError).variables).toEqual(['API_HOST', 'API_PORT', 'APP_SYSTEM_DATABASE_URL', 'DEVICE_IDENTITY_KEY', 'INTERNAL_BFF_CREDENTIAL', 'NODE_ENV', 'OTP_PEPPER', 'PSEUDONYMOUS_USER_ID_KEY', 'REDIS_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_URL', 'WAABEK_API_KEY', 'WAABEK_BASE_URL', 'WEB_PUBLIC_ORIGIN']);
-      expect((error as Error).message).toBe('Invalid or missing environment variables: API_HOST, API_PORT, APP_SYSTEM_DATABASE_URL, DEVICE_IDENTITY_KEY, INTERNAL_BFF_CREDENTIAL, NODE_ENV, OTP_PEPPER, PSEUDONYMOUS_USER_ID_KEY, REDIS_URL, SUPABASE_SECRET_KEY, SUPABASE_URL, WAABEK_API_KEY, WAABEK_BASE_URL, WEB_PUBLIC_ORIGIN');
+      expect((error as EnvValidationError).variables).toEqual(['ANALYTICS_SESSION_KEY', 'API_HOST', 'API_PORT', 'APP_SYSTEM_DATABASE_URL', 'DEVICE_IDENTITY_KEY', 'INTERNAL_BFF_CREDENTIAL', 'NODE_ENV', 'OTP_PEPPER', 'PSEUDONYMOUS_USER_ID_KEY', 'REDIS_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_URL', 'WAABEK_API_KEY', 'WAABEK_BASE_URL', 'WEB_PUBLIC_ORIGIN']);
+      expect((error as Error).message).toBe('Invalid or missing environment variables: ANALYTICS_SESSION_KEY, API_HOST, API_PORT, APP_SYSTEM_DATABASE_URL, DEVICE_IDENTITY_KEY, INTERNAL_BFF_CREDENTIAL, NODE_ENV, OTP_PEPPER, PSEUDONYMOUS_USER_ID_KEY, REDIS_URL, SUPABASE_SECRET_KEY, SUPABASE_URL, WAABEK_API_KEY, WAABEK_BASE_URL, WEB_PUBLIC_ORIGIN');
       expect(JSON.stringify(error)).not.toContain('secret-looking-value');
     }
   });
@@ -99,7 +100,7 @@ describe('Next.js server configuration', () => {
       internalBffCredential: CREDENTIAL,
       publicWebOrigin: ORIGIN,
     });
-    expect(readNextServerConfig('admin', { API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL }).apiBaseUrl).toBe('https://api.example');
+    expect(readWebServerConfig({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL }).apiBaseUrl).toBe('https://api.example');
     for (const bad of [undefined, '', 'not a url', 'ftp://x', 'file:///etc/passwd', 'https://user:placeholder@api.internal', 'https://user@api.internal']) {
       expect(() => readWebServerConfig({ API_BASE_URL: bad, INTERNAL_BFF_CREDENTIAL: CREDENTIAL, PUBLIC_WEB_ORIGIN: ORIGIN })).toThrow('Invalid or missing environment variables: API_BASE_URL');
     }
@@ -201,13 +202,19 @@ describe('Next.js server configuration', () => {
     expect(httpOrigin.safeParse(42).success).toBe(false);
   });
 
-  it('does not ask the admin console for a public origin it has no use for', () => {
-    // The admin console is never indexed and has no sitemap, so the variable belongs to one app, not both.
-    expect(readNextServerConfig('admin', { API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })).toEqual({
+  it('treats the public origin as genuinely optional, not merely defaulted', () => {
+    // A complete, valid configuration without it, and `publicWebOrigin` is `null` rather than a guess. 0108 removed
+    // the narrower `readNextServerConfig`, which used to make this point: with one Next.js deployment there is no
+    // app whose inventory matches the two-field map, so every call to it would have thrown. The point it made is
+    // made here instead, against the reader that actually runs.
+    expect(readWebServerConfig({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })).toEqual({
       apiBaseUrl: 'https://api.example',
       internalBffCredential: CREDENTIAL,
+      publicWebOrigin: null,
     });
+    // And the two-field base map is still exactly that: the pair every Next.js BFF needs, with no origin in it.
     expect(Object.keys(NEXT_SERVER_FIELDS)).not.toContain('PUBLIC_WEB_ORIGIN');
+    expect(Object.keys(NEXT_SERVER_FIELDS).sort()).toEqual(['API_BASE_URL', 'INTERNAL_BFF_CREDENTIAL']);
   });
 
   it('names no domain of its own', () => {

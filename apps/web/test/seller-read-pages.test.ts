@@ -144,6 +144,19 @@ const PERFORMANCE = {
   clicks: '75',
 };
 
+/** 0102's listing rollup totals. Deliberately different numbers, so the two sections cannot be confused. */
+const LISTING_PERFORMANCE = {
+  listingSlug: 'a-chair',
+  listingTitle: 'A Listed Chair',
+  listingStatus: 'active',
+  firstDay: '2026-05-03',
+  lastDay: '2026-05-04',
+  clicks: '131',
+  contacts: '17',
+  favorites: '0',
+  shares: '0',
+};
+
 /**
  * Values no 6-J contract carries. The stub offers them on every surface; none may reach the document.
  *
@@ -214,6 +227,9 @@ function apiServes(mode: Mode = { kind: 'ok' }): void {
       '/v1/sellers/me/earnings',
       '/v1/sellers/me/promotions',
       '/v1/sellers/me/analytics',
+      // 0102's sibling operation, served alongside the five 6-J surfaces so the page's second section has
+      // something real to render.
+      '/v1/sellers/me/listing-analytics',
     ]);
     if (READ_PATHS.has(path)) {
       if (mode.kind === 'not_a_seller') return problem(response, 404, 'NOT_FOUND');
@@ -242,6 +258,12 @@ function apiServes(mode: Mode = { kind: 'ok' }): void {
         return json(response, {
           promotions: empty ? [] : [{ ...PROMOTION, ...leak }],
           nextCursor: null,
+        });
+      }
+      if (path === '/v1/sellers/me/listing-analytics') {
+        return json(response, {
+          days: 30,
+          listings: empty ? [] : [{ ...LISTING_PERFORMANCE, ...leak }],
         });
       }
       return json(response, {
@@ -517,10 +539,56 @@ describe('analytics', () => {
     expect(page.html.toLowerCase()).not.toContain('conversion');
   });
 
-  it('says plainly that per-listing analytics is not available yet', async () => {
+  /**
+   * Narrowed by 0102, which added the listing section this once said did not exist. What the page still says
+   * plainly — and what the note now carries — is that **impressions and views are not counted for listings**,
+   * which is the part that was always about a definition nobody had settled.
+   */
+  it('says plainly what is still not counted for a listing', async () => {
     const page = await load('/dashboard/seller/analytics');
-    // A truthful sentence rather than a fabricated chart.
     expect(page.html).toContain(en.SellerAnalytics.listingNote);
+    expect(en.SellerAnalytics.listingNote.toLowerCase()).toContain('impressions and views are not counted');
+  });
+
+  it('shows the listing rollup’s four totals in their own section', async () => {
+    const page = await load('/dashboard/seller/analytics');
+    expect(page.status).toBe(200);
+    expect(page.html).toContain(en.SellerAnalytics.listingsHeading);
+    expect(page.html).toContain('A Listed Chair');
+    expect(page.html).toContain('131');
+    expect(page.html).toContain('17');
+    for (const label of [
+      en.SellerAnalytics.clicks,
+      en.SellerAnalytics.contacts,
+      en.SellerAnalytics.favorites,
+      en.SellerAnalytics.shares,
+    ]) {
+      expect(page.html, label).toContain(label);
+    }
+  });
+
+  it('keeps the two sections apart, each under its own heading', async () => {
+    const page = await load('/dashboard/seller/analytics');
+    expect(page.html).toContain(en.SellerAnalytics.promotionsHeading);
+    expect(page.html).toContain(en.SellerAnalytics.listingsHeading);
+    // The promotion section's own numbers are still there: one section did not replace the other.
+    expect(page.html).toContain('2500');
+    expect(page.html).toContain('131');
+  });
+
+  it('derives nothing from the listing totals either', async () => {
+    const page = await load('/dashboard/seller/analytics');
+    // 17/131 is about 13%. No rate, ratio or percentage is anywhere on the page.
+    expect(page.html).not.toContain('13%');
+    expect(page.html.toLowerCase()).not.toContain('click-through');
+    expect(page.html.toLowerCase()).not.toContain('conversion rate');
+  });
+
+  it('shows an honest empty state for the listing section too', async () => {
+    apiServes({ kind: 'ok', empty: true });
+    const page = await load('/dashboard/seller/analytics');
+    expect(page.html).toContain(en.SellerAnalytics.listingsEmpty);
+    expect(page.html).not.toContain('131');
   });
 
   it('reports the window the server resolved', async () => {

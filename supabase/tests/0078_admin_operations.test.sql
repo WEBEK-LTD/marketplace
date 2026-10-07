@@ -1512,15 +1512,18 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- 17. What these twenty functions do not write
 -- ---------------------------------------------------------------------------------------------------
--- Role assignment is the gap the owner deferred to its own increment after Phase 7, and this is the
--- assertion that fails if somebody adds that writer without one.
+-- Role assignment was the gap the owner deferred to its own increment after Phase 7. 0100 is that increment,
+-- so this assertion no longer says "nothing writes this table" — it names the two writers that may, which is
+-- the stronger statement and still fails the moment a third appears.
 select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  (select coalesce(array_agg(p.proname::text order by p.proname), array[]::text[])
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and (p.prosrc ~* 'insert\s+into\s+public\.user_roles'
         or p.prosrc ~* 'update\s+public\.user_roles'
         or p.prosrc ~* 'delete\s+from\s+public\.user_roles')),
-  0, 'no app_private function writes public.user_roles — role assignment remains deferred');
+  array['staff_role_grant', 'staff_role_revoke'],
+  'the only functions writing public.user_roles are 0100''s two named writers — the gap this file recorded is closed by them and by nothing else');
 -- Seller status now has a writer, and it is 0079's rather than one of these. These twenty are still reads
 -- and recovery steps: the boundary between the read surface and the status writer is the point.
 select is(

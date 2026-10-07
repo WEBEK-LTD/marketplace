@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, Req } from '@nestjs/common';
 import {
   FileMessagingReportRequestSchema,
+  MessageAttachmentRecordRequestSchema,
+  MessageAttachmentUploadRequestSchema,
   MESSAGING_INBOX_DEFAULT_LIMIT,
   MESSAGING_INBOX_MAX_LIMIT,
   MESSAGING_MESSAGES_DEFAULT_LIMIT,
@@ -18,6 +20,11 @@ import {
   type LeaveConversationResponse,
   type MarkReadRequest,
   type MarkReadResponse,
+  type MessageAttachmentLinkResponse,
+  type MessageAttachmentRecordRequest,
+  type MessageAttachmentRecordResponse,
+  type MessageAttachmentUploadRequest,
+  type MessageAttachmentUploadResponse,
   type MessagingInboxResponse,
   type SendMessageRequest,
   type SendMessageResponse,
@@ -30,6 +37,7 @@ import {
 import { AuthenticationRequiredError } from '../auth/auth-errors.js';
 import { MessagingService } from '../messaging/messaging.service.js';
 import { MessagingWriteService } from '../messaging/messaging-write.service.js';
+import { MessageAttachmentsService } from '../messaging/message-attachments.service.js';
 import { CurrentUserService } from '../users/current-user.service.js';
 import { RequestValidationException } from '../common/request-validation.exception.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
@@ -70,6 +78,7 @@ export class MessagingController {
   constructor(
     private readonly messaging: MessagingService,
     private readonly writes: MessagingWriteService,
+    private readonly attachments: MessageAttachmentsService,
     private readonly users: CurrentUserService,
   ) {}
 
@@ -232,6 +241,108 @@ export class MessagingController {
     const userId = await this.caller(request);
     const reportId = await this.writes.fileReport(userId, body);
     return { outcome: 'filed', reportId };
+  }
+
+  /* ---------------------------------------------------------------------------------------------- */
+  /* Attachments (0104)                                                                              */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  /**
+   * Authorizes one upload against a message the caller already sent.
+   *
+   * **Three steps, and this is the first.** Nothing is recorded here: the database decides whether this caller
+   * may attach to this message, composes the object path, and the provider signs an upload for exactly that
+   * path. A client that asks and never uploads leaves no trace, which is why a row cannot end up pointing at
+   * nothing.
+   *
+   * The request names a content type and a size and **nothing about where the file goes**. There is no path
+   * field, no bucket field and no filename: the namespace is the database's and the client is told it only so
+   * it can hand the same value back to confirm.
+   */
+  @Post('conversations/:conversationId/messages/:messageId/attachments/uploads')
+  @HttpCode(200)
+  async authorizeAttachmentUpload(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+    @Body(new ZodValidationPipe(MessageAttachmentUploadRequestSchema)) body: MessageAttachmentUploadRequest,
+    @Req() request: MessagingRequestContext,
+  ): Promise<MessageAttachmentUploadResponse> {
+    const userId = await this.caller(request);
+    this.assertConversationId(conversationId);
+    this.assertMessageId(messageId);
+    return await this.attachments.authorizeUpload({
+      userId,
+      conversationId,
+      messageId,
+      contentType: body.contentType,
+      byteSize: body.byteSize,
+    });
+  }
+
+  /**
+   * Records an upload that happened.
+   *
+   * The path is the one the authorization issued, sent back unchanged. It is **not** trusted: the storage
+   * provider is asked whether that object is actually there, and then the database re-derives the prefix it
+   * would have composed and refuses anything else. A confirmation that arrives twice records the file once,
+   * which is 0014's unique index rather than anything this layer does.
+   */
+  @Post('conversations/:conversationId/messages/:messageId/attachments')
+  @HttpCode(201)
+  async recordAttachment(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+    @Body(new ZodValidationPipe(MessageAttachmentRecordRequestSchema)) body: MessageAttachmentRecordRequest,
+    @Req() request: MessagingRequestContext,
+  ): Promise<MessageAttachmentRecordResponse> {
+    const userId = await this.caller(request);
+    this.assertConversationId(conversationId);
+    this.assertMessageId(messageId);
+    return await this.attachments.confirmUpload({
+      userId,
+      conversationId,
+      messageId,
+      objectPath: body.objectPath,
+      contentType: body.contentType,
+      byteSize: body.byteSize,
+    });
+  }
+
+  /**
+   * A short-lived signed read of one attachment.
+   *
+   * The caller names an attachment, never an object: the path comes out of the row the database found, so a
+   * signed URL is always for that one file. Either participant may ask, including after a block — a readable
+   * thread stays readable, and blocking takes away the next thing sent rather than the record of the last one.
+   */
+  @Get('conversations/:conversationId/attachments/:attachmentId/link')
+  async attachmentLink(
+    @Param('conversationId') conversationId: string,
+    @Param('attachmentId') attachmentId: string,
+    @Req() request: MessagingRequestContext,
+  ): Promise<MessageAttachmentLinkResponse> {
+    const userId = await this.caller(request);
+    this.assertConversationId(conversationId);
+    this.assertAttachmentId(attachmentId);
+    return await this.attachments.link({ userId, conversationId, attachmentId });
+  }
+
+  /** A malformed identifier names no message, so it is refused before anything is read or written. */
+  private assertMessageId(messageId: string): void {
+    if (!UUID_PATTERN.test(messageId)) {
+      throw new RequestValidationException([
+        { path: 'messageId', message: 'The message identifier is invalid.' },
+      ]);
+    }
+  }
+
+  /** And the same for an attachment, so nothing but an identifier reaches a parameter binding. */
+  private assertAttachmentId(attachmentId: string): void {
+    if (!UUID_PATTERN.test(attachmentId)) {
+      throw new RequestValidationException([
+        { path: 'attachmentId', message: 'The attachment identifier is invalid.' },
+      ]);
+    }
   }
 
   /** A malformed identifier names no conversation, so it is refused before anything is read or written. */

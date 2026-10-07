@@ -149,6 +149,8 @@ export class NotificationsService {
     try {
       rows = await this.store.notificationsInbox({
         userId: input.userId,
+        // One more than asked for: the extra row is how "is there another page?" is answered without a
+        // count. The reader's ceiling is the public maximum plus one so this row survives the clamp (0106).
         limit: input.limit + 1,
         cursorCreatedAt: position?.createdAt ?? null,
         cursorId: position?.notificationId ?? null,

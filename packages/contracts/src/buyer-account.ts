@@ -35,7 +35,14 @@ import { z } from './zod.js';
 /* Paging                                                                                            */
 /* ------------------------------------------------------------------------------------------------ */
 
-/** The same page size every other list in this project uses. */
+/**
+ * The same page size every other list in this project uses.
+ *
+ * This is the **public** maximum and it is the authority. The reader behind it clamps at this number
+ * **plus one**, because the API asks for `limit + 1` to learn whether another page exists; a ceiling
+ * equal to the maximum would eat that probe row and report no next page (0106). This figure must not
+ * move without moving that ceiling with it.
+ */
 export const ACCOUNT_DEFAULT_LIMIT = 20;
 export const ACCOUNT_MAX_LIMIT = 50;
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { trackListingEvent } from './listing-beacon';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
@@ -53,6 +54,12 @@ export function StartConversationButton({
 
   async function onClick(): Promise<void> {
     if (pending) return;
+    // 0101: contacting a seller about a listing is one of the four ingested event types. Queued before the
+    // request, because the event is the visitor's action and not its outcome — a conversation that fails to
+    // open was still an attempt to make contact, and the beacon never blocks the click either way.
+    if (subject.kind === 'listing') {
+      trackListingEvent({ listingId: subject.listingId, eventType: 'contact', source: 'listing' });
+    }
     setMessage(null);
     setPending(true);
     const fetcher = (input: string, init: RequestInit) => fetch(input, init);

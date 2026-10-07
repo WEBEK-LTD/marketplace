@@ -76,6 +76,8 @@ const DETAILS: Readonly<Record<ProblemCode, string>> = {
   // who cannot be contacted is one sentence for a suspension, a closure and a listing nobody can see.
   MESSAGING_CONVERSATION_CLOSED: 'The conversation is closed.',
   MESSAGING_BLOCKED: 'The conversation is not available.',
+  MESSAGE_ATTACHMENT_LIMIT_REACHED: 'That message cannot take another attachment.',
+  MESSAGE_ATTACHMENT_OBJECT_MISSING: 'The file has not finished uploading.',
   MESSAGING_SELLER_NOT_CONTACTABLE: 'This seller cannot be contacted.',
   // Phase 5-H. One sentence for a message or conversation the caller may not report and one that does
   // not exist: the two are the same refusal, and a second sentence would be the difference between them.
@@ -172,6 +174,14 @@ const DETAILS: Readonly<Record<ProblemCode, string>> = {
   SELLER_STATUS_REASON_REQUIRED: 'A suspension is always recorded with its reason.',
   SELLER_STATUS_NOT_VERIFIED: 'This storefront is not verified.',
   SELLER_STATUS_ALREADY_VERIFIED: 'This storefront is verified.',
+  STAFF_ROLE_IS_SELF: 'A colleague cannot change their own roles.',
+  STAFF_ROLE_ABOVE_CEILING: 'That role is above your own, so you cannot grant or withdraw it.',
+  STAFF_ROLE_NOT_GRANTABLE: 'That role cannot be granted from the console.',
+  STAFF_ROLE_NOT_REVOCABLE: 'That role cannot be withdrawn from the console.',
+  STAFF_ROLE_NOT_ASSIGNABLE: 'That role cannot be assigned to an account.',
+  STAFF_ROLE_ALREADY_REVOKED: 'That role has already been withdrawn.',
+  STAFF_ROLE_EXPIRY_INVALID: 'An expiry must be in the future.',
+  STAFF_ROLE_REASON_REQUIRED: 'A role change is always recorded with its reason.',
   REVIEW_IS_PARTY: 'Nobody moderates a review they are a party to.',
   REVIEW_REASON_REQUIRED: 'A moderation decision is always recorded with its reason.',
   DISPUTE_IS_PARTY: 'Nobody rules on a dispute they are a party to.',
@@ -210,6 +220,9 @@ const DETAILS: Readonly<Record<ProblemCode, string>> = {
   CMS_MEDIA_NOT_ALLOWED: 'That is not an allowed value for a media upload.',
   CMS_MEDIA_OBJECT_MISSING: 'No uploaded file was found at that location.',
   CMS_MEDIA_PATH_TAKEN: 'That uploaded file already has a library entry.',
+  // 0102. One sentence for a malformed position, an altered one, one of the wrong kind and one from a
+  // retired version, because the remedy is the same in all four.
+  LISTING_ANALYTICS_CURSOR_INVALID: 'The list position could not be used.',
 };
 
 function codeForStatus(status: number): ProblemCode {
