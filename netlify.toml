@@ -1,0 +1,54 @@
+# The authoritative Netlify configuration for this repository.
+#
+# **Why this file is at the repository root, and why that is the whole point.**
+#
+# Netlify reads `netlify.toml` from the site's base directory. A site created by connecting this repository has
+# no base or package directory set, so that directory is the repository root — and until this file existed,
+# Netlify found no repository configuration there at all. It therefore fell back to the build command and publish
+# directory stored in the site's own settings, which is how a deploy came to keep running
+#
+#     pnpm --filter @repo/admin run build        →  publish apps/admin/.next
+#
+# long after 0108 merged the console into `apps/web` and deleted `apps/admin`. Nothing in the repository said
+# otherwise, because nothing in the repository was being read. `apps/web/netlify.toml` is read only when the
+# site's package directory is `apps/web`, which was the right shape while there were two sites and is exactly
+# the wrong shape now that there is one.
+#
+# Configuration in `netlify.toml` takes precedence over a site's stored build settings, so this file corrects a
+# deploy without anyone editing a setting. `scripts/policy/netlify-config.mjs` holds it to that: the check fails
+# if this file goes missing, if it stops naming the web build, or if any Netlify configuration anywhere in the
+# repository names `@repo/admin` or `apps/admin/.next` again.
+#
+# ---------------------------------------------------------------------------------------------------------------
+#
+# One Next.js application, one Netlify site, two surfaces (0108, owner-approved topology):
+#
+#     www.example.com         →  the public marketplace
+#     www.example.com/admin   →  the staff console
+#
+# There is no `admin.` hostname, no second site and no reverse proxy. Both surfaces are produced by the single
+# build below and served by the single Next.js runtime it emits.
+#
+# `publish` is repository-root-relative, because Netlify resolves paths against the repository root.
+#
+# **The `...` suffix is required, not stylistic.** Every workspace package exports only `dist/`, `dist/` is
+# gitignored, and no package has a `postinstall` or `prepare` script — so a fresh Netlify checkout has no `dist/`
+# anywhere. `--filter @repo/web` alone does not build dependencies, and `next.config.ts` imports `@repo/config`
+# before Next.js does anything else, so the build dies loading its own config:
+#
+#     Error: Cannot find module '.../apps/web/node_modules/@repo/config/dist/index.js'
+#
+# CI never saw this because it builds the dependency graph itself first (`turbo run build --filter="@repo/web..."`).
+# Netlify does no such pre-step. `--filter "@repo/web..."` builds this app and exactly its own dependencies; the
+# root workspace build stays prohibited, which `scripts/toolchain/tool1-guards.mjs` enforces from the build log.
+[build]
+  command = "pnpm --filter \"@repo/web...\" run build"
+  publish = "apps/web/.next"
+
+# A backstop to .nvmrc: `engines` pins Node exactly and pnpm-workspace.yaml sets `engineStrict: true`, so a
+# builder on any other version is a failed install rather than a warning.
+[build.environment]
+  NODE_VERSION = "24.21.0"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

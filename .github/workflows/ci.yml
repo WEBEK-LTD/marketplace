@@ -81,6 +81,8 @@ jobs:
         run: node scripts/policy/currency-literals.mjs
       - name: Migration policy (naming, headers, RLS coverage, grants, pgTAP plans)
         run: node scripts/policy/migrations.mjs
+      - name: Netlify deployment configuration policy (repository is authoritative)
+        run: node scripts/policy/netlify-config.mjs
       - name: Record tool versions
         if: always()
         run: node scripts/ci/checks.mjs tool-versions --job policy --output "$RUNNER_TEMP/artifacts/tool-versions-policy.json"

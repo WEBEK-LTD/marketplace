@@ -32,7 +32,8 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 
 ## `@repo/web` — the marketplace and the console
 
-- Next.js 16 (App Router, Turbopack), React 19, next-intl 4, Tailwind CSS 4. Local port 3000. Built for Netlify with `@netlify/plugin-nextjs` and one `netlify.toml`.
+- Next.js 16 (App Router, Turbopack), React 19, next-intl 4, Tailwind CSS 4. Local port 3000. Built for Netlify with `@netlify/plugin-nextjs`.
+- **The repository root `netlify.toml` is authoritative.** Netlify reads `netlify.toml` from the site's base directory, and a site created by connecting this repository has none set — so that directory is the repository root. While no file existed there, Netlify read no repository configuration at all and used the build command and publish directory stored in the site's own settings, which is how a deploy kept building the deleted admin app. `apps/web/netlify.toml` is a second copy, read only by TOOL-1 (`netlify build --filter @repo/web` sets the package directory to that folder). `scripts/policy/netlify-config.mjs` fails `pnpm run check:policy` if the root file goes missing, if the two disagree about the command, publish directory, Node version or plugins, or if any Netlify configuration names `@repo/admin` or `apps/admin/.next`.
 - **One origin, two surfaces (0108, owner-approved topology revision).** `www.example.com` serves the public marketplace and `www.example.com/admin` serves the staff console. There is no `admin.` hostname, no second Netlify site and no reverse proxy. The two share a runtime and nothing else: `src/app/layout.tsx` branches on the surface and renders a different document for each, `src/i18n/request.ts` gives each its own locale model and message catalogue (`messages/` and `messages/admin/`), the console's code lives under `src/admin/` and `src/app/admin/`, and `.dependency-cruiser.cjs` refuses an import either way across that line. `src/admin/paths.ts` is the only module that knows where the console is mounted.
 - **`/admin/*` bypasses every public routing stage**, in `src/proxy.ts`, before locale routing: no next-intl rewrite (so the console's own route handlers are reachable), no catalogue resolution, no `publicWebServes` check and — the one that matters — no SEO redirect-map lookup, so an operator-authored redirect can never shadow a live console page.
 - Session cookies stay separate by name: `__Host-mp_access`/`__Host-mp_refresh` for the marketplace, `__Host-mp_admin_access`/`__Host-mp_admin_refresh` for the console. The `__Host-` prefix forbids path scoping, so both are sent on every request to the host; nothing reads the other's, and `test/no-totp.test.ts` and `test/admin/no-recovery.test.ts` assert that neither surface contains the code to mint or read the other's. Authorization is unchanged and entirely server-side: token, `aal2`, role, permission and RLS in the API, never the proxy (C22).
@@ -206,7 +207,7 @@ Every web and admin response carries `Strict-Transport-Security`, `X-Content-Typ
 
 ## Deployment verification
 
-A checklist for the first deployment of the two Netlify sites, in the order the facts become knowable. It assumes
+A checklist for the first deployment of the Netlify site, in the order the facts become knowable. It assumes
 the **default Netlify domains**; no real domain is named anywhere in this repository. Nothing here enables, or
 depends on, any financial capability.
 
@@ -218,17 +219,20 @@ run* below).
 
 ### Owner actions, outside the repository
 
-1. Create the two Netlify sites from this repository, with the base directory left at the repository root — Netlify
-   resolves paths against the git root, which is why each app's `netlify.toml` uses a repository-root-relative
-   `publish` and a package-scoped build command (see *TOOL-1 and the pinned Deno toolchain*).
-2. Set the variables from the manifest above on each site. `API_BASE_URL` may point at a host that does not exist
-   yet; `INTERNAL_BFF_CREDENTIAL` must be the same 43-character base64url value on both. **Do not create a
-   `PUBLIC_WEB_ORIGIN` field at all** unless you are setting a real origin: only an absent variable counts as
-   deferred, and an empty field is a present value that fails its validator, which means every request answers
-   `500`.
-3. If pull-request previews are enabled, **the admin previews must have access protection**. A preview is a public
-   URL unless something stops it, and an admin preview with none is a sign-in page on the open internet.
-4. Note both default domains. Everything below is run against them.
+1. Create **one** Netlify site from this repository, with the base directory and the package directory both left
+   unset. The repository root `netlify.toml` then supplies the build command and the publish directory, and it
+   takes precedence over anything stored in the site's settings — which is what makes the repository, rather than a
+   site setting, the thing that decides what deploys. One build produces both surfaces: the marketplace at `/` and
+   the staff console at `/admin`.
+2. Set the variables from the manifest above on the site. `API_BASE_URL` may point at a host that does not exist
+   yet. **Do not create a `PUBLIC_WEB_ORIGIN` field at all** unless you are setting a real origin: only an absent
+   variable counts as deferred, and an empty field is a present value that fails its validator, which means every
+   request answers `500`.
+3. If pull-request previews are enabled, **a preview exposes `/admin` as well as `/`, so previews need access
+   protection**. A preview is a public URL unless something stops it, and the console's sign-in page on the open
+   internet is the thing to avoid. This matters more than it did when the console had its own site: there is no
+   longer a separate preview to protect, only the one that carries both surfaces.
+4. Note the default domain. Everything below is run against it.
 
 ### Phase 1 — the sites, before an API is hosted
 
@@ -1985,7 +1989,7 @@ Gate B remains open until the owner provides real results: the GitHub repository
 
 `pnpm run tool1` runs `netlify build --offline --filter @repo/<app>` **from the repository root** for both apps.
 
-Netlify resolves its paths against the git repository root, so running the build inside an app folder writes the runtime outputs to a doubled path (`apps/web/apps/web/.netlify/...`) and TOOL-1 fails with missing outputs. This only happens in a real checkout, which is why a sandbox without `.git` passed while CI failed. Each app's `netlify.toml` therefore uses a repository-root-relative `publish` (`apps/<app>/.next`) and a package-scoped command (`pnpm --filter @repo/<app> run build`), so the app's own build runs and never the root workspace build.
+Netlify resolves its paths against the git repository root, so running the build inside an app folder writes the runtime outputs to a doubled path (`apps/web/apps/web/.netlify/...`) and TOOL-1 fails with missing outputs. This only happens in a real checkout, which is why a sandbox without `.git` passed while CI failed. The `netlify.toml` files therefore use a repository-root-relative `publish` (`apps/web/.next`) and a package-scoped, dependency-inclusive command (`pnpm --filter "@repo/web..." run build`), so the app's own build runs with its own dependencies and never the root workspace build.
 
 Four guards (`scripts/toolchain/tool1-guards.mjs`, tested by `scripts/toolchain/tool1-guards.test.mjs`) stop TOOL-1 from passing for environment-specific reasons: the resolved `publish`, `packagePath` and `buildDir` must match this app and the repository root; no doubled `.netlify` output path may exist (the repository-relative copy inside the packaged function bundle is not flagged); with `.git` present Netlify's `repositoryRoot` must equal the repository root (recorded in the result either way); and the log must show the package-scoped build command and no root `turbo run build`.
 

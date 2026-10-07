@@ -1,26 +1,26 @@
-# Build configuration only; no Netlify site is created in Phase 1.
+# The app-scoped copy of the Netlify build configuration. **The root `netlify.toml` is authoritative.**
 #
-# Repository-root-relative build model (Phase 1 Step 9): Netlify resolves paths against the git repository
-# root, so `publish` is repo-root-relative and the command is package-scoped. TOOL-1 runs
-# `netlify build --offline --filter @repo/web` from the repository root and verifies both.
+# Two files exist because Netlify resolves configuration from the site's base directory, and two different
+# directories are in play:
 #
-# **The `...` suffix is required, not stylistic.** Every workspace package exports only `dist/`, `dist/` is
-# gitignored, and no package has a `postinstall` or `prepare` script — so a fresh Netlify checkout has no
-# `dist/` anywhere. `--filter @repo/web` alone does not build dependencies, and `next.config.ts` imports
-# `@repo/config` before Next.js does anything else, so the build dies loading its own config:
+#   * **The deployed site** has no base or package directory set, so Netlify reads `/netlify.toml`. That is the
+#     file that decides what actually deploys, and it is the one to edit.
+#   * **TOOL-1** runs `netlify build --offline --filter @repo/web` from the repository root. `--filter` is the
+#     Netlify CLI's monorepo flag: it sets the package directory to this workspace package, so the CLI reads
+#     *this* file instead. Without it TOOL-1 would verify a configuration the site never uses.
 #
-#     Error: Cannot find module '.../apps/web/node_modules/@repo/config/dist/index.js'
+# Keeping both is therefore not duplication for its own sake — it is what lets the verification harness and the
+# deployment agree. The hazard is that they drift, so they are not allowed to:
+# `scripts/policy/netlify-config.mjs` asserts that both files exist and that their build command, publish
+# directory, Node version and plugin list are identical, and `pnpm run check:policy` fails if they are not.
 #
-# CI never saw this because it builds the dependency graph itself before invoking Netlify
-# (`turbo run build --filter="@repo/web..."`), so TOOL-1 always inherited a tree where every `dist/` existed.
-# Netlify does no such pre-step. `--filter "@repo/web..."` builds this app and exactly its own dependencies;
-# the root workspace build stays prohibited, which `scripts/toolchain/tool1-guards.mjs` still enforces.
+# Everything below is explained at length in the root file, including why the `...` suffix in the filter is
+# load-bearing and why the publish path is repository-root-relative. One Next.js application serves the public
+# marketplace at `/` and the staff console at `/admin` (0108); there is no admin site and no admin hostname.
 [build]
   command = "pnpm --filter \"@repo/web...\" run build"
   publish = "apps/web/.next"
 
-# A backstop to .nvmrc: `engines` pins Node exactly and pnpm-workspace.yaml sets `engineStrict: true`, so a
-# builder on any other version is a failed install rather than a warning.
 [build.environment]
   NODE_VERSION = "24.21.0"
 
