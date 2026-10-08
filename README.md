@@ -13,7 +13,7 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 | `packages/money` | `@repo/money` | Implemented (Step 2) |
 | `packages/shared-types` | `@repo/shared-types` | Implemented (Step 2) |
 | `packages/config` | `@repo/config` | Implemented (Step 2): neutral design tokens |
-| `packages/ui` | `@repo/ui` | Implemented (Step 5): shared React primitives |
+| `packages/ui` | `@repo/ui` | Implemented (Step 5; the marketplace visual system in 0109): shared React primitives |
 | `packages/db` | `@repo/db` | Implemented (Step 6): server-only Kysely factory and RLS transaction helper |
 | `packages/server-config` | `@repo/server-config` | Implemented (Step 7): environment variable inventory and server-only configuration reader |
 | `packages/telemetry` | `@repo/telemetry` | Implemented (Step 8): vendor-neutral tracing and log correlation (server-only) |
@@ -48,7 +48,46 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 
 ## `@repo/ui`
 
-Shared primitives used by both apps: `PageContainer`, `SkipLink`, `Heading`. App headers and footers stay in each app.
+The shared primitives, and since 0109 the marketplace's visual system. Nineteen primitives across fifteen files:
+`Button`/`ButtonLink`, `Input`, `Textarea`, `Select`, `Choice`/`ChoiceGroup`, `FormField`, `Card`/`LinkCard`,
+`Badge`, `Avatar`, `Tabs`, `Dropdown`, `Dialog`, `Alert`, `Skeleton`, `Spinner`, `Breadcrumb`, `Pagination`,
+`EmptyState`/`EmptyLine`, plus the pre-0109 `PageContainer`, `SkipLink`, `Heading` and the layout helpers. The
+chrome (`SiteHeader`, `SiteFooter`, the menus) stays in `apps/web`, because it reads request headers.
+
+`src/recipes.ts` is the grammar every primitive composes from, and the mechanism of cohesion: `FOCUS_RING`, the
+four surfaces (`SURFACE_CARD`, `SURFACE_WELL`, `SURFACE_POPOVER`, `SURFACE_OVERLAY`), the frozen `TYPE` scale and
+`cx`. A primitive that needs a surface or a focus state takes it from here rather than spelling out utilities, so
+there is one place to change and no drift.
+
+The rules the system is built on, each forced by something already decided rather than chosen for taste:
+
+- **The palette is monochrome.** D5 gives the owner exactly two brand colours and both are still grey
+  placeholders, so hierarchy is carried by type, weight, surface layering, border contrast, radius and elevation.
+  A 2px border is the only emphasis the system has — which is why the `danger` button and a field error carry no
+  red, and why `Alert` distinguishes its four tones by border weight, an icon shape and the words.
+- **Radius by role**: `md` for controls, `lg` for surfaces, `full` for pills. Asserted by test.
+- **Elevation only for what leaves the page**: the sticky header (`shadow-sm`), a popover (`md`), an overlay
+  (`lg`). A flat surface takes a hairline border instead. Asserted by test, with a two-file allowlist.
+- **One focus ring product-wide**, as an `outline` rather than a `box-shadow`, so no ancestor's `overflow` can
+  clip it. Asserted by test.
+- **Logical properties only** — `ps`/`pe`, `ms`/`me`, `start`/`end`, `text-start`. A test scans every primitive;
+  `pl-4` cannot enter the package even in a comment without `withoutComments()` first stripping it.
+- **No letter-spacing tokens at all.** Arabic is cursive, and negative tracking breaks the letter joins.
+- **No inline styles**, because the CSP is nonce-based. The `<dialog>` and `::backdrop` resets and the one
+  keyframe animation live in `apps/web/src/app/globals.css`, which is also where `prefers-reduced-motion` is
+  honoured.
+- **Exactly two client components**, `dialog.tsx` and `dropdown.tsx`. Asserted by test, because `'use client'`
+  surviving the `tsc` build is a property of this package worth pinning.
+
+Three places where 0109 declined to build UI for data that does not exist, each recorded in the component that
+would have shown it:
+
+- `ListingSummarySchema` is `.strict()` with eight fields and no media, so the catalogue card is typographic. A
+  grid where every card wears an empty image frame reads as an outage, not as a product.
+- There is no sort parameter — ordering is 0051's approved newest-first — so `CatalogToolbar` *states* the
+  ordering instead of offering a control that cannot change it.
+- Readers return `{ items, nextCursor }` with no total and no offset, so `Pagination` has no page numbers: it
+  offers the next page, a way back to the start, and a sentence saying where you are.
 
 ## Server-only environment configuration
 

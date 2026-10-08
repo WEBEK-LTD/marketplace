@@ -1,4 +1,4 @@
-import { Heading, PageContainer } from '@repo/ui';
+import { Heading, LINK, PageContainer } from '@repo/ui';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -21,8 +21,14 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
   const t = await getTranslations('Login');
   return (
     <PageContainer>
-      <div className="py-12">
+      {/*
+        An authentication surface is one task, so it is given one column at a readable width and centred in the
+        viewport rather than laid out across the page. It carries no composed navigation (0094, owner decision 2),
+        which is why a wide column here would leave the form alone on an empty expanse.
+      */}
+      <div className="mx-auto w-full max-w-sm py-16">
         <Heading level={1}>{t('title')}</Heading>
+        <div className="mt-8">
         <LoginForm
           action="/api/auth/login"
           successHref={locale === 'ar' ? '/ar' : '/'}
@@ -39,11 +45,12 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
             unavailable: t('unavailable'),
           }}
         />
+        </div>
         {/* Phase 7-A: the way in for somebody who has no account yet. A link and nothing more — this page
             still reads no cookie and calls no API. */}
-        <p className="mt-8 max-w-sm text-sm text-neutral-600">
+        <p className="mt-8 border-t border-neutral-200 pt-6 text-sm text-neutral-600">
           {t('noAccount')}{' '}
-          <Link href={locale === 'ar' ? '/ar/register' : '/register'} className="underline">
+          <Link href={locale === 'ar' ? '/ar/register' : '/register'} className={LINK}>
             {t('createAccount')}
           </Link>
         </p>

@@ -1,15 +1,22 @@
-import { Heading } from '@repo/ui';
-import Link from 'next/link';
+import {
+  ButtonLink,
+  CardGrid,
+  Heading,
+  LinkCard,
+  CardTitle,
+  Section,
+  SectionHeader,
+  TYPE,
+  cx,
+} from '@repo/ui';
 import { getTranslations } from 'next-intl/server';
 import { publicBlogIndexPath, publicBlogPostPath, type PublicLocale } from '@repo/config';
-import type {
-  HomepageListingCard,
-  PublicHomepageSection,
-} from '@repo/contracts';
-import { ListingPrice, type ListingPriceLabels } from './listing-price';
+import type { HomepageListingCard, PublicHomepageSection } from '@repo/contracts';
+import { CatalogCard, CategoryChip, SellerCard } from './catalog-card';
+import type { ListingPriceLabels } from './listing-price';
 
 /**
- * The homepage's sections, rendered (0093).
+ * The homepage's sections, rendered (0093, restyled in 0109).
  *
  * **Nothing here decides what to show.** Which sections exist, in what order, and what content each one still has
  * are all settled before this renders: the API composes the homepage and drops any section with nothing left to
@@ -21,13 +28,14 @@ import { ListingPrice, type ListingPriceLabels } from './listing-price';
  * **No section renders an image.** A banner strip is not served at all, and a seller's logo and a category's image
  * are absent from the contract, because this platform has no media origin to address one with.
  *
+ * What 0109 changed is only how it looks. Every card is now {@link CatalogCard} — the same component the browse
+ * lists and the search results use — so a listing on the front page is visually the same object as the same
+ * listing anywhere else in the product. Before this increment the home page drew its own card, which is why a
+ * featured listing looked nothing like the one a person then clicked through to.
+ *
  * Server components throughout: the homepage is content, and the HTML has to carry it for a crawler and for a
  * visitor with no JavaScript.
  */
-
-const SECTION_CLASS = 'border-t border-neutral-200 py-10 first:border-t-0';
-const GRID_CLASS = 'mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3';
-const CARD_CLASS = 'rounded-lg border border-neutral-200 p-4';
 
 function listingPath(locale: PublicLocale, card: HomepageListingCard): string {
   const prefix = card.resultType === 'service' ? '/service/' : '/listing/';
@@ -42,48 +50,16 @@ function sellerPath(locale: PublicLocale, slug: string): string {
   return `${locale === 'ar' ? '/ar' : ''}/seller/${encodeURIComponent(slug)}`;
 }
 
-/** A section's own heading and subheading, where it has them. */
-function SectionHeader({ title, subtitle }: { readonly title: string | null; readonly subtitle: string | null }) {
+/** A composed section's own heading and subheading, where it has them. */
+function ComposedHeader({ title, subtitle }: { readonly title: string | null; readonly subtitle: string | null }) {
   if (title === null && subtitle === null) return null;
   return (
-    <div>
-      {title === null ? null : <Heading level={2}>{title}</Heading>}
-      {subtitle === null ? null : <p className="mt-2 max-w-prose text-neutral-600">{subtitle}</p>}
-    </div>
-  );
-}
-
-function ListingGrid({
-  locale,
-  cards,
-  priceLabels,
-}: {
-  readonly locale: PublicLocale;
-  readonly cards: readonly HomepageListingCard[];
-  readonly priceLabels: ListingPriceLabels;
-}) {
-  return (
-    <ul className={GRID_CLASS}>
-      {cards.map((card) => (
-        <li className={CARD_CLASS} key={card.slug}>
-          <Link className="font-medium text-neutral-900 underline" href={listingPath(locale, card)}>
-            {card.title}
-          </Link>
-          {/* The same price component every other card on this site uses, so the front page cannot format money its
-              own way: the amount comes from `@repo/money` at the currency's declared minor unit, a listing with no
-              amount says "contact for price" rather than showing a zero, and "negotiable" appears only where there
-              is an amount for it to qualify. `isNegotiable` is null for a service, which is not a negotiable one. */}
-          <ListingPrice
-            currencyCode={card.currencyCode}
-            currencyMinorUnit={card.currencyMinorUnit}
-            isNegotiable={card.isNegotiable === true}
-            labels={priceLabels}
-            priceMinor={card.priceMinor}
-          />
-          {card.city === null ? null : <p className="mt-1 text-sm text-neutral-500">{card.city}</p>}
-        </li>
-      ))}
-    </ul>
+    <SectionHeader
+      title={title ?? ''}
+      {...(subtitle === null ? {} : { description: subtitle })}
+      as="h2"
+      className="mb-6"
+    />
   );
 }
 
@@ -106,141 +82,168 @@ export async function HomepageSections({
   return (
     <>
       {sections.map((section) => {
+        /** Each band is separated by a hairline rather than by a change of background. */
+        const band = 'border-t border-neutral-200 first:border-t-0';
+
         switch (section.sectionType) {
           case 'hero':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                {section.title === null ? null : <Heading level={1}>{section.title}</Heading>}
+              <Section space="lg" className={band} key={section.sectionKey}>
+                {section.title === null ? null : (
+                  <Heading level={1} display>
+                    {section.title}
+                  </Heading>
+                )}
                 {section.subtitle === null ? null : (
-                  <p className="mt-3 max-w-prose text-lg text-neutral-700">{section.subtitle}</p>
+                  <p className={cx('mt-4 max-w-2xl text-lg leading-normal text-neutral-700')}>{section.subtitle}</p>
                 )}
                 {section.hero.lead === null ? null : (
-                  <p className="mt-3 max-w-prose text-neutral-600">{section.hero.lead}</p>
+                  <p className={cx('mt-3 max-w-2xl', TYPE.body)}>{section.hero.lead}</p>
                 )}
                 {section.hero.ctaPath === null || section.hero.ctaLabel === null ? null : (
-                  <p className="mt-6">
-                    <Link
-                      className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-                      href={section.hero.ctaPath}
-                    >
+                  <p className="mt-8">
+                    <ButtonLink href={section.hero.ctaPath} size="lg">
                       {section.hero.ctaLabel}
-                    </Link>
+                    </ButtonLink>
                   </p>
                 )}
-              </section>
+              </Section>
             );
 
           case 'featured_listings':
           case 'latest_listings':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                <SectionHeader title={section.title} subtitle={section.subtitle} />
-                <ListingGrid cards={section.listings} locale={locale} priceLabels={priceLabels} />
-              </section>
+              <Section space="lg" className={band} key={section.sectionKey}>
+                <ComposedHeader title={section.title} subtitle={section.subtitle} />
+                <CardGrid>
+                  {section.listings.map((card) => (
+                    <CatalogCard
+                      key={`${card.resultType}-${card.slug}`}
+                      href={listingPath(locale, card)}
+                      title={card.title}
+                      city={card.city}
+                      priceMinor={card.priceMinor}
+                      currencyCode={card.currencyCode}
+                      currencyMinorUnit={card.currencyMinorUnit}
+                      isNegotiable={card.isNegotiable}
+                      labels={priceLabels}
+                    />
+                  ))}
+                </CardGrid>
+              </Section>
             );
 
           case 'featured_categories':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                <SectionHeader title={section.title} subtitle={section.subtitle} />
-                <ul className="mt-6 flex flex-wrap gap-3">
+              <Section space="lg" className={band} key={section.sectionKey}>
+                <ComposedHeader title={section.title} subtitle={section.subtitle} />
+                <ul className="flex list-none flex-wrap gap-2">
                   {section.categories.map((category) => (
-                    <li key={category.slug}>
-                      <Link
-                        className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-900"
-                        href={categoryPath(locale, category.slug)}
-                      >
-                        {category.name}
-                      </Link>
-                    </li>
+                    <CategoryChip
+                      key={category.slug}
+                      href={categoryPath(locale, category.slug)}
+                      label={category.name}
+                    />
                   ))}
                 </ul>
-              </section>
+              </Section>
             );
 
           case 'featured_sellers':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                <SectionHeader title={section.title} subtitle={section.subtitle} />
-                <ul className={GRID_CLASS}>
+              <Section space="lg" className={band} key={section.sectionKey}>
+                <ComposedHeader title={section.title} subtitle={section.subtitle} />
+                <CardGrid className="xl:grid-cols-3">
                   {section.sellers.map((seller) => (
-                    <li className={CARD_CLASS} key={seller.slug}>
-                      <Link
-                        className="font-medium text-neutral-900 underline"
-                        href={sellerPath(locale, seller.slug)}
-                      >
-                        {seller.displayName}
-                      </Link>
-                      {seller.city === null ? null : (
-                        <p className="mt-1 text-sm text-neutral-500">{seller.city}</p>
-                      )}
-                      {seller.bio === null ? null : <p className="mt-2 text-sm text-neutral-700">{seller.bio}</p>}
-                    </li>
+                    <SellerCard
+                      key={seller.slug}
+                      href={sellerPath(locale, seller.slug)}
+                      displayName={seller.displayName}
+                      city={seller.city}
+                      bio={seller.bio}
+                    />
                   ))}
-                </ul>
-              </section>
+                </CardGrid>
+              </Section>
             );
 
           case 'blog_highlights':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                <SectionHeader title={section.title} subtitle={section.subtitle} />
-                <ul className="mt-6 space-y-6">
+              <Section space="lg" className={band} key={section.sectionKey}>
+                <ComposedHeader title={section.title} subtitle={section.subtitle} />
+                <ul className="grid list-none grid-cols-1 gap-4 md:grid-cols-3">
                   {section.posts.map((post) => (
-                    <li key={post.slug}>
+                    <LinkCard as="li" key={post.slug} href={publicBlogPostPath(locale, post.slug)} aria-label={post.title}>
                       {/* `lang` and `dir` on the content itself: a post may come back in the other language when
                           the one that was asked for has not been written. */}
-                      <div dir={post.resolvedLocale === 'ar' ? 'rtl' : 'ltr'} lang={post.resolvedLocale}>
-                        <Heading level={3}>
-                          <Link
-                            className="text-neutral-900 underline"
-                            href={publicBlogPostPath(locale, post.slug)}
-                          >
-                            {post.title}
-                          </Link>
-                        </Heading>
+                      <div
+                        className="flex flex-1 flex-col gap-2 p-4"
+                        dir={post.resolvedLocale === 'ar' ? 'rtl' : 'ltr'}
+                        lang={post.resolvedLocale}
+                      >
+                        <CardTitle>{post.title}</CardTitle>
                         {post.excerpt === null ? null : (
-                          <p className="mt-2 text-neutral-700">{post.excerpt}</p>
+                          <p className="line-clamp-3 text-sm leading-normal text-neutral-700">{post.excerpt}</p>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        <time dateTime={post.publishedAt}>{post.publishedAt.slice(0, 10)}</time>
-                        {post.categoryName === null ? null : <> · {post.categoryName}</>}
-                      </p>
-                    </li>
+                      {/*
+                        A description list, not two spans joined by a middle dot. The dot was both a cliché and a
+                        loss of structure: a screen reader read "date · category" as one run of text, and the
+                        separator had to be mirrored by hand in Arabic. Here the relationship is in the markup.
+                      */}
+                      <dl className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 px-4 pb-4 text-sm text-neutral-600">
+                        <div className="flex items-center gap-1.5">
+                          <dt className="sr-only">{t('allPosts')}</dt>
+                          <dd>
+                            <time dateTime={post.publishedAt}>{post.publishedAt.slice(0, 10)}</time>
+                          </dd>
+                        </div>
+                        {post.categoryName === null ? null : (
+                          <div className="flex items-center gap-1.5">
+                            <dt className="sr-only">{post.categoryName}</dt>
+                            <dd className="truncate">{post.categoryName}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    </LinkCard>
                   ))}
                 </ul>
                 <p className="mt-6">
-                  <Link className="text-neutral-900 underline" href={publicBlogIndexPath(locale)}>
+                  <ButtonLink href={publicBlogIndexPath(locale)} variant="secondary" size="sm">
                     {t('allPosts')}
-                  </Link>
+                  </ButtonLink>
                 </p>
-              </section>
+              </Section>
             );
 
           case 'value_props':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                <SectionHeader title={section.title} subtitle={section.subtitle} />
-                <ul className={GRID_CLASS}>
+              <Section space="lg" className={band} key={section.sectionKey}>
+                <ComposedHeader title={section.title} subtitle={section.subtitle} />
+                {/*
+                  No numbered markers. `01 / 02 / 03` is only right when the content is a sequence, and a set of
+                  value propositions is not one — they are parallel, and numbering them would invent an order the
+                  administrator did not arrange.
+                */}
+                <ul className="grid list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {section.items.map((item) => (
-                    <li key={item.title}>
-                      <Heading level={3}>{item.title}</Heading>
-                      <p className="mt-2 text-neutral-700">{item.body}</p>
+                    <li key={item.title} className="border-s-2 border-neutral-200 ps-4">
+                      <h3 className={TYPE.h4}>{item.title}</h3>
+                      <p className={cx('mt-2', TYPE.body)}>{item.body}</p>
                     </li>
                   ))}
                 </ul>
-              </section>
+              </Section>
             );
 
           case 'rich_text':
             return (
-              <section className={SECTION_CLASS} key={section.sectionKey}>
-                <SectionHeader title={section.title} subtitle={section.subtitle} />
+              <Section space="lg" className={band} key={section.sectionKey}>
+                <ComposedHeader title={section.title} subtitle={section.subtitle} />
                 {/* Plain text, by owner decision D. The author's line breaks are kept and nothing here interprets
                     the string as markup. */}
-                <div className="mt-4 max-w-prose whitespace-pre-wrap text-neutral-900">{section.body}</div>
-              </section>
+                <div className={cx('max-w-prose whitespace-pre-wrap', TYPE.prose)}>{section.body}</div>
+              </Section>
             );
         }
       })}

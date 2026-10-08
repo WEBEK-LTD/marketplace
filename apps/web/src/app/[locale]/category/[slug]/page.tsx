@@ -4,13 +4,13 @@ import {
   parseCatalogFilters,
   type CatalogFilters,
 } from '@repo/contracts';
-import { PageContainer } from '@repo/ui';
+import { PageContainer, Pagination } from '@repo/ui';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
-import { CatalogFilterPanel } from '../../../../components/catalog-filter-panel';
+import { CatalogFilterPanel, CatalogToolbar } from '../../../../components/catalog-filter-panel';
 import { CategoryDetailView } from '../../../../components/category-detail';
 import { ListingMessage } from '../../../../components/listing-views';
 import { SearchResultList } from '../../../../components/search-results';
@@ -221,11 +221,12 @@ async function CategoryListings({
   readonly filters: CatalogFilters;
   readonly cursor: string | null;
 }) {
-  const [t, tListings, tServices, tFilters] = await Promise.all([
+  const [t, tListings, tServices, tFilters, tPagination] = await Promise.all([
     getTranslations({ locale, namespace: 'Categories' }),
     getTranslations({ locale, namespace: 'Listings' }),
     getTranslations({ locale, namespace: 'Services' }),
     getTranslations({ locale, namespace: 'CatalogFilters' }),
+    getTranslations({ locale, namespace: 'Pagination' }),
   ]);
 
   const feed = await readCategoryFeed(slug, { locale, filters, cursor });
@@ -289,13 +290,21 @@ async function CategoryListings({
   }
 
   // The next page keeps every filter and changes only the cursor, so paging never widens a filtered list.
+  // The same filters with no cursor are this feed's own first page, which is where "back to the start" goes.
   const next = feed.nextCursor;
-  const nextParams = new URLSearchParams(catalogFiltersToParams(filters));
+  const firstParams = new URLSearchParams(catalogFiltersToParams(filters));
+  const nextParams = new URLSearchParams(firstParams);
   if (next !== null) nextParams.set('cursor', next);
+  const firstQuery = firstParams.toString();
 
   return (
     <>
       <h2 className="mt-10 text-lg font-semibold text-neutral-900">{t('feedHeading')}</h2>
+      <CatalogToolbar
+        count={feed.items.length}
+        labels={{ ordering: tFilters('ordering'), resultCount: (count) => tFilters('resultCount', { count }) }}
+        className="mb-6"
+      />
       <SearchResultList
         results={feed.items}
         listingHref={(itemSlug) => listingPath(locale, itemSlug)}
@@ -316,17 +325,17 @@ async function CategoryListings({
           },
         }}
       />
-      {next === null ? null : (
-        <p className="mt-8">
-          <a
-            href={`${categoryPath(locale, slug)}?${nextParams.toString()}`}
-            rel="next"
-            className="inline-block rounded border border-neutral-300 px-4 py-2 text-sm text-neutral-900 hover:border-neutral-900"
-          >
-            {t('feedMore')}
-          </a>
-        </p>
-      )}
+      <Pagination
+        nextHref={next === null ? null : `${categoryPath(locale, slug)}?${nextParams.toString()}`}
+        firstHref={firstQuery === '' ? categoryPath(locale, slug) : `${categoryPath(locale, slug)}?${firstQuery}`}
+        paged={cursor !== null}
+        labels={{
+          next: t('feedMore'),
+          first: tPagination('first'),
+          navigation: tPagination('navigation'),
+        }}
+        className="mt-10"
+      />
       {panel}
     </>
   );

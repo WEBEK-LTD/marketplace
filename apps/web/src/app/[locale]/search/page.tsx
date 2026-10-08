@@ -1,4 +1,4 @@
-import { Heading, PageContainer } from '@repo/ui';
+import { Heading, PageContainer, Pagination } from '@repo/ui';
 import {
   SEARCH_MIN_QUERY_LENGTH,
   catalogFiltersToParams,
@@ -81,6 +81,7 @@ async function Results({
   // rather than being duplicated into Search.
   const tListings = await getTranslations({ locale, namespace: 'Listings' });
   const tServices = await getTranslations({ locale, namespace: 'Services' });
+  const tPagination = await getTranslations({ locale, namespace: 'Pagination' });
   const found = await readSearch({ q: query, locale, cursor, filters });
 
   if (found.kind === 'invalid') {
@@ -108,8 +109,10 @@ async function Results({
   };
 
   const next = found.page.nextCursor;
-  // Every filter is carried into the next page, so paging a filtered search cannot widen it.
-  const nextParams = new URLSearchParams([['q', query], ...catalogFiltersToParams(filters)]);
+  // Every filter is carried into the next page, so paging a filtered search cannot widen it. The same
+  // parameters without a cursor are the search's own first page, which is where "back to the start" goes.
+  const firstParams = new URLSearchParams([['q', query], ...catalogFiltersToParams(filters)]);
+  const nextParams = new URLSearchParams(firstParams);
   if (next !== null) nextParams.set('cursor', next);
 
   return (
@@ -120,17 +123,18 @@ async function Results({
         serviceHref={(slug) => servicePath(locale, slug)}
         labels={{ listing: listingLabels, service: serviceLabels }}
       />
-      {next === null ? null : (
-        <p className="mt-8">
-          <a
-            href={`${basePath(locale)}?${nextParams.toString()}`}
-            rel="next"
-            className="inline-block rounded border border-neutral-300 px-4 py-2 text-sm text-neutral-900 hover:border-neutral-900"
-          >
-            {t('more')}
-          </a>
-        </p>
-      )}
+      <Pagination
+        nextHref={next === null ? null : `${basePath(locale)}?${nextParams.toString()}`}
+        firstHref={`${basePath(locale)}?${firstParams.toString()}`}
+        paged={cursor !== null}
+        labels={{
+          next: t('more'),
+          first: tPagination('first'),
+          position: tPagination('showing', { count: found.page.items.length }),
+          navigation: tPagination('navigation'),
+        }}
+        className="mt-10"
+      />
     </>
   );
 }

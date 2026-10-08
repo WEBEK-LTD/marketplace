@@ -1,5 +1,6 @@
 {
   "Accessibility": {
+    "breadcrumb": "Breadcrumb",
     "skipToContent": "Skip to content"
   },
   "Account": {
@@ -103,17 +104,21 @@
     "unavailable": "The blog could not be loaded just now. Please try again shortly."
   },
   "CatalogFilters": {
+    "activeCount": "{count, plural, one {1 filter} other {# filters}}",
     "apply": "Apply the filters",
     "clear": "Clear the filters",
+    "filtersLabel": "Filters",
     "from": "From",
     "heading": "Narrow these results",
     "listingTypeHeading": "Products or services",
     "matches": "{count, plural, =0 {none} one {# match} other {# matches}}",
     "no": "No",
+    "ordering": "Newest first",
     "priceCurrency": "Currency",
     "priceFrom": "From",
     "priceHeading": "Price",
     "priceTo": "To",
+    "resultCount": "{count, plural, =0 {No results} one {1 result} other {# results}}",
     "tagsHeading": "Tags",
     "to": "To",
     "typeProduct": "Products",
@@ -176,8 +181,10 @@
     "copyright": "© {year} {name}"
   },
   "Header": {
+    "closeMenu": "Close menu",
     "languageLink": "العربية",
-    "languageLinkLabel": "Switch to Arabic"
+    "languageLinkLabel": "Switch to Arabic",
+    "menu": "Menu"
   },
   "Homepage": {
     "allPosts": "Read more on the blog",
@@ -433,6 +440,11 @@
     "notFoundDescription": "This page does not exist or is no longer published.",
     "errorTitle": "Page unavailable",
     "errorDescription": "We couldn't load this page right now. Please try again later."
+  },
+  "Pagination": {
+    "first": "Back to the start",
+    "navigation": "Pagination",
+    "showing": "{count, plural, =0 {No results on this page} one {1 result on this page} other {# results on this page}}"
   },
   "Profile": {
     "title": "Profile",

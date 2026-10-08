@@ -1,5 +1,6 @@
 {
   "Accessibility": {
+    "breadcrumb": "مسار التنقل",
     "skipToContent": "تخطَّ إلى المحتوى"
   },
   "Account": {
@@ -103,17 +104,21 @@
     "unavailable": "تعذّر تحميل المدونة الآن. يُرجى المحاولة بعد قليل."
   },
   "CatalogFilters": {
+    "activeCount": "{count, plural, one {عامل تصفية واحد} other {# عوامل تصفية}}",
     "apply": "تطبيق المرشحات",
     "clear": "مسح المرشحات",
+    "filtersLabel": "عوامل التصفية",
     "from": "من",
     "heading": "تضييق النتائج",
     "listingTypeHeading": "منتجات أم خدمات",
     "matches": "{count, plural, =0 {لا شيء} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
     "no": "لا",
+    "ordering": "الأحدث أولاً",
     "priceCurrency": "العملة",
     "priceFrom": "من",
     "priceHeading": "السعر",
     "priceTo": "إلى",
+    "resultCount": "{count, plural, =0 {لا نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
     "tagsHeading": "الوسوم",
     "to": "إلى",
     "typeProduct": "منتجات",
@@ -176,8 +181,10 @@
     "copyright": "© {year} {name}"
   },
   "Header": {
+    "closeMenu": "إغلاق القائمة",
     "languageLink": "English",
-    "languageLinkLabel": "التبديل إلى الإنجليزية"
+    "languageLinkLabel": "التبديل إلى الإنجليزية",
+    "menu": "القائمة"
   },
   "Homepage": {
     "allPosts": "اقرأ المزيد في المدونة",
@@ -433,6 +440,11 @@
     "notFoundDescription": "هذه الصفحة غير موجودة أو لم تعد منشورة.",
     "errorTitle": "الصفحة غير متاحة",
     "errorDescription": "لم نتمكن من تحميل هذه الصفحة الآن. يُرجى المحاولة لاحقاً."
+  },
+  "Pagination": {
+    "first": "العودة إلى البداية",
+    "navigation": "ترقيم الصفحات",
+    "showing": "{count, plural, =0 {لا نتائج في هذه الصفحة} one {نتيجة واحدة في هذه الصفحة} two {نتيجتان في هذه الصفحة} few {# نتائج في هذه الصفحة} many {# نتيجة في هذه الصفحة} other {# نتيجة في هذه الصفحة}}"
   },
   "Profile": {
     "title": "الملف الشخصي",

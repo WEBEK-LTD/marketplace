@@ -1,8 +1,9 @@
-import { Heading, PageContainer } from '@repo/ui';
+import { Heading, PageContainer, Pagination } from '@repo/ui';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ServiceGrid, ServiceGridSkeleton, ServiceMessage } from '../../../components/service-views';
+import { CatalogToolbar } from '../../../components/catalog-filter-panel';
 import { readServices } from '../../../server/bff';
 import { metadataWithOverride } from '../../../server/public-metadata';
 
@@ -63,6 +64,8 @@ export async function generateMetadata({ params, searchParams }: PageParams): Pr
 async function ServicesSection({ locale, cursor }: { readonly locale: string; readonly cursor: string | null }) {
   const t = await getTranslations({ locale, namespace: 'Services' });
   const page = await readServices({ cursor });
+  const tPagination = await getTranslations({ locale, namespace: 'Pagination' });
+  const tFilters = await getTranslations({ locale, namespace: 'CatalogFilters' });
 
   if (page === null) {
     return <ServiceMessage tone="error" title={t('errorTitle')} description={t('errorDescription')} />;
@@ -83,18 +86,23 @@ async function ServicesSection({ locale, cursor }: { readonly locale: string; re
 
   return (
     <>
+      <CatalogToolbar
+        count={page.items.length}
+        labels={{ ordering: tFilters('ordering'), resultCount: (count) => tFilters('resultCount', { count }) }}
+        className="mb-6"
+      />
       <ServiceGrid services={page.items} hrefFor={(slug) => servicePath(locale, slug)} labels={labels} />
-      {page.nextCursor === null ? null : (
-        <p className="mt-8">
-          <a
-            href={`${basePath(locale)}?cursor=${encodeURIComponent(page.nextCursor)}`}
-            rel="next"
-            className="inline-block rounded border border-neutral-300 px-4 py-2 text-sm text-neutral-900 hover:border-neutral-900"
-          >
-            {t('more')}
-          </a>
-        </p>
-      )}
+      <Pagination
+        nextHref={page.nextCursor === null ? null : `${basePath(locale)}?cursor=${encodeURIComponent(page.nextCursor)}`}
+        firstHref={basePath(locale)}
+        paged={cursor !== null}
+        labels={{
+          next: t('more'),
+          first: tPagination('first'),
+          navigation: tPagination('navigation'),
+        }}
+        className="mt-10"
+      />
     </>
   );
 }

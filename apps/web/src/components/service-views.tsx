@@ -1,19 +1,33 @@
 import type { ServiceDetail, ServiceSummary } from '@repo/contracts';
-import { ListingPrice, type ListingPriceLabels } from './listing-price';
-import { ListingMessage } from './listing-views';
+import {
+  Alert,
+  Badge,
+  Card,
+  CardGrid,
+  DetailLayout,
+  DetailList,
+  EmptyState,
+  Heading,
+  SkeletonCardGrid,
+  TYPE,
+  cx,
+} from '@repo/ui';
+import { CatalogCard } from './catalog-card';
+import { formatListingAmount, type ListingPriceLabels } from './listing-price';
 
 /**
- * The public service surfaces (Phase 4-C).
+ * The public service surfaces (Phase 4-B, restyled in 0109).
  *
- * Built on the listing components where the two surfaces genuinely agree — the price states and the
- * empty/error message are the same problem — and diverging where a service is not a product: how it is
- * priced, how long it takes, how many revisions it includes, whether it needs a brief, what it covers.
+ * Everything renders on the server: a service is content, and a crawler and a visitor with no JavaScript should
+ * both see it. Nothing here ships an image, for the same reason the listing surfaces do not — the browse contract
+ * carries no media field.
  *
- * Everything renders on the server, and nothing here ships an image: variant sizes and formats are still
- * an open decision, so there is no media UI to build yet.
+ * Direction is never hard-coded. Spacing and alignment use logical properties, so the same markup reads correctly
+ * in English and in Arabic with nothing but `dir` changing.
  *
- * Direction is never hard-coded. Spacing and alignment use logical properties, so the same markup reads
- * correctly in English and in Arabic with nothing but `dir` changing.
+ * **A service card is the same card as a listing card.** Both are {@link CatalogCard}, which is what makes a
+ * mixed grid — the marketplace landing, a search result list — read as one catalogue rather than as two lists
+ * that happen to be stacked. What differs is only what a service has to say: a pricing model, a delivery time.
  */
 
 export interface ServiceLabels extends ListingPriceLabels {
@@ -26,23 +40,10 @@ export interface ServiceLabels extends ListingPriceLabels {
 }
 
 /** The pricing model, in words, or nothing when the seller recorded none. */
-function pricingLabel(
-  pricingModel: ServiceSummary['pricingModel'],
-  labels: ServiceLabels,
-): string | null {
+function pricingLabel(pricingModel: ServiceSummary['pricingModel'], labels: ServiceLabels): string | null {
   if (pricingModel === 'fixed') return labels.fixedPrice;
   if (pricingModel === 'custom') return labels.customPricing;
   return null;
-}
-
-/** A small labelled fact — delivery time, revisions — shown only when the service states one. */
-function Fact({ label, value }: { readonly label: string; readonly value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-neutral-100 py-2">
-      <dt className="text-sm text-neutral-600">{label}</dt>
-      <dd className="text-sm text-neutral-900">{value}</dd>
-    </div>
-  );
 }
 
 /** One card in the service list. */
@@ -56,44 +57,54 @@ export function ServiceCard({
   readonly labels: ServiceLabels;
 }) {
   const pricing = pricingLabel(service.pricingModel, labels);
+  /**
+   * The facts the card states, and only the ones this service actually recorded.
+   *
+   * Both the delivery time and the revisions appear, as they did before 0109 — a buyer comparing services uses
+   * both, so dropping one to make the card tidier would be taking information away. They are a description list
+   * rather than a line joined by a separator character, which is the same reason the rest of the product gave up
+   * the middle-dot meta string: a screen reader reads a real `<dl>` as pairs, and the layout mirrors itself.
+   */
+  const facts = [
+    ...(service.deliveryDays === null
+      ? []
+      : [{ label: labels.deliveryTime, value: labels.deliveryDays(service.deliveryDays) }]),
+    ...(service.revisionsIncluded === null
+      ? []
+      : [{ label: labels.revisionsIncluded, value: String(service.revisionsIncluded) }]),
+  ];
 
   return (
-    <li className="rounded-lg border border-neutral-200 p-5">
-      <h2 className="text-base font-medium text-neutral-900">
-        <a href={href} className="underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900">
-          {service.title}
-        </a>
-      </h2>
-      {service.city === null ? null : <p className="mt-1 text-sm text-neutral-600">{service.city}</p>}
-      <ListingPrice
-        priceMinor={service.priceMinor}
-        currencyCode={service.currencyCode}
-        currencyMinorUnit={service.currencyMinorUnit}
-        isNegotiable={false}
-        labels={labels}
-      />
-      {pricing === null ? null : (
-        <p className="mt-2">
-          <span className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs text-neutral-700">
-            {pricing}
-          </span>
-        </p>
-      )}
-      {service.deliveryDays === null && service.revisionsIncluded === null ? null : (
-        <dl className="mt-3">
-          {service.deliveryDays === null ? null : (
-            <Fact label={labels.deliveryTime} value={labels.deliveryDays(service.deliveryDays)} />
-          )}
-          {service.revisionsIncluded === null ? null : (
-            <Fact label={labels.revisionsIncluded} value={String(service.revisionsIncluded)} />
-          )}
-        </dl>
-      )}
-    </li>
+    <CatalogCard
+      href={href}
+      title={service.title}
+      city={service.city}
+      priceMinor={service.priceMinor}
+      currencyCode={service.currencyCode}
+      currencyMinorUnit={service.currencyMinorUnit}
+      /* A service is not a negotiable thing: the field does not exist on the contract. */
+      isNegotiable={null}
+      labels={labels}
+      {...(pricing === null ? {} : { badge: { label: pricing, tone: 'neutral' as const } })}
+      {...(facts.length === 0
+        ? {}
+        : {
+            meta: (
+              <dl className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {facts.map((fact) => (
+                  <div key={fact.label} className="flex items-baseline gap-1.5">
+                    <dt className="text-neutral-500">{fact.label}</dt>
+                    <dd className="font-medium text-neutral-700">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ),
+          })}
+    />
   );
 }
 
-/** The service list: one column on a phone, two from small, three from large. */
+/** The service list, on the catalogue's shared responsive rhythm. */
 export function ServiceGrid({
   services,
   hrefFor,
@@ -104,35 +115,39 @@ export function ServiceGrid({
   readonly labels: ServiceLabels;
 }) {
   return (
-    <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <CardGrid className="mt-8">
       {services.map((service) => (
         <ServiceCard key={service.id} service={service} href={hrefFor(service.slug)} labels={labels} />
       ))}
-    </ul>
+    </CardGrid>
   );
 }
 
-/** The loading state: placeholders shaped like the cards, so the page does not jump. */
+/** The loading state: placeholders shaped like the real cards, so the grid does not move. */
 export function ServiceGridSkeleton({ label }: { readonly label: string }) {
   return (
-    <div aria-busy="true" aria-live="polite" className="mt-8">
-      <p className="text-sm text-neutral-600">{label}</p>
-      <div aria-hidden="true" className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2, 3, 4, 5].map((slot) => (
-          <div key={slot} className="rounded-lg border border-neutral-200 p-5">
-            <div className="h-4 w-3/4 rounded bg-neutral-200" />
-            <div className="mt-3 h-3 w-1/3 rounded bg-neutral-100" />
-            <div className="mt-4 h-4 w-1/2 rounded bg-neutral-100" />
-            <div className="mt-4 h-3 w-2/3 rounded bg-neutral-100" />
-          </div>
-        ))}
-      </div>
+    <div className="mt-8">
+      <SkeletonCardGrid count={8} label={label} />
     </div>
   );
 }
 
-/** The empty, error and not-found states share the listing surface's message component. */
-export { ListingMessage as ServiceMessage };
+/** The empty and unavailable states, drawn apart because a person's next move differs. */
+export function ServiceMessage({
+  title,
+  description,
+  tone,
+}: {
+  readonly title: string;
+  readonly description: string;
+  readonly tone: 'empty' | 'error';
+}) {
+  return (
+    <div className="mt-8">
+      <EmptyState title={title} description={description} tone={tone === 'error' ? 'unavailable' : 'empty'} />
+    </div>
+  );
+}
 
 export interface ServiceDetailLabels extends ServiceLabels {
   readonly noLongerAvailable: string;
@@ -148,10 +163,7 @@ export interface ServiceDetailLabels extends ServiceLabels {
 }
 
 /** Renders one attribute's value in the shape the attribute actually has. */
-function attributeValue(
-  attribute: ServiceDetail['attributes'][number],
-  labels: ServiceDetailLabels,
-): string {
+function attributeValue(attribute: ServiceDetail['attributes'][number], labels: ServiceDetailLabels): string {
   if (attribute.options.length > 0) return attribute.options.join(', ');
   if (attribute.boolean !== null) return attribute.boolean ? labels.yes : labels.no;
   if (attribute.text === null) return '';
@@ -161,9 +173,14 @@ function attributeValue(
 /**
  * The service detail page's body.
  *
- * `content_language` is set on the title, description and scope, because seller content is stored in its
- * own writing language and never translated (D7): a page in Arabic may carry an English service, and a
- * screen reader should switch voice for it rather than read it in the page's language.
+ * **`contentLanguage` is set on the title, description and scope**, because seller content is stored in its own
+ * writing language and never translated (D7): a page in Arabic may carry an English service, and a screen reader
+ * should switch voice for it rather than read it in the page's language. `dir="auto"` goes with it, so content in
+ * the other script is laid out the way it should be.
+ *
+ * The aside holds what a buyer judges a service by — the price, the pricing model, the delivery terms, the seller
+ * — and sticks on a wide viewport while they read the scope. On a phone it comes first in the source order, so
+ * none of that is below a long description.
  */
 export function ServiceDetailView({
   service,
@@ -174,114 +191,131 @@ export function ServiceDetailView({
 }) {
   const unavailable = service.availability === 'no_longer_available';
   const pricing = pricingLabel(service.pricingModel, labels);
+  const amount = formatListingAmount(service.priceMinor, service.currencyCode, service.currencyMinorUnit);
+
+  /** The delivery terms, as a list, where the service states any. */
+  const terms = [
+    ...(service.deliveryDays === null
+      ? []
+      : [{ label: labels.deliveryTime, value: labels.deliveryDays(service.deliveryDays) }]),
+    ...(service.revisionsIncluded === null
+      ? []
+      : [{ label: labels.revisionsIncluded, value: String(service.revisionsIncluded) }]),
+    ...(service.requiresBrief === null
+      ? []
+      : [{ label: labels.requiresBrief, value: service.requiresBrief ? labels.yes : labels.no }]),
+  ];
 
   return (
-    <article className="mt-6">
+    <article className="pt-6 pb-12">
       {unavailable ? (
-        <p
-          role="status"
-          className="rounded-lg border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-900"
-        >
-          {labels.noLongerAvailable}
-        </p>
+        <div className="mb-6">
+          <Alert tone="warning" announce="polite" title={labels.noLongerAvailable} />
+        </div>
       ) : null}
 
-      <h1 lang={service.contentLanguage} className="mt-4 text-2xl font-semibold text-neutral-900">
-        {service.title}
-      </h1>
-      {service.city === null ? null : <p className="mt-1 text-neutral-600">{service.city}</p>}
-
-      <ListingPrice
-        priceMinor={service.priceMinor}
-        currencyCode={service.currencyCode}
-        currencyMinorUnit={service.currencyMinorUnit}
-        isNegotiable={false}
-        labels={labels}
-      />
-      {pricing === null ? null : (
-        <p className="mt-2">
-          <span className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs text-neutral-700">
-            {pricing}
+      <header className="mb-8">
+        <Heading level={1}>
+          <span lang={service.contentLanguage} dir="auto">
+            {service.title}
           </span>
-        </p>
-      )}
+        </Heading>
+        {service.city === null ? null : <p className={cx('mt-2', TYPE.meta)}>{service.city}</p>}
+      </header>
 
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-neutral-900">{labels.descriptionHeading}</h2>
-          <p lang={service.contentLanguage} className="mt-2 whitespace-pre-line text-neutral-800">
-            {service.description}
-          </p>
-
-          {service.scope === null ? null : (
-            <>
-              <h2 className="mt-8 text-lg font-semibold text-neutral-900">{labels.scope}</h2>
-              <p lang={service.contentLanguage} className="mt-2 whitespace-pre-line text-neutral-800">
-                {service.scope}
-              </p>
-            </>
-          )}
-
-          {service.attributes.length > 0 ? (
-            <>
-              <h2 className="mt-8 text-lg font-semibold text-neutral-900">{labels.detailsHeading}</h2>
-              <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
-                {service.attributes.map((attribute) => (
-                  <Fact
-                    key={attribute.key}
-                    label={attribute.label}
-                    value={attributeValue(attribute, labels)}
-                  />
-                ))}
-              </dl>
-            </>
-          ) : null}
-        </div>
-
-        <aside className="space-y-6">
-          {service.deliveryDays === null &&
-          service.revisionsIncluded === null &&
-          service.requiresBrief === null ? null : (
-            <dl>
-              {service.deliveryDays === null ? null : (
-                <Fact label={labels.deliveryTime} value={labels.deliveryDays(service.deliveryDays)} />
-              )}
-              {service.revisionsIncluded === null ? null : (
-                <Fact label={labels.revisionsIncluded} value={String(service.revisionsIncluded)} />
-              )}
-              {service.requiresBrief === null ? null : (
-                <Fact
-                  label={labels.requiresBrief}
-                  value={service.requiresBrief ? labels.yes : labels.no}
-                />
-              )}
-            </dl>
-          )}
-          <section>
-            <h2 className="text-sm font-semibold text-neutral-900">{labels.sellerHeading}</h2>
-            <p className="mt-1 text-neutral-800">{service.seller.displayName}</p>
-          </section>
-          <section>
-            <h2 className="text-sm font-semibold text-neutral-900">{labels.categoryHeading}</h2>
-            <p className="mt-1 text-neutral-800">{service.category.name}</p>
-          </section>
-          {service.tags.length > 0 ? (
+      <DetailLayout
+        main={
+          <div className="space-y-10">
             <section>
-              <h2 className="text-sm font-semibold text-neutral-900">{labels.tagsHeading}</h2>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {service.tags.map((tag) => (
-                  <li
-                    key={tag.slug}
-                    className="rounded border border-neutral-300 px-2 py-0.5 text-xs text-neutral-700"
-                  >
-                    {tag.name}
-                  </li>
-                ))}
-              </ul>
+              <h2 className={TYPE.h3}>{labels.descriptionHeading}</h2>
+              <p
+                lang={service.contentLanguage}
+                dir="auto"
+                className={cx('mt-3 max-w-prose whitespace-pre-line', TYPE.prose)}
+              >
+                {service.description}
+              </p>
             </section>
-          ) : null}
-        </aside>
-      </div>
+
+            {service.scope === null ? null : (
+              <section>
+                <h2 className={TYPE.h3}>{labels.scope}</h2>
+                <p
+                  lang={service.contentLanguage}
+                  dir="auto"
+                  className={cx('mt-3 max-w-prose whitespace-pre-line', TYPE.prose)}
+                >
+                  {service.scope}
+                </p>
+              </section>
+            )}
+
+            {service.attributes.length > 0 ? (
+              <section>
+                <h2 className={TYPE.h3}>{labels.detailsHeading}</h2>
+                <DetailList
+                  className="mt-4"
+                  items={service.attributes.map((attribute) => ({
+                    label: attribute.label,
+                    value: attributeValue(attribute, labels),
+                  }))}
+                />
+              </section>
+            ) : null}
+          </div>
+        }
+        aside={
+          <div className="space-y-4">
+            <Card padding="lg">
+              <p className={amount === null ? 'text-lg font-medium text-neutral-700' : TYPE.priceLarge}>
+                {amount ?? labels.contactForPrice}
+              </p>
+              {pricing === null ? null : (
+                <p className="mt-2">
+                  <Badge tone="neutral">{pricing}</Badge>
+                </p>
+              )}
+              {terms.length === 0 ? null : (
+                <dl className="mt-5 space-y-3 border-t border-neutral-200 pt-5">
+                  {terms.map((term) => (
+                    <div key={term.label} className="flex items-baseline justify-between gap-4">
+                      <dt className="text-sm text-neutral-600">{term.label}</dt>
+                      <dd className="text-sm font-medium text-neutral-900">{term.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              <dl className="mt-5 space-y-4 border-t border-neutral-200 pt-5">
+                <div>
+                  <dt className={TYPE.label}>{labels.sellerHeading}</dt>
+                  <dd className="mt-0.5 text-sm text-neutral-700" dir="auto">
+                    {service.seller.displayName}
+                  </dd>
+                </div>
+                <div>
+                  <dt className={TYPE.label}>{labels.categoryHeading}</dt>
+                  <dd className="mt-0.5 text-sm text-neutral-700" dir="auto">
+                    {service.category.name}
+                  </dd>
+                </div>
+              </dl>
+            </Card>
+
+            {service.tags.length > 0 ? (
+              <Card padding="lg">
+                <h2 className={TYPE.label}>{labels.tagsHeading}</h2>
+                <ul className="mt-3 flex list-none flex-wrap gap-2">
+                  {service.tags.map((tag) => (
+                    <li key={tag.slug}>
+                      <Badge tone="neutral">{tag.name}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+          </div>
+        }
+      />
     </article>
   );
 }

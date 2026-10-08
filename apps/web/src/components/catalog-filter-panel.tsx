@@ -1,5 +1,6 @@
 import type { CatalogFacet, CatalogFilters } from '@repo/contracts';
 import { CATALOG_FILTER_PARAMS, catalogFiltersToParams } from '@repo/contracts';
+import { Button, ButtonLink, Choice, ChoiceGroup, Input, Select, TYPE, cx } from '@repo/ui';
 
 /**
  * The filter panel, as a plain HTML form (Phase 8-D).
@@ -20,6 +21,16 @@ import { CATALOG_FILTER_PARAMS, catalogFiltersToParams } from '@repo/contracts';
  *
  * **Nothing here decides what is offered.** The facets are the API's answer, which is the database's answer;
  * this component renders them and never invents a dimension, a bound or an ordering.
+ *
+ * **There is no sort control, and that is a decision rather than a gap** (0109). `catalog-filters.ts` states it
+ * outright: "There is no sort parameter, because ordering is 0051's approved newest-first". A dropdown offering
+ * "price, low to high" would therefore be a control that cannot work — so the ordering is *stated* instead, in
+ * {@link CatalogToolbar}, where a person can see what they are looking at. Offering a sort would need an ordering
+ * parameter on the catalogue readers and an owner decision reopening 0051.
+ *
+ * **0109 made the panel a disclosure on a narrow viewport.** A phone showed thirty filter rows above the first
+ * result, which meant a person had to scroll past the whole panel to reach the catalogue. `<details>` collapses
+ * it with no JavaScript and no state, and it stays open on a wide viewport where there is room for both.
  */
 
 export interface CatalogFilterLabels {
@@ -41,14 +52,8 @@ export interface CatalogFilterLabels {
   readonly matches: (count: number) => string;
 }
 
-const FIELDSET = 'mt-5 border-t border-neutral-200 pt-4';
-const LEGEND = 'text-sm font-semibold text-neutral-900';
-const ROW = 'mt-2 flex items-center gap-2';
-const COUNT = 'text-xs text-neutral-600';
-const BOX = 'w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const BUTTON = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-0';
-const LINK =
-  'text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900';
+/** The spacing between one dimension and the next. The rest of the grammar comes from the primitives. */
+const GROUP = 'mt-5';
 
 /** Whether a value is currently chosen, read from the filters the page was rendered with. */
 function chosen(filters: CatalogFilters, facet: CatalogFacet, value: string): boolean {
@@ -100,33 +105,61 @@ export function CatalogFilterPanel({
   const cleared = new URLSearchParams(hidden.map((field) => [field.name, field.value]));
   const clearedQuery = cleared.toString();
 
+  const activeCount = catalogFiltersToParams(filters).length;
+
   return (
-    <form method="get" action={action} className="mt-8 rounded-lg border border-neutral-200 p-5">
-      <h2 className="text-lg font-semibold text-neutral-900">{labels.heading}</h2>
-
-      {hidden.map((field) => (
-        <input key={field.name} type="hidden" name={field.name} value={field.value} />
-      ))}
-
-      {typeFacet === undefined || typeFacet.values.length < 2 ? null : (
-        <fieldset className={FIELDSET}>
-          <legend className={LEGEND}>{labels.listingTypeHeading}</legend>
-          {typeFacet.values.map((value) => (
-            <label key={value.value} className={ROW}>
-              <input
-                type="radio"
-                name={CATALOG_FILTER_PARAMS.listingType}
-                value={value.value}
-                defaultChecked={chosen(filters, typeFacet, value.value)}
-              />
-              <span className="text-sm text-neutral-900">
-                {value.value === 'service' ? labels.typeService : labels.typeProduct}
+    <form method="get" action={action} className="rounded-lg border border-neutral-200 bg-neutral-0">
+      {/*
+        `<details>` with `open` from `lg` up: collapsed on a phone, where thirty rows above the first result made
+        the catalogue unreachable, and always open on a desktop, where the panel is a column beside the grid.
+        `[&_summary]:lg:hidden` hides the toggle rather than the content, so the group is never closed where the
+        toggle is not there to reopen it.
+      */}
+      <details className="group lg:open:block" open>
+        <summary
+          className={cx(
+            'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-5 py-4 lg:hidden',
+            'marker:content-none [&::-webkit-details-marker]:hidden',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900',
+          )}
+        >
+          <span className={TYPE.h4}>{labels.heading}</span>
+          <span className="flex items-center gap-2">
+            {activeCount === 0 ? null : (
+              <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-xs font-medium text-neutral-0 tabular-nums">
+                {activeCount}
               </span>
-              <span className={COUNT}>{labels.matches(value.matchCount)}</span>
-            </label>
+            )}
+            <span
+              aria-hidden="true"
+              className="-mt-1 size-2 rotate-45 border-e-2 border-b-2 border-neutral-500 transition-transform duration-150 group-open:mt-1 group-open:-rotate-135"
+            />
+          </span>
+        </summary>
+
+        <div className="px-5 pt-1 pb-5 lg:pt-5">
+          <h2 className={cx(TYPE.h4, 'hidden lg:block')}>{labels.heading}</h2>
+
+          {hidden.map((field) => (
+            <input key={field.name} type="hidden" name={field.name} value={field.value} />
           ))}
-        </fieldset>
-      )}
+
+          {typeFacet === undefined || typeFacet.values.length < 2 ? null : (
+            <ChoiceGroup legend={labels.listingTypeHeading} className={GROUP}>
+              {typeFacet.values.map((value) => (
+                <Choice
+                  key={value.value}
+                  type="radio"
+                  name={CATALOG_FILTER_PARAMS.listingType}
+                  value={value.value}
+                  defaultChecked={chosen(filters, typeFacet, value.value)}
+                  detail={labels.matches(value.matchCount)}
+                >
+                  {value.value === 'service' ? labels.typeService : labels.typeProduct}
+                </Choice>
+              ))}
+            </ChoiceGroup>
+          )}
 
       {attributeFacets.map((facet) => {
         const name = `${CATALOG_FILTER_PARAMS.attributePrefix}${facet.key ?? ''}`;
@@ -134,101 +167,103 @@ export function CatalogFilterPanel({
 
         if (facet.dataType === 'number') {
           return (
-            <fieldset key={facet.key} className={FIELDSET}>
-              <legend className={LEGEND}>
-                {facet.label}
-                {facet.unit === null ? null : <span className="text-neutral-600"> ({facet.unit})</span>}
-              </legend>
-              <div className="mt-2 flex gap-3">
+            <ChoiceGroup
+              key={facet.key}
+              className={GROUP}
+              legend={
+                <>
+                  {facet.label}
+                  {facet.unit === null ? null : <span className="font-normal text-neutral-600"> ({facet.unit})</span>}
+                </>
+              }
+            >
+              {/* Two boxes, because a span is what the facet carries; buckets would be a rule nobody wrote. */}
+              <div className="mt-1 flex gap-3">
                 <label className="flex-1">
-                  <span className="block text-xs text-neutral-600">{labels.from}</span>
-                  <input
-                    className={BOX}
-                    type="number"
-                    step="any"
+                  <span className="mb-1 block text-xs text-neutral-600">{labels.from}</span>
+                  <Input
+                    id={`${name}-min`}
                     name={`${name}.min`}
-                    defaultValue={current?.min ?? ''}
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    defaultValue={String(current?.min ?? '')}
                     placeholder={facet.rangeMin ?? ''}
                   />
                 </label>
                 <label className="flex-1">
-                  <span className="block text-xs text-neutral-600">{labels.to}</span>
-                  <input
-                    className={BOX}
-                    type="number"
-                    step="any"
+                  <span className="mb-1 block text-xs text-neutral-600">{labels.to}</span>
+                  <Input
+                    id={`${name}-max`}
                     name={`${name}.max`}
-                    defaultValue={current?.max ?? ''}
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    defaultValue={String(current?.max ?? '')}
                     placeholder={facet.rangeMax ?? ''}
                   />
                 </label>
               </div>
-            </fieldset>
+            </ChoiceGroup>
           );
         }
 
         if (facet.dataType === 'boolean') {
           return (
-            <fieldset key={facet.key} className={FIELDSET}>
-              <legend className={LEGEND}>{facet.label}</legend>
+            <ChoiceGroup key={facet.key} legend={facet.label} className={GROUP}>
               {facet.values.map((value) => (
-                <label key={value.value} className={ROW}>
-                  <input
-                    type="radio"
-                    name={name}
-                    value={value.value}
-                    defaultChecked={chosen(filters, facet, value.value)}
-                  />
-                  <span className="text-sm text-neutral-900">
-                    {value.value === 'true' ? labels.yes : labels.no}
-                  </span>
-                  <span className={COUNT}>{labels.matches(value.matchCount)}</span>
-                </label>
+                <Choice
+                  key={value.value}
+                  type="radio"
+                  name={name}
+                  value={value.value}
+                  defaultChecked={chosen(filters, facet, value.value)}
+                  detail={labels.matches(value.matchCount)}
+                >
+                  {value.value === 'true' ? labels.yes : labels.no}
+                </Choice>
               ))}
-            </fieldset>
+            </ChoiceGroup>
           );
         }
 
         return (
-          <fieldset key={facet.key} className={FIELDSET}>
-            <legend className={LEGEND}>{facet.label}</legend>
+          <ChoiceGroup key={facet.key} legend={facet.label} className={GROUP}>
             {facet.values.map((value) => (
-              <label key={value.value} className={ROW}>
-                <input
-                  type="checkbox"
-                  name={name}
-                  value={value.value}
-                  defaultChecked={chosen(filters, facet, value.value)}
-                />
-                <span className="text-sm text-neutral-900">{value.label}</span>
-                <span className={COUNT}>{labels.matches(value.matchCount)}</span>
-              </label>
+              <Choice
+                key={value.value}
+                type="checkbox"
+                name={name}
+                value={value.value}
+                defaultChecked={chosen(filters, facet, value.value)}
+                detail={labels.matches(value.matchCount)}
+              >
+                {value.label}
+              </Choice>
             ))}
-          </fieldset>
+          </ChoiceGroup>
         );
       })}
 
-      {tagFacet === undefined || tagFacet.values.length === 0 ? null : (
-        <fieldset className={FIELDSET}>
-          <legend className={LEGEND}>{labels.tagsHeading}</legend>
-          {tagFacet.values.map((value) => (
-            <label key={value.value} className={ROW}>
-              <input
-                type="checkbox"
-                name={CATALOG_FILTER_PARAMS.tag}
-                value={value.value}
-                defaultChecked={chosen(filters, tagFacet, value.value)}
-              />
-              <span className="text-sm text-neutral-900">{value.label}</span>
-              <span className={COUNT}>{labels.matches(value.matchCount)}</span>
-            </label>
-          ))}
-        </fieldset>
-      )}
+          {tagFacet === undefined || tagFacet.values.length === 0 ? null : (
+            <ChoiceGroup legend={labels.tagsHeading} className={GROUP}>
+              {tagFacet.values.map((value) => (
+                <Choice
+                  key={value.value}
+                  type="checkbox"
+                  name={CATALOG_FILTER_PARAMS.tag}
+                  value={value.value}
+                  defaultChecked={chosen(filters, tagFacet, value.value)}
+                  detail={labels.matches(value.matchCount)}
+                >
+                  {value.label}
+                </Choice>
+              ))}
+            </ChoiceGroup>
+          )}
 
-      {currencyFacets.length === 0 ? null : (
-        <fieldset className={FIELDSET}>
-          <legend className={LEGEND}>{labels.priceHeading}</legend>
+          {currencyFacets.length === 0 ? null : (
+            <ChoiceGroup legend={labels.priceHeading} className={GROUP}>
           {/* The currency is required with a bound, because there is no conversion: a price is only ever
               compared inside the currency it was listed in. The codes are the catalogue's own. */}
           {currencyFacets.length === 1 ? (
@@ -238,61 +273,104 @@ export function CatalogFilterPanel({
               value={currencyFacets[0]?.values[0]?.value ?? ''}
             />
           ) : (
-            <label className="mt-2 block">
-              <span className="block text-xs text-neutral-600">{labels.priceCurrency}</span>
-              <select
-                className={BOX}
-                name={CATALOG_FILTER_PARAMS.priceCurrency}
-                defaultValue={filters.price?.currency ?? ''}
-              >
-                {currencyFacets.map((facet) => {
-                  const code = facet.values[0]?.value ?? '';
-                  return (
-                    <option key={code} value={code}>
-                      {code}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
+                <label className="mt-1 block">
+                  <span className="mb-1 block text-xs text-neutral-600">{labels.priceCurrency}</span>
+                  <Select
+                    id="price-currency"
+                    name={CATALOG_FILTER_PARAMS.priceCurrency}
+                    defaultValue={filters.price?.currency ?? ''}
+                    options={currencyFacets.map((facet) => {
+                      const code = facet.values[0]?.value ?? '';
+                      return { value: code, label: code };
+                    })}
+                  />
+                </label>
+              )}
+              <div className="mt-2 flex gap-3">
+                <label className="flex-1">
+                  <span className="mb-1 block text-xs text-neutral-600">{labels.priceFrom}</span>
+                  <Input
+                    id="price-min"
+                    name={CATALOG_FILTER_PARAMS.priceMin}
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    step="1"
+                    defaultValue={String(filters.price?.min ?? '')}
+                  />
+                </label>
+                <label className="flex-1">
+                  <span className="mb-1 block text-xs text-neutral-600">{labels.priceTo}</span>
+                  <Input
+                    id="price-max"
+                    name={CATALOG_FILTER_PARAMS.priceMax}
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    step="1"
+                    defaultValue={String(filters.price?.max ?? '')}
+                  />
+                </label>
+              </div>
+            </ChoiceGroup>
           )}
-          <div className="mt-2 flex gap-3">
-            <label className="flex-1">
-              <span className="block text-xs text-neutral-600">{labels.priceFrom}</span>
-              <input
-                className={BOX}
-                type="number"
-                min={0}
-                step={1}
-                name={CATALOG_FILTER_PARAMS.priceMin}
-                defaultValue={filters.price?.min ?? ''}
-              />
-            </label>
-            <label className="flex-1">
-              <span className="block text-xs text-neutral-600">{labels.priceTo}</span>
-              <input
-                className={BOX}
-                type="number"
-                min={0}
-                step={1}
-                name={CATALOG_FILTER_PARAMS.priceMax}
-                defaultValue={filters.price?.max ?? ''}
-              />
-            </label>
-          </div>
-        </fieldset>
-      )}
 
-      <div className="mt-6 flex items-center gap-4">
-        <button className={BUTTON} type="submit">
-          {labels.apply}
-        </button>
-        {anyFilter ? (
-          <a className={LINK} href={clearedQuery === '' ? action : `${action}?${clearedQuery}`}>
-            {labels.clear}
-          </a>
-        ) : null}
-      </div>
+          <div className="mt-6 flex items-center gap-2 border-t border-neutral-200 pt-5">
+            <Button type="submit" size="md">
+              {labels.apply}
+            </Button>
+            {anyFilter ? (
+              <ButtonLink
+                href={clearedQuery === '' ? action : `${action}?${clearedQuery}`}
+                variant="ghost"
+                size="md"
+              >
+                {labels.clear}
+              </ButtonLink>
+            ) : null}
+          </div>
+        </div>
+      </details>
     </form>
+  );
+}
+
+export interface CatalogToolbarLabels {
+  readonly ordering: string;
+  readonly resultCount: (count: number) => string;
+}
+
+/**
+ * What a person is looking at, above the grid.
+ *
+ * **This is where the sort control is not.** `catalog-filters.ts` states that there is no sort parameter because
+ * ordering is 0051's approved newest-first, so a dropdown here would be a control with nothing to send. Stating
+ * the ordering instead gives a person the same information the control was supposed to convey — what order these
+ * results are in — without implying a choice the product does not offer.
+ *
+ * The count is announced politely: changing a filter is a navigation, and somebody who is not watching the screen
+ * needs to hear how many results came back.
+ */
+export function CatalogToolbar({
+  count,
+  labels,
+  className,
+}: {
+  readonly count: number;
+  readonly labels: CatalogToolbarLabels;
+  readonly className?: string;
+}) {
+  return (
+    <div
+      className={cx(
+        'flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-neutral-200 pb-3',
+        className,
+      )}
+    >
+      <p className="text-sm font-medium text-neutral-900 tabular-nums" aria-live="polite">
+        {labels.resultCount(count)}
+      </p>
+      <p className="text-sm text-neutral-600">{labels.ordering}</p>
+    </div>
   );
 }

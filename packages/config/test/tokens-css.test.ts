@@ -21,10 +21,28 @@ describe('design tokens as CSS variables', () => {
     expect(css).toContain('--token-color-brand-secondary: #D4E5F6;');
   });
 
-  it('writes a :root block with no gradients or glows', () => {
+  it('writes a :root block with no gradients, glows or fetched assets', () => {
     const css = tokensToCss();
     expect(css.startsWith('/* Generated from @repo/config design tokens. Do not edit. */\n:root {')).toBe(true);
-    expect(css.toLowerCase()).not.toMatch(/gradient|glow|shadow|url\(/);
+    expect(css.toLowerCase()).not.toMatch(/gradient|glow|url\(/);
+
+    // 0109 made elevation part of the token contract, so `shadow` is no longer forbidden outright — but it is
+    // allowed in exactly three places. The rule this assertion protects is that nothing else in the sheet
+    // carries a shadow, and that each of the three is a real `box-shadow` value rather than a glow in disguise.
+    const shadowLines = css
+      .split('\n')
+      .filter((line) => line.toLowerCase().includes('shadow'))
+      .map((line) => line.trim());
+    expect(shadowLines.map((line) => line.split(':')[0])).toEqual([
+      '--token-shadow-sm',
+      '--token-shadow-md',
+      '--token-shadow-lg',
+    ]);
+    for (const line of shadowLines) {
+      // An offset-and-blur triple in `rgb(... / alpha)`. A glow would have no vertical offset.
+      expect(line).toMatch(/^--token-shadow-(?:sm|md|lg): .*rgb\(0 0 0 \/ 0\.\d+\);$/);
+      expect(line).not.toMatch(/ 0 0 \d+px/);
+    }
   });
 
   it('the built dist/tokens.css matches the generator', () => {

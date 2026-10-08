@@ -10,6 +10,8 @@ export function tokenVariables(tokens: DesignTokens = designTokens): Readonly<Re
   for (const [key, value] of Object.entries(tokens.fontSize)) vars[`--token-text-${key}`] = value;
   for (const [key, value] of Object.entries(tokens.spacing)) vars[`--token-spacing-${key}`] = value;
   for (const [key, value] of Object.entries(tokens.radius)) vars[`--token-radius-${key}`] = value;
+  for (const [key, value] of Object.entries(tokens.lineHeight)) vars[`--token-leading-${key}`] = value;
+  for (const [key, value] of Object.entries(tokens.shadow)) vars[`--token-shadow-${key}`] = value;
   return Object.freeze(vars);
 }
 

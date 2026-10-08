@@ -1,10 +1,10 @@
-import { Heading, PageContainer } from '@repo/ui';
+import { Alert, ButtonLink, Heading, PageContainer, Section, cx } from '@repo/ui';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 import type { PublicLocale } from '@repo/config';
 import { HomepageSections } from '../../components/homepage-sections';
+import { SiteSearchForm } from '../../components/site-search-form';
 import { readHomepage } from '../../server/bff';
 import { metadataWithOverride } from '../../server/public-metadata';
 
@@ -59,50 +59,83 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   );
 }
 
+/**
+ * The page's opening, and the one thing it leads with (0109).
+ *
+ * **A working search field, not a headline.** Two reasons, and the second is binding. The first is that a
+ * marketplace's characteristic action is looking for something, so the most useful thing `/` can put first is the
+ * means to do it — a big number with a small label, or a headline over a gradient, is the default treatment and
+ * says nothing about this product. The second is that this page promised, before 0109, to compose what an
+ * administrator arranged and to invent no marketing copy of its own. A function is not copy. So the band is built
+ * from the site's name, the intro line that was already approved, the search form, and the three catalogue doors
+ * that exist in code — and not one word of it is new.
+ *
+ * It appears above the composed sections as well as above the fallback, because search is wanted on the front
+ * page whether or not anyone has arranged anything below it.
+ */
+async function HomeOpening({ locale, language }: { readonly locale: string; readonly language: PublicLocale }) {
+  const t = await getTranslations({ locale, namespace: 'Homepage' });
+  const site = await getTranslations({ locale, namespace: 'Site' });
+  const search = await getTranslations({ locale, namespace: 'Search' });
+  const prefix = language === 'ar' ? '/ar' : '';
+
+  return (
+    <Section space="lg" as="div" className="border-b border-neutral-200">
+      <Heading level={1} display>
+        {site('name')}
+      </Heading>
+      <p className={cx('mt-4 max-w-2xl text-lg leading-normal text-neutral-700')}>{t('fallbackIntro')}</p>
+      <div className="mt-8">
+        <SiteSearchForm
+          action={`${prefix}/search`}
+          placeholder={search('placeholder')}
+          submitLabel={search('submit')}
+          id="home-search"
+        />
+      </div>
+      <ul className="mt-6 flex list-none flex-wrap gap-2">
+        {[
+          { href: `${prefix}/listings`, label: t('browseListings') },
+          { href: `${prefix}/services`, label: t('browseServices') },
+          { href: `${prefix}/categories`, label: t('browseCategories') },
+        ].map((entry) => (
+          <li key={entry.href}>
+            <ButtonLink href={entry.href} variant="secondary" size="sm">
+              {entry.label}
+            </ButtonLink>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 export default async function HomePage({ params }: PageParams) {
   const { locale } = await params;
   const language: PublicLocale = locale === 'ar' ? 'ar' : 'en';
   const t = await getTranslations({ locale, namespace: 'Homepage' });
-  const site = await getTranslations({ locale, namespace: 'Site' });
 
   const sections = await lookup(locale);
 
-  // Null is an outage and an empty array is an uncomposed homepage. Both render the fallback, because a visitor
-  // needs somewhere to go either way — but only the outage says so, and only when there is nothing else to show.
+  // Null is an outage and an empty array is an uncomposed homepage. Both show the opening alone, because a
+  // visitor needs somewhere to go either way — but only the outage says so, and only when there is nothing else
+  // to show. An uncomposed homepage is not a broken one and must not claim to be.
   if (sections === null || sections.length === 0) {
     return (
       <PageContainer>
-        <div className="py-12">
-          <Heading level={1}>{site('name')}</Heading>
-          <p className="mt-3 max-w-prose text-neutral-700">{t('fallbackIntro')}</p>
-          <ul className="mt-6 flex flex-wrap gap-3">
-            {[
-              { href: language === 'ar' ? '/ar/listings' : '/listings', label: t('browseListings') },
-              { href: language === 'ar' ? '/ar/services' : '/services', label: t('browseServices') },
-              { href: language === 'ar' ? '/ar/categories' : '/categories', label: t('browseCategories') },
-            ].map((entry) => (
-              <li key={entry.href}>
-                <Link
-                  className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-900"
-                  href={entry.href}
-                >
-                  {entry.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {sections === null ? (
-            <p className="mt-8 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
-              {t('unavailable')}
-            </p>
-          ) : null}
-        </div>
+        <HomeOpening locale={locale} language={language} />
+        {sections === null ? (
+          <div className="py-8">
+            <Alert tone="warning" title={t('unavailable')} />
+          </div>
+        ) : null}
       </PageContainer>
     );
   }
 
   return (
     <PageContainer>
+      <HomeOpening locale={locale} language={language} />
       <HomepageSections locale={language} sections={sections} />
     </PageContainer>
   );

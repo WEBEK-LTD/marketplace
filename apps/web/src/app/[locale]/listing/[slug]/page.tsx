@@ -1,4 +1,4 @@
-import { PageContainer } from '@repo/ui';
+import { Breadcrumb, PageContainer } from '@repo/ui';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -101,10 +101,11 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
 
 export default async function ListingPage({ params }: PageParams) {
   const { locale, slug } = await params;
-  const [t, messages, session] = await Promise.all([
+  const [t, messages, session, tAccessibility] = await Promise.all([
     getTranslations({ locale, namespace: 'Listings' }),
     getTranslations({ locale, namespace: 'Messages' }),
     getTranslations({ locale, namespace: 'Session' }),
+    getTranslations({ locale, namespace: 'Accessibility' }),
   ]);
   const offer = await getTranslations({ locale, namespace: 'MakeOffer' });
   const report = await getTranslations({ locale, namespace: 'Report' });
@@ -143,9 +144,25 @@ export default async function ListingPage({ params }: PageParams) {
     );
   }
 
+  const prefix = locale === 'ar' ? '/ar' : '';
+
   return (
     <PageContainer>
       <div className="py-12">
+        {/*
+          Where this listing sits in the catalogue. Built from the detail contract's own `category`, which until
+          0109 was printed as plain text in the facts card — named but not reachable. Both hrefs are routes that
+          already exist, so the trail is navigation rather than a new read.
+        */}
+        <Breadcrumb
+          label={tAccessibility('breadcrumb')}
+          className="mb-6"
+          items={[
+            { label: t('title'), href: `${prefix}/listings` },
+            { label: found.listing.category.name, href: `${prefix}/category/${found.listing.category.slug}` },
+            { label: found.listing.title },
+          ]}
+        />
         <ListingDetailView
           listing={found.listing}
           labels={{

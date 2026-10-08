@@ -1,5 +1,6 @@
 'use client';
 
+import { Alert, Button, FormField, Input, fieldAria } from '@repo/ui';
 import { useState, type FormEvent } from 'react';
 
 /**
@@ -38,8 +39,6 @@ export interface LoginFormProps {
   readonly successHref: string;
 }
 
-const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
 
 export function LoginForm({ labels, action, successHref }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
@@ -85,56 +84,57 @@ export function LoginForm({ labels, action, successHref }: LoginFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
-        {message}
-      </p>
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
+      {/*
+        One message region, at the top of the form, for every refusal.
 
-      <div className="mt-4">
-        <label htmlFor="login-identifier" className="block text-sm font-medium text-neutral-900">
-          {labels.identifier}
-        </label>
-        <input
-          id="login-identifier"
+        It stays mounted whether or not there is a message, because a live region inserted at the same moment as
+        its content is frequently not announced at all. It is `polite` rather than `assertive` on purpose: a
+        refused sign-in is an expected outcome and C-2 keeps the sentence generic, so interrupting is the wrong
+        register. The `Alert` inside it defers its own announcement for that reason — two nested live regions
+        would say the same thing twice and the inner one would override the politeness chosen here.
+      */}
+      <div role="status" aria-live="polite" className="min-h-6">
+        {message === null ? null : (
+          <Alert tone="error" announce="off">
+            {message}
+          </Alert>
+        )}
+      </div>
+
+      <FormField
+        id="login-identifier"
+        label={labels.identifier}
+        hint={labels.identifierHint}
+        required
+      >
+        <Input
+          {...fieldAria('login-identifier', { hint: labels.identifierHint, required: true })}
           name="identifier"
           type="text"
           autoComplete="username"
-          autoCapitalize="none"
-          spellCheck={false}
-          required
-          aria-describedby="login-identifier-hint"
+          /* An email or a phone number is never in Arabic script, so the field stays left-to-right. */
+          dir="ltr"
           value={identifier}
-          onChange={(event) => setIdentifier(event.target.value)}
-          className={FIELD_CLASS}
+          onChange={setIdentifier}
         />
-        <p id="login-identifier-hint" className="mt-1 text-sm text-neutral-600">
-          {labels.identifierHint}
-        </p>
-      </div>
+      </FormField>
 
-      <div className="mt-4">
-        <label htmlFor="login-password" className="block text-sm font-medium text-neutral-900">
-          {labels.password}
-        </label>
-        <input
-          id="login-password"
+      <FormField id="login-password" label={labels.password} required>
+        <Input
+          {...fieldAria('login-password', { required: true })}
           name="password"
           type="password"
           autoComplete="current-password"
-          required
+          dir="ltr"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className={FIELD_CLASS}
+          onChange={setPassword}
         />
-      </div>
+      </FormField>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-6 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-      >
-        {pending ? labels.submitting : labels.submit}
-      </button>
+      <Button type="submit" size="lg" fullWidth pending={pending} pendingLabel={labels.submitting}>
+        {labels.submit}
+      </Button>
     </form>
   );
 }

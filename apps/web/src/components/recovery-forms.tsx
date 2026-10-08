@@ -1,5 +1,7 @@
 'use client';
 
+import { Alert, Button, FormField, Input, fieldAria } from '@repo/ui';
+
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -37,10 +39,6 @@ export interface RecoveryLabels {
   readonly done: string;
 }
 
-const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const BUTTON_CLASS =
-  'mt-6 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 
 /**
  * The complete status-to-sentence map for every recovery step, exported so a test can pin it.
@@ -56,12 +54,23 @@ export function recoveryMessageFor(status: number, labels: RecoveryLabels): stri
   return labels.unavailable;
 }
 
-/** A live region that carries at most one sentence, and never a value the person typed. */
+/**
+ * A live region that carries at most one sentence, and never a value the person typed.
+ *
+ * Mounted whether or not there is a message, because a live region inserted at the same moment as its content is
+ * frequently not announced at all. `polite`, not `assertive`: every recovery refusal is one generic sentence by
+ * design, and interrupting a person mid-task to repeat it is the wrong register. The `Alert` inside defers its own
+ * announcement so the sentence is not read twice.
+ */
 function Status({ message }: { readonly message: string | null }) {
   return (
-    <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
-      {message}
-    </p>
+    <div aria-live="polite" role="status" className="min-h-6">
+      {message === null ? null : (
+        <Alert tone="error" announce="off">
+          {message}
+        </Alert>
+      )}
+    </div>
   );
 }
 
@@ -124,32 +133,23 @@ export function RecoveryStartForm({ labels, action, nextHref }: StartFormProps) 
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
       <Status message={message} />
-      <div className="mt-4">
-        <label htmlFor="recovery-identifier" className="block text-sm font-medium text-neutral-900">
-          {labels.identifier}
-        </label>
-        <input
-          id="recovery-identifier"
+      <FormField id="recovery-identifier" label={labels.identifier} hint={labels.identifierHint} required>
+        <Input
+          {...fieldAria('recovery-identifier', { hint: labels.identifierHint, required: true })}
           name="identifier"
           type="text"
           autoComplete="username"
-          autoCapitalize="none"
-          spellCheck={false}
-          required
-          aria-describedby="recovery-identifier-hint"
+          /* An email or a phone number is never in Arabic script, so the field stays left-to-right. */
+          dir="ltr"
           value={identifier}
-          onChange={(event) => setIdentifier(event.target.value)}
-          className={FIELD_CLASS}
+          onChange={setIdentifier}
         />
-        <p id="recovery-identifier-hint" className="mt-1 text-sm text-neutral-600">
-          {labels.identifierHint}
-        </p>
-      </div>
-      <button type="submit" disabled={pending} className={BUTTON_CLASS}>
-        {pending ? labels.submitting : labels.submitStart}
-      </button>
+      </FormField>
+      <Button type="submit" size="lg" fullWidth pending={pending} pendingLabel={labels.submitting}>
+        {labels.submitStart}
+      </Button>
     </form>
   );
 }
@@ -208,32 +208,25 @@ export function RecoveryVerifyForm({ labels, action, challengeId, fallbackHref }
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
       <Status message={message} />
-      <div className="mt-4">
-        <label htmlFor="recovery-code" className="block text-sm font-medium text-neutral-900">
-          {labels.code}
-        </label>
-        <input
-          id="recovery-code"
+      <FormField id="recovery-code" label={labels.code} hint={labels.codeHint} required>
+        <Input
+          {...fieldAria('recovery-code', { hint: labels.codeHint, required: true })}
           name="otp"
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
-          required
-          aria-describedby="recovery-code-hint"
+          /* A one-time code is digits, so it reads left-to-right in both languages. */
+          dir="ltr"
           value={code}
-          onChange={(event) => setCode(event.target.value)}
-          className={FIELD_CLASS}
+          onChange={setCode}
         />
-        <p id="recovery-code-hint" className="mt-1 text-sm text-neutral-600">
-          {labels.codeHint}
-        </p>
-      </div>
-      <button type="submit" disabled={pending} className={BUTTON_CLASS}>
-        {pending ? labels.submitting : labels.submitVerify}
-      </button>
+      </FormField>
+      <Button type="submit" size="lg" fullWidth pending={pending} pendingLabel={labels.submitting}>
+        {labels.submitVerify}
+      </Button>
     </form>
   );
 }
@@ -291,30 +284,22 @@ export function RecoveryResetForm({ labels, action, signInHref }: ResetFormProps
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
+    <form onSubmit={onSubmit} noValidate className="space-y-5">
       <Status message={message} />
-      <div className="mt-4">
-        <label htmlFor="recovery-password" className="block text-sm font-medium text-neutral-900">
-          {labels.newPassword}
-        </label>
-        <input
-          id="recovery-password"
+      <FormField id="recovery-password" label={labels.newPassword} hint={labels.newPasswordHint} required>
+        <Input
+          {...fieldAria('recovery-password', { hint: labels.newPasswordHint, required: true })}
           name="newPassword"
           type="password"
           autoComplete="new-password"
-          required
-          aria-describedby="recovery-password-hint"
+          dir="ltr"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className={FIELD_CLASS}
+          onChange={setPassword}
         />
-        <p id="recovery-password-hint" className="mt-1 text-sm text-neutral-600">
-          {labels.newPasswordHint}
-        </p>
-      </div>
-      <button type="submit" disabled={pending} className={BUTTON_CLASS}>
-        {pending ? labels.submitting : labels.submitReset}
-      </button>
+      </FormField>
+      <Button type="submit" size="lg" fullWidth pending={pending} pendingLabel={labels.submitting}>
+        {labels.submitReset}
+      </Button>
     </form>
   );
 }

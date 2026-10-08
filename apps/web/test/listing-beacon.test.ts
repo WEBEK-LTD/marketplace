@@ -307,9 +307,16 @@ describe('which surfaces emit', () => {
     return readFileSync(join(ROOT, relative), 'utf8');
   }
 
-  /** A card the handler can attribute: the identifier has to be in the markup for `closest` to find it. */
-  it('marks every listing card with its identifier', () => {
-    expect(read('src/components/listing-views.tsx')).toContain('data-listing-id={listing.id}');
+  /**
+   * A card the handler can attribute: the identifier has to be in the markup for `closest` to find it.
+   *
+   * 0109 moved the attribute off the card's own element and onto the stretched link inside `LinkCard`, which is
+   * the element a click actually lands on — so the identifier now travels as `listingId` through `CatalogCard`,
+   * the one card every browsing surface renders. This asserts that hand-off; that the attribute reaches the
+   * rendered markup is asserted against real HTML in `listing-views.test.tsx`, which is where the cards render.
+   */
+  it('hands every listing card its identifier', () => {
+    expect(read('src/components/listing-views.tsx')).toContain('listingId={listing.id}');
   });
 
   it('wraps the search results, which have an honest source', () => {
@@ -351,6 +358,8 @@ describe('which surfaces emit', () => {
 
   /** A service is not a listing: `listing_events.listing_id` references listings, and only those. */
   it('never marks a service card', () => {
-    expect(read('src/components/service-views.tsx')).not.toContain('data-listing-id');
+    const source = read('src/components/service-views.tsx');
+    expect(source).not.toContain('data-listing-id');
+    expect(source).not.toContain('listingId');
   });
 });

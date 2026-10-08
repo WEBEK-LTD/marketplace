@@ -1,9 +1,10 @@
-import { Heading, PageContainer } from '@repo/ui';
+import { Heading, PageContainer, Pagination } from '@repo/ui';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ListingClickBeacon } from '../../../components/listing-beacon';
 import { ListingGrid, ListingGridSkeleton, ListingMessage } from '../../../components/listing-views';
+import { CatalogToolbar } from '../../../components/catalog-filter-panel';
 import { readListings } from '../../../server/bff';
 import { metadataWithOverride } from '../../../server/public-metadata';
 
@@ -73,6 +74,8 @@ async function ListingsSection({
 }) {
   const t = await getTranslations({ locale, namespace: 'Listings' });
   const page = await readListings({ cursor });
+  const tPagination = await getTranslations({ locale, namespace: 'Pagination' });
+  const tFilters = await getTranslations({ locale, namespace: 'CatalogFilters' });
 
   if (page === null) {
     return <ListingMessage tone="error" title={t('errorTitle')} description={t('errorDescription')} />;
@@ -85,21 +88,26 @@ async function ListingsSection({
 
   return (
     <>
+      <CatalogToolbar
+        count={page.items.length}
+        labels={{ ordering: tFilters('ordering'), resultCount: (count) => tFilters('resultCount', { count }) }}
+        className="mb-6"
+      />
       {/* 0101: one listener for the whole grid. No source: see `ListingClickBeacon`. */}
       <ListingClickBeacon>
         <ListingGrid listings={page.items} hrefFor={(slug) => listingPath(locale, slug)} labels={labels} />
       </ListingClickBeacon>
-      {page.nextCursor === null ? null : (
-        <p className="mt-8">
-          <a
-            href={`${basePath(locale)}?cursor=${encodeURIComponent(page.nextCursor)}`}
-            rel="next"
-            className="inline-block rounded border border-neutral-300 px-4 py-2 text-sm text-neutral-900 hover:border-neutral-900"
-          >
-            {t('more')}
-          </a>
-        </p>
-      )}
+      <Pagination
+        nextHref={page.nextCursor === null ? null : `${basePath(locale)}?cursor=${encodeURIComponent(page.nextCursor)}`}
+        firstHref={basePath(locale)}
+        paged={cursor !== null}
+        labels={{
+          next: t('more'),
+          first: tPagination('first'),
+          navigation: tPagination('navigation'),
+        }}
+        className="mt-10"
+      />
     </>
   );
 }

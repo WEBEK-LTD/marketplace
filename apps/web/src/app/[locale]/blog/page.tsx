@@ -1,4 +1,4 @@
-import { Heading, PageContainer } from '@repo/ui';
+import { Heading, PageContainer, Pagination } from '@repo/ui';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -67,6 +67,7 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
   const { locale } = await params;
   const query = await searchParams;
   const t = await getTranslations({ locale, namespace: 'Blog' });
+  const tPagination = await getTranslations({ locale, namespace: 'Pagination' });
 
   const category = single(query['category']);
   const tag = single(query['tag']);
@@ -177,17 +178,27 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
               </ul>
             )}
 
-            {page.nextCursor === null ? null : (
-              <p className="mt-8">
-                <Link
-                  className="text-neutral-900 underline"
-                  href={`${base}?${keep.size === 0 ? '' : `${keep.toString()}&`}cursor=${encodeURIComponent(page.nextCursor)}`}
-                  rel="next"
-                >
-                  {t('nextPage')}
-                </Link>
-              </p>
-            )}
+            {/*
+              The one pager the whole product uses. The blog is forward-only for the same reason the catalogue
+              is — `readBlogIndex` returns a cursor and no total — so "back to the start" keeps whichever
+              category or tag filter is in the URL and drops only the cursor.
+            */}
+            <Pagination
+              nextHref={
+                page.nextCursor === null
+                  ? null
+                  : `${base}?${keep.size === 0 ? '' : `${keep.toString()}&`}cursor=${encodeURIComponent(page.nextCursor)}`
+              }
+              firstHref={keep.size === 0 ? base : `${base}?${keep.toString()}`}
+              paged={cursor !== null}
+              labels={{
+                next: t('nextPage'),
+                first: tPagination('first'),
+                position: tPagination('showing', { count: page.items.length }),
+                navigation: tPagination('navigation'),
+              }}
+              className="mt-10"
+            />
           </>
         )}
       </div>

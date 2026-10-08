@@ -104,6 +104,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             siteName={t('Site.name')}
             languageLink={t('Header.languageLink')}
             languageLinkLabel={t('Header.languageLinkLabel')}
+            publicSurface={isPublicSurface}
+            labels={{
+              // The chrome's copy comes from the namespace that already owns these strings: the catalogue doors
+              // are the home page's own entry points. Only the drawer's two labels are new.
+              menu: t('Header.menu'),
+              closeMenu: t('Header.closeMenu'),
+              listings: t('Homepage.browseListings'),
+              services: t('Homepage.browseServices'),
+              categories: t('Homepage.browseCategories'),
+            }}
             {...(header === undefined ? {} : { navigation: <HeaderMenu menu={header} /> })}
             {...(mobile === undefined ? {} : { mobileNavigation: <MobileMenu menu={mobile} /> })}
           />
@@ -111,6 +121,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {children}
           </main>
           <SiteFooter
+            siteName={t('Site.name')}
+            locale={language}
+            publicSurface={isPublicSurface}
+            labels={{
+              listings: t('Homepage.browseListings'),
+              services: t('Homepage.browseServices'),
+              categories: t('Homepage.browseCategories'),
+            }}
             copyright={t('Footer.copyright', { year: new Date().getFullYear(), name: t('Site.name') })}
             {...(footer === undefined ? {} : { navigation: <FooterMenu menu={footer} /> })}
           />

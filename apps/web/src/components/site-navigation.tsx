@@ -1,3 +1,4 @@
+import { FOCUS_RING, SURFACE_POPOVER, cx } from '@repo/ui';
 import Link from 'next/link';
 import {
   isCmsPageSlug,
@@ -32,7 +33,17 @@ import type { PublicNavigationLink, PublicNavigationMenu, PublicNavigationTarget
  * with no JavaScript.
  */
 
-const LINK_CLASS = 'text-sm text-neutral-700 underline-offset-2 hover:underline';
+/**
+ * A composed entry's own treatment.
+ *
+ * Not underlined at rest — a header row of six underlined links is noise — but underlined on hover and focus,
+ * and carrying the product's one focus ring so keyboard navigation through a composed menu looks like keyboard
+ * navigation anywhere else.
+ */
+const LINK_CLASS = cx(
+  'rounded-sm text-sm text-neutral-700 transition-colors duration-150 hover:text-neutral-900 hover:underline hover:underline-offset-2',
+  FOCUS_RING,
+);
 
 /**
  * Where one entry leads, or null when this application serves no address for it.
@@ -140,8 +151,26 @@ export function HeaderMenu({
             ) : (
               /* Owner decision 5: a native disclosure, so the second level works with no JavaScript at all. */
               <details className="group relative">
-                <summary className="cursor-pointer list-none text-sm text-neutral-700">{item.label}</summary>
-                <ul className="mt-2 space-y-1 rounded-md border border-neutral-200 bg-white p-3 sm:absolute sm:z-10 sm:min-w-48">
+                <summary
+                  className={cx(
+                    'flex cursor-pointer list-none items-center gap-1.5 rounded-sm text-sm text-neutral-700',
+                    'transition-colors duration-150 hover:text-neutral-900',
+                    FOCUS_RING,
+                  )}
+                >
+                  {item.label}
+                  <span
+                    aria-hidden="true"
+                    className="-mt-1 size-1.5 rotate-45 border-e border-b border-neutral-500 transition-transform duration-150 group-open:mt-0.5 group-open:-rotate-135"
+                  />
+                </summary>
+                {/* The shared popover surface: the one place in the product a `shadow-md` may appear. */}
+                <ul
+                  className={cx(
+                    'mt-2 space-y-1 p-2 sm:absolute sm:z-30 sm:min-w-52',
+                    SURFACE_POPOVER,
+                  )}
+                >
                   {/* The heading is a link too, and it is repeated inside: a summary cannot be a link, so the
                       address an operator chose for it would otherwise be unreachable. */}
                   <li>
@@ -170,9 +199,20 @@ export function MobileMenu({
 }) {
   return (
     <nav aria-label={menu.label}>
-      <details>
-        <summary className="cursor-pointer list-none text-sm font-medium text-neutral-900">{menu.label}</summary>
-        <ul className="mt-3 space-y-2">
+      <details open>
+        <summary
+          className={cx(
+            'flex cursor-pointer list-none items-center justify-between rounded-sm border-t border-neutral-200 py-3 text-base font-medium text-neutral-900',
+            FOCUS_RING,
+          )}
+        >
+          {menu.label}
+          <span
+            aria-hidden="true"
+            className="-mt-1 size-2 rotate-45 border-e-2 border-b-2 border-neutral-500 transition-transform duration-150 group-open:mt-1"
+          />
+        </summary>
+        <ul className="mt-2 space-y-1">
           {menu.items.map((item) => (
             <li key={item.itemId}>
               <Anchor link={item} />
@@ -208,7 +248,13 @@ export function FooterMenu({
       <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {menu.items.map((item) => (
           <li key={item.itemId}>
-            <Anchor className="text-sm font-medium text-neutral-900 underline-offset-2 hover:underline" link={item} />
+            <Anchor
+              className={cx(
+                'rounded-sm text-sm font-semibold text-neutral-900 transition-colors duration-150 hover:underline hover:underline-offset-2',
+                FOCUS_RING,
+              )}
+              link={item}
+            />
             {item.children.length === 0 ? null : (
               <ul className="mt-2 space-y-1">
                 {item.children.map((child) => (

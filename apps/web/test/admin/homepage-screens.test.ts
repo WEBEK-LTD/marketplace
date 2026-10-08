@@ -387,7 +387,11 @@ describe('the list', () => {
     // a client component that returned null would still have carried them here.
     expect(html).not.toContain(EN.Homepage.reorderSubmit);
     expect(html).not.toContain(EN.Homepage.reorderNotice);
-    expect(html).not.toContain(EN.Homepage.moveUp);
+    // `moveUp` is the two-character string "Up", which is a substring of "Updated" and "Upload" and so cannot be
+    // asserted bare. The invariant is that the label reaches neither the serialised props nor a rendered control,
+    // and both of those have an unambiguous shape.
+    expect(html).not.toContain(`"up":"${EN.Homepage.moveUp}"`);
+    expect(html).not.toContain(`>${EN.Homepage.moveUp}<`);
   });
 
   it('offers the reorder control once there are two sections to order', async () => {
