@@ -45,9 +45,9 @@ export interface TotpLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
 const BUTTON_CLASS =
-  'mt-6 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'mt-6 rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 
 /**
  * The complete status-to-sentence map for both TOTP steps, exported so a test can pin it.
@@ -81,7 +81,7 @@ async function problemCode(response: Response): Promise<string | null> {
 /** A live region that carries at most one sentence, and never a value the person typed. */
 function Status({ message }: { readonly message: string | null }) {
   return (
-    <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+    <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
       {message}
     </p>
   );
@@ -112,7 +112,7 @@ function CodeField({
 }) {
   return (
     <div className="mt-4">
-      <label htmlFor={id} className="block text-sm font-medium text-neutral-900">
+      <label htmlFor={id} className="block text-sm font-medium text-ink-strong">
         {labels.codeLabel}
       </label>
       <input
@@ -129,7 +129,7 @@ function CodeField({
         dir="ltr"
         className={FIELD_CLASS}
       />
-      <p id={`${id}-hint`} className="mt-1 text-sm text-neutral-600">
+      <p id={`${id}-hint`} className="mt-1 text-sm text-ink-muted">
         {labels.codeHint}
       </p>
     </div>
@@ -253,7 +253,7 @@ export function TotpSetupForm({
     return (
       <div className="mt-8 max-w-md">
         <Status message={message} />
-        <p className="mt-4 text-neutral-600">{labels.setupIntro}</p>
+        <p className="mt-4 text-ink-muted">{labels.setupIntro}</p>
         <button type="button" onClick={begin} disabled={pending} className={BUTTON_CLASS}>
           {pending ? labels.submitting : labels.begin}
         </button>
@@ -267,8 +267,8 @@ export function TotpSetupForm({
 
       {enrolment.qrSvg !== null && (
         <div className="mt-4">
-          <h2 className="text-base font-medium text-neutral-900">{labels.scanHeading}</h2>
-          <p className="mt-1 text-sm text-neutral-600">{labels.scanHint}</p>
+          <h2 className="text-base font-medium text-ink-strong">{labels.scanHeading}</h2>
+          <p className="mt-1 text-sm text-ink-muted">{labels.scanHint}</p>
           {/* An `<img>`, never injected markup: SVG loaded this way cannot execute script. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -278,17 +278,17 @@ export function TotpSetupForm({
             alt={labels.qrAlt}
             width={192}
             height={192}
-            className="mt-3 h-48 w-48 rounded-md border border-neutral-200 bg-white p-2"
+            className="mt-3 h-48 w-48 rounded-md border border-hairline bg-surface-raised p-2"
           />
         </div>
       )}
 
       <div className="mt-6">
-        <h2 className="text-base font-medium text-neutral-900">{labels.secretHeading}</h2>
-        <p className="mt-1 text-sm text-neutral-600">{labels.secretHint}</p>
+        <h2 className="text-base font-medium text-ink-strong">{labels.secretHeading}</h2>
+        <p className="mt-1 text-sm text-ink-muted">{labels.secretHint}</p>
         {/* Left to right and monospaced in every locale: a Base32 secret is transcribed character by
             character, and an RTL run would reverse the order somebody is copying. */}
-        <p dir="ltr" className="mt-3 break-all rounded-md bg-neutral-100 px-3 py-2 font-mono text-sm text-neutral-900">
+        <p dir="ltr" className="mt-3 break-all rounded-md bg-surface-muted px-3 py-2 font-mono text-sm text-ink-strong">
           {grouped(enrolment.secret)}
         </p>
       </div>

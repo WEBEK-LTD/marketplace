@@ -23,7 +23,7 @@ export default async function TotpChallengePage() {
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('challengeTitle')}</Heading>
-        <p className="mt-2 max-w-md text-neutral-600">{t('challengeIntro')}</p>
+        <p className="mt-2 max-w-md text-ink-muted">{t('challengeIntro')}</p>
         <TotpChallengeForm
           challengeAction={adminApiPath('/api/auth/totp/challenge')}
           verifyAction={adminApiPath('/api/auth/totp/verify')}

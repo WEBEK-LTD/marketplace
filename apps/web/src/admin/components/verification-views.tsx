@@ -63,37 +63,37 @@ export async function VerificationQueue({
       </nav>
 
       {page.items.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-          <p className="text-base font-medium text-neutral-900">{t('emptyTitle')}</p>
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('emptyBody')}</p>
+        <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+          <p className="text-base font-medium text-ink-strong">{t('emptyTitle')}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('emptyBody')}</p>
         </div>
       ) : (
         <ul className="mt-8 space-y-3">
           {page.items.map((item) => (
-            <li key={item.id} className="rounded-lg border border-neutral-200 p-4">
+            <li key={item.id} className="rounded-lg border border-hairline p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-base font-medium text-neutral-900">{item.sellerDisplayName}</p>
-                  <p dir="ltr" className="mt-1 break-all font-mono text-xs text-neutral-600">
+                  <p className="text-base font-medium text-ink-strong">{item.sellerDisplayName}</p>
+                  <p dir="ltr" className="mt-1 break-all font-mono text-xs text-ink-muted">
                     {item.sellerSlug}
                   </p>
                 </div>
                 <StatusBadge status={item.status} label={t(`status.${item.status}`)} />
               </div>
 
-              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
                 <div>
-                  <dt className="text-xs text-neutral-600">{t('submittedOn')}</dt>
+                  <dt className="text-xs text-ink-muted">{t('submittedOn')}</dt>
                   <dd>
                     <time dateTime={item.submittedAt}>{item.submittedAt.slice(0, 10)}</time>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-neutral-600">{t('documents')}</dt>
+                  <dt className="text-xs text-ink-muted">{t('documents')}</dt>
                   <dd>{item.documentCount}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-neutral-600">{t('contacts')}</dt>
+                  <dt className="text-xs text-ink-muted">{t('contacts')}</dt>
                   <dd>
                     {t(item.emailVerified ? 'emailVerified' : 'emailUnverified')} ·{' '}
                     {t(item.phoneVerified ? 'phoneVerified' : 'phoneUnverified')}
@@ -103,7 +103,7 @@ export async function VerificationQueue({
 
               <Link
                 href={adminPath(`/sellers/verification/${item.id}`)}
-                className="mt-4 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 underline-offset-4"
+                className="mt-4 inline-block rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong underline-offset-4"
               >
                 {t('open')}
               </Link>
@@ -115,7 +115,7 @@ export async function VerificationQueue({
       {page.nextCursor !== null && (
         <Link
           href={queueHref(status, page.nextCursor)}
-          className="mt-6 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900"
+          className="mt-6 inline-block rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong"
         >
           {t('next')}
         </Link>
@@ -142,12 +142,12 @@ export async function VerificationDetail({ verificationId }: { readonly verifica
   return (
     <>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold text-neutral-900">{seller.displayName}</h2>
+        <h2 className="text-xl font-semibold text-ink-strong">{seller.displayName}</h2>
         <StatusBadge status={verification.status} label={t(`status.${verification.status}`)} />
       </div>
 
       <section aria-labelledby="verification-identity" className="mt-6">
-        <h3 id="verification-identity" className="text-base font-medium text-neutral-900">
+        <h3 id="verification-identity" className="text-base font-medium text-ink-strong">
           {t('identity')}
         </h3>
         <dl className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
@@ -167,7 +167,7 @@ export async function VerificationDetail({ verificationId }: { readonly verifica
       </section>
 
       <section aria-labelledby="verification-application" className="mt-8">
-        <h3 id="verification-application" className="text-base font-medium text-neutral-900">
+        <h3 id="verification-application" className="text-base font-medium text-ink-strong">
           {t('application')}
         </h3>
         <dl className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
@@ -193,31 +193,31 @@ export async function VerificationDetail({ verificationId }: { readonly verifica
       </section>
 
       <section aria-labelledby="verification-evidence" className="mt-8">
-        <h3 id="verification-evidence" className="text-base font-medium text-neutral-900">
+        <h3 id="verification-evidence" className="text-base font-medium text-ink-strong">
           {t('documents')}
         </h3>
         {verification.documents.length === 0 ? (
-          <p className="mt-3 max-w-prose text-sm text-neutral-600" role="status">
+          <p className="mt-3 max-w-prose text-sm text-ink-muted" role="status">
             {t('documentsEmpty')}
           </p>
         ) : (
           <ul className="mt-3 space-y-3">
             {verification.documents.map((document) => (
-              <li key={document.id} className="rounded-lg border border-neutral-200 p-4">
+              <li key={document.id} className="rounded-lg border border-hairline p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-neutral-900">
+                    <p className="text-sm font-medium text-ink-strong">
                       {t(`documentType.${document.documentType}`)}
                     </p>
-                    <p dir="ltr" className="mt-1 break-all text-xs text-neutral-600">
+                    <p dir="ltr" className="mt-1 break-all text-xs text-ink-muted">
                       {document.originalFilename ?? t('notProvided')}
                     </p>
                   </div>
-                  <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs text-neutral-700">
+                  <span className="rounded-full border border-edge px-2 py-0.5 text-xs text-ink-body">
                     {t(`documentStatus.${document.status}`)}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-neutral-600">
+                <p className="mt-2 text-xs text-ink-muted">
                   <time dateTime={document.uploadedAt}>{document.uploadedAt.slice(0, 10)}</time>
                   {document.contentType !== null && <span className="ms-3">{document.contentType}</span>}
                 </p>
@@ -237,7 +237,7 @@ export async function VerificationDetail({ verificationId }: { readonly verifica
       </section>
 
       <section aria-labelledby="verification-decision" className="mt-8">
-        <h3 id="verification-decision" className="text-base font-medium text-neutral-900">
+        <h3 id="verification-decision" className="text-base font-medium text-ink-strong">
           {t('decision')}
         </h3>
         {verification.decidable ? (
@@ -263,7 +263,7 @@ export async function VerificationDetail({ verificationId }: { readonly verifica
             }}
           />
         ) : (
-          <p className="mt-3 max-w-prose text-sm text-neutral-600" role="status">
+          <p className="mt-3 max-w-prose text-sm text-ink-muted" role="status">
             {t('alreadyDecided')}
           </p>
         )}
@@ -300,9 +300,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -323,13 +323,13 @@ function Field({
   const shown = value === null || value === '' ? (empty ?? '—') : value;
   return (
     <div className={wide ? 'sm:col-span-2' : undefined}>
-      <dt className="text-xs text-neutral-600">{label}</dt>
+      <dt className="text-xs text-ink-muted">{label}</dt>
       <dd
         {...(monospace ? { dir: 'ltr' as const } : {})}
         className={
           monospace
-            ? 'mt-0.5 break-all font-mono text-sm text-neutral-900'
-            : 'mt-0.5 text-sm text-neutral-900'
+            ? 'mt-0.5 break-all font-mono text-sm text-ink-strong'
+            : 'mt-0.5 text-sm text-ink-strong'
         }
       >
         {shown}
@@ -342,10 +342,10 @@ function Field({
 function StatusBadge({ status, label }: { readonly status: string; readonly label: string }) {
   const tone =
     status === 'approved'
-      ? 'border-neutral-900 text-neutral-900'
+      ? 'border-edge-strong text-ink-strong'
       : status === 'rejected' || status === 'expired'
-        ? 'border-neutral-400 text-neutral-600'
-        : 'border-neutral-600 text-neutral-800';
+        ? 'border-edge-strong text-ink-muted'
+        : 'border-edge-strong text-ink-strong';
   return (
     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>
   );
@@ -374,7 +374,7 @@ function FilterLink({
       href={queueHref(value, null)}
       {...(active ? { 'aria-current': 'page' as const } : {})}
       className={`rounded-md border px-3 py-1 text-sm ${
-        active ? 'border-neutral-900 font-medium text-neutral-900' : 'border-neutral-300 text-neutral-700'
+        active ? 'border-edge-strong font-medium text-ink-strong' : 'border-edge text-ink-body'
       }`}
     >
       {label}

@@ -90,12 +90,12 @@ export function AdminServiceRequestDeclineForm({
             setError(null);
             setAsking(true);
           }}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-900"
+          className="rounded-md border border-edge px-4 py-2 text-sm text-ink-strong"
         >
           {copy.action}
         </button>
         {error !== null && (
-          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
             {error}
           </p>
         )}
@@ -104,14 +104,14 @@ export function AdminServiceRequestDeclineForm({
   }
 
   return (
-    <div className="max-w-prose rounded-lg border border-neutral-300 p-4">
-      <p className="text-sm font-medium text-neutral-900">{copy.question}</p>
+    <div className="max-w-prose rounded-lg border border-edge p-4">
+      <p className="text-sm font-medium text-ink-strong">{copy.question}</p>
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="button"
           disabled={pending}
           onClick={() => void submit()}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? copy.working : copy.confirm}
         </button>
@@ -122,13 +122,13 @@ export function AdminServiceRequestDeclineForm({
             setAsking(false);
             setError(null);
           }}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-900 disabled:opacity-60"
+          className="rounded-md border border-edge px-4 py-2 text-sm text-ink-strong disabled:opacity-60"
         >
           {copy.cancel}
         </button>
       </div>
       {error !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}

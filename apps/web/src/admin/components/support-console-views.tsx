@@ -90,9 +90,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -100,15 +100,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function StatusBadge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -131,16 +131,16 @@ function TicketRow({
   readonly showOutcome: boolean;
 }) {
   return (
-    <li className="rounded-lg border border-neutral-200 p-4">
+    <li className="rounded-lg border border-hairline p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-base font-medium text-neutral-900">
+          <p className="text-base font-medium text-ink-strong">
             <Link href={adminPath(`/support/${ticket.id}`)} className="underline underline-offset-4">
               {ticket.subject}
             </Link>
           </p>
-          <p className="mt-1 text-sm text-neutral-600">
-            <span className="text-xs text-neutral-600">{t('requester')}: </span>
+          <p className="mt-1 text-sm text-ink-muted">
+            <span className="text-xs text-ink-muted">{t('requester')}: </span>
             {ticket.requesterName ?? t('requesterUnknown')}
             {ticket.reference !== null && (
               <>
@@ -153,7 +153,7 @@ function TicketRow({
         <StatusBadge label={t(`status.${ticket.status}`)} />
       </div>
 
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
         <Cell label={t('category')} value={t(`category.${ticket.category}`)} />
         {/*
           Read, never ranked: the queue is ordered oldest first, because the schema's priority column is text
@@ -197,9 +197,9 @@ export async function SupportQueue({ cursor }: { readonly cursor: string | null 
 
   if (page.items.length === 0) {
     return (
-      <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-        <p className="text-base font-medium text-neutral-900">{t('queueEmptyTitle')}</p>
-        <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('queueEmptyBody')}</p>
+      <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+        <p className="text-base font-medium text-ink-strong">{t('queueEmptyTitle')}</p>
+        <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('queueEmptyBody')}</p>
       </div>
     );
   }
@@ -236,9 +236,9 @@ export async function SupportAssigned({ cursor }: { readonly cursor: string | nu
 
   if (page.items.length === 0) {
     return (
-      <div className="mt-6 rounded-lg border border-neutral-200 p-6" role="status">
-        <p className="text-base font-medium text-neutral-900">{t('assignedEmptyTitle')}</p>
-        <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('assignedEmptyBody')}</p>
+      <div className="mt-6 rounded-lg border border-hairline p-6" role="status">
+        <p className="text-base font-medium text-ink-strong">{t('assignedEmptyTitle')}</p>
+        <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('assignedEmptyBody')}</p>
       </div>
     );
   }
@@ -294,28 +294,28 @@ export async function SupportTicketDetail({
 
   return (
     <>
-      <section aria-labelledby="ticket-subject" className="mt-6 rounded-lg border border-neutral-200 p-4">
+      <section aria-labelledby="ticket-subject" className="mt-6 rounded-lg border border-hairline p-4">
         {/*
           The subject, and it lives **here** rather than in the page's heading: inside the gate, so a colleague
           who may not read this ticket — or an outage — leaves a titled page carrying none of it. What a ticket
           is about is the first thing somebody working it needs, and nothing else on the screen says it.
         */}
-        <h2 id="ticket-subject" className="text-lg font-medium text-neutral-900">
+        <h2 id="ticket-subject" className="text-lg font-medium text-ink-strong">
           {ticket.subject}
         </h2>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <StatusBadge label={t(`status.${ticket.status}`)} />
-          <span className="text-sm text-neutral-600">{t(`category.${ticket.category}`)}</span>
-          <span className="text-sm text-neutral-600">{t(`priority.${ticket.priority}`)}</span>
+          <span className="text-sm text-ink-muted">{t(`category.${ticket.category}`)}</span>
+          <span className="text-sm text-ink-muted">{t(`priority.${ticket.priority}`)}</span>
           {/* Whether somebody holds it, never who. */}
-          <span className="text-sm font-medium text-neutral-900">
+          <span className="text-sm font-medium text-ink-strong">
             {ticket.isMine ? t('heldByYou') : ticket.isAssigned ? t('heldByColleague') : t('unassigned')}
           </span>
         </div>
 
         <dl
           aria-label={t('ticketFacts')}
-          className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700"
+          className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body"
         >
           {ticket.reference !== null && <Cell label={t('reference')} value={ticket.reference} />}
           <Cell label={t('requester')} value={ticket.requesterName ?? t('requesterUnknown')} />
@@ -361,7 +361,7 @@ export async function SupportTicketDetail({
           />
         )}
         {isClosed && (
-          <p role="status" className="mt-4 text-sm text-neutral-600">
+          <p role="status" className="mt-4 text-sm text-ink-muted">
             {t('closedHint')}
           </p>
         )}
@@ -455,7 +455,7 @@ async function SupportConversation({
 
   return (
     <section aria-labelledby="ticket-conversation" className="mt-8">
-      <h2 id="ticket-conversation" className="text-lg font-medium text-neutral-900">
+      <h2 id="ticket-conversation" className="text-lg font-medium text-ink-strong">
         {t('conversation')}
       </h2>
       {page.nextCursor !== null && (
@@ -470,8 +470,8 @@ async function SupportConversation({
       )}
       <ul className="mt-4 space-y-3">
         {page.items.map((message) => (
-          <li key={message.id} className="rounded-lg border border-neutral-200 p-4">
-            <p className="text-xs font-medium text-neutral-600">
+          <li key={message.id} className="rounded-lg border border-hairline p-4">
+            <p className="text-xs font-medium text-ink-muted">
               {/* The side, never the person. */}
               {message.authorRole === 'requester'
                 ? t('fromRequester')
@@ -480,20 +480,20 @@ async function SupportConversation({
                   : t('fromSupport')}{' '}
               · {minute(message.createdAt)}
             </p>
-            <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">
+            <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">
               {message.body}
             </p>
             {message.attachments.length > 0 && (
-              <div className="mt-3 border-t border-neutral-200 pt-3">
-                <p className="text-xs font-medium text-neutral-600">{t('files')}</p>
+              <div className="mt-3 border-t border-hairline pt-3">
+                <p className="text-xs font-medium text-ink-muted">{t('files')}</p>
                 <ul className="mt-2 space-y-2">
                   {message.attachments.map((attachment) => {
                     const size = kilobytes(attachment.byteSize);
                     return (
                       <li key={attachment.id} className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-neutral-900">
+                        <span className="text-ink-strong">
                           {attachment.originalFilename ?? t('files')}
-                          {size !== null && <span className="text-neutral-600"> · {size}</span>}
+                          {size !== null && <span className="text-ink-muted"> · {size}</span>}
                         </span>
                         <SupportAttachmentButton
                           ticketId={ticketId}
@@ -531,22 +531,22 @@ async function SupportNotes({ ticketId }: { readonly ticketId: string }) {
 
   return (
     <section aria-labelledby="ticket-notes" className="mt-8">
-      <h2 id="ticket-notes" className="text-lg font-medium text-neutral-900">
+      <h2 id="ticket-notes" className="text-lg font-medium text-ink-strong">
         {t('notesHeading')}
       </h2>
-      <p className="mt-1 max-w-prose text-sm text-neutral-600">{t('notesIntro')}</p>
+      <p className="mt-1 max-w-prose text-sm text-ink-muted">{t('notesIntro')}</p>
       {page.items.length === 0 ? (
-        <p role="status" className="mt-4 text-sm text-neutral-600">
+        <p role="status" className="mt-4 text-sm text-ink-muted">
           {t('notesEmpty')}
         </p>
       ) : (
         <ul className="mt-4 space-y-3">
           {page.items.map((note) => (
-            <li key={note.id} className="rounded-lg border border-dashed border-neutral-400 p-4">
-              <p className="text-xs font-medium text-neutral-600">
+            <li key={note.id} className="rounded-lg border border-dashed border-edge-strong p-4">
+              <p className="text-xs font-medium text-ink-muted">
                 {note.isOwnNote ? t('noteByYou') : t('noteByColleague')} · {minute(note.createdAt)}
               </p>
-              <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">
+              <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">
                 {note.body}
               </p>
             </li>

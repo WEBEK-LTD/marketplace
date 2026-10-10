@@ -52,10 +52,10 @@ import { adminPath } from '../paths';
  * **There is no rename control and no delete control** anywhere here, because no such route exists.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -75,11 +75,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -155,7 +155,7 @@ export async function AttributeVocabulary() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('vocabularyHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('vocabularyNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('vocabularyNote')}</p>
 
       {attributes.length === 0 ? (
         <Message tone="empty" title={t('emptyTitle')} body={t('emptyBody')} />
@@ -191,16 +191,16 @@ async function AttributeRow({ attribute }: { readonly attribute: AdminAttributeD
         <Link className="underline hover:no-underline" href={adminPath(`/catalog/attributes/${attribute.definitionId}`)}>
           {attribute.nameEn}
         </Link>
-        <span className="mt-1 block text-xs text-neutral-500">{attribute.key}</span>
-        <span className="mt-1 block text-xs text-neutral-500" dir="rtl">
+        <span className="mt-1 block text-xs text-ink-muted">{attribute.key}</span>
+        <span className="mt-1 block text-xs text-ink-muted" dir="rtl">
           {attribute.nameAr}
         </span>
       </td>
       <td className={TD}>
         {await typeName(attribute.dataType)}
-        {attribute.unit === null ? null : <span className="block text-xs text-neutral-500">{attribute.unit}</span>}
+        {attribute.unit === null ? null : <span className="block text-xs text-ink-muted">{attribute.unit}</span>}
         {attributeHasOptions(attribute.dataType) ? (
-          <span className="block text-xs text-neutral-500">
+          <span className="block text-xs text-ink-muted">
             {t('optionCount', { count: attribute.optionCount })}
           </span>
         ) : null}
@@ -209,13 +209,13 @@ async function AttributeRow({ attribute }: { readonly attribute: AdminAttributeD
         {attribute.isActive ? t('stateShown') : t('stateHidden')}
         {needsOption ? <span className="block text-xs text-amber-700">{t('needsOption')}</span> : null}
         {attribute.isFilterable ? (
-          <span className="block text-xs text-neutral-500">{t('filterableMark')}</span>
+          <span className="block text-xs text-ink-muted">{t('filterableMark')}</span>
         ) : null}
       </td>
       <td className={TD}>{attribute.sortOrder}</td>
       <td className={TD}>
         <span className="block">{t('categoryCount', { count: attribute.categoryCount })}</span>
-        <span className="block text-xs text-neutral-500">{t('answerCount', { count: attribute.answerCount })}</span>
+        <span className="block text-xs text-ink-muted">{t('answerCount', { count: attribute.answerCount })}</span>
       </td>
     </tr>
   );
@@ -227,7 +227,7 @@ export async function AttributeCreatePanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('createHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('createNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('createNote')}</p>
       <AttributeCreateForm
         labels={{
           ...(await sharedLabels()),
@@ -291,7 +291,7 @@ export async function AttributeDetailView({ definitionId }: { readonly definitio
           <Fact label={t('categoryCountLabel')} value={String(attribute.categoryCount)} />
           <Fact label={t('answerCountLabel')} value={String(attribute.answerCount)} />
         </dl>
-        <p className="mt-3 text-sm text-neutral-600">{t('identityNote')}</p>
+        <p className="mt-3 text-sm text-ink-muted">{t('identityNote')}</p>
 
         {canManage ? (
           <VocabularyStateForm
@@ -301,14 +301,14 @@ export async function AttributeDetailView({ definitionId }: { readonly definitio
             labels={await stateLabels()}
           />
         ) : (
-          <p className="mt-4 text-sm text-neutral-600">{t('readOnlyNote')}</p>
+          <p className="mt-4 text-sm text-ink-muted">{t('readOnlyNote')}</p>
         )}
       </section>
 
       {canManage ? (
         <section className={CARD}>
           <Heading level={2}>{t('settingsHeading')}</Heading>
-          <p className="mt-1 text-sm text-neutral-600">{t('settingsNote')}</p>
+          <p className="mt-1 text-sm text-ink-muted">{t('settingsNote')}</p>
           <AttributeSettingsForm
             definitionId={attribute.definitionId}
             dataType={attribute.dataType}
@@ -336,7 +336,7 @@ export async function AttributeDetailView({ definitionId }: { readonly definitio
       {hasOptions ? (
         <section className={CARD}>
           <Heading level={2}>{t('optionsHeading')}</Heading>
-          <p className="mt-1 text-sm text-neutral-600">{t('optionsNote')}</p>
+          <p className="mt-1 text-sm text-ink-muted">{t('optionsNote')}</p>
 
           {options.length === 0 ? (
             <Message tone="empty" title={t('noOptionsTitle')} body={t('noOptionsBody')} />
@@ -398,8 +398,8 @@ async function OptionRow({
     <tr>
       <td className={TD}>
         <span className="block font-medium">{option.labelEn}</span>
-        <span className="block text-xs text-neutral-500">{option.value}</span>
-        <span className="block text-xs text-neutral-500" dir="rtl">
+        <span className="block text-xs text-ink-muted">{option.value}</span>
+        <span className="block text-xs text-ink-muted" dir="rtl">
           {option.labelAr}
         </span>
         {canManage ? (
@@ -439,8 +439,8 @@ async function OptionRow({
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
@@ -472,7 +472,7 @@ export async function TagVocabulary() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('tagsHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('tagsNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('tagsNote')}</p>
 
       {tags.length === 0 ? (
         <Message tone="empty" title={t('noTagsTitle')} body={t('noTagsBody')} />
@@ -503,8 +503,8 @@ async function TagRow({ tag, canManage }: { readonly tag: AdminTag; readonly can
     <tr>
       <td className={TD}>
         <span className="block font-medium">{tag.nameEn}</span>
-        <span className="block text-xs text-neutral-500">{tag.slug}</span>
-        <span className="block text-xs text-neutral-500" dir="rtl">
+        <span className="block text-xs text-ink-muted">{tag.slug}</span>
+        <span className="block text-xs text-ink-muted" dir="rtl">
           {tag.nameAr}
         </span>
         {canManage ? (
@@ -544,7 +544,7 @@ export async function TagCreatePanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('createTagHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('createTagNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('createTagNote')}</p>
       <TagCreateForm
         labels={{
           ...(await sharedLabels()),
@@ -575,19 +575,19 @@ async function CategoryAttributeRow({
     <tr>
       <td className={TD}>
         <span className="block font-medium">{attribute.nameEn}</span>
-        <span className="block text-xs text-neutral-500">{attribute.key}</span>
+        <span className="block text-xs text-ink-muted">{attribute.key}</span>
       </td>
       <td className={TD}>{await typeName(attribute.dataType)}</td>
       <td className={TD}>
         <span className="block">{attribute.isRequired ? t('askedRequired') : t('askedOptional')}</span>
         {attribute.isRequired ? (
-          <span className="block text-xs text-neutral-500">{t('advisoryNote')}</span>
+          <span className="block text-xs text-ink-muted">{t('advisoryNote')}</span>
         ) : null}
         {attribute.isActive ? null : (
           <span className="block text-xs text-amber-700">{t('attachedButHidden')}</span>
         )}
         {attribute.isFilterable ? (
-          <span className="block text-xs text-neutral-500">{t('filterableMark')}</span>
+          <span className="block text-xs text-ink-muted">{t('filterableMark')}</span>
         ) : null}
       </td>
       <td className={TD}>{attribute.sortOrder}</td>
@@ -655,7 +655,7 @@ export async function CategoryAttributePanel({ categoryId }: { readonly category
   return (
     <section className={CARD}>
       <Heading level={2}>{t('categoryHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('categoryNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('categoryNote')}</p>
 
       {attributes.length === 0 ? (
         <Message tone="empty" title={t('noCategoryAttributesTitle')} body={t('noCategoryAttributesBody')} />
@@ -683,7 +683,7 @@ export async function CategoryAttributePanel({ categoryId }: { readonly category
         </table>
       )}
 
-      {canManage && choices.length === 0 ? <p className="mt-4 text-sm text-neutral-600">{t('noChoices')}</p> : null}
+      {canManage && choices.length === 0 ? <p className="mt-4 text-sm text-ink-muted">{t('noChoices')}</p> : null}
 
       {canManage && choices.length > 0 ? (
         <CategoryAttributeAttachForm
@@ -705,7 +705,7 @@ export async function CategoryAttributePanel({ categoryId }: { readonly category
           }}
         />
       ) : (
-        <p className="mt-4 text-sm text-neutral-600">{t('categoryReadOnlyNote')}</p>
+        <p className="mt-4 text-sm text-ink-muted">{t('categoryReadOnlyNote')}</p>
       )}
     </section>
   );

@@ -81,9 +81,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -91,15 +91,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function Badge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -141,25 +141,25 @@ export async function ScheduledJobs() {
 
   return (
     <section aria-labelledby="scheduled-jobs" className="mt-10">
-      <h2 id="scheduled-jobs" className="text-lg font-medium text-neutral-900">
+      <h2 id="scheduled-jobs" className="text-lg font-medium text-ink-strong">
         {t('scheduleHeading')}
       </h2>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('scheduleIntro')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('scheduleIntro')}</p>
       {/*
         The reported gap, on the page: the worker's repeatable jobs record no run, so this list is the
         database's scheduled jobs and nothing else. Said here rather than left to be noticed as an absence.
       */}
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('workerJobsNote')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('workerJobsNote')}</p>
 
       {items.length === 0 ? (
         <Notice title={t('scheduleEmptyTitle')} body={t('scheduleEmptyBody')} />
       ) : (
         <ul className="mt-4 space-y-3">
           {items.map((job) => (
-            <li key={job.jobKey} className="rounded-lg border border-neutral-200 p-4">
+            <li key={job.jobKey} className="rounded-lg border border-hairline p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-base font-medium text-neutral-900">
+                  <p className="text-base font-medium text-ink-strong">
                     <Link
                       href={adminPath(`/platform/jobs?jobName=${encodeURIComponent(job.jobKey)}`)}
                       className="underline underline-offset-4"
@@ -167,7 +167,7 @@ export async function ScheduledJobs() {
                       {job.jobKey}
                     </Link>
                   </p>
-                  <p className="mt-1 max-w-prose text-sm text-neutral-600">{job.purpose}</p>
+                  <p className="mt-1 max-w-prose text-sm text-ink-muted">{job.purpose}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Badge label={job.cronSchedule} />
@@ -175,7 +175,7 @@ export async function ScheduledJobs() {
                 </div>
               </div>
 
-              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
                 <Cell label={t('targetLabel')} value={job.targetSignature} />
                 <Cell label={t('runCountLabel')} value={count(job.runCount)} />
                 <Cell label={t('failureCountLabel')} value={count(job.failureCount)} />
@@ -227,11 +227,11 @@ export async function ScheduleProblems() {
 
   return (
     <section aria-labelledby="schedule-problems" className="mt-10">
-      <h2 id="schedule-problems" className="text-lg font-medium text-neutral-900">
+      <h2 id="schedule-problems" className="text-lg font-medium text-ink-strong">
         {t('problemsHeading')}
       </h2>
       {items.length === 0 ? (
-        <p role="status" className="mt-2 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-2 max-w-prose text-sm text-ink-muted">
           {t('problemsNone')}
         </p>
       ) : (
@@ -239,11 +239,11 @@ export async function ScheduleProblems() {
           {items.map((problem) => (
             <li
               key={`${problem.object}:${problem.problem}`}
-              className="rounded-lg border border-neutral-300 p-4 text-sm"
+              className="rounded-lg border border-edge p-4 text-sm"
             >
-              <p className="font-medium text-neutral-900">{problem.object}</p>
+              <p className="font-medium text-ink-strong">{problem.object}</p>
               {/* The guard's own sentence, not translated: it is a database fact rather than console copy. */}
-              <p className="mt-1 max-w-prose text-neutral-700">{problem.problem}</p>
+              <p className="mt-1 max-w-prose text-ink-body">{problem.problem}</p>
             </li>
           ))}
         </ul>
@@ -264,16 +264,16 @@ export async function OutboxPanel() {
 
   return (
     <section aria-labelledby="outbox" className="mt-10">
-      <h2 id="outbox" className="text-lg font-medium text-neutral-900">
+      <h2 id="outbox" className="text-lg font-medium text-ink-strong">
         {t('outboxHeading')}
       </h2>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('outboxIntro')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('outboxIntro')}</p>
       {/*
         The other reported gap, and the one that would mislead most. No relay and no sweeper exist in this
         repository, so every event stays pending and the count only grows: the numbers below are correct and
         look exactly like a relay that has fallen over. Said before the figures rather than after them.
       */}
-      <p role="status" className="mt-2 max-w-prose text-sm text-neutral-600">
+      <p role="status" className="mt-2 max-w-prose text-sm text-ink-muted">
         {t('noRelayNote')}
       </p>
 
@@ -301,9 +301,9 @@ export async function OutboxPanel() {
         )}
       </dl>
 
-      <h3 className="mt-6 text-base font-medium text-neutral-900">{t('deadLettersHeading')}</h3>
+      <h3 className="mt-6 text-base font-medium text-ink-strong">{t('deadLettersHeading')}</h3>
       {items.length === 0 ? (
-        <p role="status" className="mt-2 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-2 max-w-prose text-sm text-ink-muted">
           {t('deadLettersNone')}
         </p>
       ) : (
@@ -312,21 +312,21 @@ export async function OutboxPanel() {
             Grouped rather than listed, and the page says why: identifying each event would mean naming the
             order, conversation or account it is about, and there is no action here to take on one.
           */}
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('deadLettersGroupedNote')}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('deadLettersGroupedNote')}</p>
           <ul className="mt-4 space-y-3">
             {items.map((group) => (
               <li
                 key={`${group.eventType}:${group.lastErrorType ?? ''}`}
-                className="rounded-lg border border-neutral-200 p-4"
+                className="rounded-lg border border-hairline p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-base font-medium text-neutral-900">{group.eventType}</p>
+                  <p className="text-base font-medium text-ink-strong">{group.eventType}</p>
                   <div className="flex flex-wrap gap-2">
                     {group.lastErrorType !== null && <Badge label={group.lastErrorType} />}
                     <Badge label={t('eventCountBadge', { value: group.eventCount })} />
                   </div>
                 </div>
-                <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+                <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
                   <Cell label={t('firstDeadLetteredLabel')} value={minute(group.firstDeadLetteredAt)} />
                   <Cell label={t('lastDeadLetteredLabel')} value={minute(group.lastDeadLetteredAt)} />
                   <Cell label={t('maxAttemptsLabel')} value={count(group.maxAttempts)} />
@@ -338,7 +338,7 @@ export async function OutboxPanel() {
       )}
 
       {/* No control, and the reason, rather than leaving somebody hunting for a replay button. */}
-      <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('readOnlyNote')}</p>
+      <p className="mt-6 max-w-prose text-sm text-ink-muted">{t('readOnlyNote')}</p>
     </section>
   );
 }
@@ -373,12 +373,12 @@ export async function JobRunList({
 
   return (
     <section aria-labelledby="job-runs" className="mt-10">
-      <h2 id="job-runs" className="text-lg font-medium text-neutral-900">
+      <h2 id="job-runs" className="text-lg font-medium text-ink-strong">
         {t('runsHeading')}
       </h2>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('runsIntro')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('runsIntro')}</p>
       {jobName !== null && (
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-2 text-sm text-ink-muted">
           {t('filteredByJob', { jobName })}{' '}
           <Link href={adminPath('/platform/jobs')} className="underline underline-offset-4">
             {t('clearFilter')}
@@ -392,10 +392,10 @@ export async function JobRunList({
         <>
           <ul className="mt-4 space-y-3">
             {page.items.map((run) => (
-              <li key={run.id} className="rounded-lg border border-neutral-200 p-4">
+              <li key={run.id} className="rounded-lg border border-hairline p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-base font-medium text-neutral-900">
+                    <p className="text-base font-medium text-ink-strong">
                       <Link
                         href={adminPath(`/platform/jobs/${run.id}`)}
                         className="underline underline-offset-4"
@@ -403,7 +403,7 @@ export async function JobRunList({
                         {run.jobName}
                       </Link>
                     </p>
-                    <p className="mt-1 text-sm text-neutral-600">{minute(run.startedAt)}</p>
+                    <p className="mt-1 text-sm text-ink-muted">{minute(run.startedAt)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Badge label={t(`status.${run.status}`)} />
@@ -413,7 +413,7 @@ export async function JobRunList({
                   </div>
                 </div>
 
-                <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+                <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
                   <Cell label={t('durationLabel')} value={duration(run.durationMs, t)} />
                   <Cell
                     label={t('processedLabel')}
@@ -452,7 +452,7 @@ export async function JobRunDetailView({ runId }: { readonly runId: string }) {
 
   return (
     <section aria-labelledby="run-name" className="mt-6">
-      <h2 id="run-name" className="text-lg font-medium text-neutral-900">
+      <h2 id="run-name" className="text-lg font-medium text-ink-strong">
         {run.jobName}
       </h2>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -483,9 +483,9 @@ export async function JobRunDetailView({ runId }: { readonly runId: string }) {
         looking for a bug.
       */}
       {(run.errorType !== null || run.errorSqlstate !== null) && (
-        <div className="mt-4 rounded-lg border border-neutral-300 p-4">
-          <p className="text-base font-medium text-neutral-900">{t('failureHeading')}</p>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+        <div className="mt-4 rounded-lg border border-edge p-4">
+          <p className="text-base font-medium text-ink-strong">{t('failureHeading')}</p>
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
             {run.errorType !== null && (
               <Cell label={t('errorClassLabel')} value={run.errorType} />
             )}
@@ -493,14 +493,14 @@ export async function JobRunDetailView({ runId }: { readonly runId: string }) {
               <Cell label={t('sqlstateLabel')} value={run.errorSqlstate} />
             )}
           </dl>
-          <p className="mt-3 max-w-prose text-sm text-neutral-600">{t('noMessageNote')}</p>
+          <p className="mt-3 max-w-prose text-sm text-ink-muted">{t('noMessageNote')}</p>
         </div>
       )}
 
       {/* The contract row, when the schedule still names this key. */}
       {run.isContracted ? (
-        <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-          <p className="text-base font-medium text-neutral-900">{t('contractHeading')}</p>
+        <div className="mt-4 rounded-lg border border-hairline p-4">
+          <p className="text-base font-medium text-ink-strong">{t('contractHeading')}</p>
           <dl className="mt-3 grid gap-4 text-sm sm:grid-cols-2">
             {run.cronSchedule !== null && (
               <Cell label={t('scheduleLabel')} value={run.cronSchedule} />
@@ -510,11 +510,11 @@ export async function JobRunDetailView({ runId }: { readonly runId: string }) {
             )}
           </dl>
           {run.purpose !== null && (
-            <p className="mt-3 max-w-prose text-sm text-neutral-700">{run.purpose}</p>
+            <p className="mt-3 max-w-prose text-sm text-ink-body">{run.purpose}</p>
           )}
         </div>
       ) : (
-        <p role="status" className="mt-4 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-4 max-w-prose text-sm text-ink-muted">
           {t('uncontractedNote')}
         </p>
       )}
@@ -526,7 +526,7 @@ export async function JobRunDetailView({ runId }: { readonly runId: string }) {
       </p>
 
       {/* No control, and the reason. */}
-      <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('readOnlyNote')}</p>
+      <p className="mt-6 max-w-prose text-sm text-ink-muted">{t('readOnlyNote')}</p>
     </section>
   );
 }

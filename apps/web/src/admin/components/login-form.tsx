@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { ADMIN_BUTTON, ADMIN_FIELD } from '../ui';
 
 /**
  * The admin sign-in form. It is the web form's twin rather than a shared component: the two apps may
@@ -41,8 +42,7 @@ export interface LoginFormProps {
   readonly successHref: string;
 }
 
-const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
+const FIELD_CLASS = `mt-1 ${ADMIN_FIELD} text-base`;
 
 export function LoginForm({ labels, action, successHref }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
@@ -89,12 +89,12 @@ export function LoginForm({ labels, action, successHref }: LoginFormProps) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+      <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
         {message}
       </p>
 
       <div className="mt-4">
-        <label htmlFor="login-identifier" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="login-identifier" className="block text-sm font-medium text-ink-strong">
           {labels.identifier}
         </label>
         <input
@@ -110,13 +110,13 @@ export function LoginForm({ labels, action, successHref }: LoginFormProps) {
           onChange={(event) => setIdentifier(event.target.value)}
           className={FIELD_CLASS}
         />
-        <p id="login-identifier-hint" className="mt-1 text-sm text-neutral-600">
+        <p id="login-identifier-hint" className="mt-1 text-sm text-ink-muted">
           {labels.identifierHint}
         </p>
       </div>
 
       <div className="mt-4">
-        <label htmlFor="login-password" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="login-password" className="block text-sm font-medium text-ink-strong">
           {labels.password}
         </label>
         <input
@@ -134,7 +134,7 @@ export function LoginForm({ labels, action, successHref }: LoginFormProps) {
       <button
         type="submit"
         disabled={pending}
-        className="mt-6 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        className={`${ADMIN_BUTTON} mt-6 disabled:opacity-60`}
       >
         {pending ? labels.submitting : labels.submit}
       </button>

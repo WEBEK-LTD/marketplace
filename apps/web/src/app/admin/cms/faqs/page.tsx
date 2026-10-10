@@ -33,7 +33,7 @@ export default async function Page({
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('faqs.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('pageIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('pageIntro')}</p>
           <FaqTopicsPanel />
           <FaqList topic={topic} />
           <FaqAddPanel />

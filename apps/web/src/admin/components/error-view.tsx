@@ -1,3 +1,5 @@
+import { ADMIN_BUTTON_QUIET } from '../ui';
+
 export interface ErrorViewProps {
   readonly title: string;
   readonly retryLabel: string;
@@ -8,8 +10,8 @@ export interface ErrorViewProps {
 export function ErrorView({ title, retryLabel, onRetry }: ErrorViewProps) {
   return (
     <div role="alert" className="py-12">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <button type="button" onClick={onRetry} className="mt-4 rounded-md border border-neutral-300 px-4 py-2 text-sm">
+      <h1 className="text-2xl font-semibold text-ink-strong">{title}</h1>
+      <button type="button" onClick={onRetry} className={`${ADMIN_BUTTON_QUIET} mt-4`}>
         {retryLabel}
       </button>
     </div>

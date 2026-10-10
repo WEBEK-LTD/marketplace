@@ -34,14 +34,14 @@ import { adminApiPath } from '../paths';
  * The screen says that out loud rather than leaving an operator to discover it.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const DANGER_CLASS =
   'rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 const MONO_FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 font-mono text-xs text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 font-mono text-xs text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 interface Outcome {
   readonly status: number | null;

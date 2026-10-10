@@ -1,4 +1,5 @@
 import { Heading, PageContainer } from '@repo/ui';
+import { ADMIN_PANEL, ADMIN_PANEL_SPACE } from '../ui';
 import { getTranslations } from 'next-intl/server';
 import { RequireStaff } from './require-staff';
 import { sectionByHref } from '../server/console-sections';
@@ -43,10 +44,10 @@ async function SectionBody({ id }: { readonly id: string }) {
   return (
     <>
       <Heading level={1}>{sectionLabels(`${id}.title`)}</Heading>
-      <p className="mt-2 max-w-prose text-neutral-600">{sectionLabels(`${id}.description`)}</p>
-      <div className="mt-8 rounded-lg border border-neutral-200 p-6">
-        <p className="text-base font-medium text-neutral-900">{t('comingSoonTitle')}</p>
-        <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('comingSoon')}</p>
+      <p className="mt-2 max-w-prose text-ink-muted">{sectionLabels(`${id}.description`)}</p>
+      <div className={`mt-8 ${ADMIN_PANEL} ${ADMIN_PANEL_SPACE}`}>
+        <p className="text-base font-medium text-ink-strong">{t('comingSoonTitle')}</p>
+        <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('comingSoon')}</p>
       </div>
     </>
   );

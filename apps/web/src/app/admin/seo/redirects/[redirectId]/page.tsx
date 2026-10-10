@@ -33,9 +33,9 @@ export default async function Page({ params }: { readonly params: Promise<{ redi
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('seoRedirects.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('detailIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('detailIntro')}</p>
           <p className="mt-2 text-sm">
-            <Link className="text-neutral-900 underline" href={adminPath('/seo/redirects')}>
+            <Link className="text-ink-strong underline" href={adminPath('/seo/redirects')}>
               {t('backToList')}
             </Link>
           </p>

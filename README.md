@@ -78,8 +78,66 @@ status has no writer anywhere. The migration asserts that, so a future sweeper c
 | 1b | Delete what is now inert: the store and service methods for closed functions, the quote-only request and response schemas, and the `quotes` array once a reader stops returning it | Outstanding. Nothing reachable, so it is tidying rather than closing |
 | 2 | Re-route conversations so the buyer's counterparty is staff | A design problem of its own: `0014`/`0054` assume a seller on the other side, and `0103`/`0104` build on that |
 | 3 | The console's receipt desk — the office's queue and the screen that records a payment | The database side exists (`office_receipts_for_staff`, `office_receipt_record`); the console screens do not |
-| 4 | The property catalogue (OD-A9): a `property` listing type, its categories and attributes, and the surfaces that read them | `listing_types` is reference data seeded in 0002 and currently holds `product` and `service` only |
-| 5 | The `/admin` visual redesign | Deliberately excluded from 0109's UI work and still outstanding |
+| 4 | The property catalogue (OD-A9) | **Done — `0111_property_catalogue.sql`.** See below |
+| 5 | The `/admin` visual redesign | **Done.** See below |
+| 6 | Listing photographs | Outstanding. `public.listing_media` and `public.media_variants` have existed since 0011; what is missing is the public contract field, the reader and the upload surface |
+| 7 | The home page: a hero photograph with the service explained over it, and the sections beneath it | Outstanding, and **waiting on photographs from the owner** — nothing in this repository may draw one and the sandbox cannot download one |
+| 8 | AI search, both kinds | Outstanding. Needs an OpenAI key, and the semantic half needs the `vector` extension, which `0001` does not create |
+
+### What `0111_property_catalogue.sql` seeded
+
+A listing type, ten categories, eleven attributes and their options — and **no machinery at all**, because
+the machinery has been here since Phase 2. `public.categories` is a three-level tree with per-locale names
+(0010), `public.attribute_definitions` has the five data types a property needs including both select kinds,
+`public.category_attributes` says which attributes a category asks for and which are filterable, and
+`app_private.public_category_facets` and `catalog_filters_resolve` already turn all of that into the filter
+panel and the narrowed query (0089). So "filters for 1+1, 2+1, villas and buildings" was a seeding problem,
+not a building one — and a `property_type` column with a bespoke filter would have been a second catalogue
+beside the one the console already edits.
+
+Three decisions are worth knowing:
+
+- **`sale_or_rent` is an attribute, not a category.** A villa for sale and a villa to rent are the same kind
+  of thing on different terms; two branches would double every category and halve every count.
+- **Room layout is stored `2-1` and read `2+1`**, in both scripts, because `attribute_options_value_format`
+  allows no `+` and because a system that stored `3` and displayed `2+1` is one nobody can filter correctly.
+- **The attribute set is per category.** A warehouse has no bedrooms and a plot of land has no floor, and a
+  panel offering a filter that cannot apply is a panel nobody trusts. That is asserted one category at a
+  time in the suite.
+
+Everything in it is editable in the console: 0087 manages categories and their translations, 0088 manages
+attribute definitions and their options. It is a starting catalogue, not privileged seed data.
+
+### The console, on the system rather than beside it
+
+The console was exempt from the visual system by instruction — 0109 was told to leave `/admin` functional and
+visually isolated — and the exemption had a consequence nobody predicted until the brand arrived. A surface
+written against `border-neutral-200` and `bg-neutral-900` **cannot inherit a brand**, because a raw grey step
+is not a decision about anything and there is nothing for a brand colour to flow into. So the public site
+turned emerald the moment the two slots changed and the console stayed exactly as grey as it had been.
+
+What changed:
+
+- **`src/admin/ui.ts`**, the console's own grammar. It imports the shared focus ring, card, and transition
+  from `@repo/ui` — the same ones the public pages use, which is what keeps the two one product — and states
+  only what a console needs beside them: a masthead, a section bar, a queue table, controls and a badge. A
+  console is not a marketplace: what it needs is density and a chrome nobody can mistake for the storefront,
+  not an opening band and a rhythm.
+- **An inverted masthead**, `surface.ink`, which is the owner's emerald at its own lightness. Since 0108 the
+  two surfaces share an origin and a deployment; a member of staff with both open had two tabs that looked
+  like the same grey document. A dark bar settles it at a glance and costs nothing.
+- **Every raw grey replaced by the role it meant** — 1,056 utilities across 87 files, mapped rather than
+  guessed: `border-neutral-200` → `border-hairline`, `text-neutral-600` → `text-ink-muted`, `bg-neutral-900`
+  → `bg-surface-ink`, and so on. The console now re-derives with the brand exactly as the public site does.
+- **`test/admin/admin-tokens.test.ts`** holds it there: no raw neutral step, no bare `white` or `black`, no
+  hard-coded colour of any kind anywhere in `src/admin` or `src/app/admin`, and exactly one masthead. The
+  rule reads the statements, not the prose — comments are stripped first, because a comment explaining why a
+  grey was replaced is not a grey, and that false-positive class has broken six detectors in this repository
+  already.
+
+One defect the screenshots caught and the tests could not: setting the document's text to `ink-body` turned
+every unstyled heading in the console grey. The public side never had the problem because `BAND.canvas` sets
+`ink-strong` and secondary text opts out of it; the console's document now does the same.
 
 ### What `0110_buyer_seller_paths_closed.sql` and the code beside it did
 
@@ -2078,7 +2136,7 @@ unreadable and `noindex, follow`, which is a stronger pair than the single asser
 - With Docker: `pnpm run supabase start` applies the migrations, and `pnpm run supabase test db --local`
   runs the pgTAP suite in `supabase/tests/`. This is the authoritative path and the one CI uses.
 - Without Docker, and **with a plain PostgreSQL 16 server the sandbox can start itself**, the whole pgTAP
-  suite does run: 111 files and 10,622 assertions, all passing as of 0110. `pg_cron` has
+  suite does run: 112 files and 10,647 assertions, all passing as of 0111. `pg_cron` has
   to be in `shared_preload_libraries` with `cron.database_name` set to the target database, or `0001` stops on
   an unrecognised parameter. Apply with `--baseline` into a **freshly created** database and run the test files
   with `psql` directly; `--tests` stops at `0031` because installing pgTAP into an existing database trips the

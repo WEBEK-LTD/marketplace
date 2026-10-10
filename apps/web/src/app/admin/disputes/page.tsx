@@ -43,8 +43,8 @@ export default async function Page({
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('disputes.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('queueIntro')}</p>
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('boundaryNote')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('queueIntro')}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('boundaryNote')}</p>
           <DisputeQueue cursor={single(query['cursor'])} status={single(query['status'])} />
         </div>
       </PageContainer>

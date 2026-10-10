@@ -39,11 +39,11 @@ import { adminApiPath } from '../paths';
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 
 /** `account_recovery_approvals_note_length`, which is the tightest bound any of the three notes meets. */
 const NOTE_MAX_LENGTH = 2000;
@@ -172,9 +172,9 @@ export function RecoveryDecisionForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-8 rounded-lg border border-neutral-200 p-4">
-      <h3 className="text-base font-medium text-neutral-900">{copy.heading}</h3>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{copy.intro}</p>
+    <form onSubmit={submit} className="mt-8 rounded-lg border border-hairline p-4">
+      <h3 className="text-base font-medium text-ink-strong">{copy.heading}</h3>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{copy.intro}</p>
 
       {step === 'decision' && copy.approve !== undefined && copy.reject !== undefined && (
         <fieldset className="mt-4">
@@ -212,7 +212,7 @@ export function RecoveryDecisionForm({
 
       {step !== 'completion' && copy.noteLabel !== undefined && (
         <label className="mt-4 block text-sm">
-          <span className="text-neutral-900">{copy.noteLabel}</span>
+          <span className="text-ink-strong">{copy.noteLabel}</span>
           <textarea
             className={FIELD_CLASS}
             rows={3}
@@ -224,7 +224,7 @@ export function RecoveryDecisionForm({
             disabled={busy}
           />
           {copy.noteHint !== undefined && (
-            <span className="mt-1 block text-xs text-neutral-600">{copy.noteHint}</span>
+            <span className="mt-1 block text-xs text-ink-muted">{copy.noteHint}</span>
           )}
         </label>
       )}
@@ -239,12 +239,12 @@ export function RecoveryDecisionForm({
             }}
             disabled={busy}
           />
-          <span className="text-neutral-900">{copy.mfaLabel}</span>
+          <span className="text-ink-strong">{copy.mfaLabel}</span>
         </label>
       )}
 
       {asking && (
-        <p role="alert" className="mt-4 max-w-prose text-sm text-neutral-900">
+        <p role="alert" className="mt-4 max-w-prose text-sm text-ink-strong">
           {copy.confirm}
         </p>
       )}
@@ -268,7 +268,7 @@ export function RecoveryDecisionForm({
       </div>
 
       {message !== null && (
-        <p role="alert" className="mt-3 max-w-prose text-sm text-neutral-900">
+        <p role="alert" className="mt-3 max-w-prose text-sm text-ink-strong">
           {message}
         </p>
       )}
@@ -401,12 +401,12 @@ export function SellerStatusForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-8 rounded-lg border border-neutral-200 p-4">
-      <h3 className="text-base font-medium text-neutral-900">{copy.heading}</h3>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{copy.intro}</p>
+    <form onSubmit={submit} className="mt-8 rounded-lg border border-hairline p-4">
+      <h3 className="text-base font-medium text-ink-strong">{copy.heading}</h3>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{copy.intro}</p>
 
       <label className="mt-4 block text-sm">
-        <span className="text-neutral-900">{copy.statusLabel}</span>
+        <span className="text-ink-strong">{copy.statusLabel}</span>
         <select
           className={FIELD_CLASS}
           value={status}
@@ -426,7 +426,7 @@ export function SellerStatusForm({
 
       {needsReason && (
         <label className="mt-4 block text-sm">
-          <span className="text-neutral-900">{copy.reasonLabel}</span>
+          <span className="text-ink-strong">{copy.reasonLabel}</span>
           <textarea
             className={FIELD_CLASS}
             rows={3}
@@ -437,12 +437,12 @@ export function SellerStatusForm({
             }}
             disabled={busy}
           />
-          <span className="mt-1 block text-xs text-neutral-600">{copy.reasonHint}</span>
+          <span className="mt-1 block text-xs text-ink-muted">{copy.reasonHint}</span>
         </label>
       )}
 
       {asking && (
-        <p role="alert" className="mt-4 max-w-prose text-sm text-neutral-900">
+        <p role="alert" className="mt-4 max-w-prose text-sm text-ink-strong">
           {question}
         </p>
       )}
@@ -466,7 +466,7 @@ export function SellerStatusForm({
       </div>
 
       {message !== null && (
-        <p role="alert" className="mt-3 max-w-prose text-sm text-neutral-900">
+        <p role="alert" className="mt-3 max-w-prose text-sm text-ink-strong">
           {message}
         </p>
       )}
@@ -638,18 +638,18 @@ export function StaffRoleForm({
   }
 
   return (
-    <section className="mt-8 rounded-lg border border-neutral-200 p-4">
-      <h3 className="text-base font-medium text-neutral-900">{copy.heading}</h3>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{copy.intro}</p>
+    <section className="mt-8 rounded-lg border border-hairline p-4">
+      <h3 className="text-base font-medium text-ink-strong">{copy.heading}</h3>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{copy.intro}</p>
       {/* Owner decision 6. An operator must not believe this signs anybody out. */}
-      <p className="mt-2 max-w-prose rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-neutral-800">
+      <p className="mt-2 max-w-prose rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-ink-strong">
         {copy.sessionNote}
       </p>
 
       {first === undefined || copy.grantSubmit === undefined ? null : (
         <form onSubmit={submitGrant} className="mt-4">
           <label className="block text-sm">
-            <span className="text-neutral-900">{copy.roleLabel}</span>
+            <span className="text-ink-strong">{copy.roleLabel}</span>
             <select
               className={FIELD_CLASS}
               value={roleKey}
@@ -668,7 +668,7 @@ export function StaffRoleForm({
           </label>
 
           <label className="mt-4 block text-sm">
-            <span className="text-neutral-900">{copy.reasonLabel}</span>
+            <span className="text-ink-strong">{copy.reasonLabel}</span>
             <input
               className={FIELD_CLASS}
               value={reason}
@@ -677,11 +677,11 @@ export function StaffRoleForm({
               disabled={busy}
               required
             />
-            <span className="mt-1 block text-xs text-neutral-500">{copy.reasonHint}</span>
+            <span className="mt-1 block text-xs text-ink-muted">{copy.reasonHint}</span>
           </label>
 
           <label className="mt-4 block text-sm">
-            <span className="text-neutral-900">{copy.expiresLabel}</span>
+            <span className="text-ink-strong">{copy.expiresLabel}</span>
             <input
               className={FIELD_CLASS}
               type="datetime-local"
@@ -689,11 +689,11 @@ export function StaffRoleForm({
               onChange={(event) => setExpiresAt(event.target.value)}
               disabled={busy}
             />
-            <span className="mt-1 block text-xs text-neutral-500">{copy.expiresHint}</span>
+            <span className="mt-1 block text-xs text-ink-muted">{copy.expiresHint}</span>
           </label>
 
           {asking ? (
-            <p className="mt-4 max-w-prose text-sm text-neutral-900">{copy.grantConfirm}</p>
+            <p className="mt-4 max-w-prose text-sm text-ink-strong">{copy.grantConfirm}</p>
           ) : null}
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -715,23 +715,23 @@ export function StaffRoleForm({
       )}
 
       {revocable.length === 0 || copy.revokeSubmit === undefined ? null : (
-        <div className="mt-6 border-t border-neutral-200 pt-4">
-          <p className="text-sm font-medium text-neutral-900">{copy.heldHeading}</p>
+        <div className="mt-6 border-t border-hairline pt-4">
+          <p className="text-sm font-medium text-ink-strong">{copy.heldHeading}</p>
           <ul className="mt-3 space-y-3">
             {revocable.map((option) => (
               <li key={option.roleKey}>
                 <form onSubmit={(event) => submitRevoke(event, option.roleKey)}>
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-neutral-900">{option.label}</span>
+                    <span className="text-sm text-ink-strong">{option.label}</span>
                     <button className={SECONDARY_CLASS} type="submit" disabled={busy}>
                       {copy.revokeSubmit}
                     </button>
                   </div>
                   {revoking === option.roleKey ? (
                     <div className="mt-3">
-                      <p className="max-w-prose text-sm text-neutral-900">{copy.revokeConfirm}</p>
+                      <p className="max-w-prose text-sm text-ink-strong">{copy.revokeConfirm}</p>
                       <label className="mt-2 block text-sm">
-                        <span className="text-neutral-900">{copy.reasonLabel}</span>
+                        <span className="text-ink-strong">{copy.reasonLabel}</span>
                         <input
                           className={FIELD_CLASS}
                           value={revokeReason}

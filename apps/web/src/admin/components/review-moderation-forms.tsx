@@ -38,11 +38,11 @@ import { adminApiPath } from '../paths';
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 
 /** `ReviewModerationReasonSchema`'s bound, which is the column's own. */
 const REASON_MAX_LENGTH = 4000;
@@ -171,12 +171,12 @@ export function ReviewModerationForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-8 rounded-lg border border-neutral-200 p-4">
-      <h3 className="text-base font-medium text-neutral-900">{copy.heading}</h3>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{copy.intro}</p>
+    <form onSubmit={submit} className="mt-8 rounded-lg border border-hairline p-4">
+      <h3 className="text-base font-medium text-ink-strong">{copy.heading}</h3>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{copy.intro}</p>
 
       <label className="mt-4 block text-sm">
-        <span className="text-neutral-900">{copy.statusLabel}</span>
+        <span className="text-ink-strong">{copy.statusLabel}</span>
         <select
           className={FIELD_CLASS}
           value={status}
@@ -195,7 +195,7 @@ export function ReviewModerationForm({
       </label>
 
       <label className="mt-4 block text-sm">
-        <span className="text-neutral-900">{copy.reasonLabel}</span>
+        <span className="text-ink-strong">{copy.reasonLabel}</span>
         <textarea
           className={FIELD_CLASS}
           rows={3}
@@ -206,11 +206,11 @@ export function ReviewModerationForm({
           }}
           disabled={busy}
         />
-        <span className="mt-1 block text-xs text-neutral-600">{copy.reasonHint}</span>
+        <span className="mt-1 block text-xs text-ink-muted">{copy.reasonHint}</span>
       </label>
 
       {asking && (
-        <p role="alert" className="mt-4 max-w-prose text-sm text-neutral-900">
+        <p role="alert" className="mt-4 max-w-prose text-sm text-ink-strong">
           {question}
         </p>
       )}
@@ -234,7 +234,7 @@ export function ReviewModerationForm({
       </div>
 
       {message !== null && (
-        <p role="alert" className="mt-3 max-w-prose text-sm text-neutral-900">
+        <p role="alert" className="mt-3 max-w-prose text-sm text-ink-strong">
           {message}
         </p>
       )}

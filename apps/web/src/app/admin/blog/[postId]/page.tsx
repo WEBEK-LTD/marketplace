@@ -29,9 +29,9 @@ export default async function Page({ params }: { readonly params: Promise<{ post
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('blog.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('detailIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('detailIntro')}</p>
           <p className="mt-2 text-sm">
-            <Link className="text-neutral-900 underline" href={adminPath('/blog')}>
+            <Link className="text-ink-strong underline" href={adminPath('/blog')}>
               {t('backToList')}
             </Link>
           </p>

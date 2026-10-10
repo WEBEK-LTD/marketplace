@@ -73,12 +73,12 @@ export function VerificationDocumentButton({
         type="button"
         onClick={() => void open()}
         disabled={pending}
-        className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-900 disabled:opacity-60"
+        className="rounded-md border border-edge px-3 py-1.5 text-sm font-medium text-ink-strong disabled:opacity-60"
       >
         {pending ? labels.working : labels.view}
       </button>
       {failed && (
-        <span role="alert" className="text-sm text-neutral-900">
+        <span role="alert" className="text-sm text-ink-strong">
           {labels.failed}
         </span>
       )}

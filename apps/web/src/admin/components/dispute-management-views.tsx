@@ -97,9 +97,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -107,15 +107,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function Badge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -159,15 +159,15 @@ export async function DisputeQueue({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((dispute) => (
-          <li key={dispute.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={dispute.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link href={adminPath(`/disputes/${dispute.id}`)} className="underline underline-offset-4">
                     {t(`reason.${dispute.reasonCode}`)}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-neutral-600">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t('onOrder', { orderNumber: dispute.orderNumber })}
                   {dispute.sellerDisplayName !== null
                     ? ` · ${dispute.sellerDisplayName}`
@@ -182,7 +182,7 @@ export async function DisputeQueue({
               </div>
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               {dispute.claimAmountMinor !== null && (
                 <Cell
                   label={t('claimLabel')}
@@ -206,12 +206,12 @@ export async function DisputeQueue({
               are a party to, and the reader is the only account this row can describe.
             */}
             {dispute.isParty && (
-              <p role="status" className="mt-3 text-sm text-neutral-600">
+              <p role="status" className="mt-3 text-sm text-ink-muted">
                 {t('isPartyHint')}
               </p>
             )}
             {dispute.resolvedByMe && (
-              <p className="mt-3 text-sm text-neutral-600">{t('resolvedByMeHint')}</p>
+              <p className="mt-3 text-sm text-ink-muted">{t('resolvedByMeHint')}</p>
             )}
           </li>
         ))}
@@ -244,7 +244,7 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
 
   return (
     <section aria-labelledby="dispute-reason" className="mt-6">
-      <h2 id="dispute-reason" className="text-lg font-medium text-neutral-900">
+      <h2 id="dispute-reason" className="text-lg font-medium text-ink-strong">
         {t(`reason.${dispute.reasonCode}`)}
       </h2>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -252,7 +252,7 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
         <Badge label={t(`openedBy.${dispute.openedByRole}`)} />
         {dispute.resolution !== null && <Badge label={t(`resolution.${dispute.resolution}`)} />}
       </div>
-      <p className="mt-2 text-sm text-neutral-600">
+      <p className="mt-2 text-sm text-ink-muted">
         {t('onOrder', { orderNumber: dispute.orderNumber })}
         {dispute.sellerSlug !== null && (
           <>
@@ -268,7 +268,7 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
       </p>
 
       {dispute.details !== null && (
-        <p className="mt-4 max-w-prose whitespace-pre-line text-neutral-800">{dispute.details}</p>
+        <p className="mt-4 max-w-prose whitespace-pre-line text-ink-strong">{dispute.details}</p>
       )}
 
       <dl
@@ -301,9 +301,9 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
 
       {/* The recorded decision, and — for a refund — what it did and did not do. */}
       {dispute.resolution !== null && (
-        <div className="mt-4 rounded-lg border border-neutral-300 p-4">
-          <p className="text-base font-medium text-neutral-900">{t('decisionHeading')}</p>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+        <div className="mt-4 rounded-lg border border-edge p-4">
+          <p className="text-base font-medium text-ink-strong">{t('decisionHeading')}</p>
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
             <Cell label={t('decisionLabel')} value={t(`resolution.${dispute.resolution}`)} />
             {dispute.resolutionAmountMinor !== null && (
               <Cell
@@ -313,17 +313,17 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
             )}
           </dl>
           {dispute.resolutionNote !== null && (
-            <p className="mt-3 max-w-prose text-sm text-neutral-900">{dispute.resolutionNote}</p>
+            <p className="mt-3 max-w-prose text-sm text-ink-strong">{dispute.resolutionNote}</p>
           )}
           {dispute.resolvedByMe && (
-            <p className="mt-2 text-xs text-neutral-600">{t('resolvedByMeHint')}</p>
+            <p className="mt-2 text-xs text-ink-muted">{t('resolvedByMeHint')}</p>
           )}
           {/*
             The boundary, beside the recorded decision: a refund was decided, and no money has moved. Somebody
             reading this record later needs to know that as much as the colleague who wrote it.
           */}
           {decidedRefund && (
-            <p role="status" className="mt-3 max-w-prose text-sm text-neutral-900">
+            <p role="status" className="mt-3 max-w-prose text-sm text-ink-strong">
               {t('refundDecidedNotMoved')}
             </p>
           )}
@@ -338,11 +338,11 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
         shown a resolution control the writer will refuse.
       */}
       {!dispute.canManage ? (
-        <p role="status" className="mt-8 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-8 max-w-prose text-sm text-ink-muted">
           {t('readOnlyNote')}
         </p>
       ) : isResolved ? (
-        <p role="status" className="mt-8 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-8 max-w-prose text-sm text-ink-muted">
           {t('closedNote')}
         </p>
       ) : (
@@ -369,7 +369,7 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
           />
 
           {dispute.isParty ? (
-            <p role="status" className="mt-8 max-w-prose text-sm text-neutral-600">
+            <p role="status" className="mt-8 max-w-prose text-sm text-ink-muted">
               {t('isPartyNote')}
             </p>
           ) : (
@@ -415,8 +415,8 @@ export async function DisputeDetailView({ disputeId }: { readonly disputeId: str
       </p>
 
       {/* The standing notes: what a resolution does, and the three things this section cannot do yet. */}
-      <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('boundaryNote')}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('deferredNote')}</p>
+      <p className="mt-6 max-w-prose text-sm text-ink-muted">{t('boundaryNote')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('deferredNote')}</p>
     </section>
   );
 }
@@ -438,7 +438,7 @@ async function DisputeThread({ disputeId }: { readonly disputeId: string }) {
 
   return (
     <section aria-labelledby="dispute-thread" className="mt-8">
-      <h3 id="dispute-thread" className="text-base font-medium text-neutral-900">
+      <h3 id="dispute-thread" className="text-base font-medium text-ink-strong">
         {t('threadHeading')}
       </h3>
       <ul className="mt-3 space-y-3">
@@ -446,7 +446,7 @@ async function DisputeThread({ disputeId }: { readonly disputeId: string }) {
           <li
             key={message.id}
             className={`rounded-lg border p-4 text-sm ${
-              message.isInternal ? 'border-neutral-400 bg-neutral-50' : 'border-neutral-200'
+              message.isInternal ? 'border-edge-strong bg-surface-sunken' : 'border-hairline'
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -454,11 +454,11 @@ async function DisputeThread({ disputeId }: { readonly disputeId: string }) {
                 <Badge label={t(`author.${message.authorRole}`)} />
                 {message.isInternal && <Badge label={t('internalBadge')} />}
               </div>
-              <span className="text-xs text-neutral-600">{minute(message.createdAt)}</span>
+              <span className="text-xs text-ink-muted">{minute(message.createdAt)}</span>
             </div>
-            <p className="mt-2 max-w-prose whitespace-pre-line text-neutral-900">{message.body}</p>
+            <p className="mt-2 max-w-prose whitespace-pre-line text-ink-strong">{message.body}</p>
             {message.isOwnMessage && (
-              <p className="mt-2 text-xs text-neutral-600">{t('ownMessageHint')}</p>
+              <p className="mt-2 text-xs text-ink-muted">{t('ownMessageHint')}</p>
             )}
           </li>
         ))}

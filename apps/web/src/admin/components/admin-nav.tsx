@@ -3,6 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import {
+  ADMIN_BUTTON_QUIET,
+  ADMIN_NAV,
+  ADMIN_NAV_LINK,
+  ADMIN_NAV_LINK_ACTIVE,
+  ADMIN_NAV_LINK_IDLE,
+} from '../ui';
 
 /**
  * The console's section navigation (Phase 7-F).
@@ -32,8 +39,8 @@ export interface NavItem {
   readonly label: string;
 }
 
-const LINK_BASE =
-  'block rounded-md px-3 py-2 text-sm underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900';
+// The link's shape, its focus ring and its two states all come from the console's grammar, so a section
+// link cannot drift away from the rest of the console or from the public site's focus behaviour.
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -60,9 +67,7 @@ export function AdminNav({
         <Link
           href={item.href}
           aria-current={active ? 'page' : undefined}
-          className={`${LINK_BASE} ${
-            active ? 'bg-neutral-100 font-semibold text-neutral-900' : 'text-neutral-700 hover:bg-neutral-50'
-          }`}
+          className={`${ADMIN_NAV_LINK} ${active ? ADMIN_NAV_LINK_ACTIVE : ADMIN_NAV_LINK_IDLE}`}
         >
           {item.label}
         </Link>
@@ -71,14 +76,14 @@ export function AdminNav({
   });
 
   return (
-    <nav aria-label={label} className="border-b border-neutral-200">
+    <nav aria-label={label} className={ADMIN_NAV}>
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
           aria-expanded={open}
           aria-controls="admin-sections"
-          className="my-2 rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-900 md:hidden"
+          className={`${ADMIN_BUTTON_QUIET} my-2 md:hidden`}
         >
           {menuLabel}
         </button>

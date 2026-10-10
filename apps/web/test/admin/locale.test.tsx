@@ -30,7 +30,9 @@ describe('admin locale', () => {
       </AdminDocument>,
     );
     expect(html).toContain('<html lang="ar" dir="rtl">');
-    expect(html).toContain('السوق <span class="text-neutral-600">الإدارة</span>');
+    // The section name beside the wordmark. It is a role now rather than a grey step, and it sits on the
+    // console's inverted masthead, so the class names moved with the surface it is written on.
+    expect(html).toContain('السوق <span class="font-normal text-on-ink-muted">الإدارة</span>');
     expect(html).toContain('<h1>الإدارة</h1>');
     expect(html).toContain('تخطَّ إلى المحتوى');
     expect(directionFor('ar')).toBe('rtl');

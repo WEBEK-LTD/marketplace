@@ -32,10 +32,10 @@ import { adminPath } from '../paths';
  * address with no history to redirect from, and every table that references a category restricts deletion.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -55,11 +55,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -97,7 +97,7 @@ export async function CategoryTree() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('treeHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('treeNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('treeNote')}</p>
 
       {categories.length === 0 ? (
         <Message tone="empty" title={t('emptyTitle')} body={t('emptyBody')} />
@@ -138,7 +138,7 @@ async function CategoryRow({ category }: { readonly category: AdminCategoryNode 
             {category.name ?? category.slug}
           </Link>
         </span>
-        <span className="mt-1 block text-xs text-neutral-500">
+        <span className="mt-1 block text-xs text-ink-muted">
           <code>{publicCategoryPath('en', category.slug)}</code>
         </span>
       </td>
@@ -194,7 +194,7 @@ export async function CategoryCreatePanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('createHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('createNote')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('createNote')}</p>
       <CategoryCreateForm
         parents={parents}
         labels={{
@@ -251,28 +251,28 @@ export async function CategoryDetailView({ categoryId }: { readonly categoryId: 
       <section className={CARD}>
         <Heading level={2}>{category.slug}</Heading>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-neutral-600">{t('publicAddressLabel')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('publicAddressLabel')}</dt>
+          <dd className="text-ink-strong">
             <code>{publicCategoryPath('en', category.slug)}</code>
-            <span className="mt-1 block text-xs text-neutral-500">{t('slugImmutable')}</span>
+            <span className="mt-1 block text-xs text-ink-muted">{t('slugImmutable')}</span>
           </dd>
-          <dt className="text-neutral-600">{t('columnDepth')}</dt>
-          <dd className="text-neutral-900">{category.depth + 1}</dd>
-          <dt className="text-neutral-600">{t('parentLabel')}</dt>
-          <dd className="text-neutral-900">{category.parentSlug ?? t('noParent')}</dd>
-          <dt className="text-neutral-600">{t('listingTypeLabel')}</dt>
-          <dd className="text-neutral-900">{category.listingTypeCode ?? t('anyListingType')}</dd>
-          <dt className="text-neutral-600">{t('columnOrder')}</dt>
-          <dd className="text-neutral-900">{category.sortOrder}</dd>
-          <dt className="text-neutral-600">{t('columnState')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnDepth')}</dt>
+          <dd className="text-ink-strong">{category.depth + 1}</dd>
+          <dt className="text-ink-muted">{t('parentLabel')}</dt>
+          <dd className="text-ink-strong">{category.parentSlug ?? t('noParent')}</dd>
+          <dt className="text-ink-muted">{t('listingTypeLabel')}</dt>
+          <dd className="text-ink-strong">{category.listingTypeCode ?? t('anyListingType')}</dd>
+          <dt className="text-ink-muted">{t('columnOrder')}</dt>
+          <dd className="text-ink-strong">{category.sortOrder}</dd>
+          <dt className="text-ink-muted">{t('columnState')}</dt>
+          <dd className="text-ink-strong">
             {category.isActive ? t('stateShown') : t('stateHidden')}
             {category.isActive && !category.isVisible ? (
               <span className="mt-1 block text-xs text-amber-700">{t('shadowed')}</span>
             ) : null}
           </dd>
-          <dt className="text-neutral-600">{t('columnContents')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnContents')}</dt>
+          <dd className="text-ink-strong">
             {t('contents', { children: category.childCount, listings: category.listingCount })}
           </dd>
         </dl>
@@ -342,7 +342,7 @@ async function CategoryControls({ detail }: { readonly detail: AdminCategoryDeta
 
       <section className={CARD}>
         <Heading level={2}>{t('stateHeading')}</Heading>
-        <p className="mt-1 text-sm text-neutral-600">{t('stateNote')}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t('stateNote')}</p>
         <CategoryStateForm
           categoryId={category.categoryId}
           isActive={category.isActive}

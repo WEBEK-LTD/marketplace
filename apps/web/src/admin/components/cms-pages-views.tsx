@@ -31,10 +31,10 @@ import { adminPath } from '../paths';
  * refusal in the words the API sent.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -62,11 +62,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error' | 'note'; titl
       ? 'border-red-200 bg-red-50'
       : tone === 'note'
         ? 'border-amber-200 bg-amber-50'
-        : 'border-neutral-200 bg-neutral-50';
+        : 'border-hairline bg-surface-sunken';
   return (
     <div className={`mt-4 rounded-md border p-4 ${classes}`}>
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -99,7 +99,7 @@ export async function CmsPageList({ cursor, status }: CmsPageListProps) {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
 
       {items.length === 0 ? (
         <Message tone="empty" title={t('emptyTitle')} body={t('emptyBody')} />
@@ -126,7 +126,7 @@ export async function CmsPageList({ cursor, status }: CmsPageListProps) {
       {nextCursor === null ? null : (
         <p className="mt-4">
           <Link
-            className="text-sm text-neutral-900 underline"
+            className="text-sm text-ink-strong underline"
             href={`/cms/pages?cursor=${encodeURIComponent(nextCursor)}${
               status === null ? '' : `&status=${encodeURIComponent(status)}`
             }`}
@@ -143,7 +143,7 @@ function CmsPageRow({ page, untitled }: { page: CmsPageSummary; untitled: string
   return (
     <tr>
       <td className={TD}>
-        <Link className="text-neutral-900 underline" href={adminPath(`/cms/pages/${page.id}`)}>
+        <Link className="text-ink-strong underline" href={adminPath(`/cms/pages/${page.id}`)}>
           {page.title ?? untitled}
         </Link>
       </td>
@@ -183,7 +183,7 @@ export async function CmsPageCreatePanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('createHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('createIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('createIntro')}</p>
       <CmsPageCreateForm
         copy={{
           slugLabel: t('slugLabel'),
@@ -231,22 +231,22 @@ export async function CmsPageDetailView({ pageId }: { readonly pageId: string | 
       <section className={CARD}>
         <Heading level={2}>{page.slug}</Heading>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-neutral-600">{t('columnStatus')}</dt>
-          <dd className="text-neutral-900">{page.status}</dd>
-          <dt className="text-neutral-600">{t('templateLabel')}</dt>
-          <dd className="text-neutral-900">{page.template}</dd>
-          <dt className="text-neutral-600">{t('pageKeyLabel')}</dt>
-          <dd className="text-neutral-900">{page.pageKey ?? '—'}</dd>
-          <dt className="text-neutral-600">{t('columnIndexable')}</dt>
-          <dd className="text-neutral-900">{page.isIndexable ? 'yes' : 'no'}</dd>
-          <dt className="text-neutral-600">{t('sortOrderLabel')}</dt>
-          <dd className="text-neutral-900">{page.sortOrder}</dd>
-          <dt className="text-neutral-600">{t('publishedAtLabel')}</dt>
-          <dd className="text-neutral-900">{page.publishedAt ?? '—'}</dd>
-          <dt className="text-neutral-600">{t('scheduledForLabel')}</dt>
-          <dd className="text-neutral-900">{page.scheduledFor ?? '—'}</dd>
-          <dt className="text-neutral-600">{t('publicAddressLabel')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnStatus')}</dt>
+          <dd className="text-ink-strong">{page.status}</dd>
+          <dt className="text-ink-muted">{t('templateLabel')}</dt>
+          <dd className="text-ink-strong">{page.template}</dd>
+          <dt className="text-ink-muted">{t('pageKeyLabel')}</dt>
+          <dd className="text-ink-strong">{page.pageKey ?? '—'}</dd>
+          <dt className="text-ink-muted">{t('columnIndexable')}</dt>
+          <dd className="text-ink-strong">{page.isIndexable ? 'yes' : 'no'}</dd>
+          <dt className="text-ink-muted">{t('sortOrderLabel')}</dt>
+          <dd className="text-ink-strong">{page.sortOrder}</dd>
+          <dt className="text-ink-muted">{t('publishedAtLabel')}</dt>
+          <dd className="text-ink-strong">{page.publishedAt ?? '—'}</dd>
+          <dt className="text-ink-muted">{t('scheduledForLabel')}</dt>
+          <dd className="text-ink-strong">{page.scheduledFor ?? '—'}</dd>
+          <dt className="text-ink-muted">{t('publicAddressLabel')}</dt>
+          <dd className="text-ink-strong">
             {isCmsPageSlug(page.slug) ? (
               <code>{publicCmsPagePath('en', page.slug)}</code>
             ) : (
@@ -266,9 +266,9 @@ export async function CmsPageDetailView({ pageId }: { readonly pageId: string | 
 
         {page.previousSlugs.length === 0 ? null : (
           <div className="mt-4">
-            <p className="text-sm font-medium text-neutral-700">{t('previousSlugsHeading')}</p>
-            <p className="mt-1 text-sm text-neutral-600">{t('previousSlugsNote')}</p>
-            <ul className="mt-2 text-sm text-neutral-900">
+            <p className="text-sm font-medium text-ink-body">{t('previousSlugsHeading')}</p>
+            <p className="mt-1 text-sm text-ink-muted">{t('previousSlugsNote')}</p>
+            <ul className="mt-2 text-sm text-ink-strong">
               {page.previousSlugs.map((slug) => (
                 <li key={slug}>
                   <code>{slug}</code>
@@ -321,7 +321,7 @@ async function CmsPageControls({ page }: { readonly page: CmsPageDetail }) {
 
       <section className={CARD}>
         <Heading level={2}>{t('coverHeading')}</Heading>
-        <p className="mt-1 text-sm text-neutral-600">{t('coverIntro')}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t('coverIntro')}</p>
 
         {/*
           Owner decision 5: the stored path and the alt text, and nothing else. The bucket is private and no
@@ -332,12 +332,12 @@ async function CmsPageControls({ page }: { readonly page: CmsPageDetail }) {
           <Message tone="empty" title={t('coverNoneTitle')} body={t('coverNoneBody')} />
         ) : (
           <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            <dt className="text-neutral-600">{t('coverPathLabel')}</dt>
-            <dd className="break-all font-mono text-xs text-neutral-900">{page.coverObjectPath}</dd>
-            <dt className="text-neutral-600">{t('coverAltEnLabel')}</dt>
-            <dd className="text-neutral-900">{page.coverAltTextEn ?? t('coverAltNone')}</dd>
-            <dt className="text-neutral-600">{t('coverAltArLabel')}</dt>
-            <dd className="text-neutral-900">{page.coverAltTextAr ?? t('coverAltNone')}</dd>
+            <dt className="text-ink-muted">{t('coverPathLabel')}</dt>
+            <dd className="break-all font-mono text-xs text-ink-strong">{page.coverObjectPath}</dd>
+            <dt className="text-ink-muted">{t('coverAltEnLabel')}</dt>
+            <dd className="text-ink-strong">{page.coverAltTextEn ?? t('coverAltNone')}</dd>
+            <dt className="text-ink-muted">{t('coverAltArLabel')}</dt>
+            <dd className="text-ink-strong">{page.coverAltTextAr ?? t('coverAltNone')}</dd>
           </dl>
         )}
 
@@ -364,7 +364,7 @@ async function CmsPageControls({ page }: { readonly page: CmsPageDetail }) {
 
       <section className={CARD}>
         <Heading level={2}>{t('statusHeading')}</Heading>
-        <p className="mt-1 text-sm text-neutral-600">{t('statusIntro')}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t('statusIntro')}</p>
         <CmsPageStatusForm
           pageId={page.id}
           current={page.status}
@@ -390,19 +390,19 @@ async function CmsPageTranslations({ page }: { readonly page: CmsPageDetail }) {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('translationsHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('translationsIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('translationsIntro')}</p>
 
       {page.translations.length === 0 ? (
         <Message tone="empty" title={t('noLocalesTitle')} body={t('noLocalesBody')} />
       ) : (
         <ul className="mt-4 space-y-3 text-sm">
           {page.translations.map((translation) => (
-            <li key={translation.localeCode} className="rounded-md border border-neutral-200 p-3">
-              <p className="font-medium text-neutral-900">
+            <li key={translation.localeCode} className="rounded-md border border-hairline p-3">
+              <p className="font-medium text-ink-strong">
                 <code>{translation.localeCode}</code> — {translation.title}
               </p>
               {translation.metaDescription === null ? null : (
-                <p className="mt-1 text-neutral-600">{translation.metaDescription}</p>
+                <p className="mt-1 text-ink-muted">{translation.metaDescription}</p>
               )}
             </li>
           ))}

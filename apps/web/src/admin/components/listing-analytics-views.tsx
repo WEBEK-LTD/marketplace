@@ -55,9 +55,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -65,8 +65,8 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
@@ -94,12 +94,12 @@ export async function ListingAnalyticsTable({
 
   return (
     <section aria-labelledby="listing-analytics" className="mt-10">
-      <h2 id="listing-analytics" className="text-lg font-medium text-neutral-900">
+      <h2 id="listing-analytics" className="text-lg font-medium text-ink-strong">
         {t('windowLabel')}: {t('windowValue', { days: page.days })}
       </h2>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('readOnlyNote')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('readOnlyNote')}</p>
       {/* Stated, not implied: the two things this rollup does not count, and why. */}
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('notCountedNote')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('notCountedNote')}</p>
 
       {page.items.length === 0 ? (
         <Notice title={t('emptyTitle')} body={t('emptyBody')} />
@@ -109,16 +109,16 @@ export async function ListingAnalyticsTable({
             {page.items.map((row) => (
               <li
                 key={`${row.day}-${row.listingSlug}`}
-                className="rounded-lg border border-neutral-200 p-4"
+                className="rounded-lg border border-hairline p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-base font-medium text-neutral-900">{row.listingTitle}</p>
-                    <p className="mt-1 text-sm text-neutral-600">
+                    <p className="text-base font-medium text-ink-strong">{row.listingTitle}</p>
+                    <p className="mt-1 text-sm text-ink-muted">
                       {t('dayHeading')}: {row.day}
                     </p>
                   </div>
-                  <p className="text-sm text-neutral-600">
+                  <p className="text-sm text-ink-muted">
                     {t('sellerHeading')}: {row.sellerSlug ?? t('noSeller')}
                   </p>
                 </div>
@@ -129,7 +129,7 @@ export async function ListingAnalyticsTable({
                   <Cell label={t('sharesHeading')} value={row.shares} />
                   <Cell label={t('statusHeading')} value={row.listingStatus} />
                 </dl>
-                <p className="mt-2 text-xs text-neutral-500">
+                <p className="mt-2 text-xs text-ink-muted">
                   {t('computedHeading')}: {minute(row.computedAt)}
                 </p>
               </li>

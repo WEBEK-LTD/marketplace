@@ -42,21 +42,21 @@ export default async function Page({
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('support.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{sections('support.description')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{sections('support.description')}</p>
 
           <section aria-labelledby="support-mine" className="mt-8">
-            <h2 id="support-mine" className="text-lg font-medium text-neutral-900">
+            <h2 id="support-mine" className="text-lg font-medium text-ink-strong">
               {t('assignedHeading')}
             </h2>
-            <p className="mt-1 max-w-prose text-sm text-neutral-600">{t('assignedIntro')}</p>
+            <p className="mt-1 max-w-prose text-sm text-ink-muted">{t('assignedIntro')}</p>
             <SupportAssigned cursor={single(query['mine'])} />
           </section>
 
           <section aria-labelledby="support-queue" className="mt-12">
-            <h2 id="support-queue" className="text-lg font-medium text-neutral-900">
+            <h2 id="support-queue" className="text-lg font-medium text-ink-strong">
               {t('queueHeading')}
             </h2>
-            <p className="mt-1 max-w-prose text-sm text-neutral-600">{t('queueIntro')}</p>
+            <p className="mt-1 max-w-prose text-sm text-ink-muted">{t('queueIntro')}</p>
             <SupportQueue cursor={single(query['cursor'])} />
           </section>
         </div>

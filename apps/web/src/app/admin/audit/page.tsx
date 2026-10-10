@@ -39,7 +39,7 @@ export default async function Page({
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('audit.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('auditIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('auditIntro')}</p>
           <AuditTrail
             cursor={single(query['cursor'])}
             tableSchema={single(query['tableSchema'])}

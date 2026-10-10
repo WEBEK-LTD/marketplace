@@ -102,10 +102,14 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- Which categories are returned
 -- ---------------------------------------------------------------------------------------------------
+-- **Scoped to this suite's own fixtures.** It counted every row the reader returned until 0111 seeded a
+-- real property catalogue and the number moved — which was the assertion's fault, not the catalogue's: a
+-- test that counts every row in a shared table is a test that any future seed breaks, and it was never
+-- the five-ness of the whole database that mattered here but which of *these* five the reader admits.
 select is(
-  (select count(*) from app_private.public_categories('en')),
+  (select count(*) from app_private.public_categories('en') c where c.slug = any (array['home', 'electronics', 'phones', 'untranslated', 'smartphones'])),
   5::bigint,
-  'the five published categories come back');
+  'the five published fixtures come back');
 select is(
   (select count(*) from app_private.public_categories('en') c where c.slug = 'retired'),
   0::bigint,
@@ -130,8 +134,12 @@ select is(
   (select c.parent_id from app_private.public_categories('en') c where c.slug = 'smartphones'),
   'aa000000-0000-4000-8000-000000000003'::uuid,
   'and a grandchild names its own parent, so three levels can be rebuilt');
+-- Filtered to the fixtures for the reason above. Filtering preserves relative order, so this proves
+-- exactly what it always proved: the reader's ordering, among rows whose ordering this suite controls.
 select is(
-  (select array_agg(c.slug order by ordinality) from app_private.public_categories('en') with ordinality c(id, parent_id, slug, name, ordinality)),
+  (select array_agg(c.slug order by ordinality)
+     from app_private.public_categories('en') with ordinality c(id, parent_id, slug, name, ordinality)
+    where c.slug = any (array['home', 'electronics', 'phones', 'untranslated', 'smartphones'])),
   array['home', 'electronics', 'phones', 'untranslated', 'smartphones'],
   'rows arrive shallowest first and, within a level, in sort order then slug');
 select is(

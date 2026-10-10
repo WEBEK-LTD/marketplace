@@ -23,10 +23,10 @@ import { adminPath } from '../paths';
  * `@repo/config` and only this layer can check it.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -46,11 +46,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -89,7 +89,7 @@ export async function FaqTopicsPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('topicsHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('topicsIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('topicsIntro')}</p>
       {/* Said out loud, because an operator cannot deduce any of it from anything on the screen. */}
       <Message tone="empty" title={t('notHereTitle')} body={t('notHereBody')} />
 
@@ -110,7 +110,7 @@ export async function FaqTopicsPanel() {
               <tr key={topic.topic}>
                 <td className={TD}>
                   <Link
-                    className="text-neutral-900 underline"
+                    className="text-ink-strong underline"
                     href={adminPath(`/cms/faqs?topic=${encodeURIComponent(topic.topic)}`)}
                   >
                     <code>{topic.topic}</code>
@@ -126,7 +126,7 @@ export async function FaqTopicsPanel() {
                   {!topic.isMapped ? <p className="text-amber-700">{t('notShown')}</p> : null}
                   {isUnservable(topic) ? <p className="text-amber-700">{t('unservablePage')}</p> : null}
                   {topic.isMapped && topic.publishedCount === 0 ? (
-                    <p className="text-neutral-600">{t('nothingPublished')}</p>
+                    <p className="text-ink-muted">{t('nothingPublished')}</p>
                   ) : null}
                   {topic.isMapped && !isUnservable(topic) && topic.publishedCount > 0 ? '—' : null}
                 </td>
@@ -167,10 +167,10 @@ export async function FaqList({ topic }: { readonly topic?: string | undefined }
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
       {topic === undefined ? null : (
         <p className="mt-2 text-sm">
-          <Link className="text-neutral-900 underline" href={adminPath('/cms/faqs')}>
+          <Link className="text-ink-strong underline" href={adminPath('/cms/faqs')}>
             {t('showAllTopics')}
           </Link>
         </p>
@@ -193,7 +193,7 @@ export async function FaqList({ topic }: { readonly topic?: string | undefined }
             {items.map((entry) => (
               <tr key={entry.id}>
                 <td className={TD}>
-                  <Link className="text-neutral-900 underline" href={adminPath(`/cms/faqs/${entry.id}`)}>
+                  <Link className="text-ink-strong underline" href={adminPath(`/cms/faqs/${entry.id}`)}>
                     {entry.questionEn}
                   </Link>
                 </td>
@@ -204,7 +204,7 @@ export async function FaqList({ topic }: { readonly topic?: string | undefined }
                 <td className={TD}>
                   {!entry.isMapped ? <p className="text-amber-700">{t('notShown')}</p> : null}
                   {isUnservable(entry) ? <p className="text-amber-700">{t('unservablePage')}</p> : null}
-                  {entry.questionAr === null ? <p className="text-neutral-600">{t('noArabic')}</p> : null}
+                  {entry.questionAr === null ? <p className="text-ink-muted">{t('noArabic')}</p> : null}
                   {entry.isMapped && !isUnservable(entry) && entry.questionAr !== null ? '—' : null}
                 </td>
                 <td className={TD}>
@@ -219,7 +219,7 @@ export async function FaqList({ topic }: { readonly topic?: string | undefined }
       {result.data.nextCursor === null ? null : (
         <p className="mt-4 text-sm">
           <Link
-            className="text-neutral-900 underline"
+            className="text-ink-strong underline"
             href={adminPath(`/cms/faqs?${new URLSearchParams({
               ...(topic === undefined ? {} : { topic }),
               cursor: result.data.nextCursor,
@@ -271,7 +271,7 @@ export async function FaqAddPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('addHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('addIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('addIntro')}</p>
       <FaqCreateForm
         copy={{ ...(await entryCopy()), unpublishedNotice: t('unpublishedNotice') }}
         topics={topics.kind === 'ok' ? topicNames(topics.data.topics) : []}
@@ -353,12 +353,12 @@ export async function FaqDetailView({ faqId }: { readonly faqId: string | undefi
       {/* The answer as the public would read it: paragraphs split on blank lines and nothing interpreted as
           markup, which is owner decision 3 shown rather than described. */}
       <div className="mt-4">
-        <p className="text-sm font-medium text-neutral-700">{t('previewHeading')}</p>
-        <p className="mt-1 text-xs text-neutral-500">{t('previewHint')}</p>
-        <div className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-4">
-          <p className="font-medium text-neutral-900">{faq.questionEn}</p>
+        <p className="text-sm font-medium text-ink-body">{t('previewHeading')}</p>
+        <p className="mt-1 text-xs text-ink-muted">{t('previewHint')}</p>
+        <div className="mt-2 rounded-md border border-hairline bg-surface-sunken p-4">
+          <p className="font-medium text-ink-strong">{faq.questionEn}</p>
           {paragraphsOf(faq.answerEn).map((paragraph, index) => (
-            <p className="mt-2 text-sm text-neutral-700" key={index}>
+            <p className="mt-2 text-sm text-ink-body" key={index}>
               {paragraph}
             </p>
           ))}
@@ -405,8 +405,8 @@ function paragraphsOf(answer: string): readonly string[] {
 function Row({ label, value }: { readonly label: string; readonly value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-neutral-600">{label}</dt>
-      <dd className="mt-0.5 text-neutral-900">{value}</dd>
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="mt-0.5 text-ink-strong">{value}</dd>
     </div>
   );
 }

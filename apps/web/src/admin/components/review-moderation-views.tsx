@@ -74,9 +74,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -84,15 +84,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function Badge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -141,15 +141,15 @@ export async function ReviewQueue({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((review) => (
-          <li key={review.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={review.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link href={adminPath(`/reviews/${review.id}`)} className="underline underline-offset-4">
                     {review.title ?? t('untitled')}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-neutral-600">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t('aboutStorefront', { storefront: review.sellerDisplayName })}
                 </p>
               </div>
@@ -161,7 +161,7 @@ export async function ReviewQueue({
               </div>
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell label={t('storefrontLabel')} value={review.sellerSlug} />
               <Cell
                 label={t('bodyLabel')}
@@ -183,12 +183,12 @@ export async function ReviewQueue({
               are a party to, and the reader is the only account this row can describe.
             */}
             {review.isParty && (
-              <p role="status" className="mt-3 text-sm text-neutral-600">
+              <p role="status" className="mt-3 text-sm text-ink-muted">
                 {t('isPartyHint')}
               </p>
             )}
             {review.moderatedByMe && (
-              <p className="mt-3 text-sm text-neutral-600">{t('moderatedByMeHint')}</p>
+              <p className="mt-3 text-sm text-ink-muted">{t('moderatedByMeHint')}</p>
             )}
           </li>
         ))}
@@ -217,14 +217,14 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
 
   return (
     <section aria-labelledby="review-title" className="mt-6">
-      <h2 id="review-title" className="text-lg font-medium text-neutral-900">
+      <h2 id="review-title" className="text-lg font-medium text-ink-strong">
         {review.title ?? t('untitled')}
       </h2>
       <div className="mt-2 flex flex-wrap gap-2">
         <Badge label={rating(review.rating, t)} />
         <Badge label={t(`status.${review.status}`)} />
       </div>
-      <p className="mt-2 text-sm text-neutral-600">
+      <p className="mt-2 text-sm text-ink-muted">
         <Link
           href={adminPath(`/sellers/storefront/${review.sellerSlug}`)}
           className="underline underline-offset-4"
@@ -234,7 +234,7 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
       </p>
 
       {review.body !== null && (
-        <p className="mt-4 max-w-prose whitespace-pre-line text-neutral-800">{review.body}</p>
+        <p className="mt-4 max-w-prose whitespace-pre-line text-ink-strong">{review.body}</p>
       )}
 
       <dl
@@ -251,18 +251,18 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
       </dl>
 
       {review.autoHiddenReason !== null && (
-        <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-          <p className="text-xs text-neutral-600">{t('autoHiddenLabel')}</p>
-          <p className="mt-1 max-w-prose text-sm text-neutral-900">{review.autoHiddenReason}</p>
+        <div className="mt-4 rounded-lg border border-hairline p-4">
+          <p className="text-xs text-ink-muted">{t('autoHiddenLabel')}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-strong">{review.autoHiddenReason}</p>
         </div>
       )}
 
       {review.moderationReason !== null && (
-        <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-          <p className="text-xs text-neutral-600">{t('moderationReasonLabel')}</p>
-          <p className="mt-1 max-w-prose text-sm text-neutral-900">{review.moderationReason}</p>
+        <div className="mt-4 rounded-lg border border-hairline p-4">
+          <p className="text-xs text-ink-muted">{t('moderationReasonLabel')}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-strong">{review.moderationReason}</p>
           {review.moderatedByMe && (
-            <p className="mt-2 text-xs text-neutral-600">{t('moderatedByMeHint')}</p>
+            <p className="mt-2 text-xs text-ink-muted">{t('moderatedByMeHint')}</p>
           )}
         </div>
       )}
@@ -272,7 +272,7 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
         they are overriding — and a decision, once recorded, is final against that automation.
       */}
       {review.publicationBlock !== null && (
-        <p role="status" className="mt-4 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-4 max-w-prose text-sm text-ink-muted">
           {t(`publicationBlock.${review.publicationBlock}`)}
         </p>
       )}
@@ -280,23 +280,23 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
       {/* The seller's answer, read so the whole exchange can be judged — and read-only, because nothing in
           this repository writes a reply's status. */}
       {review.replyBody !== null && (
-        <section aria-labelledby="review-reply" className="mt-6 rounded-lg border border-neutral-200 p-4">
-          <h3 id="review-reply" className="text-base font-medium text-neutral-900">
+        <section aria-labelledby="review-reply" className="mt-6 rounded-lg border border-hairline p-4">
+          <h3 id="review-reply" className="text-base font-medium text-ink-strong">
             {t('replyHeading')}
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {review.replyStatus !== null && <Badge label={t(`status.${review.replyStatus}`)} />}
           </div>
-          <p className="mt-3 max-w-prose whitespace-pre-line text-neutral-800">{review.replyBody}</p>
+          <p className="mt-3 max-w-prose whitespace-pre-line text-ink-strong">{review.replyBody}</p>
           {review.replyModerationReason !== null && (
-            <p className="mt-3 text-sm text-neutral-600">{review.replyModerationReason}</p>
+            <p className="mt-3 text-sm text-ink-muted">{review.replyModerationReason}</p>
           )}
           {review.replyCreatedAt !== null && (
-            <p className="mt-3 text-xs text-neutral-600">
+            <p className="mt-3 text-xs text-ink-muted">
               {t('replyWritten', { when: minute(review.replyCreatedAt) })}
             </p>
           )}
-          <p className="mt-3 max-w-prose text-sm text-neutral-600">{t('replyReadOnlyNote')}</p>
+          <p className="mt-3 max-w-prose text-sm text-ink-muted">{t('replyReadOnlyNote')}</p>
         </section>
       )}
 
@@ -309,7 +309,7 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
         re-recording the current one re-affirms it with a fresh reason.
       */}
       {!review.canModerate ? null : review.isParty ? (
-        <p role="status" className="mt-6 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-6 max-w-prose text-sm text-ink-muted">
           {t('isPartyNote')}
         </p>
       ) : (
@@ -341,7 +341,7 @@ export async function ReviewDetailView({ reviewId }: { readonly reviewId: string
       <ReviewModerationTrail reviewId={review.id} />
 
       {/* The gap that remains, said on the page rather than left to be discovered. */}
-      <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('replyGapNote')}</p>
+      <p className="mt-6 max-w-prose text-sm text-ink-muted">{t('replyGapNote')}</p>
     </section>
   );
 }
@@ -364,22 +364,22 @@ async function ReviewModerationTrail({ reviewId }: { readonly reviewId: string }
 
   return (
     <section aria-labelledby="review-history" className="mt-8">
-      <h3 id="review-history" className="text-base font-medium text-neutral-900">
+      <h3 id="review-history" className="text-base font-medium text-ink-strong">
         {t('historyHeading')}
       </h3>
       <ul className="mt-3 space-y-3">
         {items.map((action) => (
-          <li key={action.id} className="rounded-lg border border-neutral-200 p-4 text-sm">
+          <li key={action.id} className="rounded-lg border border-hairline p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Badge label={t(`action.${action.action}`)} />
-              <span className="text-xs text-neutral-600">{minute(action.createdAt)}</span>
+              <span className="text-xs text-ink-muted">{minute(action.createdAt)}</span>
             </div>
-            <p className="mt-2 max-w-prose text-neutral-900">{action.reason}</p>
+            <p className="mt-2 max-w-prose text-ink-strong">{action.reason}</p>
             {action.notes !== null && (
-              <p className="mt-2 max-w-prose text-neutral-700">{action.notes}</p>
+              <p className="mt-2 max-w-prose text-ink-body">{action.notes}</p>
             )}
             {action.isOwnAction && (
-              <p className="mt-2 text-xs text-neutral-600">{t('ownActionHint')}</p>
+              <p className="mt-2 text-xs text-ink-muted">{t('ownActionHint')}</p>
             )}
           </li>
         ))}

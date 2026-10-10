@@ -68,12 +68,15 @@ select is((select count(*) from public.countries where default_currency_code is 
 -- ---------------------------------------------------------------------------------------------------
 -- Listing types — products and services in V1
 -- ---------------------------------------------------------------------------------------------------
+-- 0033 seeded two; 0111 added `property` for OD-A9 and sorted it first, so the catalogue the owner's V1
+-- is for comes first in the console and in the public filters. The two earlier types stay active, because
+-- a type with listings behind it is not removed in passing — which is the thing this assertion is for.
 select is(
   (select string_agg(format('%s/%s', code, is_active), ' ' order by sort_order) from public.listing_types),
-  'product/t service/t',
-  'both listing types the marketplace sells are seeded and active'
+  'property/t product/t service/t',
+  'the three listing types are seeded and active, property first'
 );
-select is((select count(*) from public.listing_types), 2::bigint, 'and there are only those two');
+select is((select count(*) from public.listing_types), 3::bigint, 'and there are only those three');
 select is((select count(*) from public.listing_types where btrim(name_ar) = '' or name_ar = name_en), 0::bigint,
   'each carries a real Arabic name rather than a copy of the English one');
 

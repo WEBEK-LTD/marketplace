@@ -97,9 +97,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -107,15 +107,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function Badge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -167,10 +167,10 @@ export async function AdminSellerList({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((seller) => (
-          <li key={seller.slug} className="rounded-lg border border-neutral-200 p-4">
+          <li key={seller.slug} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link
                     href={adminPath(`/sellers/storefront/${seller.slug}`)}
                     className="underline underline-offset-4"
@@ -178,7 +178,7 @@ export async function AdminSellerList({
                     {seller.displayName}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-neutral-600">{seller.slug}</p>
+                <p className="mt-1 text-sm text-ink-muted">{seller.slug}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge label={t(`sellerStatus.${seller.status}`)} />
@@ -186,7 +186,7 @@ export async function AdminSellerList({
               </div>
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell label={t('listingsLabel')} value={String(seller.listingCount)} />
               <Cell label={t('openReportsLabel')} value={String(seller.openReportCount)} />
               {seller.city !== null && <Cell label={t('cityLabel')} value={seller.city} />}
@@ -218,7 +218,7 @@ export async function AdminSellerDetailView({ slug }: { readonly slug: string })
 
   return (
     <section aria-labelledby="seller-name" className="mt-6">
-      <h2 id="seller-name" className="text-lg font-medium text-neutral-900">
+      <h2 id="seller-name" className="text-lg font-medium text-ink-strong">
         {seller.displayName}
       </h2>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -226,7 +226,7 @@ export async function AdminSellerDetailView({ slug }: { readonly slug: string })
         <Badge label={t(`verification.${seller.verificationStatus}`)} />
       </div>
 
-      {seller.bio !== null && <p className="mt-4 max-w-prose text-neutral-800">{seller.bio}</p>}
+      {seller.bio !== null && <p className="mt-4 max-w-prose text-ink-strong">{seller.bio}</p>}
 
       <dl
         aria-label={t('storefrontFacts')}
@@ -251,14 +251,14 @@ export async function AdminSellerDetailView({ slug }: { readonly slug: string })
       </dl>
 
       {seller.suspensionReason !== null && (
-        <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-          <p className="text-xs text-neutral-600">{t('suspensionReasonLabel')}</p>
-          <p className="mt-1 max-w-prose text-sm text-neutral-900">{seller.suspensionReason}</p>
+        <div className="mt-4 rounded-lg border border-hairline p-4">
+          <p className="text-xs text-ink-muted">{t('suspensionReasonLabel')}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-strong">{seller.suspensionReason}</p>
         </div>
       )}
 
       {seller.isOwnStorefront && (
-        <p role="status" className="mt-4 text-sm text-neutral-600">
+        <p role="status" className="mt-4 text-sm text-ink-muted">
           {t('ownStorefrontHint')}
         </p>
       )}
@@ -275,7 +275,7 @@ export async function AdminSellerDetailView({ slug }: { readonly slug: string })
         is why it is absent here.
       */}
       {!seller.canManage ? null : targets.length === 0 ? (
-        <p role="status" className="mt-6 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-6 max-w-prose text-sm text-ink-muted">
           {t('sellerTerminalNote')}
         </p>
       ) : (
@@ -305,7 +305,7 @@ export async function AdminSellerDetailView({ slug }: { readonly slug: string })
       {/*
         The gap that remains, said on the page: verification is 7-G's and role assignment has no writer at all.
       */}
-      <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('sellerVerificationNote')}</p>
+      <p className="mt-6 max-w-prose text-sm text-ink-muted">{t('sellerVerificationNote')}</p>
     </section>
   );
 }
@@ -357,15 +357,15 @@ export async function AdminUserList({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((user) => (
-          <li key={user.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={user.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link href={adminPath(`/users/${user.id}`)} className="underline underline-offset-4">
                     {user.displayName ?? t('noDisplayName')}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-neutral-600">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t(`accountStatus.${user.status}`)}
                   {user.isSelf ? ` · ${t('isSelfLabel')}` : ''}
                 </p>
@@ -377,7 +377,7 @@ export async function AdminUserList({
             </div>
 
             {/* Whether a channel was confirmed. The contact itself is not in the contract at all. */}
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell
                 label={t('emailVerifiedLabel')}
                 value={user.hasVerifiedEmail ? t('yes') : t('no')}
@@ -440,7 +440,7 @@ export async function AdminUserDetailView({ userId }: { readonly userId: string 
 
   return (
     <section aria-labelledby="account-name" className="mt-6">
-      <h2 id="account-name" className="text-lg font-medium text-neutral-900">
+      <h2 id="account-name" className="text-lg font-medium text-ink-strong">
         {user.displayName ?? t('noDisplayName')}
       </h2>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -476,24 +476,24 @@ export async function AdminUserDetailView({ userId }: { readonly userId: string 
       )}
 
       {user.isSelf && (
-        <p role="status" className="mt-4 text-sm text-neutral-600">
+        <p role="status" className="mt-4 text-sm text-ink-muted">
           {t('isSelfHint')}
         </p>
       )}
 
       {roles.kind === 'ok' && roles.data.items.length > 0 && (
         <section aria-labelledby="account-roles" className="mt-8">
-          <h3 id="account-roles" className="text-base font-medium text-neutral-900">
+          <h3 id="account-roles" className="text-base font-medium text-ink-strong">
             {t('rolesHeading')}
           </h3>
           <ul className="mt-3 space-y-3">
             {roles.data.items.map((role) => (
-              <li key={role.roleKey} className="rounded-lg border border-neutral-200 p-4">
+              <li key={role.roleKey} className="rounded-lg border border-hairline p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <p className="text-sm font-medium text-neutral-900">{role.nameEn}</p>
+                  <p className="text-sm font-medium text-ink-strong">{role.nameEn}</p>
                   <Badge label={role.isEffective ? t('roleEffective') : t('roleNotEffective')} />
                 </div>
-                <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+                <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
                   <Cell label={t('grantedAtLabel')} value={minute(role.grantedAt)} />
                   {role.expiresAt !== null && (
                     <Cell label={t('expiresAtLabel')} value={minute(role.expiresAt)} />
@@ -513,7 +513,7 @@ export async function AdminUserDetailView({ userId }: { readonly userId: string 
             does hold the manage key gets the controls below instead.
           */}
           {grantable.kind === 'ok' ? null : (
-            <p className="mt-4 max-w-prose text-sm text-neutral-600">{t('rolesReadOnlyNote')}</p>
+            <p className="mt-4 max-w-prose text-sm text-ink-muted">{t('rolesReadOnlyNote')}</p>
           )}
         </section>
       )}
@@ -524,10 +524,10 @@ export async function AdminUserDetailView({ userId }: { readonly userId: string 
           because a client component carrying the words for controls nobody can use would ship them in the
           payload on every page view.
         */
-        <section className="mt-8 rounded-lg border border-neutral-200 p-4">
-          <h3 className="text-base font-medium text-neutral-900">{t('roleWriteHeading')}</h3>
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('roleNothingToDo')}</p>
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('roleSessionNote')}</p>
+        <section className="mt-8 rounded-lg border border-hairline p-4">
+          <h3 className="text-base font-medium text-ink-strong">{t('roleWriteHeading')}</h3>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('roleNothingToDo')}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('roleSessionNote')}</p>
         </section>
       ) : (
         <StaffRoleForm
@@ -575,17 +575,17 @@ export async function AdminUserDetailView({ userId }: { readonly userId: string 
 
       {events.kind === 'ok' && events.data.items.length > 0 && (
         <section aria-labelledby="account-security" className="mt-8">
-          <h3 id="account-security" className="text-base font-medium text-neutral-900">
+          <h3 id="account-security" className="text-base font-medium text-ink-strong">
             {t('securityHeading')}
           </h3>
           <ul className="mt-3 space-y-2">
             {events.data.items.map((event) => (
               <li
                 key={event.id}
-                className="flex flex-wrap justify-between gap-3 rounded-lg border border-neutral-200 px-4 py-3 text-sm"
+                className="flex flex-wrap justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
               >
-                <span className="text-neutral-900">{event.eventType}</span>
-                <span className="text-neutral-600">{minute(event.occurredAt)}</span>
+                <span className="text-ink-strong">{event.eventType}</span>
+                <span className="text-ink-muted">{minute(event.occurredAt)}</span>
               </li>
             ))}
           </ul>
@@ -605,21 +605,21 @@ export async function AdminRoleCatalogue() {
 
   return (
     <section aria-labelledby="role-catalogue" className="mt-10">
-      <h2 id="role-catalogue" className="text-lg font-medium text-neutral-900">
+      <h2 id="role-catalogue" className="text-lg font-medium text-ink-strong">
         {t('catalogueHeading')}
       </h2>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('catalogueIntro')}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('catalogueIntro')}</p>
       <ul className="mt-4 space-y-3">
         {catalogue.map((role) => (
-          <li key={role.roleKey} className="rounded-lg border border-neutral-200 p-4">
+          <li key={role.roleKey} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <p className="text-sm font-medium text-neutral-900">{role.nameEn}</p>
+              <p className="text-sm font-medium text-ink-strong">{role.nameEn}</p>
               <div className="flex flex-wrap gap-2">
                 {role.isAdminConsole && <Badge label={t('consoleRole')} />}
                 {role.requiresMfa && <Badge label={t('mfaRole')} />}
               </div>
             </div>
-            <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell label={t('permissionsLabel')} value={String(role.permissionCount)} />
               <Cell label={t('holdersLabel')} value={String(role.holderCount)} />
               <Cell label={t('assignableLabel')} value={role.isAssignable ? t('yes') : t('no')} />
@@ -660,10 +660,10 @@ export async function RecoveryQueue({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((request) => (
-          <li key={request.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={request.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link
                     href={adminPath(`/security/recovery/${request.id}`)}
                     className="underline underline-offset-4"
@@ -671,12 +671,12 @@ export async function RecoveryQueue({
                     {t(`channel.${request.claimedContactChannel}`)}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-neutral-600">{t('openRequest')}</p>
+                <p className="mt-1 text-sm text-ink-muted">{t('openRequest')}</p>
               </div>
               <Badge label={t(`recoveryStatus.${request.status}`)} />
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell label={t('openedLabel')} value={minute(request.createdAt)} />
               <Cell label={t('evidenceLabel')} value={String(request.evidenceCount)} />
               <Cell
@@ -691,12 +691,12 @@ export async function RecoveryQueue({
               the account holder at every step and refuses the reviewer as the second approver.
             */}
             {request.isOwnRequest && (
-              <p role="status" className="mt-3 text-sm text-neutral-600">
+              <p role="status" className="mt-3 text-sm text-ink-muted">
                 {t('ownRequestHint')}
               </p>
             )}
             {!request.isOwnRequest && request.isTheReviewer && (
-              <p role="status" className="mt-3 text-sm text-neutral-600">
+              <p role="status" className="mt-3 text-sm text-ink-muted">
                 {t('isReviewerHint')}
               </p>
             )}
@@ -744,7 +744,7 @@ export async function RecoveryRequestDetailView({ requestId }: { readonly reques
 
   return (
     <section aria-labelledby="recovery-heading" className="mt-6">
-      <h2 id="recovery-heading" className="text-lg font-medium text-neutral-900">
+      <h2 id="recovery-heading" className="text-lg font-medium text-ink-strong">
         {t('recoveryDetailHeading')}
       </h2>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -782,15 +782,15 @@ export async function RecoveryRequestDetailView({ requestId }: { readonly reques
       </dl>
 
       {request.reviewNote !== null && (
-        <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-          <p className="text-xs text-neutral-600">{t('reviewNoteLabel')}</p>
-          <p className="mt-1 max-w-prose text-sm text-neutral-900">{request.reviewNote}</p>
+        <div className="mt-4 rounded-lg border border-hairline p-4">
+          <p className="text-xs text-ink-muted">{t('reviewNoteLabel')}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-strong">{request.reviewNote}</p>
         </div>
       )}
       {request.rejectionReason !== null && (
-        <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-          <p className="text-xs text-neutral-600">{t('rejectionReasonLabel')}</p>
-          <p className="mt-1 max-w-prose text-sm text-neutral-900">{request.rejectionReason}</p>
+        <div className="mt-4 rounded-lg border border-hairline p-4">
+          <p className="text-xs text-ink-muted">{t('rejectionReasonLabel')}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-strong">{request.rejectionReason}</p>
         </div>
       )}
 
@@ -801,7 +801,7 @@ export async function RecoveryRequestDetailView({ requestId }: { readonly reques
       {request.completedAt !== null && (
         <dl
           aria-label={t('recoveryEffects')}
-          className="mt-4 grid gap-4 rounded-lg border border-neutral-200 p-4 text-sm sm:grid-cols-3"
+          className="mt-4 grid gap-4 rounded-lg border border-hairline p-4 text-sm sm:grid-cols-3"
         >
           <Cell
             label={t('sessionsRevokedLabel')}
@@ -820,18 +820,18 @@ export async function RecoveryRequestDetailView({ requestId }: { readonly reques
 
       {evidence.kind === 'ok' && evidence.data.items.length > 0 && (
         <section aria-labelledby="recovery-evidence" className="mt-8">
-          <h3 id="recovery-evidence" className="text-base font-medium text-neutral-900">
+          <h3 id="recovery-evidence" className="text-base font-medium text-ink-strong">
             {t('evidenceHeading')}
           </h3>
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('evidenceIntro')}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('evidenceIntro')}</p>
           <ul className="mt-3 space-y-2">
             {((evidence.data as RecoveryEvidenceResponse).items ?? []).map((item) => (
               <li
                 key={item.id}
-                className="flex flex-wrap justify-between gap-3 rounded-lg border border-neutral-200 px-4 py-3 text-sm"
+                className="flex flex-wrap justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
               >
-                <span className="text-neutral-900">{t(`evidenceType.${item.evidenceType}`)}</span>
-                <span className="text-neutral-600">
+                <span className="text-ink-strong">{t(`evidenceType.${item.evidenceType}`)}</span>
+                <span className="text-ink-muted">
                   {item.originalFilename ?? t('unnamedFile')}
                   {item.byteSize === null ? '' : ` · ${Math.ceil(item.byteSize / 1024)} KB`}
                 </span>
@@ -846,7 +846,7 @@ export async function RecoveryRequestDetailView({ requestId }: { readonly reques
         offers nothing says which rule is in the way, so a colleague is not left clicking at a refusal.
       */}
       {request.isOwnRequest ? (
-        <p role="status" className="mt-8 text-sm text-neutral-600">
+        <p role="status" className="mt-8 text-sm text-ink-muted">
           {t('ownRequestHint')}
         </p>
       ) : canReview ? (
@@ -906,15 +906,15 @@ export async function RecoveryRequestDetailView({ requestId }: { readonly reques
           }}
         />
       ) : request.isTheReviewer && request.status === 'under_review' ? (
-        <p role="status" className="mt-8 text-sm text-neutral-600">
+        <p role="status" className="mt-8 text-sm text-ink-muted">
           {t('isReviewerHint')}
         </p>
       ) : request.status === 'contact_verification' && request.contactVerifiedAt === null ? (
-        <p role="status" className="mt-8 text-sm text-neutral-600">
+        <p role="status" className="mt-8 text-sm text-ink-muted">
           {t('awaitingContactHint')}
         </p>
       ) : (
-        <p role="status" className="mt-8 text-sm text-neutral-600">
+        <p role="status" className="mt-8 text-sm text-ink-muted">
           {t('noStepHint')}
         </p>
       )}
@@ -964,9 +964,9 @@ export async function AuditTrail({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((row) => (
-          <li key={row.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={row.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <p className="text-sm font-medium text-neutral-900">
+              <p className="text-sm font-medium text-ink-strong">
                 {row.tableSchema === null || row.tableName === null
                   ? t('unknownTable')
                   : `${row.tableSchema}.${row.tableName}`}
@@ -977,7 +977,7 @@ export async function AuditTrail({
               </div>
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell label={t('whenLabel')} value={minute(row.occurredAt)} />
               {row.actorType !== null && (
                 <Cell label={t('actorTypeLabel')} value={t(`actorType.${row.actorType}`)} />
@@ -991,8 +991,8 @@ export async function AuditTrail({
               would expose every audited table's columns to anybody holding this one key.
             */}
             {row.changedColumns.length > 0 && (
-              <p className="mt-3 text-sm text-neutral-700">
-                <span className="text-xs text-neutral-600">{t('changedColumnsLabel')}: </span>
+              <p className="mt-3 text-sm text-ink-body">
+                <span className="text-xs text-ink-muted">{t('changedColumnsLabel')}: </span>
                 {row.changedColumns.join(', ')}
               </p>
             )}

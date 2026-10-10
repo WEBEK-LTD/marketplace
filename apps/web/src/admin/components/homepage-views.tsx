@@ -29,10 +29,10 @@ import { adminPath } from '../paths';
  * increment does not offer — a banner strip above all — are named rather than simply missing.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -52,11 +52,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -84,7 +84,7 @@ export async function HomepageSectionList() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
       {/* Said out loud, because an operator cannot deduce any of it from anything on the screen. */}
       <Message tone="empty" title={t('notHereTitle')} body={t('notHereBody')} />
 
@@ -106,7 +106,7 @@ export async function HomepageSectionList() {
             {sections.map((section) => (
               <tr key={section.id}>
                 <td className={TD}>
-                  <Link className="text-neutral-900 underline" href={adminPath(`/cms/homepage/${section.id}`)}>
+                  <Link className="text-ink-strong underline" href={adminPath(`/cms/homepage/${section.id}`)}>
                     <code>{section.sectionKey}</code>
                   </Link>
                 </td>
@@ -171,7 +171,7 @@ export async function HomepageAddPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('addHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('addIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('addIntro')}</p>
       <Message tone="empty" title={t('typesTitle')} body={t('typesBody')} />
       <HomepageCreateForm copy={await createCopy()} />
     </section>
@@ -269,7 +269,7 @@ export async function HomepageSectionDetailView({ sectionId }: { readonly sectio
           )}
           <section className={CARD}>
             <Heading level={2}>{t('stateHeading')}</Heading>
-            <p className="mt-1 text-sm text-neutral-600">{t('stateIntro')}</p>
+            <p className="mt-1 text-sm text-ink-muted">{t('stateIntro')}</p>
             <HomepageSectionStateForm
               sectionId={section.id}
               isActive={section.isActive}
@@ -318,8 +318,8 @@ async function HomepageSummaryPanel({ section }: { readonly section: HomepageSec
           show, and these two numbers are the only place the reason exists. */}
       {counted ? (
         <div className="mt-4">
-          <p className="text-sm font-medium text-neutral-700">{t('countsHeading')}</p>
-          <p className="mt-1 text-sm text-neutral-700">
+          <p className="text-sm font-medium text-ink-body">{t('countsHeading')}</p>
+          <p className="mt-1 text-sm text-ink-body">
             {t('countsBody', { chosen: section.chosenCount, renderable: section.renderableCount })}
           </p>
           {section.isActive && section.renderableCount === 0 ? (
@@ -329,8 +329,8 @@ async function HomepageSummaryPanel({ section }: { readonly section: HomepageSec
       ) : null}
 
       <div className="mt-4">
-        <p className="text-sm font-medium text-neutral-700">{t('storedConfigHeading')}</p>
-        <pre className="mt-2 overflow-x-auto rounded-md border border-neutral-200 bg-neutral-50 p-3 text-xs">
+        <p className="text-sm font-medium text-ink-body">{t('storedConfigHeading')}</p>
+        <pre className="mt-2 overflow-x-auto rounded-md border border-hairline bg-surface-sunken p-3 text-xs">
           {JSON.stringify(section.config ?? {}, null, 2)}
         </pre>
       </div>
@@ -341,8 +341,8 @@ async function HomepageSummaryPanel({ section }: { readonly section: HomepageSec
 function Row({ label, value }: { readonly label: string; readonly value: React.ReactNode }) {
   return (
     <div>
-      <dt className="font-medium text-neutral-600">{label}</dt>
-      <dd className="mt-0.5 text-neutral-900">{value}</dd>
+      <dt className="font-medium text-ink-muted">{label}</dt>
+      <dd className="mt-0.5 text-ink-strong">{value}</dd>
     </div>
   );
 }

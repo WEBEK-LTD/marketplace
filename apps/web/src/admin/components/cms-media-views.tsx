@@ -36,7 +36,7 @@ import { adminPath } from '../paths';
  * `canManage` is reported by the API all the same rather than inferred from a role.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -57,11 +57,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error' | 'note'; titl
       ? 'border-red-200 bg-red-50'
       : tone === 'note'
         ? 'border-amber-200 bg-amber-50'
-        : 'border-neutral-200 bg-neutral-50';
+        : 'border-hairline bg-surface-sunken';
   return (
     <div className={`mt-4 rounded-md border p-4 ${classes}`}>
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -76,7 +76,7 @@ export async function CmsMediaUploadPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('uploadHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-700">{t('uploadIntro')}</p>
+      <p className="mt-1 text-sm text-ink-body">{t('uploadIntro')}</p>
       {/* Owner decisions 2 and 6, said out loud rather than discovered through a refusal. */}
       <Message tone="note" title={t('rulesTitle')} body={t('rulesBody')} />
       <CmsMediaUploadForm
@@ -151,7 +151,7 @@ export async function CmsMediaList({
       ) : (
         <ul className="mt-4 space-y-6">
           {items.map((entry) => (
-            <li className="border-t border-neutral-100 pt-4" key={entry.id}>
+            <li className="border-t border-hairline pt-4" key={entry.id}>
               <Entry entry={entry} copy={entryCopy} showUsage={entry.id === usageFor} />
             </li>
           ))}
@@ -161,7 +161,7 @@ export async function CmsMediaList({
       {nextCursor === null ? null : (
         <p className="mt-6">
           <Link
-            className="text-sm text-neutral-900 underline"
+            className="text-sm text-ink-strong underline"
             href={adminPath(`/cms/media?cursor=${encodeURIComponent(nextCursor)}`)}
           >
             {t('nextPage')}
@@ -187,14 +187,14 @@ async function Entry({
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         {/* The path, because it is what a stored object *is*. It is not an address and nothing links to it. */}
-        <p className="break-all font-mono text-xs text-neutral-700">{entry.objectPath}</p>
-        <p className="text-xs text-neutral-500">
+        <p className="break-all font-mono text-xs text-ink-body">{entry.objectPath}</p>
+        <p className="text-xs text-ink-muted">
           {entry.contentType} · {kilobytes(entry.byteSize)}
           {entry.width === null || entry.height === null ? '' : ` · ${entry.width}×${entry.height}`}
         </p>
       </div>
 
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-ink-muted">
         {entry.usageCount === 0
           ? t('usedNowhere')
           : t('usedByCount', { count: entry.usageCount })}
@@ -216,7 +216,7 @@ async function Entry({
         <UsagePanel mediaId={entry.id} />
       ) : (
         <p className="mt-3">
-          <Link className="text-sm text-neutral-900 underline" href={adminPath(`/cms/media?usage=${entry.id}`)}>
+          <Link className="text-sm text-ink-strong underline" href={adminPath(`/cms/media?usage=${entry.id}`)}>
             {t('checkUsage')}
           </Link>
         </p>
@@ -246,12 +246,12 @@ async function UsagePanel({ mediaId }: { readonly mediaId: string }) {
   const { references } = result.data;
 
   return (
-    <div className="mt-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
-      <p className="text-sm font-medium text-neutral-900">{t('usageHeading')}</p>
+    <div className="mt-3 rounded-md border border-hairline bg-surface-sunken p-3">
+      <p className="text-sm font-medium text-ink-strong">{t('usageHeading')}</p>
       {references.length === 0 ? (
-        <p className="mt-1 text-sm text-neutral-700">{t('usageNone')}</p>
+        <p className="mt-1 text-sm text-ink-body">{t('usageNone')}</p>
       ) : (
-        <ul className="mt-1 list-disc ps-5 text-sm text-neutral-700">
+        <ul className="mt-1 list-disc ps-5 text-sm text-ink-body">
           {references.map((reference) => (
             <li key={`${reference.entityType}-${reference.column}-${reference.label}`}>
               {reference.entityType} · {reference.label} · <code>{reference.column}</code>
@@ -264,7 +264,7 @@ async function UsagePanel({ mediaId }: { readonly mediaId: string }) {
         mediaId={mediaId}
       />
       <p className="mt-2">
-        <Link className="text-sm text-neutral-700 underline" href={adminPath('/cms/media')}>
+        <Link className="text-sm text-ink-body underline" href={adminPath('/cms/media')}>
           {t('hideUsage')}
         </Link>
       </p>

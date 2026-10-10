@@ -34,12 +34,12 @@ import { adminApiPath } from '../paths';
  * the move, the address is taken, the category has to be named first, or a value is too long.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const DANGER_CLASS =
   'rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 export interface CategoryParentOption {
   readonly categoryId: string;
@@ -99,7 +99,7 @@ function messageFor(outcome: Outcome, labels: CategoryLabels, success: string): 
 function Note({ message }: { readonly message: string | null }) {
   if (message === null) return null;
   return (
-    <p className="mt-3 text-sm text-neutral-700" role="status">
+    <p className="mt-3 text-sm text-ink-body" role="status">
       {message}
     </p>
   );

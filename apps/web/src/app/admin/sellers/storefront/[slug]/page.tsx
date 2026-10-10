@@ -32,7 +32,7 @@ export default async function Page({ params }: { readonly params: Promise<{ slug
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('sellers.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('sellerDetailIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('sellerDetailIntro')}</p>
           <AdminSellerDetailView slug={slug} />
         </div>
       </PageContainer>

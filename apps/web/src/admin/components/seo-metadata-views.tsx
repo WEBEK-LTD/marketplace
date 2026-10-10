@@ -34,10 +34,10 @@ import { adminPath } from '../paths';
  * — each of which an operator could reasonably expect, and each of which would be a silent disappointment.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 /** The locales the public site serves. Which codes exist is the database's; this offers the two it seeds. */
 const LOCALES = ['en', 'ar'] as const;
@@ -60,11 +60,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -108,7 +108,7 @@ export async function SeoMetadataList({ cursor, entityType, locale }: SeoMetadat
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
       {/* Said out loud, because an operator cannot deduce either rule from anything on the screen. */}
       <Message tone="empty" title={t('rulesTitle')} body={t('rulesBody')} />
 
@@ -155,7 +155,7 @@ export async function SeoMetadataList({ cursor, entityType, locale }: SeoMetadat
       {nextCursor === null ? null : (
         <p className="mt-4">
           <Link
-            className="text-sm text-neutral-900 underline"
+            className="text-sm text-ink-strong underline"
             href={`/seo/metadata?cursor=${encodeURIComponent(nextCursor)}${keep === '' ? '' : `&${keep}`}`}
           >
             {t('nextPage')}
@@ -170,7 +170,7 @@ function SeoMetadataRow({ entry, untitled }: { readonly entry: SeoMetadataEntry;
   return (
     <tr>
       <td className={TD}>
-        <Link className="text-neutral-900 underline" href={adminPath(`/seo/metadata/${entry.id}`)}>
+        <Link className="text-ink-strong underline" href={adminPath(`/seo/metadata/${entry.id}`)}>
           <code>{entry.routePath ?? entry.targetSlug ?? entry.entityId ?? '—'}</code>
         </Link>
       </td>
@@ -206,7 +206,7 @@ export async function SeoMetadataAddPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('addHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('addIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('addIntro')}</p>
       <Message tone="empty" title={t('notHereTitle')} body={t('notHereBody')} />
       <SeoMetadataSaveForm locales={LOCALES} copy={await saveCopy()} />
     </section>
@@ -273,30 +273,30 @@ export async function SeoMetadataDetailView({ entryId }: { readonly entryId: str
       <section className={CARD}>
         <Heading level={2}>{entry.routePath ?? entry.targetSlug ?? entry.entityId ?? '—'}</Heading>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-neutral-600">{t('columnKind')}</dt>
-          <dd className="text-neutral-900">{entry.entityType}</dd>
-          <dt className="text-neutral-600">{t('columnLocale')}</dt>
-          <dd className="text-neutral-900">{entry.localeCode}</dd>
-          <dt className="text-neutral-600">{t('storedCanonical')}</dt>
-          <dd className="text-neutral-900">{entry.canonicalPath ?? '—'}</dd>
-          <dt className="text-neutral-600">{t('effectiveCanonical')}</dt>
-          <dd className="text-neutral-900">{entry.effectiveCanonicalPath ?? t('effectiveNone')}</dd>
-          <dt className="text-neutral-600">{t('storedDirectives')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnKind')}</dt>
+          <dd className="text-ink-strong">{entry.entityType}</dd>
+          <dt className="text-ink-muted">{t('columnLocale')}</dt>
+          <dd className="text-ink-strong">{entry.localeCode}</dd>
+          <dt className="text-ink-muted">{t('storedCanonical')}</dt>
+          <dd className="text-ink-strong">{entry.canonicalPath ?? '—'}</dd>
+          <dt className="text-ink-muted">{t('effectiveCanonical')}</dt>
+          <dd className="text-ink-strong">{entry.effectiveCanonicalPath ?? t('effectiveNone')}</dd>
+          <dt className="text-ink-muted">{t('storedDirectives')}</dt>
+          <dd className="text-ink-strong">
             <code>{entry.robotsDirectives.join(', ')}</code>
           </dd>
-          <dt className="text-neutral-600">{t('effectiveDirectives')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('effectiveDirectives')}</dt>
+          <dd className="text-ink-strong">
             {entry.effectiveRobotsDirectives.length === 0 ? (
               t('effectiveNone')
             ) : (
               <code>{entry.effectiveRobotsDirectives.join(', ')}</code>
             )}
           </dd>
-          <dt className="text-neutral-600">{t('shareMediaLabel')}</dt>
-          <dd className="text-neutral-900">{entry.shareObjectPath ?? '—'}</dd>
-          <dt className="text-neutral-600">{t('columnUpdated')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('shareMediaLabel')}</dt>
+          <dd className="text-ink-strong">{entry.shareObjectPath ?? '—'}</dd>
+          <dt className="text-ink-muted">{t('columnUpdated')}</dt>
+          <dd className="text-ink-strong">
             <time dateTime={entry.updatedAt}>{entry.updatedAt}</time>
           </dd>
         </dl>
@@ -357,7 +357,7 @@ async function SeoMetadataControls({ entry }: { readonly entry: SeoMetadataDetai
 
       <section className={CARD}>
         <Heading level={2}>{t('removeHeading')}</Heading>
-        <p className="mt-1 text-sm text-neutral-600">{t('removeIntro')}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t('removeIntro')}</p>
         <SeoMetadataRemoveForm
           entryId={entry.id}
           copy={{

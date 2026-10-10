@@ -34,14 +34,14 @@ import { adminApiPath, adminPath } from '../paths';
  * error rather than a conflict, and a malformed document never becomes a section the homepage silently skips.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const DANGER_CLASS =
   'rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 interface Outcome {
   readonly status: number | null;
@@ -185,7 +185,7 @@ export function HomepageCreateForm({ copy }: { readonly copy: HomepageCreateCopy
 
   return (
     <form className="mt-4 space-y-4" onSubmit={submit}>
-      <p className="text-sm text-neutral-600">{copy.hiddenNotice}</p>
+      <p className="text-sm text-ink-muted">{copy.hiddenNotice}</p>
       <div className="flex flex-wrap gap-4">
         <div>
           <label className={LABEL_CLASS} htmlFor="homepage-create-key">
@@ -349,7 +349,7 @@ export function HomepageEditForm({
 
   return (
     <form className="mt-4 space-y-4" onSubmit={submit}>
-      <p className="text-sm text-neutral-600">{copy.noPublishNotice}</p>
+      <p className="text-sm text-ink-muted">{copy.noPublishNotice}</p>
       <div className="flex flex-wrap gap-4">
         <div>
           <label className={LABEL_CLASS} htmlFor="homepage-edit-key">
@@ -604,11 +604,11 @@ export function HomepageReorderForm({
 
   return (
     <form className="mt-4" onSubmit={submit}>
-      <p className="text-sm text-neutral-600">{copy.notice}</p>
+      <p className="text-sm text-ink-muted">{copy.notice}</p>
       <ol className="mt-3 space-y-2">
         {order.map((entry, index) => (
-          <li className="flex items-center gap-3 text-sm text-neutral-900" key={entry.id}>
-            <span className="w-6 text-neutral-500">{index + 1}</span>
+          <li className="flex items-center gap-3 text-sm text-ink-strong" key={entry.id}>
+            <span className="w-6 text-ink-muted">{index + 1}</span>
             <span className="flex-1">{entry.label}</span>
             <button
               aria-label={`${copy.up}: ${entry.label}`}
@@ -646,7 +646,7 @@ export function HomepageReorderForm({
 /** A plain link back to the list, kept here so the detail screen needs no client component of its own. */
 export function HomepageBackLink({ label }: { readonly label: string }) {
   return (
-    <Link className="text-neutral-900 underline" href={adminPath('/cms/homepage')}>
+    <Link className="text-ink-strong underline" href={adminPath('/cms/homepage')}>
       {label}
     </Link>
   );

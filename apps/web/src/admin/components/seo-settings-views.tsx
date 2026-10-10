@@ -36,7 +36,7 @@ import {
  * `canManage` is reported by the API all the same rather than inferred from a role.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -57,11 +57,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error' | 'note'; titl
       ? 'border-red-200 bg-red-50'
       : tone === 'note'
         ? 'border-amber-200 bg-amber-50'
-        : 'border-neutral-200 bg-neutral-50';
+        : 'border-hairline bg-surface-sunken';
   return (
     <div className={`mt-4 rounded-md border p-4 ${classes}`}>
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -93,7 +93,7 @@ export async function SeoSettingsPanels() {
       <section className={CARD}>
         <Heading level={2}>{t('whatIsServedTitle')}</Heading>
         {/* Owner decisions 1-4, stated plainly: an operator has to know which of these fields does anything. */}
-        <p className="mt-1 text-sm text-neutral-700">{t('whatIsServedBody')}</p>
+        <p className="mt-1 text-sm text-ink-body">{t('whatIsServedBody')}</p>
         <Message tone="note" title={t('storedOnlyTitle')} body={t('storedOnlyBody')} />
       </section>
 
@@ -152,7 +152,7 @@ async function LocalePanel({ locale }: { readonly locale: SeoSettingsLocale }) {
             ? t('localeHeadingSame', { name: locale.nameEn })
             : t('localeHeading', { name: locale.nameEn, native: locale.nameNative })}
         </Heading>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-ink-muted">
           <code>{locale.localeCode}</code>
           {locale.isDefaultLocale ? ` · ${t('defaultLocaleBadge')}` : ''}
           {locale.isAuthored ? '' : ` · ${t('unauthoredBadge')}`}
@@ -160,7 +160,7 @@ async function LocalePanel({ locale }: { readonly locale: SeoSettingsLocale }) {
       </div>
 
       {/* The database's own answer about which locale reaches a crawler, reported and not recomputed. */}
-      <p className="mt-2 text-sm text-neutral-700">
+      <p className="mt-2 text-sm text-ink-body">
         {locale.robotsIsServed ? t('robotsServedHere') : t('robotsServedElsewhere')}
       </p>
 
@@ -168,13 +168,13 @@ async function LocalePanel({ locale }: { readonly locale: SeoSettingsLocale }) {
 
       {/* Owner decision 8: the stored identifier, said to be unresolvable rather than shown as a broken image. */}
       {locale.defaultShareMediaId === null ? null : (
-        <div className="mt-4 rounded-md border border-neutral-200 bg-neutral-50 p-4">
-          <p className="font-medium text-neutral-900">{t('shareMediaStoredTitle')}</p>
-          <p className="mt-1 break-all font-mono text-xs text-neutral-700">{locale.defaultShareMediaId}</p>
+        <div className="mt-4 rounded-md border border-hairline bg-surface-sunken p-4">
+          <p className="font-medium text-ink-strong">{t('shareMediaStoredTitle')}</p>
+          <p className="mt-1 break-all font-mono text-xs text-ink-body">{locale.defaultShareMediaId}</p>
           {locale.shareMediaObjectPath === null ? null : (
-            <p className="mt-1 break-all font-mono text-xs text-neutral-700">{locale.shareMediaObjectPath}</p>
+            <p className="mt-1 break-all font-mono text-xs text-ink-body">{locale.shareMediaObjectPath}</p>
           )}
-          <p className="mt-2 text-sm text-neutral-700">{t('shareMediaUnresolvableBody')}</p>
+          <p className="mt-2 text-sm text-ink-body">{t('shareMediaUnresolvableBody')}</p>
         </div>
       )}
 
@@ -193,9 +193,9 @@ async function LocalePanel({ locale }: { readonly locale: SeoSettingsLocale }) {
       />
 
       {locale.isAuthored ? (
-        <div className="mt-6 border-t border-neutral-200 pt-4">
-          <p className="font-medium text-neutral-900">{t('removeHeading')}</p>
-          <p className="mt-1 text-sm text-neutral-700">
+        <div className="mt-6 border-t border-hairline pt-4">
+          <p className="font-medium text-ink-strong">{t('removeHeading')}</p>
+          <p className="mt-1 text-sm text-ink-body">
             {locale.robotsIsServed ? t('removeIntroServed') : t('removeIntro')}
           </p>
           <SeoSettingsRemoveForm
@@ -206,7 +206,7 @@ async function LocalePanel({ locale }: { readonly locale: SeoSettingsLocale }) {
       ) : null}
 
       {locale.updatedAt === null ? null : (
-        <p className="mt-4 text-xs text-neutral-500">{t('lastChanged', { when: locale.updatedAt })}</p>
+        <p className="mt-4 text-xs text-ink-muted">{t('lastChanged', { when: locale.updatedAt })}</p>
       )}
     </section>
   );

@@ -36,7 +36,7 @@ export default async function Page({ params }: { readonly params: Promise<{ revi
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('reviews.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('detailIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('detailIntro')}</p>
           <ReviewDetailView reviewId={reviewId} />
         </div>
       </PageContainer>

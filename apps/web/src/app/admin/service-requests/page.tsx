@@ -37,7 +37,7 @@ export default async function Page({
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{t('serviceRequests.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('serviceRequests.description')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('serviceRequests.description')}</p>
           <AdminServiceRequestQueue status={single(query['status'])} cursor={single(query['cursor'])} />
         </div>
       </PageContainer>

@@ -44,12 +44,12 @@ import { adminApiPath } from '../paths';
  * needs `cms.page.manage` and nothing else: a page editor is not required to hold `cms.media.manage`.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const DANGER_CLASS =
   'rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 interface Outcome {
   readonly status: number | null;
@@ -354,7 +354,7 @@ export function CmsPageSettingsForm({
           checked={isIndexable}
           onChange={(event) => setIsIndexable(event.target.checked)}
         />
-        <label className="text-sm text-neutral-700" htmlFor="cms-indexable">
+        <label className="text-sm text-ink-body" htmlFor="cms-indexable">
           {copy.indexableLabel}
         </label>
       </div>
@@ -566,7 +566,7 @@ export function CmsPageStatusForm({
       ) : null}
 
       <Problem message={problem} />
-      {confirming ? <p className="text-sm text-neutral-700">{copy.confirm}</p> : null}
+      {confirming ? <p className="text-sm text-ink-body">{copy.confirm}</p> : null}
       <button
         className={BUTTON_CLASS}
         type="submit"
@@ -676,7 +676,7 @@ export function CmsPageTranslationForm({
   }
 
   return (
-    <form className="mt-6 max-w-2xl space-y-4 border-t border-neutral-200 pt-6" onSubmit={save}>
+    <form className="mt-6 max-w-2xl space-y-4 border-t border-hairline pt-6" onSubmit={save}>
       <div>
         <label className={LABEL_CLASS} htmlFor="cms-locale">
           {copy.localeLabel}
@@ -766,7 +766,7 @@ export function CmsPageTranslationForm({
       </div>
 
       <Problem message={problem} />
-      {removing ? <p className="text-sm text-neutral-700">{copy.removeConfirm}</p> : null}
+      {removing ? <p className="text-sm text-ink-body">{copy.removeConfirm}</p> : null}
 
       <div className="flex gap-3">
         <button className={BUTTON_CLASS} type="submit" disabled={busy || title.trim() === '' || body.trim() === ''}>

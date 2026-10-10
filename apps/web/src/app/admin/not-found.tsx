@@ -12,7 +12,7 @@ export default async function NotFound() {
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('title')}</Heading>
-        <p className="mt-2 text-neutral-600">{t('description')}</p>
+        <p className="mt-2 text-ink-muted">{t('description')}</p>
       </div>
     </PageContainer>
   );

@@ -73,9 +73,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -83,15 +83,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function Badge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -126,10 +126,10 @@ export async function ModerationReportQueue({
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((report) => (
-          <li key={report.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={report.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link
                     href={adminPath(`/moderation/reports/${report.id}`)}
                     className="underline underline-offset-4"
@@ -137,7 +137,7 @@ export async function ModerationReportQueue({
                     {report.subjectLabel ?? t(`subjectType.${report.subjectType}`)}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-neutral-600">
+                <p className="mt-1 text-sm text-ink-muted">
                   {t(`subjectType.${report.subjectType}`)}
                   {' · '}
                   {t(`reason.${report.reasonCode}`)}
@@ -146,7 +146,7 @@ export async function ModerationReportQueue({
               <Badge label={t(`status.${report.status}`)} />
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               {/*
                 Read, never ranked: the queue is oldest first, because the schema's priority column is text
                 and ordering it would express nothing. It is shown so a colleague can judge for themselves.
@@ -159,7 +159,7 @@ export async function ModerationReportQueue({
             </dl>
 
             {report.isOwnReport && (
-              <p role="status" className="mt-3 text-sm text-neutral-600">
+              <p role="status" className="mt-3 text-sm text-ink-muted">
                 {t('ownReportHint')}
               </p>
             )}
@@ -209,19 +209,19 @@ export async function ModerationReportDetailView({ reportId }: { readonly report
     <>
       <section
         aria-labelledby="report-subject"
-        className="mt-6 rounded-lg border border-neutral-200 p-4"
+        className="mt-6 rounded-lg border border-hairline p-4"
       >
-        <h2 id="report-subject" className="text-lg font-medium text-neutral-900">
+        <h2 id="report-subject" className="text-lg font-medium text-ink-strong">
           {report.subjectLabel ?? t(`subjectType.${report.subjectType}`)}
         </h2>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Badge label={t(`status.${report.status}`)} />
-          <span className="text-sm text-neutral-600">{t(`subjectType.${report.subjectType}`)}</span>
-          <span className="text-sm text-neutral-600">{t(`reason.${report.reasonCode}`)}</span>
-          <span className="text-sm text-neutral-600">{t(`priority.${report.priority}`)}</span>
+          <span className="text-sm text-ink-muted">{t(`subjectType.${report.subjectType}`)}</span>
+          <span className="text-sm text-ink-muted">{t(`reason.${report.reasonCode}`)}</span>
+          <span className="text-sm text-ink-muted">{t(`priority.${report.priority}`)}</span>
         </div>
 
-        <dl aria-label={t('reportFacts')} className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+        <dl aria-label={t('reportFacts')} className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
           <Cell label={t('filedAt')} value={minute(report.createdAt)} />
           {report.resolvedAt !== null && (
             <Cell label={t('decidedAt')} value={minute(report.resolvedAt)} />
@@ -237,10 +237,10 @@ export async function ModerationReportDetailView({ reportId }: { readonly report
           exists for them, which is a limit of the repository rather than of this screen.
         */}
         {report.subjectIsResolvable ? (
-          <div className="mt-4 border-t border-neutral-200 pt-4">
-            <p className="text-xs text-neutral-600">{t('subjectLabel')}</p>
+          <div className="mt-4 border-t border-hairline pt-4">
+            <p className="text-xs text-ink-muted">{t('subjectLabel')}</p>
             {report.subjectStatus !== null && (
-              <p className="mt-1 text-sm text-neutral-900">
+              <p className="mt-1 text-sm text-ink-strong">
                 {t('subjectStatusLabel')}: {t(`listingStatus.${report.subjectStatus}`)}
               </p>
             )}
@@ -257,13 +257,13 @@ export async function ModerationReportDetailView({ reportId }: { readonly report
             )}
           </div>
         ) : (
-          <p role="status" className="mt-4 text-sm text-neutral-600">
+          <p role="status" className="mt-4 text-sm text-ink-muted">
             {t('subjectUnavailable')}
           </p>
         )}
 
         {report.isOwnReport && (
-          <p role="status" className="mt-4 text-sm font-medium text-neutral-900">
+          <p role="status" className="mt-4 text-sm font-medium text-ink-strong">
             {t('ownReportHint')}
           </p>
         )}
@@ -271,22 +271,22 @@ export async function ModerationReportDetailView({ reportId }: { readonly report
 
       {report.details !== null && (
         <section aria-labelledby="report-details" className="mt-8">
-          <h2 id="report-details" className="text-lg font-medium text-neutral-900">
+          <h2 id="report-details" className="text-lg font-medium text-ink-strong">
             {t('detailsHeading')}
           </h2>
-          <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">{report.details}</p>
+          <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">{report.details}</p>
         </section>
       )}
 
       {report.resolutionNote !== null && (
         <section aria-labelledby="report-note" className="mt-8">
-          <h2 id="report-note" className="text-lg font-medium text-neutral-900">
+          <h2 id="report-note" className="text-lg font-medium text-ink-strong">
             {t('noteHeading')}
           </h2>
-          <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">
+          <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">
             {report.resolutionNote}
           </p>
-          <p className="mt-1 text-xs text-neutral-600">
+          <p className="mt-1 text-xs text-ink-muted">
             {report.resolvedByMe ? t('decidedByYou') : t('decidedByColleague')}
           </p>
         </section>
@@ -296,7 +296,7 @@ export async function ModerationReportDetailView({ reportId }: { readonly report
       <ReportActions reportId={report.id} />
 
       {isFinal ? (
-        <p role="status" className="mt-8 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-8 max-w-prose text-sm text-ink-muted">
           {t('alreadyDecidedHint')}
         </p>
       ) : report.isOwnReport ? null : (
@@ -348,19 +348,19 @@ async function ReportActions({ reportId }: { readonly reportId: string }) {
 
   return (
     <section aria-labelledby="report-actions" className="mt-8">
-      <h2 id="report-actions" className="text-lg font-medium text-neutral-900">
+      <h2 id="report-actions" className="text-lg font-medium text-ink-strong">
         {t('actionsHeading')}
       </h2>
       <ul className="mt-4 space-y-3">
         {page.items.map((action) => (
-          <li key={action.id} className="rounded-lg border border-neutral-200 p-4">
-            <p className="text-xs font-medium text-neutral-600">
+          <li key={action.id} className="rounded-lg border border-hairline p-4">
+            <p className="text-xs font-medium text-ink-muted">
               {t(`action.${action.action}`)} · {minute(action.createdAt)} ·{' '}
               {action.isOwnAction ? t('byYou') : t('byColleague')}
             </p>
-            <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">{action.reason}</p>
+            <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">{action.reason}</p>
             {action.notes !== null && (
-              <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-700">{action.notes}</p>
+              <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-body">{action.notes}</p>
             )}
           </li>
         ))}
@@ -389,20 +389,20 @@ export async function ModerationListingQueue({ cursor }: { readonly cursor: stri
     <>
       <ul className="mt-6 space-y-3">
         {page.items.map((listing) => (
-          <li key={listing.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={listing.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   <Link href={adminPath(`/catalog/${listing.id}`)} className="underline underline-offset-4">
                     {listing.title}
                   </Link>
                 </p>
-                <p className="mt-1 font-mono text-xs text-neutral-600">{listing.slug}</p>
+                <p className="mt-1 font-mono text-xs text-ink-muted">{listing.slug}</p>
               </div>
               <Badge label={t(`listingStatus.${listing.status}`)} />
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <Cell label={t('createdAt')} value={minute(listing.createdAt)} />
               <Cell label={t('typeLabel')} value={listing.listingTypeCode} />
               {listing.priceMinor !== null && (
@@ -414,7 +414,7 @@ export async function ModerationListingQueue({ cursor }: { readonly cursor: stri
             </dl>
 
             {listing.isOwnListing && (
-              <p role="status" className="mt-3 text-sm text-neutral-600">
+              <p role="status" className="mt-3 text-sm text-ink-muted">
                 {t('ownListingHint')}
               </p>
             )}
@@ -450,16 +450,16 @@ export async function ModerationListingDetailView({ listingId }: { readonly list
 
   return (
     <>
-      <section aria-labelledby="listing-title" className="mt-6 rounded-lg border border-neutral-200 p-4">
-        <h2 id="listing-title" className="text-lg font-medium text-neutral-900">
+      <section aria-labelledby="listing-title" className="mt-6 rounded-lg border border-hairline p-4">
+        <h2 id="listing-title" className="text-lg font-medium text-ink-strong">
           {listing.title}
         </h2>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Badge label={t(`listingStatus.${listing.status}`)} />
-          <span className="font-mono text-xs text-neutral-600">{listing.slug}</span>
+          <span className="font-mono text-xs text-ink-muted">{listing.slug}</span>
         </div>
 
-        <dl aria-label={t('listingFacts')} className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+        <dl aria-label={t('listingFacts')} className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
           <Cell label={t('typeLabel')} value={listing.listingTypeCode} />
           {listing.priceMinor !== null && (
             <Cell label={t('priceLabel')} value={`${listing.priceMinor} ${listing.currencyCode}`} />
@@ -478,18 +478,18 @@ export async function ModerationListingDetailView({ listingId }: { readonly list
           )}
         </dl>
 
-        <div className="mt-4 border-t border-neutral-200 pt-4">
-          <p className="text-xs text-neutral-600">{t('descriptionLabel')}</p>
+        <div className="mt-4 border-t border-hairline pt-4">
+          <p className="text-xs text-ink-muted">{t('descriptionLabel')}</p>
           <p
             lang={listing.contentLanguage}
-            className="mt-1 max-w-prose whitespace-pre-line text-sm text-neutral-900"
+            className="mt-1 max-w-prose whitespace-pre-line text-sm text-ink-strong"
           >
             {listing.description}
           </p>
         </div>
 
         {listing.isOwnListing && (
-          <p role="status" className="mt-4 text-sm font-medium text-neutral-900">
+          <p role="status" className="mt-4 text-sm font-medium text-ink-strong">
             {t('ownListingHint')}
           </p>
         )}
@@ -551,20 +551,20 @@ async function ListingHistory({ listingId }: { readonly listingId: string }) {
 
   return (
     <section aria-labelledby="listing-history" className="mt-8">
-      <h2 id="listing-history" className="text-lg font-medium text-neutral-900">
+      <h2 id="listing-history" className="text-lg font-medium text-ink-strong">
         {t('historyHeading')}
       </h2>
       <ul className="mt-4 space-y-3">
         {page.items.map((entry) => (
-          <li key={entry.id} className="rounded-lg border border-neutral-200 p-4">
-            <p className="text-xs font-medium text-neutral-600">
+          <li key={entry.id} className="rounded-lg border border-hairline p-4">
+            <p className="text-xs font-medium text-ink-muted">
               {t(`listingAction.${entry.action}`)} · {minute(entry.createdAt)} ·{' '}
               {entry.isOwnAction ? t('byYou') : t('byColleague')}
             </p>
-            <p className="mt-1 text-xs text-neutral-600">
+            <p className="mt-1 text-xs text-ink-muted">
               {t(`listingStatus.${entry.fromStatus}`)} → {t(`listingStatus.${entry.toStatus}`)}
             </p>
-            <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">{entry.reason}</p>
+            <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">{entry.reason}</p>
           </li>
         ))}
       </ul>

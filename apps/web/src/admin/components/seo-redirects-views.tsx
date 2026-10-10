@@ -32,10 +32,10 @@ import { adminPath } from '../paths';
  * nobody, and nothing on this screen will tell them so afterwards.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -55,11 +55,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -102,7 +102,7 @@ export async function SeoRedirectList({ cursor, search, active }: SeoRedirectLis
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
       {/* Said out loud, because an operator cannot deduce it from anything on the screen and a surprise here is a
           redirect that appears to do nothing. */}
       <Message tone="empty" title={t('precedenceTitle')} body={t('precedenceBody')} />
@@ -155,7 +155,7 @@ export async function SeoRedirectList({ cursor, search, active }: SeoRedirectLis
       {nextCursor === null ? null : (
         <p className="mt-4">
           <Link
-            className="text-sm text-neutral-900 underline"
+            className="text-sm text-ink-strong underline"
             href={`/seo/redirects?cursor=${encodeURIComponent(nextCursor)}${keep === '' ? '' : `&${keep}`}`}
           >
             {t('nextPage')}
@@ -178,7 +178,7 @@ function SeoRedirectRow({
   return (
     <tr>
       <td className={TD}>
-        <Link className="text-neutral-900 underline" href={adminPath(`/seo/redirects/${redirect.id}`)}>
+        <Link className="text-ink-strong underline" href={adminPath(`/seo/redirects/${redirect.id}`)}>
           <code>{redirect.fromPath}</code>
         </Link>
       </td>
@@ -214,7 +214,7 @@ export async function SeoRedirectCreatePanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('createHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('createIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('createIntro')}</p>
       <SeoRedirectCreateForm
         copy={{
           fromLabel: t('fromLabel'),
@@ -267,18 +267,18 @@ export async function SeoRedirectDetailView({ redirectId }: { readonly redirectI
       <section className={CARD}>
         <Heading level={2}>{redirect.fromPath}</Heading>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-neutral-600">{t('columnTo')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnTo')}</dt>
+          <dd className="text-ink-strong">
             <code>{redirect.toPath}</code>
           </dd>
-          <dt className="text-neutral-600">{t('columnStatus')}</dt>
-          <dd className="text-neutral-900">{redirect.statusCode}</dd>
-          <dt className="text-neutral-600">{t('columnState')}</dt>
-          <dd className="text-neutral-900">{redirect.isActive ? t('stateActive') : t('stateInactive')}</dd>
-          <dt className="text-neutral-600">{t('columnNote')}</dt>
-          <dd className="text-neutral-900">{redirect.note ?? '—'}</dd>
-          <dt className="text-neutral-600">{t('resolvedLabel')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnStatus')}</dt>
+          <dd className="text-ink-strong">{redirect.statusCode}</dd>
+          <dt className="text-ink-muted">{t('columnState')}</dt>
+          <dd className="text-ink-strong">{redirect.isActive ? t('stateActive') : t('stateInactive')}</dd>
+          <dt className="text-ink-muted">{t('columnNote')}</dt>
+          <dd className="text-ink-strong">{redirect.note ?? '—'}</dd>
+          <dt className="text-ink-muted">{t('resolvedLabel')}</dt>
+          <dd className="text-ink-strong">
             {redirect.resolvedToPath === null ? (
               t('resolvedNone')
             ) : (
@@ -287,8 +287,8 @@ export async function SeoRedirectDetailView({ redirectId }: { readonly redirectI
               </code>
             )}
           </dd>
-          <dt className="text-neutral-600">{t('columnUpdated')}</dt>
-          <dd className="text-neutral-900">
+          <dt className="text-ink-muted">{t('columnUpdated')}</dt>
+          <dd className="text-ink-strong">
             <time dateTime={redirect.updatedAt}>{redirect.updatedAt}</time>
           </dd>
         </dl>
@@ -348,7 +348,7 @@ async function SeoRedirectControls({ redirect }: { readonly redirect: SeoRedirec
 
       <section className={CARD}>
         <Heading level={2}>{t('stateHeading')}</Heading>
-        <p className="mt-1 text-sm text-neutral-600">{t('stateIntro')}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t('stateIntro')}</p>
         <SeoRedirectStateForm
           redirectId={redirect.id}
           isActive={redirect.isActive}

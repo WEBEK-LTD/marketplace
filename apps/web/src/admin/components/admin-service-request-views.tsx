@@ -72,17 +72,17 @@ export async function AdminServiceRequestQueue({
       </nav>
 
       {page.items.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-          <p className="text-base font-medium text-neutral-900">{t('emptyTitle')}</p>
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('emptyBody')}</p>
+        <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+          <p className="text-base font-medium text-ink-strong">{t('emptyTitle')}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('emptyBody')}</p>
         </div>
       ) : (
         <ul className="mt-8 space-y-3">
           {page.items.map((item) => (
-            <li key={item.id} className="rounded-lg border border-neutral-200 p-4">
+            <li key={item.id} className="rounded-lg border border-hairline p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-base font-medium text-neutral-900">
+                  <p className="text-base font-medium text-ink-strong">
                     <Link
                       href={adminPath(`/service-requests/${item.id}`)}
                       className="underline underline-offset-4"
@@ -90,15 +90,15 @@ export async function AdminServiceRequestQueue({
                       {item.title}
                     </Link>
                   </p>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    <span className="text-xs text-neutral-600">{t('buyer')}: </span>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    <span className="text-xs text-ink-muted">{t('buyer')}: </span>
                     {item.buyerName ?? t('buyerUnknown')}
                   </p>
                 </div>
                 <StatusBadge label={t(`status.${item.status}`)} />
               </div>
 
-              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
                 <Cell label={t('budget')} value={money(item.budgetMinor, item.currencyCode, item.currencyMinorUnit) ?? t('budgetNone')} />
                 {item.neededBy !== null && <Cell label={t('neededBy')} value={item.neededBy} />}
                 <Cell label={t('sentAt')} value={minute(item.createdAt)} />
@@ -151,16 +151,16 @@ export async function AdminServiceRequestDetailView({ requestId }: { readonly re
     <>
       <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-lg font-medium text-neutral-900">{request.title}</p>
-          <p className="mt-1 text-sm text-neutral-600">
-            <span className="text-xs text-neutral-600">{t('buyer')}: </span>
+          <p className="text-lg font-medium text-ink-strong">{request.title}</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            <span className="text-xs text-ink-muted">{t('buyer')}: </span>
             {request.buyerName ?? t('buyerUnknown')}
           </p>
         </div>
         <StatusBadge label={t(`status.${request.status}`)} />
       </div>
 
-      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
         <Cell label={t('budget')} value={money(request.budgetMinor, request.currencyCode, request.currencyMinorUnit) ?? t('budgetNone')} />
         {request.neededBy !== null && <Cell label={t('neededBy')} value={request.neededBy} />}
         <Cell label={t('sentAt')} value={minute(request.createdAt)} />
@@ -169,14 +169,14 @@ export async function AdminServiceRequestDetailView({ requestId }: { readonly re
       </dl>
 
       <section className="mt-6">
-        <h2 className="text-sm font-medium text-neutral-900">{t('briefHeading')}</h2>
-        <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-700">{request.brief}</p>
+        <h2 className="text-sm font-medium text-ink-strong">{t('briefHeading')}</h2>
+        <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-body">{request.brief}</p>
       </section>
 
       {/* Its own read, its own permission, and absent when that read refuses. */}
       <PaymentInformation requestId={request.id} cookieHeader={cookieHeader} />
 
-      <p className="mt-8 max-w-prose rounded-md border border-neutral-300 p-3 text-sm text-neutral-800" role="note">
+      <p className="mt-8 max-w-prose rounded-md border border-edge p-3 text-sm text-ink-strong" role="note">
         {t('noSellerNote')}
       </p>
 
@@ -230,8 +230,8 @@ async function PaymentInformation({
   if (result.kind === 'unavailable') {
     return (
       <section className="mt-8">
-        <h2 className="text-sm font-medium text-neutral-900">{t('paymentHeading')}</h2>
-        <p role="status" className="mt-2 max-w-prose text-sm text-neutral-600">
+        <h2 className="text-sm font-medium text-ink-strong">{t('paymentHeading')}</h2>
+        <p role="status" className="mt-2 max-w-prose text-sm text-ink-muted">
           {t('paymentUnavailable')}
         </p>
       </section>
@@ -242,24 +242,24 @@ async function PaymentInformation({
   const purged = payment.preferredPaymentMethod === null && payment.paymentNotes === null;
 
   return (
-    <section className="mt-8 rounded-lg border border-neutral-300 p-4">
-      <h2 className="text-sm font-medium text-neutral-900">{t('paymentHeading')}</h2>
-      <p className="mt-1 max-w-prose text-xs text-neutral-600">{t('paymentDescriptiveOnly')}</p>
+    <section className="mt-8 rounded-lg border border-edge p-4">
+      <h2 className="text-sm font-medium text-ink-strong">{t('paymentHeading')}</h2>
+      <p className="mt-1 max-w-prose text-xs text-ink-muted">{t('paymentDescriptiveOnly')}</p>
 
       {purged ? (
-        <p role="status" className="mt-3 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-3 max-w-prose text-sm text-ink-muted">
           {t('paymentPurged')}
         </p>
       ) : (
-        <dl className="mt-3 space-y-3 text-sm text-neutral-700">
+        <dl className="mt-3 space-y-3 text-sm text-ink-body">
           <div>
-            <dt className="text-xs text-neutral-600">{t('paymentMethod')}</dt>
-            <dd className="whitespace-pre-line text-neutral-900">
+            <dt className="text-xs text-ink-muted">{t('paymentMethod')}</dt>
+            <dd className="whitespace-pre-line text-ink-strong">
               {payment.preferredPaymentMethod ?? t('paymentNone')}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-neutral-600">{t('paymentNotes')}</dt>
+            <dt className="text-xs text-ink-muted">{t('paymentNotes')}</dt>
             <dd className="max-w-prose whitespace-pre-line">{payment.paymentNotes ?? t('paymentNone')}</dd>
           </div>
         </dl>
@@ -290,9 +290,9 @@ async function refusal(
 
 function Notice({ title, body }: { readonly title: string; readonly body: string }) {
   return (
-    <div className="mt-8 rounded-lg border border-neutral-200 p-6" role="status">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{body}</p>
+    <div className="mt-8 rounded-lg border border-hairline p-6" role="status">
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{body}</p>
     </div>
   );
 }
@@ -300,15 +300,15 @@ function Notice({ title, body }: { readonly title: string; readonly body: string
 function Cell({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-600">{label}</dt>
-      <dd className="text-neutral-900">{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-ink-strong">{value}</dd>
     </div>
   );
 }
 
 function StatusBadge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
       {label}
     </span>
   );
@@ -331,8 +331,8 @@ function FilterLink({
       aria-current={active ? 'page' : undefined}
       className={
         active
-          ? 'rounded-full border border-neutral-900 px-3 py-1 text-xs font-medium text-neutral-900'
-          : 'rounded-full border border-neutral-300 px-3 py-1 text-xs text-neutral-700'
+          ? 'rounded-full border border-edge-strong px-3 py-1 text-xs font-medium text-ink-strong'
+          : 'rounded-full border border-edge px-3 py-1 text-xs text-ink-body'
       }
     >
       {label}

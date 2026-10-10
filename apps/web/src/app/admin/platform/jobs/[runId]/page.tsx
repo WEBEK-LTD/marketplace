@@ -33,7 +33,7 @@ export default async function Page({ params }: { readonly params: Promise<{ runI
       <PageContainer>
         <div className="py-10">
           <Heading level={1}>{sections('platform.title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('runDetailIntro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('runDetailIntro')}</p>
           <JobRunDetailView runId={runId} />
         </div>
       </PageContainer>

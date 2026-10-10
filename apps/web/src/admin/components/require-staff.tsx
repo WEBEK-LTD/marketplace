@@ -69,7 +69,7 @@ export async function RequireStaff({
       <Refusal title={t('signedOutTitle')} body={t('signedOutBody')}>
         <Link
           href={adminPath('/login')}
-          className="mt-6 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm"
+          className="mt-6 inline-block rounded-md border border-edge px-4 py-2 text-sm"
         >
           {t('signIn')}
         </Link>
@@ -85,7 +85,7 @@ export async function RequireStaff({
       <Refusal title={t('stepUpTitle')} body={t('stepUpBody')}>
         <Link
           href={adminPath('/security/totp')}
-          className="mt-6 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm"
+          className="mt-6 inline-block rounded-md border border-edge px-4 py-2 text-sm"
         >
           {t('stepUp')}
         </Link>
@@ -143,12 +143,12 @@ async function ConsoleHeader({
 }) {
   const t = await getTranslations('Console');
   return (
-    <div className="border-b border-neutral-200 bg-neutral-50">
+    <div className="border-b border-hairline bg-surface-sunken">
       <PageContainer>
         <div className="flex flex-wrap items-center justify-between gap-3 py-3">
-          <p className="text-sm text-neutral-700">
-            <span className="font-medium text-neutral-900">{name ?? t('accountUnnamed')}</span>
-            {roleLabel !== '' && <span className="ms-2 text-neutral-600">{roleLabel}</span>}
+          <p className="text-sm text-ink-body">
+            <span className="font-medium text-ink-strong">{name ?? t('accountUnnamed')}</span>
+            {roleLabel !== '' && <span className="ms-2 text-ink-muted">{roleLabel}</span>}
           </p>
           <LocaleSwitch
             current={locale === 'ar' ? 'ar' : 'en'}
@@ -180,7 +180,7 @@ function Refusal({
     <PageContainer>
       <div className="py-12" role="status">
         <Heading level={1}>{title}</Heading>
-        <p className="mt-4 max-w-prose text-neutral-600">{body}</p>
+        <p className="mt-4 max-w-prose text-ink-muted">{body}</p>
         {children}
       </div>
     </PageContainer>

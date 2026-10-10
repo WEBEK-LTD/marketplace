@@ -37,14 +37,14 @@ import { adminApiPath, adminPath } from '../paths';
  * write is re-checked in the API and again in the database.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const DANGER_CLASS =
   'rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 interface Outcome {
   readonly status: number | null;
@@ -227,7 +227,7 @@ export function BlogCreateForm({
 
   return (
     <form className="mt-4 space-y-4" onSubmit={submit}>
-      <p className="text-sm text-neutral-600">{copy.draftNotice}</p>
+      <p className="text-sm text-ink-muted">{copy.draftNotice}</p>
       <div>
         <label className={LABEL_CLASS} htmlFor="blog-create-slug">
           {copy.slugLabel}
@@ -261,7 +261,7 @@ export function BlogCreateForm({
           ))}
         </select>
       </div>
-      <label className="flex items-center gap-2 text-sm text-neutral-700">
+      <label className="flex items-center gap-2 text-sm text-ink-body">
         <input
           checked={isIndexable}
           id="blog-create-indexable"
@@ -411,7 +411,7 @@ export function BlogDetailsForm({
         />
         <p className={HINT_CLASS}>{copy.coverHint}</p>
       </div>
-      <label className="flex items-center gap-2 text-sm text-neutral-700">
+      <label className="flex items-center gap-2 text-sm text-ink-body">
         <input
           checked={isIndexable}
           id="blog-details-indexable"
@@ -422,7 +422,7 @@ export function BlogDetailsForm({
         {copy.indexableLabel}
       </label>
       <div>
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
+        <label className="flex items-center gap-2 text-sm text-ink-body">
           <input
             checked={isFeatured}
             id="blog-details-featured"
@@ -629,7 +629,7 @@ export function BlogTranslationForm({
 
   return (
     <form className="mt-4 space-y-4" onSubmit={save}>
-      <p className="text-sm text-neutral-600">{copy.replaceNotice}</p>
+      <p className="text-sm text-ink-muted">{copy.replaceNotice}</p>
       <div>
         <label className={LABEL_CLASS} htmlFor={`blog-translation-title-${localeCode}`}>
           {copy.titleLabel}
@@ -760,14 +760,14 @@ export function BlogTagsForm({
 
   return (
     <form className="mt-4 space-y-3" onSubmit={submit}>
-      <p className="text-sm text-neutral-600">{copy.notice}</p>
+      <p className="text-sm text-ink-muted">{copy.notice}</p>
       {tags.length === 0 ? (
-        <p className="text-sm text-neutral-600">{copy.empty}</p>
+        <p className="text-sm text-ink-muted">{copy.empty}</p>
       ) : (
         <ul className="space-y-2">
           {tags.map((tag) => (
             <li key={tag.id}>
-              <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <label className="flex items-center gap-2 text-sm text-ink-body">
                 <input
                   checked={chosen.includes(tag.id)}
                   onChange={() => toggle(tag.id)}
@@ -919,7 +919,7 @@ export function BlogTaxonomyForm({
             />
           </div>
         )}
-        <label className="flex items-center gap-2 pb-2 text-sm text-neutral-700">
+        <label className="flex items-center gap-2 pb-2 text-sm text-ink-body">
           <input
             checked={isActive}
             id={`${prefix}-active`}

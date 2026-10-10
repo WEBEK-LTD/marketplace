@@ -193,8 +193,13 @@ select is((select entry_count from app_private.public_sitemap_counts() where ent
   'the listing count is zero');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'service'), 0::bigint,
   'the service count is zero');
-select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'category'), 0::bigint,
-  'the category count is zero');
+-- **The counts function agrees with the reader**, which is what this line was always for: a sitemap whose
+-- index promises a number the pages do not deliver is a broken sitemap. It said "zero" while the database
+-- had no categories in it; 0111 seeded a real property catalogue, and zero was never the point.
+select is(
+  (select entry_count from app_private.public_sitemap_counts() where entry_type = 'category'),
+  (select count(*) from app_private.public_sitemap_categories(1000000, 0)),
+  'the category count is the number of categories the reader will serve');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'seller'), 0::bigint,
   'the seller count is zero');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'blog_post'), 0::bigint,
@@ -388,8 +393,10 @@ select is((select entry_count from app_private.public_sitemap_counts() where ent
   'and the listing count is still what it was');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'service'), 0::bigint,
   'and the service count');
-select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'category'), 0::bigint,
-  'and the category count');
+select is(
+  (select entry_count from app_private.public_sitemap_counts() where entry_type = 'category'),
+  (select count(*) from app_private.public_sitemap_categories(1000000, 0)),
+  'and the category count still matches its reader');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'seller'), 0::bigint,
   'and the seller count');
 
@@ -399,7 +406,10 @@ select ok(
   'a blog post is not a CMS page');
 select is((select count(*)::int from app_private.public_sitemap_listings(1000, 0)), 0,
   'and not a listing');
-select is((select count(*)::int from app_private.public_sitemap_categories(1000, 0)), 0,
+-- The claim is that a blog post does not leak into another entry type, so it is asserted about the post
+-- rather than about the emptiness of the table it must not appear in.
+select ok(
+  not exists (select 1 from app_private.public_sitemap_categories(1000000, 0) where slug like '%languages%'),
   'and not a category');
 select is((select count(*)::int from app_private.public_sitemap_sellers(1000, 0)), 0,
   'and not a seller');

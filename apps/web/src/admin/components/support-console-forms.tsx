@@ -28,11 +28,11 @@ import { adminApiPath } from '../paths';
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 
 /** `support_messages_body_length` and `support_internal_notes_body_length`, which are the same bound. */
 const BODY_MAX_LENGTH = 8000;
@@ -117,7 +117,7 @@ export function SupportAssignmentForm({
         {pending ? copy.working : copy.action}
       </button>
       {error !== null && (
-        <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}
@@ -191,14 +191,14 @@ function Composer({
       noValidate
       className={
         dashed
-          ? 'mt-8 max-w-prose rounded-lg border border-dashed border-neutral-400 p-4'
-          : 'mt-8 max-w-prose rounded-lg border border-neutral-200 p-4'
+          ? 'mt-8 max-w-prose rounded-lg border border-dashed border-edge-strong p-4'
+          : 'mt-8 max-w-prose rounded-lg border border-hairline p-4'
       }
     >
-      <label htmlFor={fieldId} className="text-sm font-medium text-neutral-900">
+      <label htmlFor={fieldId} className="text-sm font-medium text-ink-strong">
         {copy.label}
       </label>
-      <p className="mt-1 text-xs text-neutral-600">{copy.hint}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.hint}</p>
       <textarea
         id={fieldId}
         name="body"
@@ -210,7 +210,7 @@ function Composer({
         className={FIELD_CLASS}
       />
       {message !== null && (
-        <p role="alert" className="mt-2 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-2 text-sm font-medium text-ink-strong">
           {message}
         </p>
       )}
@@ -321,11 +321,11 @@ export function SupportDecisionForm({
   }
 
   return (
-    <section aria-labelledby="ticket-decision" className="mt-8 max-w-prose rounded-lg border border-neutral-200 p-4">
-      <h2 id="ticket-decision" className="text-sm font-medium text-neutral-900">
+    <section aria-labelledby="ticket-decision" className="mt-8 max-w-prose rounded-lg border border-hairline p-4">
+      <h2 id="ticket-decision" className="text-sm font-medium text-ink-strong">
         {copy.heading}
       </h2>
-      <p className="mt-1 text-xs text-neutral-600">{copy.hint}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.hint}</p>
 
       {asking === null ? (
         <div className="mt-3 flex flex-wrap gap-3">
@@ -354,7 +354,7 @@ export function SupportDecisionForm({
         </div>
       ) : (
         <div className="mt-3">
-          <p className="text-sm font-medium text-neutral-900">
+          <p className="text-sm font-medium text-ink-strong">
             {asking === 'resolved' ? (copy.resolveQuestion ?? copy.heading) : copy.closeQuestion}
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
@@ -382,7 +382,7 @@ export function SupportDecisionForm({
       )}
 
       {error !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}

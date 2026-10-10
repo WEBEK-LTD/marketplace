@@ -73,12 +73,12 @@ export function LocaleSwitch({
         disabled={pending}
         lang={target}
         aria-label={`${labels.label}: ${targetLabel}`}
-        className="rounded-md border border-neutral-300 px-3 py-1 text-sm font-medium text-neutral-900 disabled:opacity-60"
+        className="rounded-md border border-edge px-3 py-1 text-sm font-medium text-ink-strong disabled:opacity-60"
       >
         {pending ? labels.working : targetLabel}
       </button>
       {failed && (
-        <span role="alert" className="text-xs text-neutral-900">
+        <span role="alert" className="text-xs text-ink-strong">
           {labels.failed}
         </span>
       )}

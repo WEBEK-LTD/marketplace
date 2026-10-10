@@ -32,10 +32,10 @@ import { adminPath } from '../paths';
  * simply omits it and nothing else would ever say so.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 async function cookieHeader(): Promise<string | null> {
   return (await headers()).get('cookie');
@@ -55,11 +55,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -98,7 +98,7 @@ export async function NavigationMenuList() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
       {/* Said out loud, because an operator cannot deduce any of it from anything on the screen. */}
       <Message tone="empty" title={t('notHereTitle')} body={t('notHereBody')} />
 
@@ -120,7 +120,7 @@ export async function NavigationMenuList() {
             {menus.map((menu) => (
               <tr key={menu.id}>
                 <td className={TD}>
-                  <Link className="text-neutral-900 underline" href={adminPath(`/cms/navigation/${menu.id}`)}>
+                  <Link className="text-ink-strong underline" href={adminPath(`/cms/navigation/${menu.id}`)}>
                     <code>{menu.menuKey}</code>
                   </Link>
                 </td>
@@ -167,7 +167,7 @@ export async function NavigationAddPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('addHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('addIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('addIntro')}</p>
       <NavigationMenuCreateForm
         copy={{
           keyLabel: t('keyLabel'),
@@ -319,14 +319,14 @@ export async function NavigationMenuDetailView({ menuId }: { readonly menuId: st
 
       <section className={CARD}>
         <Heading level={2}>{t('entriesHeading')}</Heading>
-        <p className="mt-1 text-sm text-neutral-600">{t('entriesIntro')}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t('entriesIntro')}</p>
 
         {menu.items.length === 0 ? (
           <Message tone="empty" title={t('noEntriesTitle')} body={t('noEntriesBody')} />
         ) : (
           <ul className="mt-4 space-y-6">
             {parents.map((parent) => (
-              <li className="rounded-md border border-neutral-200 p-4" key={parent.id}>
+              <li className="rounded-md border border-hairline p-4" key={parent.id}>
                 <EntryHeader item={parent} />
                 {menu.canManage ? (
                   <div className="mt-3">
@@ -348,7 +348,7 @@ export async function NavigationMenuDetailView({ menuId }: { readonly menuId: st
                 ) : null}
 
                 {childrenOf(parent.id).length === 0 ? null : (
-                  <ul className="mt-4 space-y-4 border-l border-neutral-200 pl-4">
+                  <ul className="mt-4 space-y-4 border-l border-hairline pl-4">
                     {childrenOf(parent.id).map((child) => (
                       <li key={child.id}>
                         <EntryHeader item={child} />
@@ -400,7 +400,7 @@ export async function NavigationMenuDetailView({ menuId }: { readonly menuId: st
       {menu.canManage ? (
         <section className={CARD}>
           <Heading level={2}>{t('addEntryHeading')}</Heading>
-          <p className="mt-1 text-sm text-neutral-600">{t('addEntryIntro')}</p>
+          <p className="mt-1 text-sm text-ink-muted">{t('addEntryIntro')}</p>
           <NavigationItemCreateForm
             copy={{
               ...targetCopy,
@@ -434,16 +434,16 @@ async function EntryHeader({ item }: { readonly item: NavigationItem }) {
 
   return (
     <div>
-      <p className="font-medium text-neutral-900">{item.labelEn}</p>
-      <p className="mt-1 text-xs text-neutral-600">
+      <p className="font-medium text-ink-strong">{item.labelEn}</p>
+      <p className="mt-1 text-xs text-ink-muted">
         <code>{item.targetKind}</code>
         {item.targetSlug === null ? null : <> · {item.targetSlug}</>}
         {item.path === null ? null : <> · {item.path}</>}
         {item.targetTitle === null ? null : <> · {item.targetTitle}</>}
       </p>
       <p className="mt-1 text-xs">
-        <span className="text-neutral-700">{item.isActive ? t('shown') : t('hidden')}</span>
-        {item.opensInNewTab ? <span className="text-neutral-700"> · {t('newTabLabel')}</span> : null}
+        <span className="text-ink-body">{item.isActive ? t('shown') : t('hidden')}</span>
+        {item.opensInNewTab ? <span className="text-ink-body"> · {t('newTabLabel')}</span> : null}
         {item.targetState === 'not_public' ? (
           <span className="text-amber-700"> · {t('targetNotPublic')}</span>
         ) : null}
@@ -458,8 +458,8 @@ async function EntryHeader({ item }: { readonly item: NavigationItem }) {
 function Row({ label, value }: { readonly label: string; readonly value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-neutral-600">{label}</dt>
-      <dd className="mt-0.5 text-neutral-900">{value}</dd>
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="mt-0.5 text-ink-strong">{value}</dd>
     </div>
   );
 }

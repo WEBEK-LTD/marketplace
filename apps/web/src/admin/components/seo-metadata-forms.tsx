@@ -38,14 +38,14 @@ import { adminApiPath, adminPath } from '../paths';
  * the screen shows those rather than restating the rules and risking a different account of them.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const DANGER_CLASS =
   'rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 interface Outcome {
   readonly status: number | null;
@@ -411,7 +411,7 @@ export function SeoMetadataSaveForm({
         <p className={HINT_CLASS}>{copy.directivesHint}</p>
         <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
           {SEO_DIRECTIVES.map((directive) => (
-            <label key={directive} className="flex items-center gap-2 text-sm text-neutral-900">
+            <label key={directive} className="flex items-center gap-2 text-sm text-ink-strong">
               <input
                 type="checkbox"
                 checked={directives.includes(directive)}
@@ -463,7 +463,7 @@ export function SeoMetadataSaveForm({
         <p className={HINT_CLASS}>{copy.shareMediaHint}</p>
       </div>
 
-      <p className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+      <p className="rounded-md border border-hairline bg-surface-sunken p-3 text-sm text-ink-body">
         {copy.replaceWarning}
       </p>
 
@@ -522,7 +522,7 @@ export function SeoMetadataRemoveForm({
   return (
     <div className="mt-4">
       <Problem message={problem} />
-      {confirming ? <p className="mb-3 text-sm text-neutral-700">{copy.removeConfirm}</p> : null}
+      {confirming ? <p className="mb-3 text-sm text-ink-body">{copy.removeConfirm}</p> : null}
       <button className={DANGER_CLASS} type="button" onClick={() => void remove()} disabled={busy}>
         {busy ? copy.working : copy.remove}
       </button>

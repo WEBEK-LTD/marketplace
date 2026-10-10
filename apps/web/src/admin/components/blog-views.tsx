@@ -30,10 +30,10 @@ import { adminPath } from '../paths';
  * the translation panel says so where somebody is editing them.
  */
 
-const CARD = 'mt-6 rounded-lg border border-neutral-200 bg-white p-5';
+const CARD = 'mt-6 rounded-lg border border-hairline bg-surface-raised p-5';
 const TABLE = 'mt-4 w-full border-collapse text-left text-sm';
-const TH = 'border-b border-neutral-200 pb-2 pr-4 font-medium text-neutral-600';
-const TD = 'border-b border-neutral-100 py-2 pr-4 align-top text-neutral-900';
+const TH = 'border-b border-hairline pb-2 pr-4 font-medium text-ink-muted';
+const TD = 'border-b border-hairline py-2 pr-4 align-top text-ink-strong';
 
 /** The locales the public site serves. Which codes exist is the database's; this offers the two it seeds. */
 const LOCALES = ['en', 'ar'] as const;
@@ -56,11 +56,11 @@ function Message({ tone, title, body }: { tone: 'empty' | 'error'; title: string
   return (
     <div
       className={`mt-4 rounded-md border p-4 ${
-        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-neutral-200 bg-neutral-50'
+        tone === 'error' ? 'border-red-200 bg-red-50' : 'border-hairline bg-surface-sunken'
       }`}
     >
-      <p className="font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-700">{body}</p>
+      <p className="font-medium text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-body">{body}</p>
     </div>
   );
 }
@@ -104,7 +104,7 @@ export async function BlogList({ cursor, status, search }: BlogListProps) {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('listHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('listIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('listIntro')}</p>
       {/* Said out loud, because an operator cannot deduce any of it from anything on the screen. */}
       <Message tone="empty" title={t('notHereTitle')} body={t('notHereBody')} />
 
@@ -149,7 +149,7 @@ export async function BlogList({ cursor, status, search }: BlogListProps) {
       {nextCursor === null ? null : (
         <p className="mt-4">
           <Link
-            className="text-sm text-neutral-900 underline"
+            className="text-sm text-ink-strong underline"
             href={`/blog?cursor=${encodeURIComponent(nextCursor)}${keep === '' ? '' : `&${keep}`}`}
           >
             {t('nextPage')}
@@ -172,7 +172,7 @@ function BlogRow({
   return (
     <tr>
       <td className={TD}>
-        <Link className="text-neutral-900 underline" href={adminPath(`/blog/${post.id}`)}>
+        <Link className="text-ink-strong underline" href={adminPath(`/blog/${post.id}`)}>
           <code>{post.slug}</code>
         </Link>
       </td>
@@ -212,7 +212,7 @@ export async function BlogAddPanel() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('addHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('addIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('addIntro')}</p>
       <BlogCreateForm
         categories={taxonomy.data.categories
           .filter((category) => category.isActive)
@@ -317,8 +317,8 @@ async function BlogSummaryPanel({ post }: { readonly post: BlogPostDetail }) {
       <Message tone="empty" title={t('coverTitle')} body={t('coverBody')} />
       {post.previousSlugs.length === 0 ? null : (
         <div className="mt-4">
-          <p className="text-sm font-medium text-neutral-700">{t('previousSlugsHeading')}</p>
-          <p className="mt-1 text-sm text-neutral-600">{t('previousSlugsBody')}</p>
+          <p className="text-sm font-medium text-ink-body">{t('previousSlugsHeading')}</p>
+          <p className="mt-1 text-sm text-ink-muted">{t('previousSlugsBody')}</p>
           <ul className="mt-2 space-y-1 text-sm">
             {post.previousSlugs.map((slug) => (
               <li key={slug}>
@@ -335,8 +335,8 @@ async function BlogSummaryPanel({ post }: { readonly post: BlogPostDetail }) {
 function Row({ label, value }: { readonly label: string; readonly value: React.ReactNode }) {
   return (
     <div>
-      <dt className="font-medium text-neutral-600">{label}</dt>
-      <dd className="mt-0.5 text-neutral-900">{value}</dd>
+      <dt className="font-medium text-ink-muted">{label}</dt>
+      <dd className="mt-0.5 text-ink-strong">{value}</dd>
     </div>
   );
 }
@@ -359,7 +359,7 @@ async function BlogDetailsPanel({
   return (
     <section className={CARD}>
       <Heading level={2}>{t('editHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('editIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('editIntro')}</p>
       <BlogDetailsForm
         postId={post.id}
         initial={{
@@ -397,7 +397,7 @@ async function BlogStatusPanel({ post }: { readonly post: BlogPostDetail }) {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('statusHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('statusIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('statusIntro')}</p>
       {post.translations.length === 0 ? (
         <Message tone="empty" title={t('unwrittenTitle')} body={t('unwrittenBody')} />
       ) : null}
@@ -441,11 +441,11 @@ async function BlogTranslationsPanel({ post }: { readonly post: BlogPostDetail }
   return (
     <section className={CARD}>
       <Heading level={2}>{t('translationsHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('translationsIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('translationsIntro')}</p>
       {LOCALES.map((locale) => {
         const existing = post.translations.find((entry) => entry.localeCode === locale);
         return (
-          <div className="mt-6 border-t border-neutral-100 pt-4" key={locale}>
+          <div className="mt-6 border-t border-hairline pt-4" key={locale}>
             <Heading level={3}>{locale === 'ar' ? t('localeArabic') : t('localeEnglish')}</Heading>
             <BlogTranslationForm
               postId={post.id}
@@ -543,18 +543,18 @@ export async function BlogTaxonomyView() {
   return (
     <section className={CARD}>
       <Heading level={2}>{t('taxonomyHeading')}</Heading>
-      <p className="mt-1 text-sm text-neutral-600">{t('taxonomyIntro')}</p>
+      <p className="mt-1 text-sm text-ink-muted">{t('taxonomyIntro')}</p>
       {/* The count is of every post, not the public ones. Said, because the two numbers differ and both are real. */}
       <Message tone="empty" title={t('countsTitle')} body={t('countsBody')} />
 
       <Heading level={3}>{t('categoriesHeading')}</Heading>
       {categories.length === 0 ? (
-        <p className="mt-2 text-sm text-neutral-600">{t('categoriesEmpty')}</p>
+        <p className="mt-2 text-sm text-ink-muted">{t('categoriesEmpty')}</p>
       ) : (
         <ul className="mt-2 space-y-4">
           {categories.map((category) => (
-            <li className="border-t border-neutral-100 pt-3" key={category.id}>
-              <p className="text-sm text-neutral-900">
+            <li className="border-t border-hairline pt-3" key={category.id}>
+              <p className="text-sm text-ink-strong">
                 <code>{category.slug}</code> — {category.nameEn}
                 {category.isActive ? '' : ` (${t('inactive')})`} · {t('postCount', { count: category.postCount })}
               </p>
@@ -577,7 +577,7 @@ export async function BlogTaxonomyView() {
         </ul>
       )}
       {!canManage ? null : (
-        <div className="mt-6 border-t border-neutral-200 pt-4">
+        <div className="mt-6 border-t border-hairline pt-4">
           <Heading level={3}>{t('addCategoryHeading')}</Heading>
           <BlogTaxonomyForm
             kind="category"
@@ -588,15 +588,15 @@ export async function BlogTaxonomyView() {
         </div>
       )}
 
-      <div className="mt-8 border-t border-neutral-200 pt-4">
+      <div className="mt-8 border-t border-hairline pt-4">
         <Heading level={3}>{t('tagsTaxonomyHeading')}</Heading>
         {tags.length === 0 ? (
-          <p className="mt-2 text-sm text-neutral-600">{t('tagsTaxonomyEmpty')}</p>
+          <p className="mt-2 text-sm text-ink-muted">{t('tagsTaxonomyEmpty')}</p>
         ) : (
           <ul className="mt-2 space-y-4">
             {tags.map((tag) => (
-              <li className="border-t border-neutral-100 pt-3" key={tag.id}>
-                <p className="text-sm text-neutral-900">
+              <li className="border-t border-hairline pt-3" key={tag.id}>
+                <p className="text-sm text-ink-strong">
                   <code>{tag.slug}</code> — {tag.nameEn}
                   {tag.isActive ? '' : ` (${t('inactive')})`} · {t('postCount', { count: tag.postCount })}
                 </p>
@@ -619,7 +619,7 @@ export async function BlogTaxonomyView() {
           </ul>
         )}
         {!canManage ? null : (
-          <div className="mt-6 border-t border-neutral-200 pt-4">
+          <div className="mt-6 border-t border-hairline pt-4">
             <Heading level={3}>{t('addTagHeading')}</Heading>
             <BlogTaxonomyForm
               kind="tag"

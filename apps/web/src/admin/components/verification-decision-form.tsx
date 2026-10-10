@@ -120,7 +120,7 @@ export function VerificationDecisionForm({
               setChoice('approved');
             }}
             disabled={!canApprove}
-            className="rounded-md border border-neutral-900 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-50"
+            className="rounded-md border border-edge-strong px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-50"
           >
             {labels.approve}
           </button>
@@ -130,16 +130,16 @@ export function VerificationDecisionForm({
               setError(null);
               setChoice('rejected');
             }}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900"
+            className="rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong"
           >
             {labels.reject}
           </button>
         </div>
         {!canApprove && (
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">{labels.contactsBlocked}</p>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">{labels.contactsBlocked}</p>
         )}
         {error !== null && (
-          <p role="alert" className="mt-3 max-w-prose text-sm font-medium text-neutral-900">
+          <p role="alert" className="mt-3 max-w-prose text-sm font-medium text-ink-strong">
             {error}
           </p>
         )}
@@ -149,20 +149,20 @@ export function VerificationDecisionForm({
 
   return (
     <form
-      className="mt-3 max-w-prose rounded-lg border border-neutral-300 p-4"
+      className="mt-3 max-w-prose rounded-lg border border-edge p-4"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <p className="text-sm font-medium text-neutral-900">
+      <p className="text-sm font-medium text-ink-strong">
         {choice === 'approved' ? labels.confirmApprove : labels.confirmReject}
       </p>
 
-      <label htmlFor="decision-reason" className="mt-4 block text-sm font-medium text-neutral-900">
+      <label htmlFor="decision-reason" className="mt-4 block text-sm font-medium text-ink-strong">
         {labels.reasonLabel}
       </label>
-      <p id="decision-reason-help" className="mt-1 text-xs text-neutral-600">
+      <p id="decision-reason-help" className="mt-1 text-xs text-ink-muted">
         {choice === 'approved' ? labels.reasonHelpApprove : labels.reasonHelpReject}
       </p>
       <textarea
@@ -174,10 +174,10 @@ export function VerificationDecisionForm({
         onChange={(event) => setReason(event.target.value)}
         aria-describedby="decision-reason-help"
         {...(reasonMissing ? { 'aria-invalid': true } : {})}
-        className="mt-2 w-full rounded-md border border-neutral-300 p-2 text-sm text-neutral-900"
+        className="mt-2 w-full rounded-md border border-edge p-2 text-sm text-ink-strong"
       />
       {reasonMissing && (
-        <p role="alert" className="mt-2 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-2 text-sm font-medium text-ink-strong">
           {labels.reasonRequired}
         </p>
       )}
@@ -186,7 +186,7 @@ export function VerificationDecisionForm({
         <button
           type="submit"
           disabled={pending || reasonMissing}
-          className="rounded-md border border-neutral-900 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-50"
+          className="rounded-md border border-edge-strong px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-50"
         >
           {pending ? labels.working : labels.confirm}
         </button>
@@ -197,14 +197,14 @@ export function VerificationDecisionForm({
             setError(null);
           }}
           disabled={pending}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-900 disabled:opacity-50"
+          className="rounded-md border border-edge px-4 py-2 text-sm text-ink-strong disabled:opacity-50"
         >
           {labels.cancel}
         </button>
       </div>
 
       {error !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}

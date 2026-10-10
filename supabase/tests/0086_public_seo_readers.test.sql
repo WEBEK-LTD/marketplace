@@ -252,10 +252,14 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- Categories
 -- ---------------------------------------------------------------------------------------------------
+-- **Scoped to this suite's own four fixtures.** It compared against every category in the database until
+-- 0111 seeded a real property catalogue; what it is for — an active category with an active ancestor is
+-- listed, and the two that fail either test are not — is unchanged and is asserted here and just below.
 select set_eq(
-  'select slug from app_private.public_sitemap_categories(100, 0)',
+  $q$select slug from app_private.public_sitemap_categories(1000, 0)
+      where slug in ('aa-furniture', 'ab-chairs', 'ac-retired', 'ad-orphan')$q$,
   array['aa-furniture', 'ab-chairs'],
-  'active categories with active ancestors are listed');
+  'active categories with active ancestors are listed, and only those');
 
 select is(
   (select count(*)::int from app_private.public_sitemap_categories(100, 0) where slug = 'ac-retired'),
@@ -387,8 +391,11 @@ select is(
   (select slug from app_private.public_sitemap_categories(1, 1)),
   'ab-chairs', 'the second page of one is the second row');
 
+-- Past the end of a catalogue that now has content in it. Offset 2 was past the end when the only
+-- categories in the database were this suite's two; the question being asked is what an offset beyond the
+-- last row does, so the offset has to actually be beyond the last row.
 select is_empty(
-  'select * from app_private.public_sitemap_categories(1, 2)',
+  'select * from app_private.public_sitemap_categories(1, 1000000)',
   'a page past the end is empty rather than an error');
 
 select is(

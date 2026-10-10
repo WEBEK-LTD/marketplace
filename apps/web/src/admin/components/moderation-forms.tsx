@@ -35,11 +35,11 @@ import { adminApiPath } from '../paths';
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 
 /** `moderation_actions_reason_length` and `listing_moderation_actions_reason_length`. */
 const REASON_MAX_LENGTH = 500;
@@ -170,15 +170,15 @@ export function ReportResolutionForm({
       onSubmit={onSubmit}
       noValidate
       aria-labelledby="report-decision"
-      className="mt-8 max-w-prose rounded-lg border border-neutral-200 p-4"
+      className="mt-8 max-w-prose rounded-lg border border-hairline p-4"
     >
-      <h2 id="report-decision" className="text-sm font-medium text-neutral-900">
+      <h2 id="report-decision" className="text-sm font-medium text-ink-strong">
         {copy.heading}
       </h2>
-      <p className="mt-1 text-xs text-neutral-600">{copy.hint}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.hint}</p>
 
       <div className="mt-3">
-        <label htmlFor="report-status" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="report-status" className="text-sm font-medium text-ink-strong">
           {copy.statusLabel}
         </label>
         <select
@@ -198,10 +198,10 @@ export function ReportResolutionForm({
       </div>
 
       <div className="mt-3">
-        <label htmlFor="report-note" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="report-note" className="text-sm font-medium text-ink-strong">
           {copy.noteLabel}
         </label>
-        <p className="mt-1 text-xs text-neutral-600">{copy.noteHint}</p>
+        <p className="mt-1 text-xs text-ink-muted">{copy.noteHint}</p>
         <textarea
           id="report-note"
           name="resolutionNote"
@@ -216,10 +216,10 @@ export function ReportResolutionForm({
 
       {status === 'duplicate' && (
         <div className="mt-3">
-          <label htmlFor="report-duplicate" className="text-sm font-medium text-neutral-900">
+          <label htmlFor="report-duplicate" className="text-sm font-medium text-ink-strong">
             {copy.duplicateLabel}
           </label>
-          <p className="mt-1 text-xs text-neutral-600">{copy.duplicateHint}</p>
+          <p className="mt-1 text-xs text-ink-muted">{copy.duplicateHint}</p>
           <input
             id="report-duplicate"
             name="duplicateOfReportId"
@@ -234,14 +234,14 @@ export function ReportResolutionForm({
       )}
 
       {message !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {message}
         </p>
       )}
 
       {asking ? (
         <div className="mt-4">
-          <p className="text-sm font-medium text-neutral-900">{copy.question}</p>
+          <p className="text-sm font-medium text-ink-strong">{copy.question}</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <button type="button" disabled={pending} onClick={() => void confirm()} className={BUTTON_CLASS}>
               {pending ? copy.working : copy.confirm}
@@ -366,15 +366,15 @@ export function ListingModerationForm({
       onSubmit={onSubmit}
       noValidate
       aria-labelledby="listing-decision"
-      className="mt-8 max-w-prose rounded-lg border border-neutral-200 p-4"
+      className="mt-8 max-w-prose rounded-lg border border-hairline p-4"
     >
-      <h2 id="listing-decision" className="text-sm font-medium text-neutral-900">
+      <h2 id="listing-decision" className="text-sm font-medium text-ink-strong">
         {copy.heading}
       </h2>
-      <p className="mt-1 text-xs text-neutral-600">{copy.hint}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.hint}</p>
 
       <div className="mt-3">
-        <label htmlFor="listing-action" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="listing-action" className="text-sm font-medium text-ink-strong">
           {copy.actionLabel}
         </label>
         <select
@@ -394,10 +394,10 @@ export function ListingModerationForm({
       </div>
 
       <div className="mt-3">
-        <label htmlFor="listing-reason" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="listing-reason" className="text-sm font-medium text-ink-strong">
           {copy.reasonLabel}
         </label>
-        <p className="mt-1 text-xs text-neutral-600">{copy.reasonHint}</p>
+        <p className="mt-1 text-xs text-ink-muted">{copy.reasonHint}</p>
         <textarea
           id="listing-reason"
           name="reason"
@@ -411,14 +411,14 @@ export function ListingModerationForm({
       </div>
 
       {message !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {message}
         </p>
       )}
 
       {asking ? (
         <div className="mt-4">
-          <p className="text-sm font-medium text-neutral-900">{copy.question}</p>
+          <p className="text-sm font-medium text-ink-strong">{copy.question}</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <button type="button" disabled={pending} onClick={() => void confirm()} className={BUTTON_CLASS}>
               {pending ? copy.working : copy.confirm}

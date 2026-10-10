@@ -43,19 +43,19 @@ async function HomeBody() {
   return (
     <>
       <Heading level={1}>{t('title')}</Heading>
-      <p className="mt-2 max-w-prose text-neutral-600">{t('intro')}</p>
+      <p className="mt-2 max-w-prose text-ink-muted">{t('intro')}</p>
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label={t('sectionsLabel')}>
         {sections.map((section) => (
           <li key={section.id}>
             <Link
               href={section.href}
-              className="block h-full rounded-lg border border-neutral-200 p-4 hover:border-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+              className="block h-full rounded-lg border border-hairline p-4 hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
             >
-              <span className="block text-base font-medium text-neutral-900">
+              <span className="block text-base font-medium text-ink-strong">
                 {sectionLabels(`${section.id}.title`)}
               </span>
-              <span className="mt-1 block text-sm text-neutral-600">
+              <span className="mt-1 block text-sm text-ink-muted">
                 {sectionLabels(`${section.id}.description`)}
               </span>
             </Link>

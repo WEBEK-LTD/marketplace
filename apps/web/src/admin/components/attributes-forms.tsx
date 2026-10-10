@@ -37,12 +37,12 @@ import { adminApiPath } from '../paths';
  * field rather than letting somebody fill in a value the database will refuse.
  */
 
-const BUTTON_CLASS = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+const BUTTON_CLASS = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-800 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-700';
-const HINT_CLASS = 'mt-1 text-xs text-neutral-500';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-body';
+const HINT_CLASS = 'mt-1 text-xs text-ink-muted';
 
 interface Outcome {
   readonly status: number | null;
@@ -95,7 +95,7 @@ function messageFor(outcome: Outcome, labels: VocabularyLabels, success: string)
 function Note({ message }: { readonly message: string | null }) {
   if (message === null) return null;
   return (
-    <p className="mt-3 text-sm text-neutral-700" role="status">
+    <p className="mt-3 text-sm text-ink-body" role="status">
       {message}
     </p>
   );
@@ -249,7 +249,7 @@ export function AttributeCreateForm({
           checked={isFilterable}
           onChange={(event) => setIsFilterable(event.target.checked)}
         />
-        <span className="text-sm text-neutral-800">{labels.isFilterable}</span>
+        <span className="text-sm text-ink-strong">{labels.isFilterable}</span>
       </label>
       <p className={HINT_CLASS}>{labels.isFilterableHint}</p>
 
@@ -377,7 +377,7 @@ export function AttributeSettingsForm({
           checked={isFilterable}
           onChange={(event) => setIsFilterable(event.target.checked)}
         />
-        <span className="text-sm text-neutral-800">{labels.isFilterable}</span>
+        <span className="text-sm text-ink-strong">{labels.isFilterable}</span>
       </label>
       <p className={HINT_CLASS}>{labels.isFilterableHint}</p>
 
@@ -834,7 +834,7 @@ export function CategoryAttributeAttachForm({
   const [message, setMessage] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
 
-  if (choices.length === 0) return <p className="mt-4 text-sm text-neutral-600">{labels.noChoices}</p>;
+  if (choices.length === 0) return <p className="mt-4 text-sm text-ink-muted">{labels.noChoices}</p>;
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -875,7 +875,7 @@ export function CategoryAttributeAttachForm({
 
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={isRequired} onChange={(event) => setIsRequired(event.target.checked)} />
-        <span className="text-sm text-neutral-800">{labels.isRequired}</span>
+        <span className="text-sm text-ink-strong">{labels.isRequired}</span>
       </label>
       <p className={HINT_CLASS}>{labels.isRequiredHint}</p>
 
@@ -885,7 +885,7 @@ export function CategoryAttributeAttachForm({
           checked={isFilterable}
           onChange={(event) => setIsFilterable(event.target.checked)}
         />
-        <span className="text-sm text-neutral-800">{labels.isFilterable}</span>
+        <span className="text-sm text-ink-strong">{labels.isFilterable}</span>
       </label>
       <p className={HINT_CLASS}>{labels.isFilterableHint}</p>
 
