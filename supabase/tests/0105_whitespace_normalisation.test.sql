@@ -161,9 +161,12 @@ language sql stable as $$
      and pg_get_constraintdef(c.oid) like '%btrim%'
 $$;
 
+-- 64 when 0105 closed; 66 since 0109 added `office_receipts`'s two text bounds, both naming the set. The
+-- number is kept rather than turned into a floor: a count that only ever goes up stops detecting the thing
+-- it was written for, which is a constraint quietly added with the loose form.
 select is((select count(*)::int from pg_temp.checks() c
             where c.loose = 0 and c.relname not in (select relname from pg_temp.deferred_tables())),
-  64, 'exactly 64 constraints outside the financial tables name the character set');
+  66, 'exactly 66 constraints outside the financial tables name the character set');
 
 select is((select count(*)::int from pg_temp.checks() c
             where c.loose > 0 and c.relname not in (select relname from pg_temp.deferred_tables())),

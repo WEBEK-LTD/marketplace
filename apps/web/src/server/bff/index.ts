@@ -198,28 +198,11 @@ export {
   type AccountResult,
 } from './buyer-account';
 export {
-  handleAcceptOffer,
-  handleCounterOffer,
-  handleCreateOffer,
-  handleRejectOffer,
-  handleWithdrawOffer,
-  readOffersMade,
-  readOffersReceived,
-  type OffersHandlerOptions,
-  type OffersResult,
-} from './offers';
-export {
-  handleAcceptServiceQuote,
   handleCreateAdminOnlyServiceRequest,
   handleCancelServiceRequest,
-  handleCreateServiceQuote,
   handleCreateServiceRequest,
-  handleDeclineServiceRequest,
-  handleRejectServiceQuote,
-  handleWithdrawServiceQuote,
   readServiceRequestDetail,
   readServiceRequestsMade,
-  readServiceRequestsReceived,
   type ServiceRequestsHandlerOptions,
   type ServiceRequestsResult,
 } from './service-requests';

@@ -59,7 +59,7 @@ function kilobytes(value: string | null): string | null {
 
 function StatusPill({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-medium text-neutral-700">
+    <span className="rounded-full border border-edge px-2 py-0.5 text-xs font-medium text-ink-body">
       {label}
     </span>
   );
@@ -79,15 +79,15 @@ function TicketCard({
   readonly href: string;
 }) {
   return (
-    <li className="rounded-lg border border-neutral-200 p-4">
+    <li className="rounded-lg border border-hairline p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-base font-medium text-neutral-900">
+          <p className="text-base font-medium text-ink-strong">
             <Link href={href} className="underline underline-offset-4">
               {ticket.subject}
             </Link>
           </p>
-          <p className="mt-1 text-sm text-neutral-600">
+          <p className="mt-1 text-sm text-ink-muted">
             {copy.categories[ticket.category] ?? ticket.category}
             {ticket.reference !== null && (
               <>
@@ -102,24 +102,24 @@ function TicketCard({
 
       <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
         <div className="flex gap-2">
-          <dt className="text-neutral-600">{copy.opened}</dt>
-          <dd className="text-neutral-900">{minute(ticket.createdAt)}</dd>
+          <dt className="text-ink-muted">{copy.opened}</dt>
+          <dd className="text-ink-strong">{minute(ticket.createdAt)}</dd>
         </div>
         {ticket.lastMessageAt !== null && (
           <div className="flex gap-2">
-            <dt className="text-neutral-600">{copy.lastActivity}</dt>
-            <dd className="text-neutral-900">{minute(ticket.lastMessageAt)}</dd>
+            <dt className="text-ink-muted">{copy.lastActivity}</dt>
+            <dd className="text-ink-strong">{minute(ticket.lastMessageAt)}</dd>
           </div>
         )}
         {ticket.closedAt !== null && (
           <div className="flex gap-2">
-            <dt className="text-neutral-600">{copy.closedAt}</dt>
-            <dd className="text-neutral-900">{minute(ticket.closedAt)}</dd>
+            <dt className="text-ink-muted">{copy.closedAt}</dt>
+            <dd className="text-ink-strong">{minute(ticket.closedAt)}</dd>
           </div>
         )}
       </dl>
 
-      <p className="mt-3 text-sm text-neutral-600">
+      <p className="mt-3 text-sm text-ink-muted">
         {copy.messages(ticket.messageCount)}
         {ticket.attachmentCount > 0 && <> · {copy.files(ticket.attachmentCount)}</>}
       </p>
@@ -162,13 +162,13 @@ export function SupportTicketHeader({
   readonly copy: SupportCopy;
 }) {
   return (
-    <section aria-labelledby="support-ticket-facts" className="mt-6 rounded-lg border border-neutral-200 p-4">
+    <section aria-labelledby="support-ticket-facts" className="mt-6 rounded-lg border border-hairline p-4">
       <h2 id="support-ticket-facts" className="sr-only">
         {copy.status}
       </h2>
       <div className="flex flex-wrap items-center gap-3">
         <StatusPill label={copy.statuses[ticket.status] ?? ticket.status} />
-        <span className="text-sm text-neutral-600">
+        <span className="text-sm text-ink-muted">
           {copy.categories[ticket.category] ?? ticket.category}
         </span>
       </div>
@@ -176,30 +176,30 @@ export function SupportTicketHeader({
       <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
         {ticket.reference !== null && (
           <div className="flex gap-2">
-            <dt className="text-neutral-600">{copy.reference}</dt>
-            <dd className="font-mono text-xs text-neutral-900">{ticket.reference}</dd>
+            <dt className="text-ink-muted">{copy.reference}</dt>
+            <dd className="font-mono text-xs text-ink-strong">{ticket.reference}</dd>
           </div>
         )}
         <div className="flex gap-2">
-          <dt className="text-neutral-600">{copy.opened}</dt>
-          <dd className="text-neutral-900">{minute(ticket.createdAt)}</dd>
+          <dt className="text-ink-muted">{copy.opened}</dt>
+          <dd className="text-ink-strong">{minute(ticket.createdAt)}</dd>
         </div>
         {ticket.lastMessageAt !== null && (
           <div className="flex gap-2">
-            <dt className="text-neutral-600">{copy.lastActivity}</dt>
-            <dd className="text-neutral-900">{minute(ticket.lastMessageAt)}</dd>
+            <dt className="text-ink-muted">{copy.lastActivity}</dt>
+            <dd className="text-ink-strong">{minute(ticket.lastMessageAt)}</dd>
           </div>
         )}
         {ticket.resolvedAt !== null && (
           <div className="flex gap-2">
-            <dt className="text-neutral-600">{copy.resolvedAt}</dt>
-            <dd className="text-neutral-900">{minute(ticket.resolvedAt)}</dd>
+            <dt className="text-ink-muted">{copy.resolvedAt}</dt>
+            <dd className="text-ink-strong">{minute(ticket.resolvedAt)}</dd>
           </div>
         )}
         {ticket.closedAt !== null && (
           <div className="flex gap-2">
-            <dt className="text-neutral-600">{copy.closedAt}</dt>
-            <dd className="text-neutral-900">{minute(ticket.closedAt)}</dd>
+            <dt className="text-ink-muted">{copy.closedAt}</dt>
+            <dd className="text-ink-strong">{minute(ticket.closedAt)}</dd>
           </div>
         )}
       </dl>
@@ -221,24 +221,24 @@ function MessageRow({
   readonly copy: SupportCopy;
 }) {
   return (
-    <li className="rounded-lg border border-neutral-200 p-4">
-      <p className="text-xs font-medium text-neutral-600">
+    <li className="rounded-lg border border-hairline p-4">
+      <p className="text-xs font-medium text-ink-muted">
         {message.isOwnMessage ? copy.you : copy.agent} · {minute(message.createdAt)}
       </p>
       {/* `whitespace-pre-line` keeps the paragraphs somebody typed without rendering anything as markup. */}
-      <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-900">{message.body}</p>
+      <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-strong">{message.body}</p>
 
       {message.attachments.length > 0 && (
-        <div className="mt-3 border-t border-neutral-200 pt-3">
-          <p className="text-xs font-medium text-neutral-600">{copy.attachments}</p>
+        <div className="mt-3 border-t border-hairline pt-3">
+          <p className="text-xs font-medium text-ink-muted">{copy.attachments}</p>
           <ul className="mt-2 grid gap-2">
             {message.attachments.map((attachment) => {
               const size = kilobytes(attachment.byteSize);
               return (
                 <li key={attachment.id} className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="text-neutral-900">
+                  <span className="text-ink-strong">
                     {attachment.originalFilename ?? copy.attachments}
-                    {size !== null && <span className="text-neutral-600"> · {size}</span>}
+                    {size !== null && <span className="text-ink-muted"> · {size}</span>}
                   </span>
                   <SupportAttachmentLink
                     ticketId={ticketId}
@@ -268,7 +268,7 @@ export function SupportConversation({
 }) {
   return (
     <section aria-labelledby="support-conversation" className="mt-8">
-      <h2 id="support-conversation" className="text-lg font-medium text-neutral-900">
+      <h2 id="support-conversation" className="text-lg font-medium text-ink-strong">
         {copy.conversation}
       </h2>
       {olderHref !== null && (

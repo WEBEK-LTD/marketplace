@@ -40,11 +40,11 @@ import {
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 
 /** What a chosen file is, once the browser has handed it over. */
 interface PickedFile {
@@ -183,7 +183,7 @@ export function OpenSupportTicketForm({ copy }: { readonly copy: OpenTicketCopy 
           {copy.action}
         </button>
         {message !== null && (
-          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
             {message}
           </p>
         )}
@@ -195,18 +195,18 @@ export function OpenSupportTicketForm({ copy }: { readonly copy: OpenTicketCopy 
     <form
       onSubmit={onSubmit}
       noValidate
-      className="max-w-prose rounded-lg border border-neutral-300 p-4"
+      className="max-w-prose rounded-lg border border-edge p-4"
       aria-labelledby="open-support-ticket"
     >
-      <h2 id="open-support-ticket" className="text-base font-medium text-neutral-900">
+      <h2 id="open-support-ticket" className="text-base font-medium text-ink-strong">
         {copy.heading}
       </h2>
-      <p className="mt-1 text-sm text-neutral-600">{copy.intro}</p>
+      <p className="mt-1 text-sm text-ink-muted">{copy.intro}</p>
       {/* Support content travels to people. The form says plainly what not to put in it. */}
-      <p className="mt-2 text-sm font-medium text-neutral-900">{copy.noCredentials}</p>
+      <p className="mt-2 text-sm font-medium text-ink-strong">{copy.noCredentials}</p>
 
       <div className="mt-4">
-        <label htmlFor="support-subject" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="support-subject" className="text-sm font-medium text-ink-strong">
           {copy.subjectLabel}
         </label>
         <input
@@ -221,7 +221,7 @@ export function OpenSupportTicketForm({ copy }: { readonly copy: OpenTicketCopy 
       </div>
 
       <div className="mt-4">
-        <label htmlFor="support-category" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="support-category" className="text-sm font-medium text-ink-strong">
           {copy.categoryLabel}
         </label>
         <select
@@ -241,7 +241,7 @@ export function OpenSupportTicketForm({ copy }: { readonly copy: OpenTicketCopy 
       </div>
 
       <div className="mt-4">
-        <label htmlFor="support-body" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="support-body" className="text-sm font-medium text-ink-strong">
           {copy.bodyLabel}
         </label>
         <textarea
@@ -256,7 +256,7 @@ export function OpenSupportTicketForm({ copy }: { readonly copy: OpenTicketCopy 
       </div>
 
       <div className="mt-4">
-        <label htmlFor="support-files" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="support-files" className="text-sm font-medium text-ink-strong">
           {copy.filesLabel}
         </label>
         <input
@@ -266,13 +266,13 @@ export function OpenSupportTicketForm({ copy }: { readonly copy: OpenTicketCopy 
           multiple
           accept={SUPPORT_ATTACHMENT_ACCEPT}
           ref={setFiles}
-          className="mt-1 block w-full text-sm text-neutral-900"
+          className="mt-1 block w-full text-sm text-ink-strong"
         />
-        <p className="mt-1 text-xs text-neutral-600">{copy.filesHint}</p>
+        <p className="mt-1 text-xs text-ink-muted">{copy.filesHint}</p>
       </div>
 
       {message !== null && (
-        <p role="alert" className="mt-4 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-4 text-sm font-medium text-ink-strong">
           {message}
         </p>
       )}
@@ -360,12 +360,12 @@ export function SupportReplyForm({
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 border-t border-neutral-200 pt-6">
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+    <form onSubmit={onSubmit} noValidate className="mt-8 border-t border-hairline pt-6">
+      <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
         {message ?? (isClosed ? copy.closedHint : null)}
       </p>
 
-      <label htmlFor="support-reply" className="text-sm font-medium text-neutral-900">
+      <label htmlFor="support-reply" className="text-sm font-medium text-ink-strong">
         {copy.label}
       </label>
       <textarea
@@ -382,7 +382,7 @@ export function SupportReplyForm({
 
       {!isClosed && (
         <div className="mt-3">
-          <label htmlFor="support-reply-files" className="text-sm font-medium text-neutral-900">
+          <label htmlFor="support-reply-files" className="text-sm font-medium text-ink-strong">
             {copy.filesLabel}
           </label>
           <input
@@ -393,9 +393,9 @@ export function SupportReplyForm({
             accept={SUPPORT_ATTACHMENT_ACCEPT}
             ref={setFiles}
             disabled={pending}
-            className="mt-1 block w-full text-sm text-neutral-900"
+            className="mt-1 block w-full text-sm text-ink-strong"
           />
-          <p className="mt-1 text-xs text-neutral-600">{copy.filesHint}</p>
+          <p className="mt-1 text-xs text-ink-muted">{copy.filesHint}</p>
         </div>
       )}
 
@@ -469,7 +469,7 @@ export function CloseSupportTicketForm({
           {copy.action}
         </button>
         {error !== null && (
-          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
             {error}
           </p>
         )}
@@ -478,9 +478,9 @@ export function CloseSupportTicketForm({
   }
 
   return (
-    <div className="mt-6 max-w-prose rounded-lg border border-neutral-300 p-4">
-      <p className="text-sm font-medium text-neutral-900">{copy.question}</p>
-      <p className="mt-1 text-sm text-neutral-600">{copy.warning}</p>
+    <div className="mt-6 max-w-prose rounded-lg border border-edge p-4">
+      <p className="text-sm font-medium text-ink-strong">{copy.question}</p>
+      <p className="mt-1 text-sm text-ink-muted">{copy.warning}</p>
       <div className="mt-3 flex flex-wrap gap-3">
         <button type="button" disabled={pending} onClick={() => void submit()} className={BUTTON_CLASS}>
           {pending ? copy.working : copy.confirm}
@@ -498,7 +498,7 @@ export function CloseSupportTicketForm({
         </button>
       </div>
       {error !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}

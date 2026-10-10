@@ -2,6 +2,122 @@
 
 Workspace scope `@repo/*` is a neutral technical placeholder and must be replaced before production branding.
 
+## Amendment to v5.2 — the office settlement model (owner decisions, 9 Oct 2026)
+
+The owner amended the approved specification: **no payment, payout or settlement provider is used at all.**
+Money changes hands at the office, in person, and the system's job is to *record* that it did. This is recorded
+here before any code moves, because it changes what several closed migrations are for.
+
+| # | Decision | As stated |
+| --- | --- | --- |
+| OD-A1 | Where the money goes | The buyer pays the **full amount** at the office. The platform records the receipt. The seller takes their share at the office. |
+| OD-A2 | Who records it | **The admin**, in the console. |
+| OD-A3 | Request lifetime | **A request never expires and is never auto-cancelled.** The subject matter is property, and a conversation with a client can run for days or weeks. |
+| OD-A4 | Who the buyer deals with | **The admin only.** A buyer never contacts a seller: no buyer↔seller offers, no quotes, no direct conversation. |
+| OD-A5 | Seller balances and withdrawals | **Removed from V1.** |
+| OD-A6 | Refunds | **The office's business, outside the system.** Nothing in the repository implements, records or reports a refund. |
+| OD-A7 | Commission | Computed **when the money is paid at the office**, by the admin. |
+| OD-A8 | The write permission | One new permission key, **`payments.office_receipt.manage`**, rather than reusing `orders.order.manage`: recording that money arrived is the most consequential write in the system and is grantable on its own. It is the only permission key this amendment adds. |
+| OD-A9 | Catalogue scope | **Property only, in V1.** Categories, attributes, search and the public surfaces are built for property; product-specific machinery (carts, variants, shipping) has no role. |
+
+**What this closes.** B1-A, B1-B and B1-C fall away: there is no provider to contract with, no payout rail and
+no provider statement to reconcile. `finance.settlement_posting_enabled` stays `FALSE` and the 0023
+reconciliation path stays dark, now permanently rather than pending.
+
+**What UB8 becomes.** OD-A1 has the platform take the buyer's whole payment and hand the seller their share, so
+the office does hold other people's money for a period. That is a legal and tax question about how the office
+operates, not a property of this repository — the system records amounts and never moves them, holds no account
+and reaches no provider. It is noted here because it was raised and decided, not because code depends on it.
+
+**Two readings taken where the decisions did not say.** Both are cheap to reverse and are called out rather than
+buried:
+
+1. **The buyer talks to the admin in the existing messaging.** OD-A4 removes the seller as a counterparty, not
+   the conversation — so `0014`/`0054` and the blocking and attachment work in `0103`/`0104` keep their purpose
+   with staff on the other side, rather than being abandoned.
+2. **There is no online cart or checkout.** With payment at the office and no buyer↔seller contact, `0017`'s
+   carts and `0019`'s provider payment path have no role in V1. The record the admin writes at the office is the
+   order.
+
+**Nothing closed is rewritten.** The buyer↔seller writers, the withdrawal and balance writers and the provider
+payment path are **disabled by revocation and by guard**, in a new migration, not dropped — the same rule every
+corrective increment in this repository has followed.
+
+### What `0109_office_settlement_model.sql` built
+
+Two capabilities, and nothing else.
+
+**A buyer enquires about a listing.** `app_private.listing_enquiry_create` writes an `admin_only` row on
+`public.service_requests` with no seller and the **listing's own** currency. 0073's writer could not be reused
+or parameterised: a property enquiry is always about one listing and 0073's deliberately has none, which is
+also what makes the listing the thing that says whose share the office owes. Routing is a literal in both
+writers, so no argument can move an enquiry into the seller-routed flow. Neither of 0073's payment-information
+columns is written — under OD-A1 there is one way to pay and the question is meaningless.
+
+**The office records that the money arrived.** `app_private.office_receipt_record` takes the staff account, its
+assurance level, the enquiry, the amount, the office's own receipt reference and an optional note. It resolves
+commission through 0016's existing `resolve_commission_components`, snapshots every component with what it
+contributed, writes one `public.office_receipts` row and closes the enquiry as `accepted`. A percentage is
+rounded in `numeric`, never through a float: money rounded in binary disagrees with the paper. A fixed
+component with no amount in the currency is skipped and contributes nothing (D27) and still appears in the
+snapshot. The total is capped at the amount received and the snapshot records when the cap bit.
+
+`public.office_receipts` is append-only, entered in 0031's contract, audited, and holds no table privilege for
+any role: the three functions are the only way in. The writer publishes its actor through 0084's attribution
+channel and is registered as a `'writer'` there — the same class of action as `transition_withdrawal`, a human
+financial decision rather than a system step.
+
+**OD-A3 needed nothing built.** 0032's sweeper expires offers and quotes and no request, and the `expired`
+status has no writer anywhere. The migration asserts that, so a future sweeper cannot quietly acquire one.
+
+### Where the amendment goes next
+
+| # | Increment | State |
+| --- | --- | --- |
+| 1 | Close the buyer↔seller surfaces end to end and revoke the functions in the same change | **Done — `0110_buyer_seller_paths_closed.sql` and the code beside it.** See below |
+| 1b | Delete what is now inert: the store and service methods for closed functions, the quote-only request and response schemas, and the `quotes` array once a reader stops returning it | Outstanding. Nothing reachable, so it is tidying rather than closing |
+| 2 | Re-route conversations so the buyer's counterparty is staff | A design problem of its own: `0014`/`0054` assume a seller on the other side, and `0103`/`0104` build on that |
+| 3 | The console's receipt desk — the office's queue and the screen that records a payment | The database side exists (`office_receipts_for_staff`, `office_receipt_record`); the console screens do not |
+| 4 | The property catalogue (OD-A9): a `property` listing type, its categories and attributes, and the surfaces that read them | `listing_types` is reference data seeded in 0002 and currently holds `product` and `service` only |
+| 5 | The `/admin` visual redesign | Deliberately excluded from 0109's UI work and still outstanding |
+
+### What `0110_buyer_seller_paths_closed.sql` and the code beside it did
+
+**Fourteen functions lost `app_system`'s execute privilege** — the seven offer functions, the four quote
+functions, and the seller-routed request writer, the seller's queue and the seller's decline. `app_system` is
+the role the API connects as and was the only role that held them, so the database now refuses them whoever
+asks. Nothing was dropped: `public.offers`, `public.offer_messages` and `public.service_quotes` keep their
+rows, their policies and their triggers, 0070's and 0071's pgTAP suites still exercise the functions directly
+as the owner, and rows already recorded stay readable — which OD-A6 needs, because an office cannot look up
+what the database deleted.
+
+**The HTTP surface went with it, in the same increment.** Revoking a function while an endpoint still calls it
+turns a removal into a 500, so both halves moved together: the whole `/v1/offers/*` group (seven operations),
+`GET /v1/service-requests/received`, `POST /v1/service-requests/{id}/decline` and all four quote operations
+are gone from the controllers, the OpenAPI document and the generated client. The offers module, its cursor,
+its errors, its BFF handlers, its five web route handlers, its two pages and its four components were deleted
+outright.
+
+**`POST /v1/service-requests` was repointed rather than removed**, and that is the change worth knowing. Its
+body was already exactly an enquiry's — a listing, a title, a brief, optionally a budget and a date — so the
+route, the contract, the response shape and the form that posts to it are all unchanged, while the function
+behind it is now 0109's `listing_enquiry_create`. A buyer still asks about a listing; the office answers
+instead of the seller. The one visible difference: a caller's own listing answers 404 rather than a distinct
+code, deliberately, because a distinguishable refusal there would be a way to ask who owns a listing.
+
+**On the public pages**, 7-H's "make an offer" button became the enquiry action on the listing page, and
+7-I's "request a quote" button became the same action on the service page — one component, `EnquireButton`,
+on both. The buyer's own list and the detail page stay; the detail page now always shows the sentence 7-J
+wrote for an admin-routed brief and builds no quote list, decision or form at all.
+
+**On the closed-increment suites**, nine stale assertions were narrowed rather than deleted. The two that
+counted grants (`0070`: "app_system may execute all seven"; `0071`: "all ten") now assert the closure
+instead — none of the seven, and only the buyer's own three of the ten. The others were counts of permissions,
+append-only tables, audited tables, attribution writers and charset-naming constraints that 0109 legitimately
+moved by one; two of them (`0074`, `0075`) counted *every* permission on the platform in order to say "this
+surface adds none", which is the wrong instrument for that claim and was narrowed to the support module's own
+key set.
+
 ## Layout
 
 | Path | Workspace | Status |
@@ -13,7 +129,7 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 | `packages/money` | `@repo/money` | Implemented (Step 2) |
 | `packages/shared-types` | `@repo/shared-types` | Implemented (Step 2) |
 | `packages/config` | `@repo/config` | Implemented (Step 2): neutral design tokens |
-| `packages/ui` | `@repo/ui` | Implemented (Step 5; the marketplace visual system in 0109): shared React primitives |
+| `packages/ui` | `@repo/ui` | Implemented (Step 5; the marketplace visual system, rebuilt in 0110): shared React primitives |
 | `packages/db` | `@repo/db` | Implemented (Step 6): server-only Kysely factory and RLS transaction helper |
 | `packages/server-config` | `@repo/server-config` | Implemented (Step 7): environment variable inventory and server-only configuration reader |
 | `packages/telemetry` | `@repo/telemetry` | Implemented (Step 8): vendor-neutral tracing and log correlation (server-only) |
@@ -48,39 +164,107 @@ Workspace scope `@repo/*` is a neutral technical placeholder and must be replace
 
 ## `@repo/ui`
 
-The shared primitives, and since 0109 the marketplace's visual system. Nineteen primitives across fifteen files:
+The shared primitives, and the marketplace's visual system. Nineteen primitives across fifteen files:
 `Button`/`ButtonLink`, `Input`, `Textarea`, `Select`, `Choice`/`ChoiceGroup`, `FormField`, `Card`/`LinkCard`,
 `Badge`, `Avatar`, `Tabs`, `Dropdown`, `Dialog`, `Alert`, `Skeleton`, `Spinner`, `Breadcrumb`, `Pagination`,
-`EmptyState`/`EmptyLine`, plus the pre-0109 `PageContainer`, `SkipLink`, `Heading` and the layout helpers. The
-chrome (`SiteHeader`, `SiteFooter`, the menus) stays in `apps/web`, because it reads request headers.
+`EmptyState`/`EmptyLine`, plus `Band`, `PageContainer`, `SkipLink`, `Heading` and the layout helpers. The chrome
+(`SiteHeader`, `SiteFooter`, the menus) stays in `apps/web`, because it reads request headers.
 
-`src/recipes.ts` is the grammar every primitive composes from, and the mechanism of cohesion: `FOCUS_RING`, the
-four surfaces (`SURFACE_CARD`, `SURFACE_WELL`, `SURFACE_POPOVER`, `SURFACE_OVERLAY`), the frozen `TYPE` scale and
-`cx`. A primitive that needs a surface or a focus state takes it from here rather than spelling out utilities, so
-there is one place to change and no drift.
+`src/recipes.ts` is the grammar every primitive composes from, and the mechanism of cohesion: the focus ring,
+the band tones, the surfaces, the frozen `TYPE` scale, the `PRICE` lockup and `cx`. A primitive takes a surface
+or a focus state from there rather than spelling out utilities, so there is one place to change and no drift.
 
-The rules the system is built on, each forced by something already decided rather than chosen for taste:
+0110 replaced the visual direction 0109 shipped — the owner rejected it as dated and weak, and the diagnosis was
+specific: two surfaces, two text colours, a 1px border drawn round everything, and a type scale that ran from
+0.875rem to 3rem with almost everything between 1rem and 1.5rem. Four ideas carry the replacement, and none of
+them is colour.
 
-- **The palette is monochrome.** D5 gives the owner exactly two brand colours and both are still grey
-  placeholders, so hierarchy is carried by type, weight, surface layering, border contrast, radius and elevation.
-  A 2px border is the only emphasis the system has — which is why the `danger` button and a field error carry no
-  red, and why `Alert` distinguishes its four tones by border weight, an icon shape and the words.
-- **Radius by role**: `md` for controls, `lg` for surfaces, `full` for pills. Asserted by test.
-- **Elevation only for what leaves the page**: the sticky header (`shadow-sm`), a popover (`md`), an overlay
-  (`lg`). A flat surface takes a hairline border instead. Asserted by test, with a two-file allowlist.
-- **One focus ring product-wide**, as an `outline` rather than a `box-shadow`, so no ancestor's `overflow` can
-  clip it. Asserted by test.
-- **Logical properties only** — `ps`/`pe`, `ms`/`me`, `start`/`end`, `text-start`. A test scans every primitive;
-  `pl-4` cannot enter the package even in a comment without `withoutComments()` first stripping it.
-- **No letter-spacing tokens at all.** Arabic is cursive, and negative tracking breaks the letter joins.
-- **No inline styles**, because the CSP is nonce-based. The `<dialog>` and `::backdrop` resets and the one
-  keyframe animation live in `apps/web/src/app/globals.css`, which is also where `prefers-reduced-motion` is
-  honoured.
-- **Exactly two client components**, `dialog.tsx` and `dropdown.tsx`. Asserted by test, because `'use client'`
-  surviving the `tsc` build is a property of this package worth pinning.
+- **Bands.** A public page is a stack of full-bleed horizontal bands that alternate between the canvas, a
+  recessed surface and ink. `Band` is the unit of composition; a `div` with a heading in it is not. A composed
+  home page opens on an ink band and closes on one, and the footer is ink too, so the page has two anchors and a
+  middle before a word of it is read.
+- **A surface ladder instead of borders.** `packages/config/src/design-tokens.ts` now carries a semantic layer —
+  seven surfaces, six text roles, five border roles, four state overlays — and components speak to that and
+  never to the neutral ramp. A card is white on a recessed band with a hairline ring and the faintest lift; a
+  border survives for the one job it is good at, dividing two regions inside a single surface.
+- **Scale contrast.** The type scale spans 0.75rem to 4.5rem, and most of what makes a hueless page read as
+  composed is that span and the air around it.
+- **The price is the hero datum.** A marketplace is scanned by price, so on a card the price is the largest
+  element and the title is second. The currency code is set as a small raised mark (`.mp-currency`) and the
+  amount in tabular figures, so a column of prices aligns on its digits.
 
-Three places where 0109 declined to build UI for data that does not exist, each recorded in the component that
-would have shown it:
+### Colour: the owner's brand, and the system derived from it
+
+**The brand, supplied 10 October 2026:** `#FFFFFF` for the page and `#123B35`, a deep emerald, for everything
+that carries the brand. The owner asked for the accent to come out of the emerald rather than from a second
+hue, so both slots hold the same value and the system finds its variety in lightness and surface — white
+canvas, two emerald washes, and an emerald ground — rather than in a second colour. The slot is still a slot:
+one different hex introduces a second hue everywhere the accent roles are used, with nothing else to change.
+
+**The ramp is anchored on that hex, not merely derived from it**, and the difference matters twice over. The
+step nearest the colour's own lightness *is* the colour — `brandScale['900'] === '#123B35'` — so what the
+owner chose appears in the product rather than only behind it, and `surface.ink` is that step, which puts it
+on the hero and the footer where people actually look. And the chroma curve is normalised around that anchor
+instead of around `500`: `#123B35` has a chroma of 0.047 at a lightness of 0.32, which reads as a rich emerald
+where the owner put it and as a grey-green at mid-scale where a fill lives. Taking the number literally is how
+a deliberate, deep brand colour becomes a button nobody can see.
+
+The neutral cast is a **fixed** small chroma rather than a percentage of the brand's, for the same reason: six
+percent of 0.047 rounds away to pure grey at several steps, which is the admin-template look the cast exists
+to prevent. The hue comes from the brand; the amount is a property of the technique.
+
+The architecture gives the owner exactly two colour inputs (D5), and every increment before this one treated
+that as a reason the product could not have a colour system — two values cannot carry an interface, so the
+interface stayed grey. That conclusion was wrong, and the grey result was rejected as an admin template.
+
+Two values carry an interface perfectly well if the system **derives** from them. `packages/config/src/color-scale.ts`
+generates eleven perceptually even steps per slot in OKLab — setting a target lightness and keeping the source's
+hue and a curve of its chroma, then binary-searching chroma down where a step falls outside sRGB so the hue
+never shifts. From those two scales come every surface, text role, border and state overlay in the semantic
+ladder, plus a neutral ramp carrying a few percent of the brand's hue, because pure greys are what make a page
+look unfinished.
+
+The placeholders are now colours — a deep teal and a brass — for a reason that is about review rather than
+taste: with grey in both slots, every derived surface was also grey, so there was no system to look at. A
+placeholder has to let the design be judged; it does not have to be colourless. It remains exactly as
+replaceable as a grey one:
+
+```ts
+createDesignTokens({ brandPrimary: '#1A2B3C', brandSecondary: '#D4E5F6' })
+```
+
+re-derives both scales, the neutral cast, every surface and every state. A test asserts that it does, and
+another asserts that nothing which is *not* colour moves with it. No component anywhere names a hue; they name
+steps (`bg-brand-700`, `text-ink-brand`, `ring-edge-brand`) and roles, and a scan over `packages/ui` fails the
+build on a hex literal or a raw `neutral-*` utility.
+
+Two notes on where colour is *not* used. A band wants a far lower chroma than a badge does, so recessed
+surfaces come from `tintSurface` rather than from `scale['50']` — at band scale that step reads as a wash of
+mint. And there are no gradients in the shipped stylesheet: a soft radial field behind the opening was built
+and removed, because it tripped the structural rule that keeps untokenised colour out of the CSS, and because
+a wash behind a headline is decoration the composition does not need.
+
+### Arabic
+
+Arabic is designed rather than mirrored, and three separate things make that true.
+
+- **Its own face.** `--font-arabic` names SF Arabic and the Noto families ahead of Tahoma; left to the Latin
+  stack's fallback, Windows substitutes Tahoma, which has cramped Naskh proportions and no weight range.
+- **Its own metrics.** Arabic sets optically smaller than Latin at the same nominal size, so `globals.css` scales
+  the root 6% under `[lang="ar"]` and gives it the relaxed leading. Every size and every rem of spacing moves
+  together, so proportions hold and only the scale changes.
+- **Tracking it can never receive.** Latin display type at 3rem and up needs negative tracking; Arabic is cursive
+  and negative tracking breaks the joins between letters. The tokens exist, and `globals.css` attaches them to
+  `.mp-display` under `[lang="en"]` only — so there is no `tracking-` utility for a component to reach for, and a
+  test enforces that there never is.
+
+Direction is logical throughout: `ps`/`pe`, `ms`/`me`, `start`/`end`, `border-s`/`border-e`, asserted by a scan
+over every file in the package. One consequence is worth knowing before writing another chevron: because
+`border-e` has already moved to the other side in RTL, a glyph drawn from logical borders needs its **own** RTL
+rotation rather than the mirror of its LTR one — `-rotate-45 rtl:rotate-45`. `breadcrumb.tsx` carries the
+arithmetic.
+
+### Where the design declines to invent
 
 - `ListingSummarySchema` is `.strict()` with eight fields and no media, so the catalogue card is typographic. A
   grid where every card wears an empty image frame reads as an outage, not as a product.
@@ -88,6 +272,8 @@ would have shown it:
   ordering instead of offering a control that cannot change it.
 - Readers return `{ items, nextCursor }` with no total and no offset, so `Pagination` has no page numbers: it
   offers the next page, a way back to the start, and a sentence saying where you are.
+- The home page's opening band invents no copy. It is the site's name, the approved intro line, the search form
+  and the three catalogue doors that exist in code — and nothing else.
 
 ## Server-only environment configuration
 
@@ -1862,20 +2048,43 @@ Realtime topics are added by 0028, which extends `can_join_realtime_topic()`; ti
 event references only (UB7) and topic versioning there is open until Phase 5. The promoted-result
 ranking formula and slot merge are Phase 9 decisions.
 
-### Corrective increment candidates
+### Corrective increments
 
-Defects found while building something else, recorded here rather than fixed in place: a closed increment is
-not reopened by the increment that happens to notice it, and each of these is owner-reviewable on its own.
+Defects found while building something else are recorded rather than fixed in place: a closed increment is
+not reopened by the increment that happens to notice it. Both of the candidates that had accumulated were
+closed together in one corrective increment.
 
-| Where | What | Found during |
+| Where | What | Fixed by |
 | --- | --- | --- |
-| `0079_seller_status_management.sql`, `app_private.admin_seller_status_set` | The suspension reason is normalised with `nullif(btrim(coalesce(p_reason, '')), '')`. `btrim` with no character set trims **spaces only**, so a reason consisting of tabs or newlines survives it and is stored as though somebody had written one — the `reason_required` refusal does not fire for it. The fix is the explicit set used elsewhere, `btrim(…, E' \t\r\n')`, as 0096 and 0100 do. Behaviour otherwise unaffected; no data is lost and nothing financial is involved. | 0100, whose own suite caught the same class of defect in its own writers before it shipped |
-| `apps/web`: the catalogue index pages (`/`, `/listings`, `/marketplace`) and the blog index (`/blog`) | When their data read fails, each renders its unavailable region at HTTP `200` while still emitting `<meta name="robots" content="index, follow">`, so a crawler can index an error page as the page's content. The CMS pages already do the right thing — they switch to `noindex, nofollow` when the content could not be read — so this is an inconsistency rather than a design choice, and that is the pattern to follow. Changing it touches the closed Phase 4-A/4-B robots policy, so it is recorded rather than fixed here. Nothing financial is involved. | the deployment-readiness increment, measured against both built apps with `API_BASE_URL` pointing at a closed port |
+| `0079_seller_status_management.sql`, `app_private.admin_seller_status_set` | The suspension reason was normalised with `nullif(btrim(coalesce(p_reason, '')), '')`. `btrim` with no character set trims **spaces only**, so a reason made of tabs or newlines survived it and was stored as though somebody had written one — the `reason_required` refusal did not fire for it. The same loose form guarded `p_slug`. | `0108_seller_status_whitespace.sql` recreates the function with the explicit set `E' \t\r\n'` that 0096 and 0100 use, extracting 0079's body rather than retyping it. No stored row is rewritten: closing the hole and restating existing data are separate decisions, and only the first was asked for. |
+| `apps/web`: `/`, `/listings`, `/marketplace`, `/blog` | When the data read failed, each rendered its unavailable region at HTTP `200` while still emitting `<meta name="robots" content="index, follow">` — so a crawler could index an error page as the page's content. | Each page now shares one `cache`d read between `generateMetadata` and its body and switches to `noindex` when that read returns null, which is the pattern `category/[slug]` already used. The hub needs **both** of its independent reads to fail before it is unindexable, because one failing section does not empty the page. The 200 and the visible explanation are unchanged — that part was the approved behaviour. |
+
+One further fix came out of the first: `scripts/policy/migrations.mjs` now strips SQL comments before scanning
+for loose `btrim()` calls. A corrective migration has to quote the defect it is fixing, and the checker was
+reading that explanation back as a fresh violation — the same false positive that has broken four detectors in
+this repository. 0105 had been exempted from its own check for exactly this reason; that exemption was the
+workaround, and `withoutSqlComments` is the fix.
+
+The second fix exposed one of its own. `test/robots-policy.test.ts` answered the browse list with the
+**detail** document, and `ListingSummarySchema` is `.strict()` — so the reader rejected every body that suite
+served and the page under test had always been rendering its unavailable region. Nothing noticed, because the
+only thing asserted there was the robots value, which the failing read did not change. Tying indexability to
+the read made the stub's shape load-bearing and the suite failed immediately. It now serves a real summary,
+and it answers `/v1/homepage` too: the homepage is asserted twice, once readable and indexable and once
+unreadable and `noindex, follow`, which is a stronger pair than the single assertion it replaced.
 
 ### Running the schema locally
 
 - With Docker: `pnpm run supabase start` applies the migrations, and `pnpm run supabase test db --local`
   runs the pgTAP suite in `supabase/tests/`. This is the authoritative path and the one CI uses.
+- Without Docker, and **with a plain PostgreSQL 16 server the sandbox can start itself**, the whole pgTAP
+  suite does run: 111 files and 10,622 assertions, all passing as of 0110. `pg_cron` has
+  to be in `shared_preload_libraries` with `cron.database_name` set to the target database, or `0001` stops on
+  an unrecognised parameter. Apply with `--baseline` into a **freshly created** database and run the test files
+  with `psql` directly; `--tests` stops at `0031` because installing pgTAP into an existing database trips the
+  security contract, and `--reset` over a database that already holds pgTAP does the same. This is still
+  supplemental evidence rather than CI evidence, but it is a great deal more than the "not runnable here" the
+  earlier increments assumed.
 - Without Docker: `SUPPLEMENTAL_SCHEMA_URL=... pnpm run db:schema --baseline --reset --tests` applies the
   same files to a plain PostgreSQL server after creating a minimal Supabase-shaped baseline
   (`scripts/db/sandbox-baseline.sql`: the `auth`, `extensions` and `vault` schemas, the

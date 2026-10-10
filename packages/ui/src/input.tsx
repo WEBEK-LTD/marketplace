@@ -1,4 +1,4 @@
-import { cx, DISABLED, FOCUS_RING } from './recipes.js';
+import { cx, DISABLED, FOCUS_RING, INTERACTIVE } from './recipes.js';
 
 /**
  * The field shell, shared by every control a person types or chooses in.
@@ -12,9 +12,12 @@ import { cx, DISABLED, FOCUS_RING } from './recipes.js';
  */
 export function fieldClasses(options: { readonly error?: boolean; readonly className?: string } = {}): string {
   return cx(
-    'w-full rounded-md bg-neutral-0 text-base text-neutral-900 transition-colors duration-150',
-    'placeholder:text-neutral-400',
-    options.error === true ? 'border-2 border-neutral-900' : 'border border-neutral-300 hover:border-neutral-400',
+    'w-full rounded-lg bg-surface-raised text-base text-ink-strong',
+    'placeholder:text-ink-faint',
+    // A ring rather than a border: it does not take part in layout, so a field and a button of the same
+    // declared height are actually the same height, which a 1px border makes false.
+    options.error === true ? 'ring-2 ring-edge-strong' : 'ring-1 ring-edge hover:ring-edge-strong',
+    INTERACTIVE,
     FOCUS_RING,
     DISABLED,
     options.className,
@@ -22,7 +25,10 @@ export function fieldClasses(options: { readonly error?: boolean; readonly class
 }
 
 /** Heights match {@link buttonClasses}, so controls and buttons line up in a row. */
-const CONTROL_HEIGHT = 'h-10 px-3';
+const CONTROL_HEIGHT = 'h-11 px-3.5';
+
+/** The home page's opening band, where the field is the point of the page rather than part of a form. */
+export const FIELD_HERO = 'h-14 px-5 text-base sm:h-[3.75rem] sm:px-6 sm:text-lg';
 
 export type InputType = 'text' | 'search' | 'email' | 'tel' | 'password' | 'number' | 'url';
 

@@ -47,7 +47,7 @@ export interface SellerReadSurfaceProps {
 }
 
 const LINK =
-  'text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900';
+  'text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary';
 
 export function SellerReadSurface({
   locale,
@@ -74,7 +74,7 @@ export function SellerReadSurface({
 
           {state.kind === 'not_a_seller' ? (
             <div role="status" className="mt-8">
-              <p className="text-neutral-900">{notASellerLabel}</p>
+              <p className="text-ink-strong">{notASellerLabel}</p>
               <p className="mt-4">
                 <Link href={`${prefix}/dashboard/seller`} className={LINK}>
                   {dashboardLabel}
@@ -83,7 +83,7 @@ export function SellerReadSurface({
             </div>
           ) : state.kind === 'unauthenticated' ? (
             <div role="status" className="mt-8">
-              <p className="max-w-prose text-neutral-600">{sessionBody}</p>
+              <p className="max-w-prose text-ink-muted">{sessionBody}</p>
               <p className="mt-4">
                 <Link href={`${prefix}/login`} className={LINK}>
                   {signInLabel}
@@ -101,7 +101,7 @@ export function SellerReadSurface({
             </div>
           ) : (
             <>
-              <p className="mt-8 max-w-prose text-neutral-700">{intro}</p>
+              <p className="mt-8 max-w-prose text-ink-body">{intro}</p>
               {children}
             </>
           )}
@@ -151,9 +151,9 @@ export function SellerFact({
 }) {
   return (
     <div>
-      <dt className="text-xs text-neutral-500">{label}</dt>
-      <dd className="text-sm font-medium text-neutral-900">{value}</dd>
-      {hint === undefined ? null : <dd className="text-xs text-neutral-500">{hint}</dd>}
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="text-sm font-medium text-ink-strong">{value}</dd>
+      {hint === undefined ? null : <dd className="text-xs text-ink-muted">{hint}</dd>}
     </div>
   );
 }

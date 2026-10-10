@@ -20,7 +20,7 @@ import { RemoveFavorite } from './account-actions';
  * second stylesheet, and every list is a real `<ul>` with an accessible name.
  */
 
-const CARD_CLASS = 'rounded-lg border border-neutral-200 p-4';
+const CARD_CLASS = 'rounded-lg border border-hairline p-4';
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Shared states                                                                                     */
@@ -30,7 +30,7 @@ export function AccountSkeleton({ label }: { readonly label: string }) {
   return (
     <div className="mt-6 space-y-3" role="status" aria-label={label} aria-busy="true">
       {[0, 1, 2].map((row) => (
-        <div key={row} className="h-20 animate-pulse rounded-lg bg-neutral-100" />
+        <div key={row} className="h-20 animate-pulse rounded-lg bg-surface-muted" />
       ))}
     </div>
   );
@@ -39,8 +39,8 @@ export function AccountSkeleton({ label }: { readonly label: string }) {
 export function AccountEmpty({ title, hint }: { readonly title: string; readonly hint: string }) {
   return (
     <div className={`mt-6 ${CARD_CLASS} text-center`}>
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mt-2 text-sm text-neutral-600">{hint}</p>
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mt-2 text-sm text-ink-muted">{hint}</p>
     </div>
   );
 }
@@ -56,7 +56,7 @@ export function AccountError({
 }) {
   return (
     <div className={`mt-6 ${CARD_CLASS}`} role="alert">
-      <p className="text-base font-medium text-neutral-900">{title}</p>
+      <p className="text-base font-medium text-ink-strong">{title}</p>
       <Link href={href} className="mt-3 inline-block text-sm underline underline-offset-4">
         {retry}
       </Link>
@@ -67,9 +67,9 @@ export function AccountError({
 /** A labelled read-only fact. Used by the profile and security surfaces. */
 export function AccountFact({ label, children }: { readonly label: string; readonly children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-neutral-100 py-3">
-      <dt className="text-sm text-neutral-600">{label}</dt>
-      <dd className="text-sm font-medium text-neutral-900">{children}</dd>
+    <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-hairline py-3">
+      <dt className="text-sm text-ink-muted">{label}</dt>
+      <dd className="text-sm font-medium text-ink-strong">{children}</dd>
     </div>
   );
 }
@@ -113,14 +113,14 @@ export function FavoriteList({
             <div className="min-w-0">
               {item.listing === null ? (
                 <>
-                  <p className="text-base font-medium text-neutral-500">{copy.unavailable}</p>
-                  <p className="mt-1 text-sm text-neutral-500">{copy.unavailableHint}</p>
+                  <p className="text-base font-medium text-ink-muted">{copy.unavailable}</p>
+                  <p className="mt-1 text-sm text-ink-muted">{copy.unavailableHint}</p>
                 </>
               ) : (
                 <>
                   <Link
                     href={`${localePrefix}/listing/${item.listing.slug}`}
-                    className="text-base font-medium text-neutral-900 underline underline-offset-4"
+                    className="text-base font-medium text-ink-strong underline underline-offset-4"
                   >
                     {item.listing.title}
                   </Link>
@@ -134,7 +134,7 @@ export function FavoriteList({
                     labels={copy.price}
                   />
                   {item.listing.city !== null && (
-                    <p className="mt-1 text-sm text-neutral-600">{item.listing.city}</p>
+                    <p className="mt-1 text-sm text-ink-muted">{item.listing.city}</p>
                   )}
                 </>
               )}
@@ -188,8 +188,8 @@ export function SavedSearchSummary({
 
   return (
     <>
-      <p className="text-base font-medium text-neutral-900">{search.name}</p>
-      <p className="mt-1 text-sm text-neutral-600">
+      <p className="text-base font-medium text-ink-strong">{search.name}</p>
+      <p className="mt-1 text-sm text-ink-muted">
         {search.notify ? copy.notifyOn : copy.notifyOff}
         <span className="ms-3">
           {copy.lastMatched}: {search.lastMatchedAt === null ? copy.never : search.lastMatchedAt.slice(0, 10)}
@@ -239,27 +239,27 @@ export function AddressSummary({
 
   return (
     <>
-      <p className="text-base font-medium text-neutral-900">
+      <p className="text-base font-medium text-ink-strong">
         {address.label ?? address.recipientName}
         {address.isDefaultShipping && (
-          <span className="ms-2 rounded bg-neutral-100 px-2 py-0.5 text-xs font-normal text-neutral-700">
+          <span className="ms-2 rounded bg-surface-muted px-2 py-0.5 text-xs font-normal text-ink-body">
             {copy.defaultShipping}
           </span>
         )}
         {address.isDefaultBilling && (
-          <span className="ms-2 rounded bg-neutral-100 px-2 py-0.5 text-xs font-normal text-neutral-700">
+          <span className="ms-2 rounded bg-surface-muted px-2 py-0.5 text-xs font-normal text-ink-body">
             {copy.defaultBilling}
           </span>
         )}
       </p>
-      <address className="mt-1 text-sm not-italic text-neutral-600">
+      <address className="mt-1 text-sm not-italic text-ink-muted">
         {address.recipientName}
         <br />
         {parts.join(', ')}
         <br />
         {address.phoneE164}
       </address>
-      <p className="mt-1 text-xs text-neutral-500">{copy.purpose[address.purpose] ?? address.purpose}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.purpose[address.purpose] ?? address.purpose}</p>
     </>
   );
 }
@@ -296,18 +296,18 @@ export function BlockedPersonSummary({
 }) {
   return (
     <>
-      <p className="text-base font-medium text-neutral-900">{person.displayName ?? copy.unnamed}</p>
+      <p className="text-base font-medium text-ink-strong">{person.displayName ?? copy.unnamed}</p>
       {person.sellerSlug !== null && (
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {copy.storefront}: {person.sellerSlug}
         </p>
       )}
       {person.reason !== null && (
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {copy.reasonLabel}: {person.reason}
         </p>
       )}
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-ink-muted">
         {copy.blockedOn}: {person.blockedAt.slice(0, 10)}
       </p>
     </>

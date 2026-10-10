@@ -29,13 +29,13 @@ export default async function RegisterPage({ params }: { params: Promise<{ local
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('startTitle')}</Heading>
-        <p className="mt-2 max-w-sm text-neutral-600">{t('startIntro')}</p>
+        <p className="mt-2 max-w-sm text-ink-muted">{t('startIntro')}</p>
         <RegisterForm
           action="/api/auth/register"
           nextHref={`${prefix}/register/verify`}
           labels={await registerLabels()}
         />
-        <p className="mt-8 max-w-sm text-sm text-neutral-600">
+        <p className="mt-8 max-w-sm text-sm text-ink-muted">
           {t('haveAccount')}{' '}
           <Link href={`${prefix}/login`} className="underline">
             {t('signIn')}

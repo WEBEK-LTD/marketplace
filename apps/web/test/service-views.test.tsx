@@ -5,11 +5,31 @@ import { describe, expect, it } from 'vitest';
 import ar from '../messages/ar.json';
 import en from '../messages/en.json';
 import {
+
+
   ServiceCard,
   ServiceDetailView,
   ServiceGrid,
   ServiceGridSkeleton,
 } from '../src/components/service-views';
+
+/**
+ * The text a reader actually gets, with the markup taken out.
+ *
+ * 0110 sets a price as a composed figure — the currency code in a small raised mark, the amount large and
+ * tabular — so "EGP 2500.00" is no longer one contiguous run in the HTML source: there is a `</span>` between
+ * the code and the number, and React puts its own separator between adjacent text nodes. The invariant was
+ * never about the markup, though. It is that the price **reads** as "EGP 2500.00" — to a person, to a screen
+ * reader, and to anyone who copies it — and that is what this asserts.
+ */
+function textOf(html: string): string {
+  return html
+    .replace(/<!--.*?-->/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
 
 /**
  * The public service surfaces as markup (Phase 4-C).
@@ -99,7 +119,7 @@ describe('a service card', () => {
     );
     expect(html).toContain('Logo design');
     expect(html).toContain('Cairo');
-    expect(html).toContain('EGP 1500.00');
+    expect(textOf(html)).toContain('EGP 1500.00');
     expect(html).toContain(EN.fixedPrice);
     expect(html).toContain('5 days');
     expect(html).toContain(EN.revisionsIncluded);
@@ -185,7 +205,8 @@ describe('the service detail', () => {
       'Turnaround',
       '48 h',
     ]) {
-      expect(html, expected).toContain(expected);
+      // Against the rendered text, not the markup: a price is a composed figure and is split across elements.
+      expect(textOf(html), expected).toContain(expected);
     }
   });
 

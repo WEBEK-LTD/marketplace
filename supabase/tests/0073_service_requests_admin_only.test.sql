@@ -364,15 +364,21 @@ select is(
       and p.prosrc like '%create_notification%'),
   0, 'and neither writer creates a notification: there is no call site, not a suppressed one');
 
--- Exactly one function in the database writes the routing mode into a row, and it is this one.
+-- Which functions write the routing mode into a row, named rather than counted.
+--
+-- This was 'exactly one, and it is Option 2's writer' when 0073 closed. 0109's amendment added the second:
+-- a property enquiry is always about one listing, and 0073's writer deliberately has no listing, so the
+-- enquiry could not be a parameter on it. The assertion is kept in the form that matters — the **set** is
+-- closed and every member writes `'admin_only'` as a literal — rather than loosened to a count, because
+-- what it guards is that no caller can choose the routing mode.
 select is(
   (select string_agg(p.proname, ',' order by p.proname) from pg_proc p
      join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and p.prosrc like '%admin_only%'
       and p.prosrc like '%insert into public.service_requests%'),
-  'service_request_create_admin_only',
-  'exactly one function writes an admin-only row, and it is the buyer''s Option 2 writer');
+  'listing_enquiry_create,service_request_create_admin_only',
+  'two functions write an admin-only row: Option 2''s writer and 0109''s listing enquiry');
 
 -- ---------------------------------------------------------------------------------------------------
 -- 5. Field-level separation, asserted on the function signatures

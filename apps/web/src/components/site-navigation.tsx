@@ -1,4 +1,4 @@
-import { FOCUS_RING, SURFACE_POPOVER, cx } from '@repo/ui';
+import { cx, FOCUS_RING, FOCUS_RING_INVERTED, SURFACE_POPOVER } from '@repo/ui';
 import Link from 'next/link';
 import {
   isCmsPageSlug,
@@ -41,7 +41,7 @@ import type { PublicNavigationLink, PublicNavigationMenu, PublicNavigationTarget
  * navigation anywhere else.
  */
 const LINK_CLASS = cx(
-  'rounded-sm text-sm text-neutral-700 transition-colors duration-150 hover:text-neutral-900 hover:underline hover:underline-offset-2',
+  'rounded-lg px-3 py-2 text-sm font-medium text-ink-body transition-colors duration-200 hover:bg-state-hover hover:text-ink-strong',
   FOCUS_RING,
 );
 
@@ -143,7 +143,7 @@ export function HeaderMenu({
 }) {
   return (
     <nav aria-label={menu.label}>
-      <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <ul className="flex flex-wrap items-center gap-x-1 gap-y-2">
         {menu.items.map((item) => (
           <li key={item.itemId}>
             {item.children.length === 0 ? (
@@ -153,15 +153,15 @@ export function HeaderMenu({
               <details className="group relative">
                 <summary
                   className={cx(
-                    'flex cursor-pointer list-none items-center gap-1.5 rounded-sm text-sm text-neutral-700',
-                    'transition-colors duration-150 hover:text-neutral-900',
+                    'flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-body',
+                    'transition-colors duration-200 hover:bg-state-hover hover:text-ink-strong',
                     FOCUS_RING,
                   )}
                 >
                   {item.label}
                   <span
                     aria-hidden="true"
-                    className="-mt-1 size-1.5 rotate-45 border-e border-b border-neutral-500 transition-transform duration-150 group-open:mt-0.5 group-open:-rotate-135"
+                    className="-mt-1 size-1.5 rotate-45 border-e border-b border-edge transition-transform duration-150 group-open:mt-0.5 group-open:-rotate-135"
                   />
                 </summary>
                 {/* The shared popover surface: the one place in the product a `shadow-md` may appear. */}
@@ -202,14 +202,14 @@ export function MobileMenu({
       <details open>
         <summary
           className={cx(
-            'flex cursor-pointer list-none items-center justify-between rounded-sm border-t border-neutral-200 py-3 text-base font-medium text-neutral-900',
+            'flex cursor-pointer list-none items-center justify-between rounded-sm border-t border-hairline py-3 text-base font-medium text-ink-strong',
             FOCUS_RING,
           )}
         >
           {menu.label}
           <span
             aria-hidden="true"
-            className="-mt-1 size-2 rotate-45 border-e-2 border-b-2 border-neutral-500 transition-transform duration-150 group-open:mt-1"
+            className="-mt-1 size-2 rotate-45 border-e-2 border-b-2 border-edge transition-transform duration-150 group-open:mt-1"
           />
         </summary>
         <ul className="mt-2 space-y-1">
@@ -217,7 +217,7 @@ export function MobileMenu({
             <li key={item.itemId}>
               <Anchor link={item} />
               {item.children.length === 0 ? null : (
-                <ul className="mt-2 space-y-2 border-s border-neutral-200 ps-3">
+                <ul className="mt-2 space-y-2 border-s border-hairline ps-3">
                   {item.children.map((child) => (
                     <li key={child.itemId}>
                       <Anchor link={child} />
@@ -248,18 +248,25 @@ export function FooterMenu({
       <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {menu.items.map((item) => (
           <li key={item.itemId}>
+            {/* The footer sits on ink since 0110, so its links take the inverted roles. */}
             <Anchor
               className={cx(
-                'rounded-sm text-sm font-semibold text-neutral-900 transition-colors duration-150 hover:underline hover:underline-offset-2',
-                FOCUS_RING,
+                'rounded-sm text-base font-medium text-on-ink transition-colors duration-200 hover:text-on-ink-muted',
+                FOCUS_RING_INVERTED,
               )}
               link={item}
             />
             {item.children.length === 0 ? null : (
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-3 space-y-2">
                 {item.children.map((child) => (
                   <li key={child.itemId}>
-                    <Anchor link={child} />
+                    <Anchor
+                      className={cx(
+                        'rounded-sm text-sm text-on-ink-muted transition-colors duration-200 hover:text-on-ink',
+                        FOCUS_RING_INVERTED,
+                      )}
+                      link={child}
+                    />
                   </li>
                 ))}
               </ul>

@@ -60,7 +60,7 @@ export function Select({ options, placeholder, error = false, className, onChang
       </select>
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute end-3 top-1/2 -mt-1 size-2 rotate-45 border-e-2 border-b-2 border-neutral-500"
+        className="pointer-events-none absolute end-3 top-1/2 -mt-1 size-2 rotate-45 border-e-2 border-b-2 border-edge"
       />
     </span>
   );

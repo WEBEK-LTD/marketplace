@@ -49,7 +49,7 @@ export default async function ServiceRequestsPage({
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('intro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('intro')}</p>
 
           {/*
             7-J: the one entry point for a brief no seller answers. It sits here rather than on a service page

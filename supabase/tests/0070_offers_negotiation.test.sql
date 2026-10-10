@@ -134,12 +134,17 @@ select is(
            or has_function_privilege('app_worker', p.oid, 'execute'))),
   0, 'neither PUBLIC, authenticated nor app_worker may execute any of them');
 
+-- All seven when 0070 closed. **None since 0110**: OD-A4 removed the buyer↔seller offer entirely, and
+-- 0110 closed the path by revoking `app_system`'s execute rather than by dropping anything — so every
+-- behavioural proof in this file still runs, directly as the owner, while the API can no longer reach a
+-- single one of these functions. The assertion is inverted rather than removed, because "the API cannot
+-- call these" is now the property worth holding.
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and (p.proname like 'offer\_%' or p.proname like 'offers\_for\_%')
       and has_function_privilege('app_system', p.oid, 'execute')),
-  7, 'app_system may execute all seven');
+  0, 'and since 0110 app_system may execute none of them either: the offer path is closed (OD-A4)');
 
 -- 0015's model is untouched.
 select is(

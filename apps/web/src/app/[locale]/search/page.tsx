@@ -169,12 +169,12 @@ export default async function SearchPage({ params, searchParams }: PageParams) {
         />
 
         {!askedAnything ? null : !asked.ok ? (
-          <p role="alert" className="mt-8 text-sm text-neutral-900">
+          <p role="alert" className="mt-8 text-sm text-ink-strong">
             {t('filtersInvalid')}
           </p>
         ) : !longEnough ? (
           // Refused here: too short to be worth asking the API, and an empty box is not a browse feed.
-          <p role="alert" className="mt-8 text-sm text-neutral-900">
+          <p role="alert" className="mt-8 text-sm text-ink-strong">
             {t('minLength')}
           </p>
         ) : (

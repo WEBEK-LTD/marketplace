@@ -31,7 +31,7 @@ export interface RemoveCopy {
 }
 
 const BUTTON_CLASS =
-  'rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-3 py-1 text-xs font-medium text-ink-strong disabled:opacity-60';
 
 function useRemover(path: string) {
   const router = useRouter();
@@ -70,7 +70,7 @@ function RemoveButton({
         {state.pending ? copy.working : copy.remove}
       </button>
       {state.failed && (
-        <span role="alert" className="text-xs text-neutral-900">
+        <span role="alert" className="text-xs text-ink-strong">
           {copy.failed}
         </span>
       )}
@@ -210,7 +210,7 @@ export function BlockPerson({
 
   if (state === 'done') {
     return (
-      <span role="status" className="text-xs text-neutral-900">
+      <span role="status" className="text-xs text-ink-strong">
         {copy.done}
       </span>
     );
@@ -226,7 +226,7 @@ export function BlockPerson({
 
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-neutral-600">{copy.explain}</span>
+      <span className="text-xs text-ink-muted">{copy.explain}</span>
       <button type="button" onClick={() => void run()} disabled={pending} className={BUTTON_CLASS}>
         {pending ? copy.working : copy.confirm}
       </button>
@@ -234,7 +234,7 @@ export function BlockPerson({
         {copy.cancel}
       </button>
       {state === 'failed' && (
-        <span role="alert" className="text-xs text-neutral-900">
+        <span role="alert" className="text-xs text-ink-strong">
           {copy.failed}
         </span>
       )}

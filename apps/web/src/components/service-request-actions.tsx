@@ -94,11 +94,11 @@ export interface ServiceRequestActionCopy {
   readonly form: ServiceQuoteFormCopy | null;
 }
 
-const BUTTON = 'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
-const QUIET = 'rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-900 disabled:opacity-60';
-const FIELD = 'mt-1 w-full rounded-md border border-neutral-300 p-2 text-sm';
-const NUMBER = 'mt-1 w-24 rounded-md border border-neutral-300 p-2 text-sm';
-const PANEL = 'max-w-prose rounded-lg border border-neutral-300 p-4';
+const BUTTON = 'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
+const QUIET = 'rounded-md border border-edge px-4 py-2 text-sm text-ink-strong disabled:opacity-60';
+const FIELD = 'mt-1 w-full rounded-md border border-edge p-2 text-sm';
+const NUMBER = 'mt-1 w-24 rounded-md border border-edge p-2 text-sm';
+const PANEL = 'max-w-prose rounded-lg border border-edge p-4';
 
 /**
  * One write, and what its refusal means in words.
@@ -165,7 +165,7 @@ function useWrite(copy: SharedCopy): {
 function Alert({ error }: { readonly error: string | null }) {
   if (error === null) return null;
   return (
-    <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+    <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
       {error}
     </p>
   );
@@ -207,7 +207,7 @@ export function ServiceRequestClosure({
 
   return (
     <div className={PANEL}>
-      <p className="text-sm font-medium text-neutral-900">{copy.question}</p>
+      <p className="text-sm font-medium text-ink-strong">{copy.question}</p>
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="button"
@@ -276,7 +276,7 @@ export function ServiceQuoteDecision({
   if (asking) {
     return (
       <div className={PANEL}>
-        <p className="text-sm font-medium text-neutral-900">{copy.confirmAccept}</p>
+        <p className="text-sm font-medium text-ink-strong">{copy.confirmAccept}</p>
         <div className="mt-3 flex flex-wrap gap-3">
           <button
             type="button"
@@ -406,12 +406,12 @@ export function ServiceQuoteForm({
           });
       }}
     >
-      <p className="text-base font-medium text-neutral-900">{copy.heading}</p>
+      <p className="text-base font-medium text-ink-strong">{copy.heading}</p>
 
-      <label htmlFor="quote-amount" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="quote-amount" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.amountLabel} ({currencyCode})
       </label>
-      <p id="quote-amount-hint" className="mt-1 text-xs text-neutral-600">
+      <p id="quote-amount-hint" className="mt-1 text-xs text-ink-muted">
         {copy.amountHint}
       </p>
       <input
@@ -425,12 +425,12 @@ export function ServiceQuoteForm({
         className={FIELD}
       />
       {amount !== '' && amountInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.amountRequired}
         </p>
       )}
 
-      <label htmlFor="quote-scope" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="quote-scope" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.scopeLabel}
       </label>
       <textarea
@@ -444,14 +444,14 @@ export function ServiceQuoteForm({
         className={FIELD}
       />
       {scope !== '' && scopeInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.scopeRequired}
         </p>
       )}
 
       <div className="mt-3 flex flex-wrap gap-4">
         <div>
-          <label htmlFor="quote-delivery" className="block text-sm font-medium text-neutral-900">
+          <label htmlFor="quote-delivery" className="block text-sm font-medium text-ink-strong">
             {copy.deliveryLabel}
           </label>
           <input
@@ -467,7 +467,7 @@ export function ServiceQuoteForm({
           />
         </div>
         <div>
-          <label htmlFor="quote-revisions" className="block text-sm font-medium text-neutral-900">
+          <label htmlFor="quote-revisions" className="block text-sm font-medium text-ink-strong">
             {copy.revisionsLabel}
           </label>
           <input
@@ -483,7 +483,7 @@ export function ServiceQuoteForm({
         </div>
         <div>
           {/* How long the quote stands. Not a payment deadline: that one is the database's to set. */}
-          <label htmlFor="quote-valid-for" className="block text-sm font-medium text-neutral-900">
+          <label htmlFor="quote-valid-for" className="block text-sm font-medium text-ink-strong">
             {copy.validForLabel}
           </label>
           <input
@@ -498,7 +498,7 @@ export function ServiceQuoteForm({
             aria-describedby="quote-valid-for-hint"
             className={NUMBER}
           />
-          <p id="quote-valid-for-hint" className="mt-1 max-w-xs text-xs text-neutral-600">
+          <p id="quote-valid-for-hint" className="mt-1 max-w-xs text-xs text-ink-muted">
             {copy.validForHint}
           </p>
         </div>

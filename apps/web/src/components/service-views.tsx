@@ -1,4 +1,5 @@
 import type { ServiceDetail, ServiceSummary } from '@repo/contracts';
+import type { ReactNode } from 'react';
 import {
   Alert,
   Badge,
@@ -13,7 +14,7 @@ import {
   cx,
 } from '@repo/ui';
 import { CatalogCard } from './catalog-card';
-import { formatListingAmount, type ListingPriceLabels } from './listing-price';
+import { type ListingPriceLabels, PriceLockup } from './listing-price';
 
 /**
  * The public service surfaces (Phase 4-B, restyled in 0109).
@@ -93,8 +94,8 @@ export function ServiceCard({
               <dl className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 {facts.map((fact) => (
                   <div key={fact.label} className="flex items-baseline gap-1.5">
-                    <dt className="text-neutral-500">{fact.label}</dt>
-                    <dd className="font-medium text-neutral-700">{fact.value}</dd>
+                    <dt className="text-ink-muted">{fact.label}</dt>
+                    <dd className="font-medium text-ink-body">{fact.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -185,13 +186,22 @@ function attributeValue(attribute: ServiceDetail['attributes'][number], labels: 
 export function ServiceDetailView({
   service,
   labels,
+  actions,
 }: {
   readonly service: ServiceDetail;
   readonly labels: ServiceDetailLabels;
+  /**
+   * What a person came here to do, rendered under the price.
+   *
+   * A slot rather than markup, because the actions are the page's: they need a session, a listing id and a
+   * client component, none of which belong in a presentational view. 0109 left them stranded at the foot of
+   * the main column, half a screen below the price and under the description — the two halves of one decision
+   * separated by everything else on the page. Here the price, the seller and the actions are one block.
+   */
+  readonly actions?: ReactNode;
 }) {
   const unavailable = service.availability === 'no_longer_available';
   const pricing = pricingLabel(service.pricingModel, labels);
-  const amount = formatListingAmount(service.priceMinor, service.currencyCode, service.currencyMinorUnit);
 
   /** The delivery terms, as a list, where the service states any. */
   const terms = [
@@ -266,35 +276,46 @@ export function ServiceDetailView({
         }
         aside={
           <div className="space-y-4">
-            <Card padding="lg">
-              <p className={amount === null ? 'text-lg font-medium text-neutral-700' : TYPE.priceLarge}>
-                {amount ?? labels.contactForPrice}
-              </p>
+            {/*
+              The buy box carries the brand surface and a brand edge. Everything else on a detail page is
+              something to read; this is the one region that is something to do, and on a page of white
+              panels it was indistinguishable from the panel of tags beneath it.
+            */}
+            <Card padding="lg" className="bg-surface-brand-soft ring-edge-brand">
+              <PriceLockup
+                priceMinor={service.priceMinor}
+                currencyCode={service.currencyCode}
+                currencyMinorUnit={service.currencyMinorUnit}
+                labels={labels}
+                size="detail"
+              />
+
+              {actions === undefined ? null : <div className="mt-6 flex flex-col gap-3">{actions}</div>}
               {pricing === null ? null : (
                 <p className="mt-2">
                   <Badge tone="neutral">{pricing}</Badge>
                 </p>
               )}
               {terms.length === 0 ? null : (
-                <dl className="mt-5 space-y-3 border-t border-neutral-200 pt-5">
+                <dl className="mt-5 space-y-3 border-t border-hairline pt-5">
                   {terms.map((term) => (
                     <div key={term.label} className="flex items-baseline justify-between gap-4">
-                      <dt className="text-sm text-neutral-600">{term.label}</dt>
-                      <dd className="text-sm font-medium text-neutral-900">{term.value}</dd>
+                      <dt className="text-sm text-ink-muted">{term.label}</dt>
+                      <dd className="text-sm font-medium text-ink-strong">{term.value}</dd>
                     </div>
                   ))}
                 </dl>
               )}
-              <dl className="mt-5 space-y-4 border-t border-neutral-200 pt-5">
+              <dl className="mt-5 space-y-4 border-t border-hairline pt-5">
                 <div>
                   <dt className={TYPE.label}>{labels.sellerHeading}</dt>
-                  <dd className="mt-0.5 text-sm text-neutral-700" dir="auto">
+                  <dd className="mt-0.5 text-sm text-ink-body" dir="auto">
                     {service.seller.displayName}
                   </dd>
                 </div>
                 <div>
                   <dt className={TYPE.label}>{labels.categoryHeading}</dt>
-                  <dd className="mt-0.5 text-sm text-neutral-700" dir="auto">
+                  <dd className="mt-0.5 text-sm text-ink-body" dir="auto">
                     {service.category.name}
                   </dd>
                 </div>

@@ -98,9 +98,9 @@ export default async function BlogPostPage({ params }: PageParams) {
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('notFoundTitle')}</Heading>
-          <p className="mt-2 text-neutral-700">{t('notFoundBody')}</p>
+          <p className="mt-2 text-ink-body">{t('notFoundBody')}</p>
           <p className="mt-4">
-            <Link className="text-neutral-900 underline" href={publicBlogIndexPath(language)}>
+            <Link className="text-ink-strong underline" href={publicBlogIndexPath(language)}>
               {t('backToIndex')}
             </Link>
           </p>
@@ -117,7 +117,7 @@ export default async function BlogPostPage({ params }: PageParams) {
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('errorTitle')}</Heading>
-          <p className="mt-2 text-neutral-700">{t('unavailable')}</p>
+          <p className="mt-2 text-ink-body">{t('unavailable')}</p>
         </div>
       </PageContainer>
     );
@@ -130,13 +130,13 @@ export default async function BlogPostPage({ params }: PageParams) {
           that was asked for has not been written. */}
       <article className="py-10" dir={post.resolvedLocale === 'ar' ? 'rtl' : 'ltr'} lang={post.resolvedLocale}>
         <Heading level={1}>{post.title}</Heading>
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-ink-muted">
           <time dateTime={post.publishedAt}>{post.publishedAt.slice(0, 10)}</time>
           {post.categoryName === null ? null : (
             <>
               {' · '}
               <Link
-                className="text-neutral-700 underline"
+                className="text-ink-body underline"
                 href={`${publicBlogIndexPath(language)}?category=${encodeURIComponent(post.categorySlug ?? '')}`}
               >
                 {post.categoryName}
@@ -144,17 +144,17 @@ export default async function BlogPostPage({ params }: PageParams) {
             </>
           )}
         </p>
-        {post.excerpt === null ? null : <p className="mt-4 text-lg text-neutral-700">{post.excerpt}</p>}
+        {post.excerpt === null ? null : <p className="mt-4 text-lg text-ink-body">{post.excerpt}</p>}
         {/* The body is the author's text, rendered as text. Nothing here interprets it as markup: a post is
             written by staff, but turning stored text into HTML would be a decision this increment was not asked
             to make and the wrong place to make it. */}
-        <div className="mt-6 whitespace-pre-wrap text-neutral-900">{post.body}</div>
+        <div className="mt-6 whitespace-pre-wrap text-ink-strong">{post.body}</div>
 
         {post.tags.length === 0 ? null : (
           <p className="mt-8 flex flex-wrap gap-2 text-sm">
             {post.tags.map((tag) => (
               <Link
-                className="rounded-full border border-neutral-300 px-3 py-1 text-neutral-700"
+                className="rounded-full border border-edge px-3 py-1 text-ink-body"
                 href={`${publicBlogIndexPath(language)}?tag=${encodeURIComponent(tag.slug)}`}
                 key={tag.slug}
               >
@@ -165,7 +165,7 @@ export default async function BlogPostPage({ params }: PageParams) {
         )}
       </article>
       <p className="pb-10">
-        <Link className="text-neutral-900 underline" href={publicBlogIndexPath(language)}>
+        <Link className="text-ink-strong underline" href={publicBlogIndexPath(language)}>
           {t('backToIndex')}
         </Link>
       </p>

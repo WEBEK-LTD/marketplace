@@ -51,11 +51,15 @@ describe('the site header', () => {
     expect(ar).toContain('hrefLang="en"');
   });
 
-  it('is sticky and is the one surface allowed permanent elevation', () => {
-    // It genuinely floats above a long scrolling grid, which is what makes the shadow a fact rather than decoration.
+  it('is sticky, translucent, and separated from the content that scrolls under it', () => {
+    // It genuinely floats above a long scrolling grid. 0110 carries that with a backdrop blur and a hairline
+    // rather than with a shadow: content disappearing under a solid bar reads as content lost, where content
+    // passing behind a translucent one reads as depth. The hairline is what keeps the two surfaces distinct.
     const html = render('en');
     expect(html).toContain('sticky top-0');
-    expect(html).toContain('shadow-sm');
+    expect(html).toContain('backdrop-blur');
+    expect(html).toContain('border-b border-hairline');
+    expect(html).toMatch(/bg-surface-canvas\/\d/);
   });
 
   it('carries no search field, and so no form, on any surface', () => {

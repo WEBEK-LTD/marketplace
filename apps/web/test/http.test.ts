@@ -121,14 +121,23 @@ describe('noindex', () => {
     expect(await res.text()).toContain('<meta name="robots" content="noindex, nofollow"/>');
   });
 
-  // 0093, owner decision E. The home page left the blanket set and now decides for itself, which means two things
-  // have to agree: the header must not deny it, and the page must say `index, follow` in its own metadata. A header
-  // is the most restrictive directive on a response, so a page claiming to be indexable under a `noindex` header
-  // would be indexable nowhere.
-  it.each(['/', '/ar'])('%s is indexable, and the header does not deny it', async (path) => {
+  // 0093, owner decision E. The home page left the blanket set and decides for itself, which means two things
+  // have to agree: the header must not deny it, and the page's own metadata settles it. A header is the most
+  // restrictive directive on a response, so a page claiming to be indexable under a `noindex` header would be
+  // indexable nowhere.
+  //
+  // **This suite runs with `API_BASE_URL` pointing at a closed port**, so every read on these pages fails and
+  // the corrective increment makes that `noindex` — the page still answers 200 and still says what happened,
+  // which is right for a visitor, but a crawler must not index that admission as the front page's content.
+  // It used to assert `index, follow` here, which is how the defect was recorded in the first place.
+  // Indexability on the happy path is covered where the reads succeed, in `homepage.test.ts`.
+  it.each(['/', '/ar'])('%s does not deny indexing in the header, and self-denies while it cannot read', async (path) => {
     const res = await get(path);
     expect(res.headers.get('x-robots-tag')).toBeNull();
-    expect(await res.text()).toContain('<meta name="robots" content="index, follow"/>');
+    // `noindex, follow`, not `noindex, nofollow`. The refusal is about *this* response, which is an outage:
+    // the entry points the fallback still renders lead to real pages, and telling a crawler to stop
+    // following them would turn a transient failure into a crawl dead end.
+    expect(await res.text()).toContain('<meta name="robots" content="noindex, follow"/>');
   });
 });
 

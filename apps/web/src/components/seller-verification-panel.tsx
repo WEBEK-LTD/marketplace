@@ -127,9 +127,9 @@ export interface SellerVerificationPanelProps {
 }
 
 const BUTTON =
-  'inline-flex items-center justify-center rounded-md border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60';
+  'inline-flex items-center justify-center rounded-md border border-edge-strong bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink hover:bg-ink-body focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60';
 const QUIET =
-  'inline-flex items-center justify-center rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-800 hover:border-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60';
+  'inline-flex items-center justify-center rounded-md border border-edge px-3 py-1.5 text-sm text-ink-body hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-60';
 
 export function SellerVerificationPanel({
   verification,
@@ -231,13 +231,13 @@ export function SellerVerificationPanel({
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-neutral-200 p-4">
+    <section className="mt-6 rounded-lg border border-hairline p-4">
       {verification === null ? (
         // No attempt. Either there is a start control, or — for a verified storefront — there is not, and
         // the page has already said so above this panel.
         start === null ? null : (
           <>
-            <p className="text-sm text-neutral-700">{start.noAttempt}</p>
+            <p className="text-sm text-ink-body">{start.noAttempt}</p>
             <button
               type="button"
               className={`${BUTTON} mt-3`}
@@ -251,12 +251,12 @@ export function SellerVerificationPanel({
       ) : (
         <>
           <p className="text-sm">
-            <span className="text-neutral-500">{labels.statusLabel}: </span>
+            <span className="text-ink-muted">{labels.statusLabel}: </span>
             <span className="font-medium">{verification.statusLabel}</span>
           </p>
 
           <h3 className="mt-4 text-sm font-medium">{labels.contact}</h3>
-          <ul className="mt-1 text-sm text-neutral-700">
+          <ul className="mt-1 text-sm text-ink-body">
             <li>
               {labels.emailVerified}:{' '}
               {verification.emailVerified ? labels.contactYes : labels.contactNo}
@@ -266,13 +266,13 @@ export function SellerVerificationPanel({
               {verification.phoneVerified ? labels.contactYes : labels.contactNo}
             </li>
           </ul>
-          <p className="mt-1 text-xs text-neutral-500">{labels.contactHint}</p>
+          <p className="mt-1 text-xs text-ink-muted">{labels.contactHint}</p>
 
           <h3 className="mt-4 text-sm font-medium">{labels.documents}</h3>
           {verification.documents.length === 0 ? (
-            <p className="mt-1 text-sm text-neutral-700">{labels.noDocuments}</p>
+            <p className="mt-1 text-sm text-ink-body">{labels.noDocuments}</p>
           ) : (
-            <ul className="mt-1 divide-y divide-neutral-100">
+            <ul className="mt-1 divide-y divide-hairline">
               {verification.documents.map((document) => (
                 <li
                   key={document.id}
@@ -280,12 +280,12 @@ export function SellerVerificationPanel({
                 >
                   <span className="text-sm">
                     <span className="font-medium">{document.typeLabel}</span>{' '}
-                    <span className="text-neutral-600">{document.originalFilename}</span>{' '}
-                    <span className="text-neutral-500">— {document.statusLabel}</span>
+                    <span className="text-ink-muted">{document.originalFilename}</span>{' '}
+                    <span className="text-ink-muted">— {document.statusLabel}</span>
                   </span>
                   {documents === null ? null : confirming === document.id ? (
                     <span className="flex items-center gap-2">
-                      <span className="text-sm text-neutral-700">{documents.removeConfirm}</span>
+                      <span className="text-sm text-ink-body">{documents.removeConfirm}</span>
                       <button
                         type="button"
                         className={QUIET}
@@ -320,13 +320,13 @@ export function SellerVerificationPanel({
           )}
 
           {documents === null ? null : (
-            <div className="mt-4 border-t border-neutral-100 pt-4">
+            <div className="mt-4 border-t border-hairline pt-4">
               <label className="block text-sm" htmlFor="verification-document-type">
                 {documents.documentType}
               </label>
               <select
                 id="verification-document-type"
-                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm"
                 value={documentType}
                 onChange={(event) =>
                   setDocumentType(event.target.value as SellerVerificationDocumentType)
@@ -349,7 +349,7 @@ export function SellerVerificationPanel({
                 className="mt-1 block w-full text-sm"
                 onChange={chooseFile}
               />
-              <p className="mt-1 text-xs text-neutral-500">{documents.allowedTypes}</p>
+              <p className="mt-1 text-xs text-ink-muted">{documents.allowedTypes}</p>
 
               <button
                 type="button"
@@ -363,11 +363,11 @@ export function SellerVerificationPanel({
           )}
 
           {submit === null ? null : (
-            <div className="mt-4 border-t border-neutral-100 pt-4">
-              <p className="text-xs text-neutral-500">{submit.submitHint}</p>
+            <div className="mt-4 border-t border-hairline pt-4">
+              <p className="text-xs text-ink-muted">{submit.submitHint}</p>
               {confirming === 'submit' ? (
                 <span className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-neutral-700">{submit.submitConfirm}</span>
+                  <span className="text-sm text-ink-body">{submit.submitConfirm}</span>
                   <button
                     type="button"
                     className={BUTTON}
@@ -403,7 +403,7 @@ export function SellerVerificationPanel({
         </p>
       )}
       {message === null ? null : (
-        <p role="status" className="mt-3 text-sm text-neutral-700">
+        <p role="status" className="mt-3 text-sm text-ink-body">
           {message}
         </p>
       )}

@@ -37,13 +37,13 @@ export interface AvatarProps {
  */
 export function Avatar({ name, size = 'md', className }: AvatarProps) {
   const shell = cx(
-    'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-200 bg-neutral-100',
+    'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline bg-surface-muted',
     SIZES[size],
     className,
   );
   return (
     <span className={shell} role="img" aria-label={name}>
-      <span aria-hidden="true" className="font-medium text-neutral-600">
+      <span aria-hidden="true" className="font-medium text-ink-muted">
         {firstGrapheme(name)}
       </span>
     </span>

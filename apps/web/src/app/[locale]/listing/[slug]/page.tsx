@@ -5,7 +5,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 import { ListingDetailView, ListingMessage } from '../../../../components/listing-views';
-import { MakeOfferButton } from '../../../../components/make-offer';
+import { EnquireButton } from '../../../../components/listing-enquiry';
 import { StartConversationButton } from '../../../../components/start-conversation';
 import { ReportForm } from '../../../../components/report-form';
 import { reportCopy } from '../../../../components/report-copy';
@@ -107,7 +107,7 @@ export default async function ListingPage({ params }: PageParams) {
     getTranslations({ locale, namespace: 'Session' }),
     getTranslations({ locale, namespace: 'Accessibility' }),
   ]);
-  const offer = await getTranslations({ locale, namespace: 'MakeOffer' });
+  const enquiry = await getTranslations({ locale, namespace: 'Enquiry' });
   const report = await getTranslations({ locale, namespace: 'Report' });
 
   // The middleware has already answered 404 for this request and said so. Render the localized
@@ -177,15 +177,15 @@ export default async function ListingPage({ params }: PageParams) {
             yes: t('yes'),
             no: t('no'),
           }}
-        />
-
+          actions={
+            <>
         {/*
           The contact action, and only while the listing is still purchasable: a listing that is no longer
           available cannot be contacted about, and the database says so too, so a button here would promise
           something that always refuses. The listing id is the subject; no seller identifier is involved.
         */}
         {found.listing.availability === 'available' ? (
-          <div className="mt-8">
+          <>
             <StartConversationButton
               subject={{ kind: 'listing', listingId: found.listing.id }}
               messagesPath={`${locale === 'ar' ? '/ar' : ''}/dashboard/messages`}
@@ -198,45 +198,54 @@ export default async function ListingPage({ params }: PageParams) {
                 failed: messages('actionFailed'),
               })}
             />
-          </div>
+          </>
         ) : null}
 
         {/*
-          The offer action, on the same condition as the contact action and for the same reason: a listing
-          that is no longer purchasable cannot be offered on, and the database says so too. The listing's
-          own currency is passed so somebody typing an amount knows the unit; it is never sent back, because
-          the currency of an offer comes out of the listing row inside the database. `isNegotiable` is not
-          used as a gate here — it is the seller's display hint, and the offers schema does not condition
-          on it, so gating on it would be a rule this increment invented.
+          The enquiry action, on the same condition as the contact action and for the same reason: a listing
+          that is no longer purchasable cannot be enquired about, and the database says so too. This replaced
+          7-H's offer action, which OD-A4 removed along with the whole buyer↔seller negotiation — the enquiry
+          goes to the office instead, and the office is who answers.
+
+          The listing's own currency is passed so somebody typing a budget knows the unit; it is never sent
+          back, because the currency comes out of the listing row inside the database. `isNegotiable` is not
+          used as a gate — it is the seller's display hint, and nothing in the enquiry path conditions on it.
         */}
         {found.listing.availability === 'available' ? (
-          <div className="mt-8">
-            <MakeOfferButton
+          <>
+            <EnquireButton
               listingId={found.listing.id}
               currencyCode={found.listing.currencyCode}
-              offersPath={`${locale === 'ar' ? '/ar' : ''}/dashboard/offers`}
+              requestsPath={`${locale === 'ar' ? '/ar' : ''}/dashboard/service-requests`}
               loginPath={`${locale === 'ar' ? '/ar' : ''}/login`}
               copy={{
-                action: offer('action'),
-                heading: offer('heading'),
-                amountLabel: offer('amountLabel'),
-                amountHint: offer('amountHint'),
-                quantityLabel: offer('quantityLabel'),
-                noteLabel: offer('noteLabel'),
-                send: offer('send'),
-                cancel: offer('cancel'),
-                working: offer('working'),
-                amountRequired: offer('amountRequired'),
+                action: enquiry('action'),
+                heading: enquiry('heading'),
+                titleLabel: enquiry('titleLabel'),
+                briefLabel: enquiry('briefLabel'),
+                budgetLabel: enquiry('budgetLabel'),
+                budgetHint: enquiry('budgetHint'),
+                neededByLabel: enquiry('neededByLabel'),
+                send: enquiry('send'),
+                cancel: enquiry('cancel'),
+                working: enquiry('working'),
+                titleRequired: enquiry('titleRequired'),
+                briefRequired: enquiry('briefRequired'),
+                budgetInvalid: enquiry('budgetInvalid'),
                 signIn: session('signIn'),
-                failedAlreadyOpen: offer('failedAlreadyOpen'),
-                failedOwnListing: offer('failedOwnListing'),
-                failedNotAvailable: offer('failedNotAvailable'),
-                failedBlocked: offer('failedBlocked'),
-                failedGeneric: offer('failedGeneric'),
+                failedNotCustom: enquiry('failedNotCustom'),
+                failedOwnListing: enquiry('failedOwnListing'),
+                failedNotAvailable: enquiry('failedNotAvailable'),
+                failedBlocked: enquiry('failedBlocked'),
+                failedGeneric: enquiry('failedGeneric'),
               }}
             />
-          </div>
+          </>
         ) : null}
+            </>
+          }
+        />
+
 
         {/*
           Reporting the listing, and unlike the two actions above it is offered whatever the availability: a
@@ -245,7 +254,7 @@ export default async function ListingPage({ params }: PageParams) {
           publicly visible state. The subject is the slug this page is addressed by; no listing id and no
           seller identifier is involved, which is the whole reason the subject travels as a slug.
         */}
-        <div className="mt-8 border-t border-neutral-200 pt-6">
+        <div className="mt-8 border-t border-hairline pt-6">
           <ReportForm
             subject={{ subjectType: 'listing', subjectSlug: found.listing.slug }}
             loginPath={`${locale === 'ar' ? '/ar' : ''}/login`}

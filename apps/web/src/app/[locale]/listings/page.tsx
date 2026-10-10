@@ -1,7 +1,7 @@
 import { Heading, PageContainer, Pagination } from '@repo/ui';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import { ListingClickBeacon } from '../../../components/listing-beacon';
 import { ListingGrid, ListingGridSkeleton, ListingMessage } from '../../../components/listing-views';
 import { CatalogToolbar } from '../../../components/catalog-filter-panel';
@@ -39,6 +39,15 @@ function listingPath(locale: string, slug: string): string {
  * crawler's budget on near-duplicates. Pages past the first therefore carry `noindex, follow`: not
  * indexed, but still crawled through to the listings themselves.
  */
+/** One read per request, shared by `generateMetadata` and the section that renders it. */
+const lookup = cache(async (cursor: string | null) => readListings({ cursor }));
+
+/** The cursor as both halves of the page read it, so the shared read is keyed identically. */
+function cursorOf(query: Record<string, string | string[] | undefined>): string | null {
+  const raw = query['cursor'];
+  return typeof raw === 'string' && raw !== '' ? raw : null;
+}
+
 export async function generateMetadata({ params, searchParams }: PageParams): Promise<Metadata> {
   const { locale } = await params;
   const query = await searchParams;
@@ -58,7 +67,12 @@ export async function generateMetadata({ params, searchParams }: PageParams): Pr
       // Stated on both branches: the root layout's default is `noindex, nofollow`, and metadata is merged
       // from the root down, so saying nothing here would inherit that refusal and the page would never be
       // indexed however the robots header is set.
-      index: !paged,
+      // **`noindex` when the read failed.** The page still answers 200 and still renders its unavailable
+      // region — that is the approved behaviour and a visitor should see an explanation rather than an error
+      // code — but a crawler must not be allowed to index that explanation as the page's content. The read is
+      // shared with the body through `cache`, so asking the question here costs no second request. This is the
+      // pattern `category/[slug]` already follows.
+      index: !paged && (await lookup(cursorOf(query))) !== null,
       follow: true,
     },
   );
@@ -73,7 +87,7 @@ async function ListingsSection({
   readonly cursor: string | null;
 }) {
   const t = await getTranslations({ locale, namespace: 'Listings' });
-  const page = await readListings({ cursor });
+  const page = await lookup(cursor);
   const tPagination = await getTranslations({ locale, namespace: 'Pagination' });
   const tFilters = await getTranslations({ locale, namespace: 'CatalogFilters' });
 
@@ -123,7 +137,7 @@ export default async function ListingsPage({ params, searchParams }: PageParams)
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('title')}</Heading>
-        <p className="mt-2 max-w-prose text-neutral-600">{t('description')}</p>
+        <p className="mt-2 max-w-prose text-ink-muted">{t('description')}</p>
         {/* Keyed by the cursor so moving to the next page shows the loading state again. */}
         <Suspense key={cursor ?? 'first'} fallback={<ListingGridSkeleton label={t('loading')} />}>
           <ListingsSection locale={locale} cursor={cursor} />

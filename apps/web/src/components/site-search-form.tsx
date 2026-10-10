@@ -1,5 +1,5 @@
 import { SEARCH_MIN_QUERY_LENGTH } from '@repo/contracts';
-import { Button, Input, cx } from '@repo/ui';
+import { Button, FIELD_HERO, Input, cx } from '@repo/ui';
 
 export interface SiteSearchFormProps {
   /** `/search` or `/ar/search`, so the form posts to the reader's own language. */
@@ -9,6 +9,8 @@ export interface SiteSearchFormProps {
   /** The current query, when this form is rendered on a page that already searched. */
   readonly defaultValue?: string;
   readonly id?: string;
+  /** `ink` is the home page's opening band, where the field sits on near-black. */
+  readonly tone?: 'default' | 'ink';
   readonly className?: string;
 }
 
@@ -39,14 +41,22 @@ export function SiteSearchForm({
   submitLabel,
   defaultValue,
   id = 'site-search',
+  tone = 'default',
   className,
 }: SiteSearchFormProps) {
+  const ink = tone === 'ink';
   return (
     <form
       action={action}
       method="get"
       role="search"
-      className={cx('flex w-full max-w-2xl items-center gap-2', className)}
+      /*
+        Stacked on a phone, side by side from `sm`. A field and a button sharing one row at 390px leaves the
+        field about 180px wide, which truncates its own placeholder — which is exactly what the first mobile
+        screenshot showed. A full-width field over a full-width button is the mobile layout, not a squeezed
+        version of the desktop one.
+      */
+      className={cx('flex w-full max-w-2xl flex-col items-stretch gap-3 sm:flex-row sm:items-stretch', className)}
     >
       <label htmlFor={id} className="sr-only">
         {placeholder}
@@ -62,9 +72,13 @@ export function SiteSearchForm({
         autoComplete="off"
         /* A query may be in either script whatever language the page is in, so the browser decides per value. */
         dir="auto"
-        className="h-12 text-base"
+        className={FIELD_HERO}
       />
-      <Button type="submit" size="lg">
+      {/*
+        On the ink band the submit inverts to a light fill. It is the one bright element on a near-black
+        surface, which is what makes it the obvious thing to press without any colour being involved.
+      */}
+      <Button type="submit" size="xl" variant={ink ? 'onInk' : 'primary'}>
         {submitLabel}
       </Button>
     </form>

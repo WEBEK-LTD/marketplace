@@ -184,11 +184,11 @@ export default async function SellerVerificationPage({
 
           {identity.kind === 'not_a_seller' || lookup.kind === 'not_a_seller' ? (
             <div role="status" className="mt-8">
-              <p className="text-neutral-900">{dashboard('notASeller')}</p>
+              <p className="text-ink-strong">{dashboard('notASeller')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/dashboard/seller`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {dashboard('title')}
                 </Link>
@@ -196,11 +196,11 @@ export default async function SellerVerificationPage({
             </div>
           ) : identity.kind === 'unauthenticated' || lookup.kind === 'unauthenticated' ? (
             <div role="status" className="mt-8">
-              <p className="max-w-prose text-neutral-600">{session('expiredBody')}</p>
+              <p className="max-w-prose text-ink-muted">{session('expiredBody')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/login`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {session('signIn')}
                 </Link>
@@ -218,18 +218,18 @@ export default async function SellerVerificationPage({
             </div>
           ) : (
             <>
-              <p className="mt-8 max-w-prose text-neutral-700">{t('intro')}</p>
+              <p className="mt-8 max-w-prose text-ink-body">{t('intro')}</p>
 
               {isVerified ? (
                 // Owner decision 2: the verified state, and nothing else. No form, no start control, no
                 // suggestion that verifying again is a thing that exists.
-                <div role="status" className="mt-6 rounded-lg border border-neutral-200 p-4">
-                  <p className="text-neutral-900">{t('verified')}</p>
+                <div role="status" className="mt-6 rounded-lg border border-hairline p-4">
+                  <p className="text-ink-strong">{t('verified')}</p>
                 </div>
               ) : (
                 <>
                   {actions.awaitingReview ? (
-                    <p role="status" className="mt-6 max-w-prose text-sm text-neutral-600">
+                    <p role="status" className="mt-6 max-w-prose text-sm text-ink-muted">
                       {lookup.kind === 'ok' && lookup.verification.status === 'submitted'
                         ? t('submittedNote')
                         : t('awaitingReview')}
@@ -241,7 +241,7 @@ export default async function SellerVerificationPage({
                     // A decided attempt: what happened, and that somebody will be in touch. No reason, no
                     // reviewer, no appeal machinery — none of that is in the contract, and none of it is
                     // this page's to invent.
-                    <p role="status" className="mt-6 max-w-prose text-sm text-neutral-600">
+                    <p role="status" className="mt-6 max-w-prose text-sm text-ink-muted">
                       {t('decided')}
                     </p>
                   ) : null}

@@ -56,7 +56,7 @@ export default async function SellerEarningsPage({
       signInLabel={session('signIn')}
     >
       {lookup.kind !== 'ok' ? null : lookup.data.balances.length === 0 ? (
-        <p role="status" className="mt-6 text-neutral-600">
+        <p role="status" className="mt-6 text-ink-muted">
           {t('empty')}
         </p>
       ) : (
@@ -69,10 +69,10 @@ export default async function SellerEarningsPage({
               return (
                 <li
                   key={balance.currencyCode}
-                  className="rounded-lg border border-neutral-200 p-4"
+                  className="rounded-lg border border-hairline p-4"
                 >
                   <p className="text-sm">
-                    <span className="text-neutral-500">{t('currency')} </span>
+                    <span className="text-ink-muted">{t('currency')} </span>
                     <span className="font-medium">{balance.currencyCode}</span>
                   </p>
                   <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -92,7 +92,7 @@ export default async function SellerEarningsPage({
                       hint={t('reservedHint')}
                     />
                   </dl>
-                  <p className="mt-3 text-xs text-neutral-500">
+                  <p className="mt-3 text-xs text-ink-muted">
                     {t('updated')}: {balance.updatedAt.slice(0, 10)}
                   </p>
                 </li>
@@ -100,7 +100,7 @@ export default async function SellerEarningsPage({
             })}
           </ul>
           {/* Said plainly, because a balance with no visible action invites hunting for one. */}
-          <p className="mt-4 max-w-prose text-sm text-neutral-600">{t('note')}</p>
+          <p className="mt-4 max-w-prose text-sm text-ink-muted">{t('note')}</p>
         </>
       )}
     </SellerReadSurface>

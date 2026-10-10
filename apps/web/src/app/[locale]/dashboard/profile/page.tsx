@@ -47,7 +47,7 @@ export default async function ProfilePage({
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('intro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('intro')}</p>
 
           <Suspense fallback={<AccountSkeleton label={t('title')} />}>
             <ProfileSection base={`${prefix}/dashboard/profile`} securityHref={`${prefix}/dashboard/security`} t={t} />
@@ -102,12 +102,12 @@ async function ProfileSection({
   return (
     <>
       <section className="mt-8 max-w-lg">
-        <h2 className="text-xl font-semibold text-neutral-900">{t('factsHeading')}</h2>
+        <h2 className="text-xl font-semibold text-ink-strong">{t('factsHeading')}</h2>
         <dl className="mt-3">
           <AccountFact label={t('phone')}>
             {profile.phoneE164 ?? t('phoneNone')}
             {profile.phoneE164 !== null && (
-              <span className="ms-2 text-xs font-normal text-neutral-600">
+              <span className="ms-2 text-xs font-normal text-ink-muted">
                 {profile.phoneVerifiedAt === null ? t('phoneUnverified') : t('phoneVerified')}
               </span>
             )}
@@ -117,7 +117,7 @@ async function ProfileSection({
           </AccountFact>
           <AccountFact label={t('memberSince')}>{profile.createdAt.slice(0, 10)}</AccountFact>
         </dl>
-        <p className="mt-3 text-sm text-neutral-600">
+        <p className="mt-3 text-sm text-ink-muted">
           <Link href={securityHref} className="underline underline-offset-4">
             {t('changePhone')}
           </Link>
@@ -125,7 +125,7 @@ async function ProfileSection({
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold text-neutral-900">{t('title')}</h2>
+        <h2 className="text-xl font-semibold text-ink-strong">{t('title')}</h2>
         <BuyerProfileForm
           labels={formLabels(t)}
           initial={{

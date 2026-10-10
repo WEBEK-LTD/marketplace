@@ -121,7 +121,7 @@ export default async function Page({
           <p className="mt-2">
             <Link
               href={`${prefix}/dashboard/seller/services`}
-              className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+              className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
             >
               {t('backToServices')}
             </Link>

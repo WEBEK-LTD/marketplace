@@ -23,7 +23,7 @@ export default async function ForgotPasswordPage({ params }: { params: Promise<{
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('startTitle')}</Heading>
-        <p className="mt-2 max-w-sm text-neutral-600">{t('startIntro')}</p>
+        <p className="mt-2 max-w-sm text-ink-muted">{t('startIntro')}</p>
         <RecoveryStartForm
           action="/api/auth/recovery/start"
           nextHref={`${prefix}/forgot-password/verify`}

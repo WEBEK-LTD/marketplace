@@ -25,10 +25,10 @@ import { accountRequest } from './account-request';
  */
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 const SUBMIT_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Profile                                                                                           */
@@ -135,7 +135,7 @@ export function BuyerProfileForm({
           className={FIELD_CLASS}
           aria-describedby="profile-display-name-hint"
         />
-        <p id="profile-display-name-hint" className="mt-1 text-xs text-neutral-600">
+        <p id="profile-display-name-hint" className="mt-1 text-xs text-ink-muted">
           {labels.displayNameHint}
         </p>
       </div>
@@ -153,7 +153,7 @@ export function BuyerProfileForm({
           className={FIELD_CLASS}
           aria-describedby="profile-full-name-hint"
         />
-        <p id="profile-full-name-hint" className="mt-1 text-xs text-neutral-600">
+        <p id="profile-full-name-hint" className="mt-1 text-xs text-ink-muted">
           {labels.fullNameHint}
         </p>
       </div>
@@ -191,7 +191,7 @@ export function BuyerProfileForm({
           className={FIELD_CLASS}
           aria-describedby="profile-timezone-hint"
         />
-        <p id="profile-timezone-hint" className="mt-1 text-xs text-neutral-600">
+        <p id="profile-timezone-hint" className="mt-1 text-xs text-ink-muted">
           {labels.timezoneHint}
         </p>
       </div>
@@ -201,12 +201,12 @@ export function BuyerProfileForm({
           {pending ? labels.saving : labels.save}
         </button>
         {saved && (
-          <span role="status" className="text-sm text-neutral-700">
+          <span role="status" className="text-sm text-ink-body">
             {labels.saved}
           </span>
         )}
         {message !== null && (
-          <span role="alert" className="text-sm text-neutral-900">
+          <span role="alert" className="text-sm text-ink-strong">
             {message}
           </span>
         )}
@@ -304,7 +304,7 @@ export function BuyerSettingsForm({
   }
 
   const toggle = (field: keyof SettingsFormValues, label: string, hint?: string) => (
-    <label className="flex items-start gap-2 text-sm text-neutral-900">
+    <label className="flex items-start gap-2 text-sm text-ink-strong">
       <input
         type="checkbox"
         name={String(field)}
@@ -314,7 +314,7 @@ export function BuyerSettingsForm({
       />
       <span>
         {label}
-        {hint !== undefined && <span className="mt-1 block text-xs font-normal text-neutral-600">{hint}</span>}
+        {hint !== undefined && <span className="mt-1 block text-xs font-normal text-ink-muted">{hint}</span>}
       </span>
     </label>
   );
@@ -322,8 +322,8 @@ export function BuyerSettingsForm({
   return (
     <form onSubmit={(event) => void submit(event)} className="mt-4 max-w-lg space-y-6" noValidate>
       <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-neutral-900">{labels.channelsHeading}</legend>
-        <p className="text-xs text-neutral-600">{labels.channelsIntro}</p>
+        <legend className="text-sm font-semibold text-ink-strong">{labels.channelsHeading}</legend>
+        <p className="text-xs text-ink-muted">{labels.channelsIntro}</p>
         {toggle('notifyInApp', labels.notifyInApp)}
         {toggle('notifyEmail', labels.notifyEmail)}
         {toggle('notifySms', labels.notifySms)}
@@ -332,7 +332,7 @@ export function BuyerSettingsForm({
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-neutral-900">{labels.displayHeading}</legend>
+        <legend className="text-sm font-semibold text-ink-strong">{labels.displayHeading}</legend>
         <div>
           <label className={LABEL_CLASS} htmlFor="settings-digit-style">
             {labels.digitStyle}
@@ -356,12 +356,12 @@ export function BuyerSettingsForm({
           {pending ? labels.saving : labels.save}
         </button>
         {saved && (
-          <span role="status" className="text-sm text-neutral-700">
+          <span role="status" className="text-sm text-ink-body">
             {labels.saved}
           </span>
         )}
         {message !== null && (
-          <span role="alert" className="text-sm text-neutral-900">
+          <span role="alert" className="text-sm text-ink-strong">
             {message}
           </span>
         )}

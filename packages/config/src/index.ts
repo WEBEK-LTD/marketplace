@@ -1,19 +1,35 @@
 export {
   BRAND_COLOR_KEYS,
-  PLACEHOLDER_BRAND_COLORS,
+  BRAND_COLORS,
+  accentScale,
+  borderColor,
+  brandScale,
   createDesignTokens,
   designTokens,
   fontFamily,
   fontSize,
+  fontWeight,
+  letterSpacing,
   lineHeight,
   neutralColors,
   radius,
   shadow,
   spacing,
+  stateOverlay,
+  surface,
+  textColor,
   type BrandColors,
   type DesignTokens,
   type HexColor,
 } from './design-tokens.js';
+export {
+  deriveColorScale,
+  deriveNeutralScale,
+  tintSurface,
+  withAlpha,
+  SCALE_STEPS,
+  type ScaleStep,
+} from './color-scale.js';
 export { tokenVariables, tokensToCss } from './tokens-css.js';
 export {
   buildContentSecurityPolicy,

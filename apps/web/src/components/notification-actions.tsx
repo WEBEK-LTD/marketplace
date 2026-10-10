@@ -30,7 +30,7 @@ export interface NotificationActionCopy {
 }
 
 const BUTTON_CLASS =
-  'rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-3 py-1 text-xs font-medium text-ink-strong disabled:opacity-60';
 
 export function NotificationActions({
   id,
@@ -84,7 +84,7 @@ export function NotificationActions({
         </button>
       )}
       {failed && (
-        <span role="alert" className="text-xs text-neutral-900">
+        <span role="alert" className="text-xs text-ink-strong">
           {copy.failed}
         </span>
       )}
@@ -139,7 +139,7 @@ export function MarkAllNotificationsRead({
         {pending ? copy.working : label}
       </button>
       {failed && (
-        <span role="alert" className="text-xs text-neutral-900">
+        <span role="alert" className="text-xs text-ink-strong">
           {copy.failed}
         </span>
       )}

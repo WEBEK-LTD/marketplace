@@ -44,8 +44,8 @@ export interface SavedSearchFormLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 
 export interface SavedSearchInitial {
   readonly id: string | null;
@@ -138,7 +138,7 @@ export function SavedSearchForm({
           className={FIELD_CLASS}
           aria-describedby="saved-search-name-hint"
         />
-        <p id="saved-search-name-hint" className="mt-1 text-xs text-neutral-600">
+        <p id="saved-search-name-hint" className="mt-1 text-xs text-ink-muted">
           {labels.nameHint}
         </p>
       </div>
@@ -158,13 +158,13 @@ export function SavedSearchForm({
           className={FIELD_CLASS}
           aria-describedby="saved-search-terms-hint"
         />
-        <p id="saved-search-terms-hint" className="mt-1 text-xs text-neutral-600">
+        <p id="saved-search-terms-hint" className="mt-1 text-xs text-ink-muted">
           {labels.termsHint}
         </p>
       </div>
 
       <div>
-        <label className="flex items-start gap-2 text-sm text-neutral-900">
+        <label className="flex items-start gap-2 text-sm text-ink-strong">
           <input
             type="checkbox"
             name="notify"
@@ -177,7 +177,7 @@ export function SavedSearchForm({
           />
           <span>
             {labels.notify}
-            <span className="mt-1 block text-xs font-normal text-neutral-600">{labels.notifyHint}</span>
+            <span className="mt-1 block text-xs font-normal text-ink-muted">{labels.notifyHint}</span>
           </span>
         </label>
       </div>
@@ -186,7 +186,7 @@ export function SavedSearchForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? labels.saving : labels.save}
         </button>
@@ -196,12 +196,12 @@ export function SavedSearchForm({
           </button>
         )}
         {saved && (
-          <span role="status" className="text-sm text-neutral-700">
+          <span role="status" className="text-sm text-ink-body">
             {labels.saved}
           </span>
         )}
         {message !== null && (
-          <span role="alert" className="text-sm text-neutral-900">
+          <span role="alert" className="text-sm text-ink-strong">
             {message}
           </span>
         )}
@@ -224,7 +224,7 @@ export function NewSavedSearch({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-4 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900"
+        className="mt-4 rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong"
       >
         {addLabel}
       </button>
@@ -255,7 +255,7 @@ export function EditSavedSearch({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-900"
+        className="rounded-md border border-edge px-3 py-1 text-xs font-medium text-ink-strong"
       >
         {editLabel}
       </button>

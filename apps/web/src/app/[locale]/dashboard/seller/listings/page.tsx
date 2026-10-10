@@ -207,11 +207,11 @@ export default async function SellerListingsPage({
           {identity.kind === 'not_a_seller' ? (
             // No storefront, so no listings. The way in is 6-C's, reached through the seller landing page.
             <div role="status" className="mt-8">
-              <p className="text-neutral-900">{dashboard('notASeller')}</p>
+              <p className="text-ink-strong">{dashboard('notASeller')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/dashboard/seller`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {dashboard('title')}
                 </Link>
@@ -219,11 +219,11 @@ export default async function SellerListingsPage({
             </div>
           ) : identity.kind === 'unauthenticated' || page.kind === 'unauthenticated' ? (
             <div role="status" className="mt-8">
-              <p className="max-w-prose text-neutral-600">{session('expiredBody')}</p>
+              <p className="max-w-prose text-ink-muted">{session('expiredBody')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/login`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {session('signIn')}
                 </Link>
@@ -245,22 +245,22 @@ export default async function SellerListingsPage({
                 // State, and why there is no form and no controls. No reason, no moderation note, no appeal
                 // machinery — none of that is in the contract and none of it is this page's to invent.
                 <div role="status" className="mt-8">
-                  <p className="text-neutral-900">
+                  <p className="text-ink-strong">
                     {identity.seller.status === 'suspended'
                       ? dashboard('statusSuspended')
                       : dashboard('statusClosed')}
                   </p>
-                  <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('notEditable')}</p>
+                  <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('notEditable')}</p>
                 </div>
               ) : null}
 
               <section aria-labelledby="seller-listings-heading" className="mt-8">
-                <h2 id="seller-listings-heading" className="text-lg font-semibold text-neutral-900">
+                <h2 id="seller-listings-heading" className="text-lg font-semibold text-ink-strong">
                   {t('yourListings')}
                 </h2>
 
                 {page.kind === 'ok' && page.listings.length > 0 ? (
-                  <ul className="mt-4 border-t border-neutral-200">
+                  <ul className="mt-4 border-t border-hairline">
                     {page.listings.map((listing) => {
                       const render = renderableListing(listing);
                       const actions = listingActions(render.status, canMutate);
@@ -284,7 +284,7 @@ export default async function SellerListingsPage({
                     })}
                   </ul>
                 ) : (
-                  <p role="status" className="mt-4 text-neutral-600">
+                  <p role="status" className="mt-4 text-ink-muted">
                     {t('empty')}
                   </p>
                 )}
@@ -293,7 +293,7 @@ export default async function SellerListingsPage({
                   <p className="mt-6">
                     <Link
                       href={`${prefix}/dashboard/seller/listings?cursor=${encodeURIComponent(page.nextCursor)}`}
-                      className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                      className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                     >
                       {t('nextPage')}
                     </Link>

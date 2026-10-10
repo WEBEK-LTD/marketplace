@@ -25,7 +25,66 @@
   --color-neutral-1000: var(--token-color-neutral-1000);
   --color-brand-primary: var(--token-color-brand-primary);
   --color-brand-secondary: var(--token-color-brand-secondary);
+
+  /* The eleven steps derived from each slot. A component names a step; it never names a hue. */
+  --color-brand-50: var(--token-brand-50);
+  --color-brand-100: var(--token-brand-100);
+  --color-brand-200: var(--token-brand-200);
+  --color-brand-300: var(--token-brand-300);
+  --color-brand-400: var(--token-brand-400);
+  --color-brand-500: var(--token-brand-500);
+  --color-brand-600: var(--token-brand-600);
+  --color-brand-700: var(--token-brand-700);
+  --color-brand-800: var(--token-brand-800);
+  --color-brand-900: var(--token-brand-900);
+  --color-brand-950: var(--token-brand-950);
+  --color-accent-50: var(--token-accent-50);
+  --color-accent-100: var(--token-accent-100);
+  --color-accent-200: var(--token-accent-200);
+  --color-accent-300: var(--token-accent-300);
+  --color-accent-400: var(--token-accent-400);
+  --color-accent-500: var(--token-accent-500);
+  --color-accent-600: var(--token-accent-600);
+  --color-accent-700: var(--token-accent-700);
+  --color-accent-800: var(--token-accent-800);
+  --color-accent-900: var(--token-accent-900);
+  --color-accent-950: var(--token-accent-950);
+
+  /*
+   * The semantic ladder (0110). Components use these and not the ramp above: `bg-surface-sunken`,
+   * `text-ink-muted`, `border-hairline`. The ramp stays mapped because `/admin` is built on it and 0110 does
+   * not touch the console.
+   */
+  --color-surface-canvas: var(--token-surface-canvas);
+  --color-surface-sunken: var(--token-surface-sunken);
+  --color-surface-raised: var(--token-surface-raised);
+  --color-surface-muted: var(--token-surface-muted);
+  --color-surface-brand-soft: var(--token-surface-brandSoft);
+  --color-surface-accent-soft: var(--token-surface-accentSoft);
+  --color-surface-ink: var(--token-surface-ink);
+  --color-surface-ink-raised: var(--token-surface-inkRaised);
+  --color-surface-ink-muted: var(--token-surface-inkMuted);
+  --color-ink-strong: var(--token-text-color-strong);
+  --color-ink-body: var(--token-text-color-body);
+  --color-ink-muted: var(--token-text-color-muted);
+  --color-ink-faint: var(--token-text-color-faint);
+  --color-ink-brand: var(--token-text-color-brand);
+  --color-ink-accent: var(--token-text-color-accent);
+  --color-on-ink: var(--token-text-color-onInk);
+  --color-on-ink-muted: var(--token-text-color-onInkMuted);
+  --color-hairline: var(--token-border-hairline);
+  --color-edge: var(--token-border-edge);
+  --color-edge-brand: var(--token-border-brand);
+  --color-edge-strong: var(--token-border-strong);
+  --color-edge-on-ink: var(--token-border-onInk);
+  --color-edge-on-ink-strong: var(--token-border-onInkStrong);
+  --color-state-hover: var(--token-state-hover);
+  --color-state-active: var(--token-state-active);
+  --color-state-hover-on-ink: var(--token-state-hoverOnInk);
+  --color-state-active-on-ink: var(--token-state-activeOnInk);
+
   --font-sans: var(--token-font-sans);
+  --font-arabic: var(--token-font-arabic);
   --text-xs: var(--token-text-xs);
   --text-sm: var(--token-text-sm);
   --text-base: var(--token-text-base);
@@ -35,6 +94,14 @@
   --text-3xl: var(--token-text-3xl);
   --text-4xl: var(--token-text-4xl);
   --text-5xl: var(--token-text-5xl);
+  --text-6xl: var(--token-text-6xl);
+  --text-7xl: var(--token-text-7xl);
+  --font-weight-light: var(--token-weight-light);
+  --font-weight-normal: var(--token-weight-regular);
+  --font-weight-medium: var(--token-weight-medium);
+  --font-weight-semibold: var(--token-weight-semibold);
+  --font-weight-bold: var(--token-weight-bold);
+  --leading-none: var(--token-leading-none);
   --leading-tight: var(--token-leading-tight);
   --leading-snug: var(--token-leading-snug);
   --leading-normal: var(--token-leading-normal);
@@ -43,21 +110,112 @@
   --radius-sm: var(--token-radius-sm);
   --radius-md: var(--token-radius-md);
   --radius-lg: var(--token-radius-lg);
+  --radius-xl: var(--token-radius-xl);
+  --radius-2xl: var(--token-radius-2xl);
   --radius-full: var(--token-radius-full);
-  /* Elevation, for the three things that leave the page. A flat surface takes a hairline border instead. */
+  /* Elevation. `xs` is a card lifting off a recessed band; `inkEdge` is a dark surface's top highlight. */
+  --shadow-xs: var(--token-shadow-xs);
   --shadow-sm: var(--token-shadow-sm);
   --shadow-md: var(--token-shadow-md);
   --shadow-lg: var(--token-shadow-lg);
+  --shadow-ink-edge: var(--token-shadow-inkEdge);
   --spacing: var(--token-spacing-1);
 }
 
 html {
   font-family: var(--font-sans);
-  background-color: var(--color-neutral-0);
-  color: var(--color-neutral-900);
-  /* Body copy sets at the taller of the two values Latin and Arabic want; see `lineHeight` in the tokens. */
+  background-color: var(--color-surface-canvas);
+  color: var(--color-ink-strong);
   line-height: var(--leading-normal);
   -webkit-text-size-adjust: 100%;
+  /* Platform sans faces hint badly at display sizes on macOS without this; it also evens out Arabic. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Arabic gets its own face and its own vertical metrics, rather than the Latin stack's fallback.
+ *
+ * Two separate things are being fixed. The **face**: left to the Latin stack, Arabic resolves to whatever the
+ * platform substitutes, which on Windows is Tahoma — cramped Naskh with no weight range. Naming the Arabic
+ * stack puts SF Arabic and the Noto families first. The **metrics**: Arabic sets taller at the same point size,
+ * its ascenders and descenders occupy more vertical space, and its counters are smaller, so at interface sizes
+ * it wants a touch more size and noticeably more leading than Latin to read at the same comfort.
+ *
+ * This is why the product's Arabic is designed rather than mirrored, which is what `[dir="rtl"]` alone gives.
+ */
+:is([lang="ar"], [dir="rtl"]) {
+  font-family: var(--font-arabic);
+  line-height: var(--leading-relaxed);
+}
+
+/*
+ * Arabic is set 6% larger than Latin, and the whole page scales with it.
+ *
+ * This is at the document root, so the staff console inherits it on an Arabic profile exactly as it inherits
+ * the neutral ramp. That is intended: it is a typographic correction at the token layer rather than a piece of
+ * the marketplace redesign, and the console's own styling is untouched by 0110. Scoping it away from the
+ * console was tried and rejected — it needed a new attribute on the console's `<html>`, which is markup that
+ * increment has no business changing.
+ *
+ * Arabic's x-height-equivalent is smaller relative to its em box than a Latin face's, so the two scripts set
+ * at the same nominal size do not *look* the same size — side by side, the Arabic reads noticeably smaller,
+ * which is exactly what the Arabic home page showed next to the English one. Nudging the root is the right
+ * lever rather than overriding each step of the type scale: every size, and every rem of spacing with them,
+ * moves together, so the page keeps its proportions and only its scale changes. 6% is enough to match the two
+ * optically and small enough that no layout reflows.
+ */
+html:is([lang="ar"], [dir="rtl"]) {
+  font-size: 106%;
+}
+
+/*
+ * Tracking, Latin display only.
+ *
+ * A platform sans at 3rem and up sets too loose, because its side bearings are tuned for 13–17px interface
+ * text. Arabic must never receive this: the script is cursive and negative tracking breaks the joins between
+ * letters. Scoping it to `[lang="en"]` here, rather than exposing a `tracking-*` utility to components, is what
+ * makes that impossible to get wrong — a component cannot opt a heading in, because there is no class to add.
+ */
+[lang="en"] .mp-display {
+  letter-spacing: var(--token-tracking-tight);
+}
+
+[lang="en"] .mp-display-sm {
+  letter-spacing: var(--token-tracking-snug);
+}
+
+/*
+ * A full-bleed band inside a normal-flow page.
+ *
+ * The public pages are composed of bands that alternate between the canvas, a recessed surface and ink, and a
+ * band has to reach both edges of the viewport while its content stays on the page's measure. `margin-inline`
+ * with the 50vw trick does that without the ancestor chain needing `overflow-x: clip` and without a second
+ * container element per section. `100vw` is deliberately avoided: it includes the scrollbar on Windows and
+ * produces a horizontal scrollbar on every band.
+ */
+.mp-band {
+  margin-inline: calc(50% - 50dvw);
+  padding-inline: calc(50dvw - 50%);
+}
+
+/*
+ * The price lockup's currency mark.
+ *
+ * `font-size` in `em` so it tracks whatever size the amount is set at, and `vertical-align` rather than `sup`,
+ * because a real superscript element would be read out by a screen reader as part of the number.
+ */
+.mp-currency {
+  font-size: 0.5em;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  vertical-align: 0.55em;
+  /*
+   * Small, because the markup keeps a real space between the code and the amount — see `PriceLockup`. The
+   * space at half size is narrow, so this tops it up to an optical gap rather than replacing it.
+   */
+  margin-inline-end: 0.12em;
+  color: var(--color-ink-muted);
 }
 
 /*

@@ -41,9 +41,9 @@ export interface ReportActionProps {
 }
 
 const LINK_CLASS =
-  'text-xs underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 disabled:opacity-60';
+  'text-xs underline decoration-edge underline-offset-4 hover:decoration-ink-strong disabled:opacity-60';
 const BUTTON_CLASS =
-  'rounded-md border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-3 py-1.5 text-xs font-medium text-ink-strong disabled:opacity-60';
 
 export function ReportAction({ subject, copy }: ReportActionProps) {
   const [state, setState] = useState<'idle' | 'confirming' | 'sending' | 'done'>('idle');
@@ -70,7 +70,7 @@ export function ReportAction({ subject, copy }: ReportActionProps) {
 
   if (state === 'done') {
     return (
-      <p role="status" className="mt-2 text-xs text-neutral-600">
+      <p role="status" className="mt-2 text-xs text-ink-muted">
         {copy.done}
       </p>
     );
@@ -87,10 +87,10 @@ export function ReportAction({ subject, copy }: ReportActionProps) {
   }
 
   return (
-    <div className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-3">
-      <p className="text-xs text-neutral-900">{copy.confirmation}</p>
-      <p className="mt-1 text-xs text-neutral-600">{copy.once}</p>
-      <p aria-live="polite" role="status" className="min-h-4 text-xs text-neutral-900">
+    <div className="mt-2 rounded-md border border-hairline bg-surface-sunken p-3">
+      <p className="text-xs text-ink-strong">{copy.confirmation}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.once}</p>
+      <p aria-live="polite" role="status" className="min-h-4 text-xs text-ink-strong">
         {message}
       </p>
       <div className="mt-2 flex flex-wrap gap-2">

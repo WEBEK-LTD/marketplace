@@ -45,11 +45,11 @@ export default async function SecurityPage({
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('intro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('intro')}</p>
 
           <section className="mt-10">
-            <h2 className="text-xl font-semibold text-neutral-900">{t('phoneHeading')}</h2>
-            <p className="mt-2 max-w-sm text-neutral-600">{t('phoneIntro')}</p>
+            <h2 className="text-xl font-semibold text-ink-strong">{t('phoneHeading')}</h2>
+            <p className="mt-2 max-w-sm text-ink-muted">{t('phoneIntro')}</p>
             <PhoneChangeForm
               startAction="/api/auth/contact/phone/start"
               verifyAction="/api/auth/contact/phone/verify"
@@ -74,19 +74,19 @@ export default async function SecurityPage({
           </section>
 
           <section className="mt-12">
-            <h2 className="text-xl font-semibold text-neutral-900">{t('passwordHeading')}</h2>
-            <p className="mt-2 max-w-prose text-neutral-600">{t('passwordIntro')}</p>
+            <h2 className="text-xl font-semibold text-ink-strong">{t('passwordHeading')}</h2>
+            <p className="mt-2 max-w-prose text-ink-muted">{t('passwordIntro')}</p>
             <Link
               href={`${prefix}/forgot-password`}
-              className="mt-3 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900"
+              className="mt-3 inline-block rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong"
             >
               {t('passwordLink')}
             </Link>
           </section>
 
           <section className="mt-12">
-            <h2 className="text-xl font-semibold text-neutral-900">{t('sessionHeading')}</h2>
-            <p className="mt-2 max-w-prose text-neutral-600">{t('sessionIntro')}</p>
+            <h2 className="text-xl font-semibold text-ink-strong">{t('sessionHeading')}</h2>
+            <p className="mt-2 max-w-prose text-ink-muted">{t('sessionIntro')}</p>
             <SignOutButton label={t('signOut')} working={t('submitting')} failed={t('unavailable')} />
           </section>
         </div>

@@ -1,38 +1,53 @@
 import type { ReactNode } from 'react';
-import { cx, DISABLED, FOCUS_RING, INTERACTIVE } from './recipes.js';
+import { cx, DISABLED, FOCUS_RING, FOCUS_RING_INVERTED, INTERACTIVE } from './recipes.js';
 import { Spinner } from './spinner.js';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'onInk' | 'onInkGhost';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /**
  * The variants, and what each one is for.
  *
- * **`danger` carries no red, because there is no red.** The palette is monochrome until the owner supplies the
- * two brand colours, so a destructive action is marked by weight instead of hue: a 2px border where every other
- * control has a hairline, and a full inversion on hover so the commitment is unmistakable at the moment of the
- * click. The label is expected to name the destruction ("Delete listing", never "Confirm"), which is what
- * actually stops a mistake — colour never did that work alone.
+ * `primary` is solid ink and is the only filled control on a light surface, which is what makes it findable
+ * without colour. `onInk` and `onInkGhost` are its counterparts on an ink band — the inversion is a real pair of
+ * variants rather than a `className` override at the call site, so a button on a dark band gets the correct
+ * hover, press and focus treatment instead of an approximation.
+ *
+ * **`danger` carries no red, because there is no red.** The palette has no hue until the owner supplies the two
+ * brand colours, so a destructive action is marked by weight instead: a 2px edge where every other control has a
+ * hairline, and a full inversion on hover so the commitment is unmistakable at the moment of the click. The
+ * label is expected to name the destruction ("Delete listing", never "Confirm"), which is what actually stops a
+ * mistake — colour never did that work alone.
  */
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'border border-neutral-900 bg-neutral-900 text-neutral-0 hover:border-neutral-800 hover:bg-neutral-800',
-  secondary: 'border border-neutral-300 bg-neutral-0 text-neutral-900 hover:border-neutral-400 hover:bg-neutral-50',
-  ghost: 'border border-transparent bg-transparent text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
-  danger: 'border-2 border-neutral-900 bg-neutral-0 font-semibold text-neutral-900 hover:bg-neutral-900 hover:text-neutral-0',
+  primary: 'bg-surface-ink text-on-ink shadow-xs hover:bg-ink-body hover:shadow-sm',
+  secondary: 'bg-surface-raised text-ink-strong ring-1 ring-edge hover:bg-surface-sunken hover:ring-edge-strong',
+  ghost: 'bg-transparent text-ink-body hover:bg-state-hover hover:text-ink-strong',
+  danger: 'bg-surface-raised font-semibold text-ink-strong ring-2 ring-edge-strong hover:bg-surface-ink hover:text-on-ink',
+  onInk: 'bg-on-ink text-ink-strong hover:bg-surface-sunken',
+  onInkGhost: 'bg-transparent text-on-ink ring-1 ring-edge-on-ink hover:bg-state-hover-on-ink hover:ring-edge-on-ink-strong',
 };
 
-/** Heights are fixed so a row of mixed controls — button, input, select — lines up on one baseline. */
+/**
+ * Heights are fixed so a row of mixed controls — button, input, select — lines up on one baseline.
+ *
+ * `xl` is new in 0110 and exists for one place: the search control in the home page's opening band, where a
+ * 48px field looks like a form and a 60px one looks like the point of the page.
+ */
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 gap-1.5 px-3 text-sm',
-  md: 'h-10 gap-2 px-4 text-sm',
-  lg: 'h-12 gap-2 px-5 text-base',
+  sm: 'h-9 gap-1.5 px-3.5 text-sm',
+  md: 'h-11 gap-2 px-5 text-sm',
+  lg: 'h-12 gap-2 px-6 text-base',
+  xl: 'h-14 gap-2 px-7 text-base sm:h-[3.75rem] sm:px-8',
 };
 
-const BASE = 'inline-flex shrink-0 items-center justify-center rounded-md font-medium whitespace-nowrap';
+const BASE =
+  'inline-flex shrink-0 items-center justify-center rounded-lg font-medium whitespace-nowrap active:translate-y-px';
 
 /** The classes a button-shaped element needs, for the rare case that element cannot be a `<button>`. */
 export function buttonClasses(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', fullWidth = false): string {
-  return cx(BASE, VARIANTS[variant], SIZES[size], INTERACTIVE, DISABLED, FOCUS_RING, fullWidth && 'w-full');
+  const ring = variant === 'onInk' || variant === 'onInkGhost' ? FOCUS_RING_INVERTED : FOCUS_RING;
+  return cx(BASE, VARIANTS[variant], SIZES[size], INTERACTIVE, DISABLED, ring, fullWidth && 'w-full');
 }
 
 export interface ButtonProps {

@@ -255,13 +255,6 @@ const VALID_REQUEST = {
   title: 'Build me a shelf',
   brief: 'A brief that is comfortably longer than ten characters.',
 };
-const VALID_QUOTE = {
-  amountMinor: '380000',
-  deliveryDays: 10,
-  revisionsIncluded: 2,
-  scope: 'A scope long enough to satisfy the ten-character rule.',
-  validForDays: 14,
-};
 
 const arg = (recorded: Recorded, name: string): Record<string, unknown> | undefined =>
   recorded.args.find((entry) => entry.name === name)?.input;
@@ -274,33 +267,51 @@ afterEach(async () => {
 /* ------------------------------------------------------------------------------------------------ */
 
 describe('the session is the only authority', () => {
+  // Four routes, not ten. OD-A4 closed the seller's queue, the seller-routed create, the seller's decline
+  // and all three quote transitions, and 0110 revoked the functions behind them — so a route that answered
+  // 200 here before now does not exist. What survives is the whole of a buyer's dealings with the office.
   it('serves every route for the caller the provider vouched for', async () => {
     await start();
     expect((await call('GET', MADE)).status).toBe(200);
-    expect((await call('GET', RECEIVED)).status).toBe(200);
     expect((await call('GET', DETAIL)).status).toBe(200);
     expect((await call('POST', CREATE, { payload: VALID_REQUEST })).status).toBe(201);
     expect((await call('POST', CANCEL)).status).toBe(200);
-    expect((await call('POST', DECLINE)).status).toBe(200);
-    expect((await call('POST', QUOTES, { payload: VALID_QUOTE })).status).toBe(201);
-    expect((await call('POST', ACCEPT)).status).toBe(200);
-    expect((await call('POST', REJECT)).status).toBe(200);
-    expect((await call('POST', WITHDRAW)).status).toBe(200);
+  });
+
+  // Each closed address is refused, and **nothing reaches the store** — which is the property that
+  // matters, and the one asserted. The status is not the same on all six and should not be asserted as
+  // one: `/received` is refused with 400 rather than 404 because `:requestId` matches the word and then
+  // rejects it as an identifier, while a quote address matches no route at all and is 404. Either way it
+  // is gone, and either way the database is never asked.
+  it('refuses every address OD-A4 closed, and asks the database for none of them', async () => {
+    const recorded = await start();
+    for (const [method, url] of [
+      ['GET', RECEIVED],
+      ['POST', DECLINE],
+      ['POST', QUOTES],
+      ['POST', ACCEPT],
+      ['POST', REJECT],
+      ['POST', WITHDRAW],
+    ] as const) {
+      const result = await call(method, url);
+      expect(result.status, url).toBeGreaterThanOrEqual(400);
+      expect([400, 404], url).toContain(result.status);
+    }
+    // The session is still established before routing refuses, so `get-user` is expected here; what must
+    // not appear is any store call. Asserting the store names rather than an empty list keeps this test
+    // about the closure instead of about where session validation sits in the pipeline.
+    for (const name of ['received', 'decline', 'quote', 'accept', 'reject', 'withdraw']) {
+      expect(recorded.calls, name).not.toContain(name);
+    }
   });
 
   it('refuses every route without a session, before asking anything', async () => {
     const recorded = await start();
     for (const [method, url, payload] of [
       ['GET', MADE, undefined],
-      ['GET', RECEIVED, undefined],
       ['GET', DETAIL, undefined],
       ['POST', CREATE, VALID_REQUEST],
       ['POST', CANCEL, undefined],
-      ['POST', DECLINE, undefined],
-      ['POST', QUOTES, VALID_QUOTE],
-      ['POST', ACCEPT, undefined],
-      ['POST', REJECT, undefined],
-      ['POST', WITHDRAW, undefined],
     ] as const) {
       const result = await call(method, url, {
         accessToken: null,
@@ -313,7 +324,7 @@ describe('the session is the only authority', () => {
 
   it('refuses a token the provider does not vouch for, before the database is asked', async () => {
     const recorded = await start({ tokenFails: true });
-    expect((await call('POST', ACCEPT)).status).toBe(401);
+    expect((await call('POST', CANCEL)).status).toBe(401);
     expect(recorded.calls).toEqual(['get-user']);
   });
 
@@ -329,23 +340,24 @@ describe('the session is the only authority', () => {
 
   it('acts as the vouched-for account, whatever a header or body claims', async () => {
     const recorded = await start();
-    await call('POST', ACCEPT, { headers: { 'x-user-id': 'd1000000-0000-4000-8000-0000000000aa' } });
-    expect(arg(recorded, 'accept')?.['buyerId']).toBe(USER);
+    await call('POST', CANCEL, { headers: { 'x-user-id': 'd1000000-0000-4000-8000-0000000000aa' } });
+    expect(arg(recorded, 'cancel')?.['buyerId']).toBe(USER);
 
-    await call('POST', QUOTES, {
-      payload: VALID_QUOTE,
+    await call('POST', CREATE, {
+      payload: VALID_REQUEST,
       headers: { 'x-user-id': 'd1000000-0000-4000-8000-0000000000aa' },
     });
-    expect(arg(recorded, 'quote')?.['sellerId']).toBe(USER);
+    expect(arg(recorded, 'create')?.['buyerId']).toBe(USER);
   });
 
-  it('keeps the two sides on separate operations, with no role anywhere', async () => {
+  // There is one side now. The assertion that survives is the one that mattered: the list reader is given
+  // the account, the paging position and nothing else — no role, and no way to ask for somebody else's list.
+  it('gives the list reader the account and the position, and no role anywhere', async () => {
     const recorded = await start();
     await call('GET', MADE);
-    await call('GET', RECEIVED);
 
     expect(recorded.calls.filter((name) => name === 'made')).toHaveLength(1);
-    expect(recorded.calls.filter((name) => name === 'received')).toHaveLength(1);
+    expect(recorded.calls.filter((name) => name === 'received')).toHaveLength(0);
     expect(Object.keys(arg(recorded, 'made') ?? {}).sort()).toEqual([
       'cursorCreatedAt',
       'cursorId',
@@ -374,79 +386,13 @@ describe('nothing about the outcome comes from a request', () => {
     expect(recorded.calls).not.toContain('create');
   });
 
-  it.each([
-    ['a payment deadline', { ...VALID_QUOTE, paymentDueAt: '2026-05-05T09:00:00.000Z' }],
-    ['a status', { ...VALID_QUOTE, status: 'accepted' }],
-    ['a currency', { ...VALID_QUOTE, currencyCode: 'USD' }],
-    ['an explicit expiry', { ...VALID_QUOTE, expiresAt: '2027-01-01T00:00:00.000Z' }],
-    ['a request of its own', { ...VALID_QUOTE, serviceRequestId: REQUEST }],
-    ['a seller', { ...VALID_QUOTE, sellerUserId: USER }],
-    ['accepted terms', { ...VALID_QUOTE, acceptedTerms: { amount_minor: '1' } }],
-  ])('refuses a quote carrying %s, and writes nothing', async (_name, payload) => {
+  // Cancelling is the one transition a buyer still has (OD-A4 closed the rest), and it still takes no
+  // body: the account comes from the session and the request from the route, so there is nothing a caller
+  // could put in a body that this surface would read.
+  it('cancels with no body at all, and sends exactly the two values it was given', async () => {
     const recorded = await start();
-    const result = await call('POST', QUOTES, { payload });
-    expect(result.status).toBe(400);
-    expect(recorded.calls).not.toContain('quote');
-  });
-
-  it('accepts, rejects, withdraws, cancels and declines with no body at all', async () => {
-    const recorded = await start();
-    for (const url of [ACCEPT, REJECT, WITHDRAW, CANCEL, DECLINE]) {
-      expect((await call('POST', url)).status, url).toBe(200);
-    }
-    for (const name of ['accept', 'reject', 'withdraw']) {
-      expect(Object.keys(arg(recorded, name) ?? {}).sort(), name).toHaveLength(2);
-    }
-  });
-
-  it('never computes a deadline of its own', async () => {
-    const recorded = await start();
-    await call('POST', ACCEPT);
-    for (const key of Object.keys(arg(recorded, 'accept') ?? {})) {
-      expect(key.toLowerCase()).not.toContain('due');
-      expect(key.toLowerCase()).not.toContain('hour');
-      expect(key.toLowerCase()).not.toContain('accepted');
-    }
-  });
-});
-
-describe('the validity window and the payment deadline are different things', () => {
-  it('requires the seller to state how long the quote stands', async () => {
-    const recorded = await start();
-    const withoutWindow = {
-      amountMinor: VALID_QUOTE.amountMinor,
-      deliveryDays: VALID_QUOTE.deliveryDays,
-      revisionsIncluded: VALID_QUOTE.revisionsIncluded,
-      scope: VALID_QUOTE.scope,
-    };
-    const result = await call('POST', QUOTES, { payload: withoutWindow });
-    expect(result.status).toBe(400);
-    expect(recorded.calls).not.toContain('quote');
-  });
-
-  it('bounds it by the schema’s own 1..365', async () => {
-    const recorded = await start();
-    for (const validForDays of [0, -1, 366, 1.5, '14']) {
-      const result = await call('POST', QUOTES, { payload: { ...VALID_QUOTE, validForDays } });
-      expect(result.status, String(validForDays)).toBe(400);
-    }
-    expect(recorded.calls).not.toContain('quote');
-
-    for (const validForDays of [1, 14, 365]) {
-      expect(
-        (await call('POST', QUOTES, { payload: { ...VALID_QUOTE, validForDays } })).status,
-        String(validForDays),
-      ).toBe(201);
-    }
-  });
-
-  it('passes it as a window and never as a deadline', async () => {
-    const recorded = await start();
-    await call('POST', QUOTES, { payload: VALID_QUOTE });
-    const quote = arg(recorded, 'quote');
-    expect(quote?.['validForDays']).toBe(14);
-    expect(Object.keys(quote ?? {})).not.toContain('expiresAt');
-    expect(Object.keys(quote ?? {})).not.toContain('paymentDueAt');
+    expect((await call('POST', CANCEL)).status).toBe(200);
+    expect(Object.keys(arg(recorded, 'cancel') ?? {}).sort()).toHaveLength(2);
   });
 });
 
@@ -601,86 +547,6 @@ describe('the detail', () => {
   });
 });
 
-describe('a quote belongs to its own request', () => {
-  it('refuses a quote the database says belongs to another request', async () => {
-    await start({
-      accept: {
-        outcome: 'accepted',
-        status: 'accepted',
-        requestId: 'd1000000-0000-4000-8000-00000000ffff',
-        acceptedAt: new Date('2026-05-03T09:00:00.000Z'),
-        paymentDueAt: new Date('2026-05-05T09:00:00.000Z'),
-      },
-    });
-    const result = await call('POST', ACCEPT);
-    expect(result.status).toBe(404);
-    expect(result.body['code']).toBe('NOT_FOUND');
-  });
-
-  it('refuses it on all three quote transitions', async () => {
-    const elsewhere = {
-      status: 'rejected',
-      requestId: 'd1000000-0000-4000-8000-00000000ffff',
-      acceptedAt: null,
-      paymentDueAt: null,
-    };
-    await start({
-      reject: { outcome: 'rejected', ...elsewhere },
-      withdraw: { outcome: 'withdrawn', ...elsewhere },
-    });
-    expect((await call('POST', REJECT)).status).toBe(404);
-    expect((await call('POST', WITHDRAW)).status).toBe(404);
-  });
-
-  it('refuses a quote identifier that is not one', async () => {
-    const recorded = await start();
-    const bad = `${QUOTES}/${encodeURIComponent('nope')}/accept`;
-    expect((await call('POST', bad)).status).toBe(400);
-    expect(recorded.calls).not.toContain('accept');
-  });
-});
-
-describe('acceptance', () => {
-  it('answers with the obligation the database recorded', async () => {
-    await start();
-    const result = await call('POST', ACCEPT);
-    expect(result.status).toBe(200);
-    expect(result.body).toEqual({
-      status: 'accepted',
-      acceptedAt: '2026-05-03T09:00:00.000Z',
-      paymentDueAt: '2026-05-05T09:00:00.000Z',
-    });
-  });
-
-  it('records no obligation on a rejection or a withdrawal', async () => {
-    await start();
-    for (const url of [REJECT, WITHDRAW]) {
-      const result = await call('POST', url);
-      expect(result.body['acceptedAt'], url).toBeNull();
-      expect(result.body['paymentDueAt'], url).toBeNull();
-    }
-  });
-
-  it('turns a missing payment window into an integrity failure, never an acceptance', async () => {
-    await start({
-      accept: {
-        outcome: 'payment_policy_missing',
-        status: 'sent',
-        requestId: REQUEST,
-        acceptedAt: null,
-        paymentDueAt: null,
-      },
-    });
-    const result = await call('POST', ACCEPT);
-
-    expect(result.status).toBe(503);
-    expect(result.body['code']).toBe('SERVICE_QUOTE_PAYMENT_POLICY_MISSING');
-    // The caller is not told that an admin setting is missing.
-    expect(result.raw).not.toContain('payment_due_hours');
-    expect(result.raw).not.toContain('site_setting');
-  });
-});
-
 describe('every outcome becomes one answer', () => {
   it.each([
     ['not_available', 409, 'SERVICE_REQUEST_NOT_AVAILABLE'],
@@ -696,64 +562,21 @@ describe('every outcome becomes one answer', () => {
     expect(result.body['code']).toBe(code);
   });
 
+  // Cancelling alone: the seller's decline went with OD-A4, and the mapping it shared with cancelling is
+  // still asserted here on the transition that survives.
   it.each([
     ['conflict', 409, 'SERVICE_REQUEST_NOT_ACTIONABLE'],
     ['not_found', 404, 'NOT_FOUND'],
-  ])('turns a cancel or decline outcome of %s into %i', async (outcome, status, code) => {
-    await start({
-      cancel: { outcome, status: 'accepted' },
-      decline: { outcome, status: 'accepted' },
-    });
-    for (const url of [CANCEL, DECLINE]) {
-      const result = await call('POST', url);
-      expect(result.status, url).toBe(status);
-      expect(result.body['code'], url).toBe(code);
-    }
-  });
-
-  it.each([
-    ['conflict', 409, 'SERVICE_REQUEST_NOT_ACTIONABLE'],
-    ['blocked', 409, 'SERVICE_REQUEST_BLOCKED'],
-    ['not_found', 404, 'NOT_FOUND'],
-  ])('turns a quote-create outcome of %s into %i', async (outcome, status, code) => {
-    await start({ quote: { outcome, quoteId: null, status: null } });
-    const result = await call('POST', QUOTES, { payload: VALID_QUOTE });
+  ])('turns a cancel outcome of %s into %i', async (outcome, status, code) => {
+    await start({ cancel: { outcome, status: 'accepted' } });
+    const result = await call('POST', CANCEL);
     expect(result.status).toBe(status);
     expect(result.body['code']).toBe(code);
   });
 
-  it.each([
-    ['conflict', 409, 'SERVICE_REQUEST_NOT_ACTIONABLE'],
-    ['expired', 409, 'SERVICE_QUOTE_LAPSED'],
-    ['not_found', 404, 'NOT_FOUND'],
-  ])('turns a quote-decision outcome of %s into %i, on all three transitions', async (outcome, status, code) => {
-    const row = { status: 'sent', requestId: REQUEST, acceptedAt: null, paymentDueAt: null };
-    await start({
-      accept: { outcome, ...row },
-      reject: { outcome, ...row },
-      withdraw: { outcome, ...row },
-    });
-    for (const url of [ACCEPT, REJECT, WITHDRAW]) {
-      const result = await call('POST', url);
-      expect(result.status, url).toBe(status);
-      expect(result.body['code'], url).toBe(code);
-    }
-  });
-
-  it('repeating a decision is whatever the database says, never a second write of ours', async () => {
-    const recorded = await start({
-      accept: { outcome: 'conflict', status: 'accepted', requestId: REQUEST, acceptedAt: null, paymentDueAt: null },
-    });
-    await call('POST', ACCEPT);
-    await call('POST', ACCEPT);
-    expect(recorded.calls.filter((name) => name === 'accept')).toHaveLength(2);
-  });
-
   it('treats an outcome it does not understand as an outage, never as a success', async () => {
-    await start({
-      accept: { outcome: 'something_new', status: null, requestId: REQUEST, acceptedAt: null, paymentDueAt: null },
-    });
-    expect((await call('POST', ACCEPT)).status).toBe(503);
+    await start({ create: { outcome: 'something_new', requestId: null, status: null } });
+    expect((await call('POST', CREATE, { payload: VALID_REQUEST })).status).toBe(503);
   });
 
   it('turns an unreachable database into an outage on every route', async () => {
@@ -761,8 +584,7 @@ describe('every outcome becomes one answer', () => {
     expect((await call('GET', MADE)).status).toBe(503);
     expect((await call('GET', DETAIL)).status).toBe(503);
     expect((await call('POST', CREATE, { payload: VALID_REQUEST })).status).toBe(503);
-    expect((await call('POST', QUOTES, { payload: VALID_QUOTE })).status).toBe(503);
-    expect((await call('POST', ACCEPT)).status).toBe(503);
+    expect((await call('POST', CANCEL)).status).toBe(503);
   });
 
   it('refuses an unusable cursor rather than paging from the beginning', async () => {

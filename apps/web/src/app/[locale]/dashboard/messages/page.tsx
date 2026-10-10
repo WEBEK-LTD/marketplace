@@ -60,7 +60,7 @@ export default async function MessagesPage({
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('title')}</Heading>
-          <p className="mt-2 text-neutral-600">{t('yourMessages')}</p>
+          <p className="mt-2 text-ink-muted">{t('yourMessages')}</p>
 
           <Suspense fallback={<ConversationListSkeleton label={t('title')} />}>
             <InboxSection

@@ -118,7 +118,7 @@ export default async function ServicesPage({ params, searchParams }: PageParams)
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('title')}</Heading>
-        <p className="mt-2 max-w-prose text-neutral-600">{t('description')}</p>
+        <p className="mt-2 max-w-prose text-ink-muted">{t('description')}</p>
         {/* Keyed by the cursor so moving to the next page shows the loading state again. */}
         <Suspense key={cursor ?? 'first'} fallback={<ServiceGridSkeleton label={t('loading')} />}>
           <ServicesSection locale={locale} cursor={cursor} />

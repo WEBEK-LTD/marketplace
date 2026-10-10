@@ -222,7 +222,7 @@ export default async function ConversationPage({
           <p className="mt-2">
             <Link
               href={`${prefix}/dashboard/messages`}
-              className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+              className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
             >
               {t('title')}
             </Link>
@@ -230,7 +230,7 @@ export default async function ConversationPage({
 
           {thread.kind === 'not_found' || thread.kind === 'invalid' ? (
             // One wording for a conversation that is not theirs and one that does not exist.
-            <p role="status" className="mt-8 text-neutral-900">
+            <p role="status" className="mt-8 text-ink-strong">
               {t('unavailableConversation')}
             </p>
           ) : thread.kind !== 'ok' ? (

@@ -7,7 +7,6 @@ import {
   encodeSupportMessagesCursor,
   encodeSupportTicketsCursor,
 } from '../src/support/support-cursor.js';
-import { encodeOffersCursor } from '../src/offers/offers-cursor.js';
 import { encodeServiceRequestsCursor } from '../src/services/service-requests-cursor.js';
 
 /**
@@ -60,7 +59,9 @@ describe('the support cursors', () => {
   });
 
   it('carry their own versions, and refuse the other surfaces’ cursors', () => {
-    expect(decodeSupportTicketsCursor(encodeOffersCursor(POSITION))).toBeNull();
+    // The offers cursor was named here too until 0110 closed the offers surface (OD-A4) and its module
+    // went with it. What this assertion is for — a cursor minted by one surface is refused by another, so
+    // the version prefix is doing its job — is unchanged, and the service-request cursor still proves it.
     expect(decodeSupportTicketsCursor(encodeServiceRequestsCursor(POSITION))).toBeNull();
     expect(decodeSupportMessagesCursor(encodeServiceRequestsCursor(POSITION))).toBeNull();
     expect(Buffer.from(encodeSupportTicketsCursor(POSITION), 'base64url').toString()).toContain(

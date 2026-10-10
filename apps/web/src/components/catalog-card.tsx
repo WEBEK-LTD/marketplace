@@ -1,6 +1,6 @@
-import { Badge, CardFooter, CardOverlayLink, CardTitle, LinkCard, TYPE, cx } from '@repo/ui';
+import { Badge, CardOverlayLink, CardTitle, FOCUS_RING, INTERACTIVE, LinkCard, TYPE, cx } from '@repo/ui';
 import type { ReactNode } from 'react';
-import { formatListingAmount, type ListingPriceLabels } from './listing-price';
+import { PriceLockup, formatListingAmountParts, type ListingPriceLabels } from './listing-price';
 
 export interface CatalogCardProps {
   readonly href: string;
@@ -21,6 +21,15 @@ export interface CatalogCardProps {
   readonly secondaryLink?: { readonly href: string; readonly label: string };
   /** The listing's id, for 0101's click beacon. Passed through to the card's own anchor. */
   readonly listingId?: string;
+  /**
+   * `wide` is the two-up variant the services grid uses.
+   *
+   * The two catalogues are deliberately not the same shape. A service carries facts a product does not — a
+   * delivery time, a revision count — and a wider card lets those be read rather than truncated. That is the
+   * "clearly differentiated marketplace sections" the design asks for, done with composition rather than with
+   * a different colour.
+   */
+  readonly size?: 'default' | 'wide';
 }
 
 /**
@@ -35,10 +44,14 @@ export interface CatalogCardProps {
  * them media — the platform has no media origin to address a picture with. So the layout spends its space on the
  * two things a person actually compares across a grid:
  *
- *   * **The title**, clamped to two lines so a row keeps its rhythm in both scripts.
- *   * **The price**, bold, `tabular-nums`, and pinned to the bottom of the card by `CardFooter` — so a row of
- *     cards aligns its prices on one line however long the titles above them ran. In a grid that a person scans
- *     by price, that alignment is the difference between comparable and not.
+ *   * **The price**, which 0110 makes the largest element on the card. A marketplace is scanned by price, so
+ *     that is the honest hierarchy; 0109 set the price at 18px under an 18px title and the card had no focal
+ *     point, which is most of why the catalogue read as rows of identical boxes. It is pinned to the bottom of
+ *     the card so a row aligns its prices on one line however long the titles above them ran, and set in
+ *     tabular figures so they align on their digits.
+ *   * **The title**, second, clamped to two lines so a row keeps its rhythm in both scripts.
+ *   * **A quiet line of metadata above both** — the city, a state badge — rather than a middle-dot string
+ *     beneath them. Putting it first gives the card a top edge that is not its own border.
  *
  * The price words come from the `Listings` namespace, which is where they already lived, so a card on the front
  * page reads exactly as the same card reads on the browse list — including "contact for price" where there is no
@@ -57,47 +70,79 @@ export function CatalogCard({
   meta,
   secondaryLink,
   listingId,
+  size = 'default',
 }: CatalogCardProps) {
-  const amount = formatListingAmount(priceMinor, currencyCode, currencyMinorUnit);
+  const priced = formatListingAmountParts(priceMinor, currencyCode, currencyMinorUnit) !== null;
+  const place =
+    secondaryLink !== undefined ? (
+      <CardOverlayLink href={secondaryLink.href} className={cx('truncate', TYPE.metaSmall)}>
+        {secondaryLink.label}
+      </CardOverlayLink>
+    ) : city === null || city === undefined ? null : (
+      <span className={cx('truncate', TYPE.metaSmall)}>{city}</span>
+    );
+
   return (
     <LinkCard
       as="li"
       href={href}
       aria-label={title}
-      className="min-h-40"
+      className={size === 'wide' ? 'min-h-48' : 'min-h-44'}
       {...(listingId === undefined ? {} : { dataListingId: listingId })}
     >
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        {badge === undefined ? null : (
-          <span className="relative z-20 self-start">
-            <Badge tone={badge.tone ?? 'neutral'}>{badge.label}</Badge>
-          </span>
+      {/*
+        **The price band.** A marketplace card without a photograph has one thing a person's eye can land on,
+        and it should be the number they came to compare — so the price is given its own tinted region at the
+        head of the card rather than a line at the foot of it. That is the composition this revision turns on:
+        a grid of these reads as a run of priced objects, where a grid of white tiles with a price line reads
+        as a table. The tint deepens under the pointer, which is also the card's hover state.
+      */}
+      <div
+        className={cx(
+          'relative bg-surface-sunken transition-colors duration-200 group-hover:bg-surface-brand-soft',
+          size === 'wide' ? 'px-6 pt-6 pb-5' : 'px-5 pt-5 pb-4',
         )}
+      >
+        {/*
+          The price alone on this line. "Negotiable" shared it at first and was the thing that got clipped
+          when a price ran to six figures — the longest price and the longest qualifier competing for one
+          row. It belongs with the other facts about the listing, at the foot.
+        */}
+        <PriceLockup
+          priceMinor={priceMinor}
+          currencyCode={currencyCode}
+          currencyMinorUnit={currencyMinorUnit}
+          labels={labels}
+        />
+      </div>
+
+      <div className={cx('flex flex-1 flex-col', size === 'wide' ? 'gap-3 p-6' : 'gap-2.5 p-5')}>
         {/* `dir="auto"` on the title: a listing may be written in either script whatever language the page is in. */}
-        <CardTitle>
+        <CardTitle size={size === 'wide' ? 'large' : 'default'}>
           <span dir="auto">{title}</span>
         </CardTitle>
-        {meta === undefined ? null : <div className={TYPE.meta}>{meta}</div>}
-      </div>
-      <CardFooter>
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className={cx(amount === null ? 'text-base font-medium text-neutral-700' : TYPE.price, 'truncate')}>
-            {amount ?? labels.contactForPrice}
-          </span>
-          {isNegotiable === true && amount !== null ? (
-            <span className="text-xs text-neutral-600">{labels.negotiable}</span>
-          ) : null}
-        </span>
-        {secondaryLink === undefined ? (
-          city === null || city === undefined ? null : (
-            <span className="truncate text-sm text-neutral-600">{city}</span>
-          )
-        ) : (
-          <CardOverlayLink href={secondaryLink.href} className="truncate text-sm text-neutral-600">
-            {secondaryLink.label}
-          </CardOverlayLink>
+        {meta === undefined ? null : <div className={cx(TYPE.metaSmall)}>{meta}</div>}
+
+        {/*
+          The foot: where the thing is, and anything the platform is asserting about it. Pushed down by
+          `mt-auto`, so a row of cards aligns on this line however long the titles above them ran.
+        */}
+        {place === null && badge === undefined && !(isNegotiable === true && priced) ? null : (
+          <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+            {place}
+            <span className="flex shrink-0 items-center gap-2">
+              {isNegotiable === true && priced ? (
+                <span className={cx('font-medium text-ink-brand', TYPE.metaSmall)}>{labels.negotiable}</span>
+              ) : null}
+              {badge === undefined ? null : (
+                <span className="relative z-20">
+                  <Badge tone={badge.tone ?? 'neutral'}>{badge.label}</Badge>
+                </span>
+              )}
+            </span>
+          </div>
         )}
-      </CardFooter>
+      </div>
     </LinkCard>
   );
 }
@@ -119,21 +164,21 @@ export interface SellerCardProps {
  */
 export function SellerCard({ href, displayName, city, bio, badge }: SellerCardProps) {
   return (
-    <LinkCard as="li" href={href} aria-label={displayName} className="min-h-32">
-      <div className="flex flex-1 flex-col gap-2 p-4">
+    <LinkCard as="li" href={href} aria-label={displayName} className="min-h-44">
+      <div className="flex flex-1 flex-col gap-3 p-6">
         <div className="flex items-start justify-between gap-3">
-          <CardTitle lines={1}>
-            <span dir="auto">{displayName}</span>
-          </CardTitle>
+          {city === null || city === undefined ? <span /> : <span className={TYPE.metaSmall}>{city}</span>}
           {badge === undefined ? null : (
             <span className="relative z-20 shrink-0">
               <Badge tone="solid">{badge}</Badge>
             </span>
           )}
         </div>
-        {city === null || city === undefined ? null : <p className={TYPE.meta}>{city}</p>}
+        <CardTitle size="large" lines={1}>
+          <span dir="auto">{displayName}</span>
+        </CardTitle>
         {bio === null || bio === undefined ? null : (
-          <p className="line-clamp-3 text-sm leading-normal text-neutral-700" dir="auto">
+          <p className={cx('line-clamp-3', TYPE.meta)} dir="auto">
             {bio}
           </p>
         )}
@@ -142,32 +187,60 @@ export function SellerCard({ href, displayName, city, bio, badge }: SellerCardPr
   );
 }
 
-export interface CategoryChipProps {
+export interface CategoryTileProps {
   readonly href: string;
   readonly label: string;
   readonly count?: number;
+  /** The first tile in a mosaic spans two columns, which is what gives the block a composition. */
+  readonly wide?: boolean;
 }
 
 /**
- * A category, as an entry point.
+ * A category, as a door.
  *
- * A chip rather than a card: a category is a door, not an item, and twenty doors in a card grid would compete
- * with the listings they lead to. They wrap into a dense block instead, which is also how a person scans a
- * category list — by reading across it, not down it.
+ * **A tile, not a chip.** 0109 drew categories as a wrapped row of 32px pills, which read as leftover form
+ * controls and gave the most important navigation on the home page less presence than a button. A tile is big
+ * enough to aim at on a phone, big enough to carry a count, and — because the first one in a mosaic spans two
+ * columns — produces a block with a composition rather than a uniform rhythm.
+ *
+ * The chevron is drawn from two logical borders rather than typed as an arrow character, so it points the way
+ * the page reads in both scripts and no label ends with "→", which is the commonest piece of template chrome
+ * there is.
  */
-export function CategoryChip({ href, label, count }: CategoryChipProps) {
+export function CategoryTile({ href, label, count, wide = false }: CategoryTileProps) {
   return (
-    <li>
+    <li className={wide ? 'col-span-2' : ''}>
       <a
         href={href}
         className={cx(
-          'inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-neutral-0 px-4 py-2 text-sm font-medium text-neutral-900',
-          'transition-colors duration-150 hover:border-neutral-900 hover:bg-neutral-50',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900',
+          'group relative flex h-full min-h-28 flex-col justify-between gap-4 overflow-hidden rounded-xl p-5 sm:min-h-32 sm:p-6',
+          // Inverts under the pointer rather than nudging a border. A category is a destination, and a tile
+          // that commits to the brand when you aim at it says so far better than a grey hover does.
+          'bg-surface-raised ring-1 ring-edge-brand hover:bg-surface-ink hover:ring-transparent',
+          INTERACTIVE,
+          FOCUS_RING,
         )}
       >
-        <span dir="auto">{label}</span>
-        {count === undefined ? null : <span className="text-xs text-neutral-600 tabular-nums">{count}</span>}
+        <span className="flex items-start justify-between gap-3">
+          <span
+            className={cx(
+              'font-medium text-ink-strong transition-colors duration-200 group-hover:text-on-ink',
+              wide ? 'text-lg sm:text-xl' : 'text-base sm:text-lg',
+            )}
+            dir="auto"
+          >
+            {label}
+          </span>
+          <span
+            aria-hidden="true"
+            className="mt-1.5 size-2 shrink-0 -rotate-45 rtl:rotate-45 border-e-2 border-b-2 border-edge-brand transition-all duration-200 group-hover:translate-x-0.5 group-hover:border-accent-400 rtl:group-hover:-translate-x-0.5"
+          />
+        </span>
+        {count === undefined ? null : (
+          <span className={cx('tabular-nums transition-colors duration-200 group-hover:text-on-ink-muted', TYPE.metaSmall)}>
+            {count}
+          </span>
+        )}
       </a>
     </li>
   );

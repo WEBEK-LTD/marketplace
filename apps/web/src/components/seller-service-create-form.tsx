@@ -76,8 +76,8 @@ export interface RenderableServiceCategory {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 
 /** The two interface locales, as every seller form renders them. `public.locales` remains the authority. */
 const LANGUAGES: readonly { readonly code: string; readonly label: string }[] = [
@@ -149,7 +149,7 @@ export function SellerServiceCreateForm({
 
   return (
     <section aria-labelledby="seller-service-create-heading" className="mt-10 max-w-xl">
-      <h2 id="seller-service-create-heading" className="text-lg font-semibold text-neutral-900">
+      <h2 id="seller-service-create-heading" className="text-lg font-semibold text-ink-strong">
         {labels.create}
       </h2>
 
@@ -167,7 +167,7 @@ export function SellerServiceCreateForm({
             onChange={(event) => set('slug', event.target.value)}
             className={FIELD_CLASS}
           />
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.slugPermanent}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.slugPermanent}</p>
         </div>
 
         <div>
@@ -221,7 +221,7 @@ export function SellerServiceCreateForm({
               </option>
             ))}
           </select>
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.categoryHint}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.categoryHint}</p>
         </div>
 
         <div>
@@ -275,7 +275,7 @@ export function SellerServiceCreateForm({
               className={FIELD_CLASS}
             />
           )}
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.currencyHint}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.currencyHint}</p>
         </div>
 
         <div>
@@ -311,7 +311,7 @@ export function SellerServiceCreateForm({
             onChange={(event) => set('priceMinor', event.target.value)}
             className={FIELD_CLASS}
           />
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.priceHint}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.priceHint}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -321,9 +321,9 @@ export function SellerServiceCreateForm({
             type="checkbox"
             checked={values.isNegotiable !== ''}
             onChange={(event) => set('isNegotiable', event.target.checked ? 'yes' : '')}
-            className="h-4 w-4 rounded border-neutral-300"
+            className="h-4 w-4 rounded border-edge"
           />
-          <label htmlFor="service-negotiable" className="text-sm text-neutral-900">
+          <label htmlFor="service-negotiable" className="text-sm text-ink-strong">
             {labels.negotiable}
           </label>
         </div>
@@ -358,8 +358,8 @@ export function SellerServiceCreateForm({
 
         {/* The pricing block. Its four dependent fields appear only once a model is stated, because until
             then there is nothing for them to belong to and the database would refuse them. */}
-        <fieldset className="border-t border-neutral-200 pt-5">
-          <legend className="text-sm font-semibold text-neutral-900">{labels.pricing}</legend>
+        <fieldset className="border-t border-hairline pt-5">
+          <legend className="text-sm font-semibold text-ink-strong">{labels.pricing}</legend>
 
           <div className="mt-3">
             <label htmlFor="service-pricing-model" className={LABEL_CLASS}>
@@ -376,7 +376,7 @@ export function SellerServiceCreateForm({
               <option value="fixed">{labels.pricingFixed}</option>
               <option value="custom">{labels.pricingCustom}</option>
             </select>
-            <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.pricingHint}</p>
+            <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.pricingHint}</p>
           </div>
 
           {pricingStated ? (
@@ -395,7 +395,7 @@ export function SellerServiceCreateForm({
                   onChange={(event) => set('deliveryDays', event.target.value)}
                   className={FIELD_CLASS}
                 />
-                <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.deliveryDaysHint}</p>
+                <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.deliveryDaysHint}</p>
               </div>
 
               <div className="mt-4">
@@ -420,9 +420,9 @@ export function SellerServiceCreateForm({
                   type="checkbox"
                   checked={values.requiresBrief !== ''}
                   onChange={(event) => set('requiresBrief', event.target.checked ? 'yes' : '')}
-                  className="h-4 w-4 rounded border-neutral-300"
+                  className="h-4 w-4 rounded border-edge"
                 />
-                <label htmlFor="service-requires-brief" className="text-sm text-neutral-900">
+                <label htmlFor="service-requires-brief" className="text-sm text-ink-strong">
                   {labels.requiresBrief}
                 </label>
               </div>
@@ -451,7 +451,7 @@ export function SellerServiceCreateForm({
           </p>
         ) : null}
         {created ? (
-          <p role="status" className="text-sm text-neutral-900">
+          <p role="status" className="text-sm text-ink-strong">
             {labels.created}
           </p>
         ) : null}
@@ -459,7 +459,7 @@ export function SellerServiceCreateForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? labels.creating : labels.createSubmit}
         </button>

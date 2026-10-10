@@ -45,13 +45,13 @@ import {
  */
 
 const LINK_CLASS =
-  'text-xs underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 disabled:opacity-60';
+  'text-xs underline decoration-edge underline-offset-4 hover:decoration-ink-strong disabled:opacity-60';
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
+  'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
 
 export interface ReportCopy extends ReportFailureLabels {
   /** The link, before anything is opened. */
@@ -132,9 +132,9 @@ export function ReportForm({
 
   if (state === 'done') {
     return (
-      <div role="status" className="mt-4 max-w-prose rounded-lg border border-neutral-200 p-4">
-        <p className="text-sm font-medium text-neutral-900">{copy.done}</p>
-        <p className="mt-1 text-xs text-neutral-600">{copy.doneHint}</p>
+      <div role="status" className="mt-4 max-w-prose rounded-lg border border-hairline p-4">
+        <p className="text-sm font-medium text-ink-strong">{copy.done}</p>
+        <p className="mt-1 text-xs text-ink-muted">{copy.doneHint}</p>
       </div>
     );
   }
@@ -154,15 +154,15 @@ export function ReportForm({
       onSubmit={onSubmit}
       noValidate
       aria-labelledby="report-heading"
-      className="mt-4 max-w-prose rounded-lg border border-neutral-200 p-4"
+      className="mt-4 max-w-prose rounded-lg border border-hairline p-4"
     >
-      <h2 id="report-heading" className="text-sm font-medium text-neutral-900">
+      <h2 id="report-heading" className="text-sm font-medium text-ink-strong">
         {copy.heading}
       </h2>
-      <p className="mt-1 text-xs text-neutral-600">{copy.intro}</p>
+      <p className="mt-1 text-xs text-ink-muted">{copy.intro}</p>
 
       <div className="mt-3">
-        <label htmlFor="report-reason" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="report-reason" className="text-sm font-medium text-ink-strong">
           {copy.reasonLabel}
         </label>
         <select
@@ -183,10 +183,10 @@ export function ReportForm({
       </div>
 
       <div className="mt-3">
-        <label htmlFor="report-details" className="text-sm font-medium text-neutral-900">
+        <label htmlFor="report-details" className="text-sm font-medium text-ink-strong">
           {copy.detailsLabel}
         </label>
-        <p className="mt-1 text-xs text-neutral-600">{copy.detailsHint}</p>
+        <p className="mt-1 text-xs text-ink-muted">{copy.detailsHint}</p>
         <textarea
           id="report-details"
           name="details"
@@ -200,7 +200,7 @@ export function ReportForm({
       </div>
 
       {message !== null && (
-        <p role="alert" className="mt-3 max-w-prose text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 max-w-prose text-sm font-medium text-ink-strong">
           {message}
         </p>
       )}

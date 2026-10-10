@@ -1,16 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  handleAcceptServiceQuote,
   handleCreateAdminOnlyServiceRequest,
   handleCancelServiceRequest,
-  handleCreateServiceQuote,
   handleCreateServiceRequest,
-  handleDeclineServiceRequest,
-  handleRejectServiceQuote,
-  handleWithdrawServiceQuote,
   readServiceRequestDetail,
   readServiceRequestsMade,
-  readServiceRequestsReceived,
 } from '../src/server/bff/service-requests';
 
 /**
@@ -135,21 +129,8 @@ const VALID_REQUEST = {
   title: 'Build me a shelf',
   brief: 'A brief that is comfortably longer than ten characters.',
 };
-const VALID_QUOTE = {
-  amountMinor: '380000',
-  deliveryDays: 10,
-  revisionsIncluded: 2,
-  scope: 'A scope long enough to satisfy the ten-character rule.',
-  validForDays: 14,
-};
 
 const CREATED = { requestId: REQUEST, status: 'open' };
-const QUOTED = { quoteId: QUOTE, status: 'sent' };
-const ACCEPTED = {
-  status: 'accepted',
-  acceptedAt: '2026-05-03T09:00:00.000Z',
-  paymentDueAt: '2026-05-05T09:00:00.000Z',
-};
 
 /* ------------------------------------------------------------------------------------------------ */
 
@@ -168,14 +149,14 @@ describe('reading the three views', () => {
     expect(seen[0]!.headers.get('cookie')).toBeNull();
   });
 
-  it('reads the two sides from two different operations, neither naming a party', async () => {
+  // One side now: OD-A4 closed the seller's queue. The assertion that survives is the one that mattered —
+  // the read names no party, no role and no side, so nothing a caller sends can ask for somebody else's list.
+  it('reads the caller’s own list without naming a party', async () => {
     const seen: Seen[] = [];
     const empty = { items: [], nextCursor: null };
     await readServiceRequestsMade({}, { env: ENV, cookieHeader: COOKIE, fetch: api(200, empty, seen) });
-    await readServiceRequestsReceived({}, { env: ENV, cookieHeader: COOKIE, fetch: api(200, empty, seen) });
 
     expect(seen[0]!.url).toBe('https://api.internal.test/v1/service-requests/made');
-    expect(seen[1]!.url).toBe('https://api.internal.test/v1/service-requests/received');
     for (const request of seen) {
       expect(request.url).not.toContain('role=');
       expect(request.url).not.toContain('user');
@@ -199,7 +180,6 @@ describe('reading the three views', () => {
     const seen: Seen[] = [];
     for (const read of [
       () => readServiceRequestsMade({}, { env: ENV, cookieHeader: null, fetch: api(200, {}, seen) }),
-      () => readServiceRequestsReceived({}, { env: ENV, cookieHeader: null, fetch: api(200, {}, seen) }),
       () => readServiceRequestDetail(REQUEST, { env: ENV, cookieHeader: null, fetch: api(200, {}, seen) }),
     ]) {
       expect((await read()).kind).toBe('unauthenticated');
@@ -272,11 +252,11 @@ describe('reading the three views', () => {
 
   it('sends no query at all when nothing was asked for', async () => {
     const seen: Seen[] = [];
-    await readServiceRequestsReceived(
+    await readServiceRequestsMade(
       { cursor: '', limit: null },
       { env: ENV, cookieHeader: COOKIE, fetch: api(200, { items: [], nextCursor: null }, seen) },
     );
-    expect(seen[0]!.url).toBe('https://api.internal.test/v1/service-requests/received');
+    expect(seen[0]!.url).toBe('https://api.internal.test/v1/service-requests/made');
   });
 });
 
@@ -381,222 +361,31 @@ describe('sending a brief', () => {
   });
 });
 
-describe('quoting', () => {
-  it('takes the brief from the route and rebuilds the five fields', async () => {
+describe('the one step that takes no body', () => {
+  // Cancelling is all that is left of the five (OD-A4): the seller's decline and all three quote decisions
+  // went with the buyer→seller path, and 0110 revoked the functions behind them. The property asserted is
+  // the one that always mattered here — a step that takes no body sends none, whatever a caller puts in it.
+  it('closes a brief through /cancel, forwarding no body at all', async () => {
     const seen: Seen[] = [];
-    const response = await handleCreateServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes`, {
-        ...VALID_QUOTE,
-        // Dropped: the request, the currency, the expiry, the status, the deadline and the terms.
-        serviceRequestId: 'd1000000-0000-4000-8000-00000000ffff',
-        currencyCode: 'USD',
-        expiresAt: '2027-01-01T00:00:00.000Z',
-        status: 'accepted',
-        paymentDueAt: '2026-05-05T09:00:00.000Z',
-        acceptedTerms: { amount_minor: '1' },
-      }),
+    const response = await handleCancelServiceRequest(
+      post(`/api/service-requests/${REQUEST}/cancel`, { status: 'accepted', paymentDueAt: 'now' }),
       REQUEST,
-      { env: ENV, fetch: api(201, QUOTED, seen) },
-    );
-
-    expect(response.status).toBe(201);
-    expect(seen[0]!.url).toBe(`https://api.internal.test/v1/service-requests/${REQUEST}/quotes`);
-    expect(Object.keys(JSON.parse(seen[0]!.body) as Record<string, unknown>).sort()).toEqual([
-      'amountMinor',
-      'deliveryDays',
-      'revisionsIncluded',
-      'scope',
-      'validForDays',
-    ]);
-  });
-
-  it('sends the validity window as a window, never as a deadline', async () => {
-    const seen: Seen[] = [];
-    await handleCreateServiceQuote(post(`/api/service-requests/${REQUEST}/quotes`, VALID_QUOTE), REQUEST, {
-      env: ENV,
-      fetch: api(201, QUOTED, seen),
-    });
-    const body = JSON.parse(seen[0]!.body) as Record<string, unknown>;
-    expect(body['validForDays']).toBe(14);
-    for (const key of Object.keys(body)) {
-      expect(key.toLowerCase()).not.toContain('due');
-      expect(key.toLowerCase()).not.toContain('expires');
-    }
-  });
-
-  it('defaults the revisions the contract defaults, and refuses what it refuses', async () => {
-    const seen: Seen[] = [];
-    await handleCreateServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes`, {
-        amountMinor: VALID_QUOTE.amountMinor,
-        deliveryDays: VALID_QUOTE.deliveryDays,
-        scope: VALID_QUOTE.scope,
-        validForDays: VALID_QUOTE.validForDays,
-      }),
-      REQUEST,
-      { env: ENV, fetch: api(201, QUOTED, seen) },
-    );
-    expect((JSON.parse(seen[0]!.body) as Record<string, unknown>)['revisionsIncluded']).toBe(0);
-
-    const before = seen.length;
-    for (const body of [
-      { ...VALID_QUOTE, amountMinor: 380000 },
-      { ...VALID_QUOTE, validForDays: 0 },
-      { ...VALID_QUOTE, validForDays: 366 },
-      { ...VALID_QUOTE, deliveryDays: 0 },
-      { ...VALID_QUOTE, scope: 'short' },
-      { amountMinor: '1' },
-    ]) {
-      const response = await handleCreateServiceQuote(
-        post(`/api/service-requests/${REQUEST}/quotes`, body),
-        REQUEST,
-        { env: ENV, fetch: api(201, QUOTED, seen) },
-      );
-      expect(response.status).toBe(400);
-    }
-    expect(seen).toHaveLength(before);
-  });
-
-  it('refuses a brief identifier that is not one', async () => {
-    const seen: Seen[] = [];
-    const response = await handleCreateServiceQuote(
-      post('/api/service-requests/nope/quotes', VALID_QUOTE),
-      'nope',
-      { env: ENV, fetch: api(201, QUOTED, seen) },
-    );
-    expect(response.status).toBe(400);
-    expect(seen).toHaveLength(0);
-  });
-});
-
-describe('the five steps that take no body', () => {
-  const steps = [
-    ['cancel', (r: Request, o: object) => handleCancelServiceRequest(r, REQUEST, o)],
-    ['decline', (r: Request, o: object) => handleDeclineServiceRequest(r, REQUEST, o)],
-  ] as const;
-
-  it.each(steps)('closes a brief through /%s, forwarding no body at all', async (step, run) => {
-    const seen: Seen[] = [];
-    const response = await run(
-      post(`/api/service-requests/${REQUEST}/${step}`, { status: 'accepted', paymentDueAt: 'now' }),
-      { env: ENV, fetch: api(200, { status: step === 'cancel' ? 'cancelled' : 'declined' }, seen) },
+      { env: ENV, fetch: api(200, { status: 'cancelled' }, seen) },
     );
 
     expect(response.status).toBe(200);
-    expect(seen[0]!.url).toBe(`https://api.internal.test/v1/service-requests/${REQUEST}/${step}`);
+    expect(seen[0]!.url).toBe(`https://api.internal.test/v1/service-requests/${REQUEST}/cancel`);
     expect(seen[0]!.body).toBe('');
     expect(seen[0]!.headers.get('content-type')).toBeNull();
   });
 
-  const decisions = [
-    ['accept', handleAcceptServiceQuote],
-    ['reject', handleRejectServiceQuote],
-    ['withdraw', handleWithdrawServiceQuote],
-  ] as const;
-
-  it.each(decisions)('decides a quote through /%s, addressed through its own brief', async (step, run) => {
-    const seen: Seen[] = [];
-    const settled = { accept: 'accepted', reject: 'rejected', withdraw: 'withdrawn' } as const;
-    const payload =
-      step === 'accept' ? ACCEPTED : { status: settled[step], acceptedAt: null, paymentDueAt: null };
-    const response = await run(
-      post(`/api/service-requests/${REQUEST}/quotes/${QUOTE}/${step}`, { paymentDueAt: 'now' }),
-      REQUEST,
-      QUOTE,
-      { env: ENV, fetch: api(200, payload, seen) },
-    );
-
-    expect(response.status).toBe(200);
-    expect(seen[0]!.url).toBe(
-      `https://api.internal.test/v1/service-requests/${REQUEST}/quotes/${QUOTE}/${step}`,
-    );
-    expect(seen[0]!.body).toBe('');
-  });
-
-  it('refuses either identifier being malformed, without reaching the API', async () => {
-    const seen: Seen[] = [];
-    const bad: ReadonlyArray<readonly [string | undefined, string | undefined]> = [
-      ['nope', QUOTE],
-      [REQUEST, 'nope'],
-      [undefined, QUOTE],
-      [REQUEST, undefined],
-      ['', ''],
-    ];
-    for (const [requestId, quoteId] of bad) {
-      const response = await handleAcceptServiceQuote(
-        post('/api/service-requests/x/quotes/y/accept', {}),
-        requestId,
-        quoteId,
-        { env: ENV, fetch: api(200, ACCEPTED, seen) },
-      );
-      expect(response.status).toBe(400);
-    }
-    expect(seen).toHaveLength(0);
-  });
-
-  it('answers an acceptance with the obligation the API recorded, and nothing more', async () => {
-    const response = await handleAcceptServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes/${QUOTE}/accept`, {}),
-      REQUEST,
-      QUOTE,
-      { env: ENV, fetch: api(200, ACCEPTED) },
-    );
-    const body = (await response.json()) as Record<string, unknown>;
-    expect(Object.keys(body).sort()).toEqual(['acceptedAt', 'paymentDueAt', 'status']);
-    expect(body['paymentDueAt']).toBe('2026-05-05T09:00:00.000Z');
-  });
-
-  it('refuses an acceptance body the contract does not describe rather than trimming it', async () => {
-    // Strict, not lenient: a field nobody approved makes the answer a clean failure here, which is how a
-    // later widening upstream gets noticed instead of quietly reaching a browser.
-    const response = await handleAcceptServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes/${QUOTE}/accept`, {}),
-      REQUEST,
-      QUOTE,
-      { env: ENV, fetch: api(200, { ...ACCEPTED, internalNote: 'do not show this' }) },
-    );
-    expect(response.status).toBe(503);
-    expect(await response.text()).not.toContain('do not show this');
-  });
-
-  it('lets the payment-window failure reach the browser as itself', async () => {
-    const response = await handleAcceptServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes/${QUOTE}/accept`, {}),
-      REQUEST,
-      QUOTE,
-      { env: ENV, fetch: api(503, { status: 503, code: 'SERVICE_QUOTE_PAYMENT_POLICY_MISSING' }) },
-    );
-    expect(response.status).toBe(503);
-    expect(((await response.json()) as Record<string, unknown>)['code']).toBe(
-      'SERVICE_QUOTE_PAYMENT_POLICY_MISSING',
-    );
-  });
-
-  it.each([
-    [409, 'SERVICE_REQUEST_NOT_ACTIONABLE'],
-    [409, 'SERVICE_QUOTE_LAPSED'],
-    [404, 'NOT_FOUND'],
-  ])('forwards %i %s so a page can say what happened', async (status, code) => {
-    const response = await handleRejectServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes/${QUOTE}/reject`, {}),
-      REQUEST,
-      QUOTE,
-      { env: ENV, fetch: api(status, { status, code }) },
-    );
-    expect(response.status).toBe(status);
-    expect(((await response.json()) as Record<string, unknown>)['code']).toBe(code);
-  });
 });
 
 describe('every write is same-origin and has a session', () => {
   const writes: ReadonlyArray<readonly [string, (request: Request, options: object) => Promise<Response>]> = [
     ['create', (r, o) => handleCreateServiceRequest(r, o)],
-    ['quote', (r, o) => handleCreateServiceQuote(r, REQUEST, o)],
     ['cancel', (r, o) => handleCancelServiceRequest(r, REQUEST, o)],
-    ['decline', (r, o) => handleDeclineServiceRequest(r, REQUEST, o)],
-    ['accept', (r, o) => handleAcceptServiceQuote(r, REQUEST, QUOTE, o)],
-    ['reject', (r, o) => handleRejectServiceQuote(r, REQUEST, QUOTE, o)],
-    ['withdraw', (r, o) => handleWithdrawServiceQuote(r, REQUEST, QUOTE, o)],
+    ['admin-only', (r, o) => handleCreateAdminOnlyServiceRequest(r, o)],
   ];
 
   it.each(writes)('refuses a cross-site %s before reading anything', async (_name, run) => {
@@ -685,11 +474,6 @@ describe('no Option 2 surface exists here', () => {
       post('/api/service-requests', { ...VALID_REQUEST, routingMode: 'admin_only', adminOnly: true }),
       { env: ENV, fetch: api(201, CREATED, seen) },
     );
-    await handleCreateServiceQuote(
-      post(`/api/service-requests/${REQUEST}/quotes`, { ...VALID_QUOTE, routingMode: 'admin_only' }),
-      REQUEST,
-      { env: ENV, fetch: api(201, QUOTED, seen) },
-    );
     expect(seen).not.toHaveLength(0);
     for (const request of seen) {
       expect(request.body).not.toContain('routingMode');
@@ -742,7 +526,6 @@ describe('no Option 2 surface exists here', () => {
     const seen: Seen[] = [];
     const options = { env: ENV, cookieHeader: COOKIE, fetch: api(200, { items: [], nextCursor: null }, seen) };
     await readServiceRequestsMade({}, options);
-    await readServiceRequestsReceived({}, options);
     await readServiceRequestDetail(REQUEST, {
       env: ENV,
       cookieHeader: COOKIE,
@@ -752,10 +535,9 @@ describe('no Option 2 surface exists here', () => {
       env: ENV,
       fetch: api(201, CREATED, seen),
     });
-    await handleAcceptServiceQuote(post('/x', {}), REQUEST, QUOTE, {
+    await handleCancelServiceRequest(post('/x', {}), REQUEST, {
       env: ENV,
-      cookieHeader: COOKIE,
-      fetch: api(200, ACCEPTED, seen),
+      fetch: api(200, { status: 'cancelled' }, seen),
     });
 
     expect(seen).not.toHaveLength(0);

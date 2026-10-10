@@ -58,12 +58,12 @@ export function SupportAttachmentLink({
         type="button"
         disabled={pending}
         onClick={() => void open()}
-        className="rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-900 disabled:opacity-60"
+        className="rounded-md border border-edge px-2 py-1 text-xs font-medium text-ink-strong disabled:opacity-60"
       >
         {pending ? copy.opening : copy.open}
       </button>
       {error !== null && (
-        <span role="alert" className="text-xs font-medium text-neutral-900">
+        <span role="alert" className="text-xs font-medium text-ink-strong">
           {error}
         </span>
       )}

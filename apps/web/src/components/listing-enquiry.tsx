@@ -5,26 +5,33 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 /**
- * The "request a quote" action on a service detail page (Phase 7-I).
+ * The enquiry action on a listing detail page (OD-A4).
  *
- * **Why it carries no session state**, exactly as the offer action of 7-H and the contact action of 5-E do
- * not: the service page is public and cacheable, and reading the session on it would change what that frozen
- * surface is. So this button does not know whether the visitor is signed in and does not ask — it offers the
- * action, and a 401 from the BFF, the only authority on that question, turns it into a link to sign in. The
- * markup is identical for everybody and stays cacheable.
+ * **This was 7-I's "request a quote" button and it is the same form**, repointed. OD-A4 removed the seller as
+ * a counterparty, and `POST /api/service-requests` now creates an office-routed enquiry instead of a brief
+ * for a seller to quote on — so the body it sends, the refusals it renders and the page it lands on are all
+ * unchanged, while who answers is not. The form was kept rather than rewritten because a buyer's side of the
+ * exchange did not change: they still name a listing, a title, a brief and optionally a budget and a date.
  *
- * **It cannot know whether the visitor is the seller either**, for the same reason. The database does, and says
- * so with its own code; that answer becomes a sentence here rather than a hidden button.
+ * **Why it carries no session state**, exactly as the contact action of 5-E does not: a detail page is public
+ * and cacheable, and reading the session on it would change what that frozen surface is. So this button does
+ * not know whether the visitor is signed in and does not ask — it offers the action, and a 401 from the BFF,
+ * the only authority on that question, turns it into a link to sign in. The markup is identical for everybody
+ * and stays cacheable.
+ *
+ * **It cannot know whether the visitor owns the listing either**, for the same reason. The database does, and
+ * answers 404 for a visitor's own listing — deliberately the same answer an absent listing gets, so asking
+ * cannot reveal who owns one. That answer becomes a sentence here rather than a hidden button.
  *
  * **What crosses.** A listing identifier, a title, a brief, and optionally a budget and a date. There is no
- * seller field and no currency field: both are derived from the listing inside the database. The currency is
- * *shown* here because a person typing a budget needs to know the unit — it is the service's own — but it is
- * never sent. There is no status, no acceptance time and no payment deadline: a brief has none of those yet.
+ * seller field, no currency field and no routing field: all three are derived inside the database, and the
+ * routing is a literal there, so nothing a caller sends can reach a seller. The currency is *shown* here
+ * because a person typing a budget needs to know the unit — it is the listing's own — but it is never sent.
  *
- * On success the visitor is taken to their own service requests, which is where the exchange continues.
+ * On success the visitor is taken to their own enquiries, which is where the exchange continues.
  */
 
-export interface RequestQuoteCopy {
+export interface EnquiryCopy {
   readonly action: string;
   readonly heading: string;
   readonly titleLabel: string;
@@ -46,7 +53,7 @@ export interface RequestQuoteCopy {
   readonly failedGeneric: string;
 }
 
-export function RequestQuoteButton({
+export function EnquireButton({
   listingId,
   currencyCode,
   requestsPath,
@@ -58,7 +65,7 @@ export function RequestQuoteButton({
   readonly currencyCode: string;
   readonly requestsPath: string;
   readonly loginPath: string;
-  readonly copy: RequestQuoteCopy;
+  readonly copy: EnquiryCopy;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -133,7 +140,7 @@ export function RequestQuoteButton({
       <div>
         <Link
           href={loginPath}
-          className="inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900"
+          className="inline-block rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong"
         >
           {copy.signIn}
         </Link>
@@ -150,12 +157,12 @@ export function RequestQuoteButton({
             setError(null);
             setOpen(true);
           }}
-          className="rounded-md border border-neutral-900 px-4 py-2 text-sm font-medium text-neutral-900"
+          className="rounded-md border border-edge-strong px-4 py-2 text-sm font-medium text-ink-strong"
         >
           {copy.action}
         </button>
         {error !== null && (
-          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
             {error}
           </p>
         )}
@@ -165,15 +172,15 @@ export function RequestQuoteButton({
 
   return (
     <form
-      className="max-w-prose rounded-lg border border-neutral-300 p-4"
+      className="max-w-prose rounded-lg border border-edge p-4"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <p className="text-base font-medium text-neutral-900">{copy.heading}</p>
+      <p className="text-base font-medium text-ink-strong">{copy.heading}</p>
 
-      <label htmlFor="request-title" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="request-title" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.titleLabel}
       </label>
       <input
@@ -183,15 +190,15 @@ export function RequestQuoteButton({
         maxLength={140}
         onChange={(event) => setTitle(event.target.value)}
         {...(title !== '' && titleInvalid ? { 'aria-invalid': true } : {})}
-        className="mt-1 w-full rounded-md border border-neutral-300 p-2 text-sm"
+        className="mt-1 w-full rounded-md border border-edge p-2 text-sm"
       />
       {title !== '' && titleInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.titleRequired}
         </p>
       )}
 
-      <label htmlFor="request-brief" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="request-brief" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.briefLabel}
       </label>
       <textarea
@@ -202,18 +209,18 @@ export function RequestQuoteButton({
         value={brief}
         onChange={(event) => setBrief(event.target.value)}
         {...(brief !== '' && briefInvalid ? { 'aria-invalid': true } : {})}
-        className="mt-1 w-full rounded-md border border-neutral-300 p-2 text-sm"
+        className="mt-1 w-full rounded-md border border-edge p-2 text-sm"
       />
       {brief !== '' && briefInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.briefRequired}
         </p>
       )}
 
-      <label htmlFor="request-budget" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="request-budget" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.budgetLabel} ({currencyCode})
       </label>
-      <p id="request-budget-hint" className="mt-1 text-xs text-neutral-600">
+      <p id="request-budget-hint" className="mt-1 text-xs text-ink-muted">
         {copy.budgetHint}
       </p>
       <input
@@ -224,15 +231,15 @@ export function RequestQuoteButton({
         onChange={(event) => setBudget(event.target.value)}
         aria-describedby="request-budget-hint"
         {...(budgetInvalid ? { 'aria-invalid': true } : {})}
-        className="mt-1 w-full rounded-md border border-neutral-300 p-2 text-sm"
+        className="mt-1 w-full rounded-md border border-edge p-2 text-sm"
       />
       {budgetInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.budgetInvalid}
         </p>
       )}
 
-      <label htmlFor="request-needed-by" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="request-needed-by" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.neededByLabel}
       </label>
       <input
@@ -241,14 +248,14 @@ export function RequestQuoteButton({
         type="date"
         value={neededBy}
         onChange={(event) => setNeededBy(event.target.value)}
-        className="mt-1 rounded-md border border-neutral-300 p-2 text-sm"
+        className="mt-1 rounded-md border border-edge p-2 text-sm"
       />
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="submit"
           disabled={pending || titleInvalid || briefInvalid || budgetInvalid}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? copy.working : copy.send}
         </button>
@@ -259,14 +266,14 @@ export function RequestQuoteButton({
             setOpen(false);
             setError(null);
           }}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-900 disabled:opacity-60"
+          className="rounded-md border border-edge px-4 py-2 text-sm text-ink-strong disabled:opacity-60"
         >
           {copy.cancel}
         </button>
       </div>
 
       {error !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}

@@ -92,20 +92,20 @@ export function Dialog({
       onClick={handleClick}
       aria-labelledby={titleId}
       className={cx(
-        'mp-dialog text-neutral-900',
+        'mp-dialog text-ink-strong',
         placement === 'drawer' ? 'mp-dialog-drawer' : 'mp-dialog-center',
       )}
     >
       <div
         className={cx(
-          'flex flex-col bg-neutral-0',
+          'flex flex-col bg-surface-raised',
           placement === 'drawer'
-            ? 'h-full w-[min(26rem,100vw)] border-s border-neutral-200 shadow-lg'
-            : 'max-h-[85vh] w-[min(36rem,calc(100vw-2rem))] rounded-lg border border-neutral-200 shadow-lg',
+            ? 'h-full w-[min(26rem,100vw)] border-s border-hairline shadow-lg'
+            : 'max-h-[85vh] w-[min(36rem,calc(100vw-2rem))] rounded-lg border border-hairline shadow-lg',
           className,
         )}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-neutral-200 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-hairline px-5 py-4">
           <h2 id={titleId} className={TYPE.h3}>
             {title}
           </h2>
@@ -115,7 +115,7 @@ export function Dialog({
         </header>
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
         {footer === undefined ? null : (
-          <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-5 py-4">
+          <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-hairline bg-surface-sunken px-5 py-4">
             {footer}
           </footer>
         )}

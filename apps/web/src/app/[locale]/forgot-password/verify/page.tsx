@@ -31,7 +31,7 @@ export default async function ForgotPasswordVerifyPage({
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('verifyTitle')}</Heading>
-        <p className="mt-2 max-w-sm text-neutral-600">{t('verifyIntro')}</p>
+        <p className="mt-2 max-w-sm text-ink-muted">{t('verifyIntro')}</p>
         <RecoveryVerifyForm
           action="/api/auth/recovery/verify"
           challengeId={typeof challenge === 'string' ? challenge : ''}

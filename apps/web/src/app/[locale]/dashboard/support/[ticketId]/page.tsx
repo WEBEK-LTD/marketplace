@@ -69,7 +69,7 @@ export default async function SupportTicketPage({
               <p className="mt-2">
                 <Link
                   href={base}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
                 >
                   {t('title')}
                 </Link>
@@ -106,7 +106,7 @@ export default async function SupportTicketPage({
             <>
               <Heading level={1}>{t('title')}</Heading>
               {/* One wording for a ticket that is not theirs and one that does not exist. */}
-              <p role="status" className="mt-8 text-neutral-900">
+              <p role="status" className="mt-8 text-ink-strong">
                 {t('unavailableTicket')}
               </p>
               <p className="mt-4">

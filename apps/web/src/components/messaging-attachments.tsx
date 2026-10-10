@@ -27,7 +27,7 @@ import { useRef, useState } from 'react';
  */
 
 const BUTTON_CLASS =
-  'rounded-md border border-neutral-300 px-2 py-0.5 text-xs font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-2 py-0.5 text-xs font-medium text-ink-strong disabled:opacity-60';
 
 /** The four types 0104 permits, and the only ones the picker offers. SVG is absent deliberately. */
 const ACCEPTED = 'image/jpeg,image/png,image/webp,application/pdf';
@@ -102,7 +102,7 @@ export function AttachmentDownload({
         {pending ? copy.opening : copy.download}
       </button>
       {failed && (
-        <span role="alert" className="text-xs text-neutral-900">
+        <span role="alert" className="text-xs text-ink-strong">
           {copy.downloadFailed}
         </span>
       )}
@@ -249,7 +249,7 @@ export function AttachToMessage({
         {state === 'working' ? copy.uploading : copy.attach}
       </button>
       {message !== null && (
-        <span role={state === 'error' ? 'alert' : 'status'} className="text-xs text-neutral-900">
+        <span role={state === 'error' ? 'alert' : 'status'} className="text-xs text-ink-strong">
           {message}
         </span>
       )}

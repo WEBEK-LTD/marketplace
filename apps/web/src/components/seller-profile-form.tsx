@@ -59,8 +59,8 @@ export interface SellerProfileFormLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 
 /** The two interface locales, as 6-C renders them. `public.locales` remains the authority. */
 const LANGUAGES: readonly { readonly code: string; readonly label: string }[] = [
@@ -126,13 +126,13 @@ export function SellerProfileForm({
 
   return (
     <section aria-labelledby="seller-profile-edit" className="mt-8 max-w-xl">
-      <h2 id="seller-profile-edit" className="text-lg font-semibold text-neutral-900">
+      <h2 id="seller-profile-edit" className="text-lg font-semibold text-ink-strong">
         {labels.edit}
       </h2>
 
       {/* Six of the nine editable fields are not in the seller identity this page can read, so their boxes
           start blank and a blank box keeps what is stored. Said once, here, rather than on six fields. */}
-      <p className="mt-2 max-w-prose text-sm text-neutral-600">{labels.unchangedHint}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">{labels.unchangedHint}</p>
 
       <form onSubmit={onSubmit} noValidate className="mt-6 space-y-5">
         <div>
@@ -284,7 +284,7 @@ export function SellerProfileForm({
           </p>
         )}
         {saved && message === null ? (
-          <p role="status" className="text-sm text-neutral-900">
+          <p role="status" className="text-sm text-ink-strong">
             {labels.saved}
           </p>
         ) : null}
@@ -292,7 +292,7 @@ export function SellerProfileForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
         >
           {pending ? labels.saving : labels.save}
         </button>

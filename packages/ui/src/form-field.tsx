@@ -52,7 +52,7 @@ export function FormField({
       <label htmlFor={id} className={TYPE.label}>
         {label}
         {required && requiredLabel !== undefined ? (
-          <span className="ms-1 font-normal text-neutral-600">({requiredLabel})</span>
+          <span className="ms-1 font-normal text-ink-muted">({requiredLabel})</span>
         ) : null}
       </label>
       {children}
@@ -62,7 +62,7 @@ export function FormField({
         </p>
       ) : null}
       {error !== undefined ? (
-        <p id={errorId} aria-live="polite" className="text-sm font-medium leading-normal text-neutral-900">
+        <p id={errorId} aria-live="polite" className="text-sm font-medium leading-normal text-ink-strong">
           {error}
         </p>
       ) : null}

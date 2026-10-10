@@ -51,11 +51,11 @@ export interface RegisterLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
 const BUTTON_CLASS =
-  'mt-6 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'mt-6 rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_BUTTON_CLASS =
-  'mt-3 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'mt-3 rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 
 /**
  * The complete status-to-sentence map for both registration steps, exported so a test can pin it.
@@ -75,7 +75,7 @@ export function registerMessageFor(status: number, labels: RegisterLabels): stri
 /** A live region that carries at most one sentence, and never a value the person typed. */
 function Status({ message }: { readonly message: string | null }) {
   return (
-    <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+    <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
       {message}
     </p>
   );
@@ -148,7 +148,7 @@ export function RegisterForm({ labels, action, nextHref }: RegisterFormProps) {
     <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
       <Status message={message} />
       <div className="mt-4">
-        <label htmlFor="register-email" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="register-email" className="block text-sm font-medium text-ink-strong">
           {labels.email}
         </label>
         <input
@@ -164,12 +164,12 @@ export function RegisterForm({ labels, action, nextHref }: RegisterFormProps) {
           onChange={(event) => setEmail(event.target.value)}
           className={FIELD_CLASS}
         />
-        <p id="register-email-hint" className="mt-1 text-sm text-neutral-600">
+        <p id="register-email-hint" className="mt-1 text-sm text-ink-muted">
           {labels.emailHint}
         </p>
       </div>
       <div className="mt-4">
-        <label htmlFor="register-phone" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="register-phone" className="block text-sm font-medium text-ink-strong">
           {labels.phone}
         </label>
         <input
@@ -189,12 +189,12 @@ export function RegisterForm({ labels, action, nextHref }: RegisterFormProps) {
           dir="ltr"
           className={FIELD_CLASS}
         />
-        <p id="register-phone-hint" className="mt-1 text-sm text-neutral-600">
+        <p id="register-phone-hint" className="mt-1 text-sm text-ink-muted">
           {labels.phoneHint}
         </p>
       </div>
       <div className="mt-4">
-        <label htmlFor="register-password" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="register-password" className="block text-sm font-medium text-ink-strong">
           {labels.password}
         </label>
         <input
@@ -208,12 +208,12 @@ export function RegisterForm({ labels, action, nextHref }: RegisterFormProps) {
           onChange={(event) => setPassword(event.target.value)}
           className={FIELD_CLASS}
         />
-        <p id="register-password-hint" className="mt-1 text-sm text-neutral-600">
+        <p id="register-password-hint" className="mt-1 text-sm text-ink-muted">
           {labels.passwordHint}
         </p>
       </div>
       <div className="mt-4">
-        <label htmlFor="register-name" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="register-name" className="block text-sm font-medium text-ink-strong">
           {labels.displayName}
         </label>
         <input
@@ -226,7 +226,7 @@ export function RegisterForm({ labels, action, nextHref }: RegisterFormProps) {
           onChange={(event) => setDisplayName(event.target.value)}
           className={FIELD_CLASS}
         />
-        <p id="register-name-hint" className="mt-1 text-sm text-neutral-600">
+        <p id="register-name-hint" className="mt-1 text-sm text-ink-muted">
           {labels.displayNameHint}
         </p>
       </div>
@@ -327,7 +327,7 @@ export function RegisterVerifyForm({
     <form onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
       <Status message={message} />
       <div className="mt-4">
-        <label htmlFor="register-code" className="block text-sm font-medium text-neutral-900">
+        <label htmlFor="register-code" className="block text-sm font-medium text-ink-strong">
           {labels.code}
         </label>
         <input
@@ -344,7 +344,7 @@ export function RegisterVerifyForm({
           dir="ltr"
           className={FIELD_CLASS}
         />
-        <p id="register-code-hint" className="mt-1 text-sm text-neutral-600">
+        <p id="register-code-hint" className="mt-1 text-sm text-ink-muted">
           {labels.codeHint}
         </p>
       </div>

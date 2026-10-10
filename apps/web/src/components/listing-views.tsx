@@ -1,4 +1,5 @@
 import type { ListingDetail, ListingSummary } from '@repo/contracts';
+import type { ReactNode } from 'react';
 import {
   Alert,
   Badge,
@@ -13,7 +14,7 @@ import {
   cx,
 } from '@repo/ui';
 import { CatalogCard } from './catalog-card';
-import { ListingPrice, formatListingAmount, type ListingPriceLabels } from './listing-price';
+import { ListingPrice, formatListingAmount, type ListingPriceLabels, PriceLockup } from './listing-price';
 
 /**
  * The public listing surfaces (Phase 4-B, restyled in 0109).
@@ -155,9 +156,19 @@ function attributeValue(attribute: ListingDetail['attributes'][number], labels: 
 export function ListingDetailView({
   listing,
   labels,
+  actions,
 }: {
   readonly listing: ListingDetail;
   readonly labels: ListingDetailLabels;
+  /**
+   * What a person came here to do, rendered under the price.
+   *
+   * A slot rather than markup, because the actions are the page's: they need a session, a listing id and a
+   * client component, none of which belong in a presentational view. 0109 left them stranded at the foot of
+   * the main column, half a screen below the price and under the description — the two halves of one decision
+   * separated by everything else on the page. Here the price, the seller and the actions are one block.
+   */
+  readonly actions?: ReactNode;
 }) {
   const unavailable = listing.availability === 'no_longer_available';
   const amount = formatListingAmount(listing.priceMinor, listing.currencyCode, listing.currencyMinorUnit);
@@ -209,23 +220,34 @@ export function ListingDetailView({
         }
         aside={
           <div className="space-y-4">
-            <Card padding="lg">
-              <p className={amount === null ? 'text-lg font-medium text-neutral-700' : TYPE.priceLarge}>
-                {amount ?? labels.contactForPrice}
-              </p>
+            {/*
+              The buy box carries the brand surface and a brand edge. Everything else on a detail page is
+              something to read; this is the one region that is something to do, and on a page of white
+              panels it was indistinguishable from the panel of tags beneath it.
+            */}
+            <Card padding="lg" className="bg-surface-brand-soft ring-edge-brand">
+              <PriceLockup
+                priceMinor={listing.priceMinor}
+                currencyCode={listing.currencyCode}
+                currencyMinorUnit={listing.currencyMinorUnit}
+                labels={labels}
+                size="detail"
+              />
               {listing.isNegotiable && amount !== null ? (
-                <p className="mt-1 text-sm text-neutral-600">{labels.negotiable}</p>
+                <p className="mt-1 text-sm text-ink-muted">{labels.negotiable}</p>
               ) : null}
-              <dl className="mt-5 space-y-4 border-t border-neutral-200 pt-5">
+
+              {actions === undefined ? null : <div className="mt-6 flex flex-col gap-3">{actions}</div>}
+              <dl className="mt-5 space-y-4 border-t border-hairline pt-5">
                 <div>
                   <dt className={TYPE.label}>{labels.sellerHeading}</dt>
-                  <dd className="mt-0.5 text-sm text-neutral-700" dir="auto">
+                  <dd className="mt-0.5 text-sm text-ink-body" dir="auto">
                     {listing.seller.displayName}
                   </dd>
                 </div>
                 <div>
                   <dt className={TYPE.label}>{labels.categoryHeading}</dt>
-                  <dd className="mt-0.5 text-sm text-neutral-700" dir="auto">
+                  <dd className="mt-0.5 text-sm text-ink-body" dir="auto">
                     {listing.category.name}
                   </dd>
                 </div>

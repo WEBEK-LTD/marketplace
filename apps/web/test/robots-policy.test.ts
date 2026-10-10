@@ -42,6 +42,28 @@ const LISTING = {
   tags: [],
 } as const;
 
+/**
+ * The card shape, which is **not** the detail shape.
+ *
+ * `ListingSummarySchema` is `.strict()` and carries nine fields; the browse list validates against it and a
+ * body with the detail's extra fields is rejected, so a stub that answered the list with `LISTING` was
+ * answering with something the reader throws away. That went unnoticed while nothing asserted more than the
+ * robots value — the page rendered its unavailable region and still sent the header under test. It is a real
+ * difference now that indexability depends on whether the read succeeded, which is the point of the fix: the
+ * page says `noindex` precisely when it has nothing to show.
+ */
+const SUMMARY = {
+  id: LISTING.id,
+  slug: LISTING.slug,
+  title: LISTING.title,
+  city: LISTING.city,
+  priceMinor: LISTING.priceMinor,
+  currencyCode: LISTING.currencyCode,
+  currencyMinorUnit: LISTING.currencyMinorUnit,
+  isNegotiable: LISTING.isNegotiable,
+  listingTypeCode: LISTING.listingTypeCode,
+} as const;
+
 let api: StubApi;
 let app: RunningApp;
 
@@ -55,8 +77,17 @@ afterAll(async () => {
   await api.stop();
 });
 
-/** The stub answers the catalogue reads; anything else it is asked for is a test bug. */
-function serveListing(availability: 'available' | 'no_longer_available'): void {
+/**
+ * The stub answers the catalogue reads; anything else it is asked for is a test bug.
+ *
+ * `homepage: false` withholds the homepage composition alone, which is how the unreadable homepage is proved
+ * without disturbing any other route.
+ */
+function serveListing(
+  availability: 'available' | 'no_longer_available',
+  options: { readonly homepage?: boolean } = {},
+): void {
+  const homepage = options.homepage ?? true;
   api.reply((request, response: ServerResponse) => {
     if (request.url.startsWith('/v1/listings/')) {
       response.writeHead(200, { 'content-type': 'application/json' });
@@ -65,12 +96,19 @@ function serveListing(availability: 'available' | 'no_longer_available'): void {
     }
     if (request.url.startsWith('/v1/listings')) {
       response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ items: [LISTING], nextCursor: 'Y3Vyc29y' }));
+      response.end(JSON.stringify({ items: [SUMMARY], nextCursor: 'Y3Vyc29y' }));
       return;
     }
     if (request.url.startsWith('/v1/categories')) {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(JSON.stringify({ categories: [] }));
+      return;
+    }
+    if (homepage && request.url.startsWith('/v1/homepage')) {
+      // An uncomposed homepage, which is a *successful* read of a site nobody has arranged yet: the page
+      // falls back to its own entry points, which is content, so it is indexable.
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ sections: [] }));
       return;
     }
     response.writeHead(404).end();
@@ -120,13 +158,29 @@ describe('the public catalogue is no longer globally noindex', () => {
     // Owner decision E (0093): `/` is explicitly indexable. The blanket header had to stop firing for it too, because
     // a header `noindex` is the most restrictive directive on the response and would silently overrule the page.
     //
-    // The stub answers nothing for `/v1/homepage`, so this is the *unreadable* homepage — which is the stricter proof:
-    // the route's indexability is a property of the route, not of whether a section happened to come back.
+    // This asserts the readable homepage. The earlier version of this test left `/v1/homepage` unanswered and
+    // called the resulting `index, follow` the stricter proof — that indexability is a property of the route
+    // rather than of whether a section came back. That reading is what the corrective fix overturns: a page whose
+    // read failed renders an explanation of the failure, and a crawler must not be offered that explanation as
+    // the page's content. The route-level claim is still proved — it is proved below, where `/` is `noindex`
+    // only because the read failed and not because the route is refused, and where the header is still withheld.
     for (const path of ['/', '/ar']) {
       const page = await load(path);
       expect(page.status, path).toBe(200);
       expect(page.robotsHeader, path).toBeNull();
       expect(page.robotsMeta, path).toBe('index, follow');
+    }
+  });
+
+  it('a home page that could not be read is noindex, follow — and still answers 200', async () => {
+    // The other half of the pair above, and the assertion the corrective fix exists for. `follow`, not
+    // `nofollow`: the fallback's entry points still lead to real pages, so a crawler should walk through them.
+    serveListing('available', { homepage: false });
+    for (const path of ['/', '/ar']) {
+      const page = await load(path);
+      expect(page.status, path).toBe(200);
+      expect(page.robotsHeader, path).toBeNull();
+      expect(page.robotsMeta, path).toBe('noindex, follow');
     }
   });
 

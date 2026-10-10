@@ -33,7 +33,7 @@ export interface TabsProps {
  */
 export function Tabs({ items, label, className }: TabsProps) {
   return (
-    <nav aria-label={label} className={cx('border-b border-neutral-200', className)}>
+    <nav aria-label={label} className={cx('border-b border-hairline', className)}>
       <ul className="-mb-px flex gap-1 overflow-x-auto">
         {items.map((item) => (
           <li key={item.href} className="shrink-0">
@@ -44,8 +44,8 @@ export function Tabs({ items, label, className }: TabsProps) {
                 'inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm whitespace-nowrap transition-colors duration-150',
                 FOCUS_RING,
                 item.current
-                  ? 'border-neutral-900 font-semibold text-neutral-900'
-                  : 'border-transparent font-medium text-neutral-600 hover:border-neutral-300 hover:text-neutral-900',
+                  ? 'border-edge-strong font-semibold text-ink-strong'
+                  : 'border-transparent font-medium text-ink-muted hover:border-edge hover:text-ink-strong',
               )}
             >
               {item.label}
@@ -53,7 +53,7 @@ export function Tabs({ items, label, className }: TabsProps) {
                 <span
                   className={cx(
                     'rounded-full px-1.5 py-0.5 text-xs tabular-nums',
-                    item.current ? 'bg-neutral-900 text-neutral-0' : 'bg-neutral-100 text-neutral-600',
+                    item.current ? 'bg-surface-ink text-on-ink' : 'bg-surface-muted text-ink-muted',
                   )}
                 >
                   {item.count}
@@ -76,7 +76,7 @@ export function Tabs({ items, label, className }: TabsProps) {
  */
 export function SegmentedLinks({ items, label }: { readonly items: readonly TabItem[]; readonly label: string }) {
   return (
-    <nav aria-label={label} className="inline-flex rounded-md border border-neutral-200 bg-neutral-50 p-0.5">
+    <nav aria-label={label} className="inline-flex rounded-md border border-hairline bg-surface-sunken p-0.5">
       {items.map((item) => (
         <a
           key={item.href}
@@ -86,8 +86,8 @@ export function SegmentedLinks({ items, label }: { readonly items: readonly TabI
             'rounded-sm px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-150',
             FOCUS_RING,
             item.current
-              ? 'border border-neutral-300 bg-neutral-0 text-neutral-900'
-              : 'border border-transparent text-neutral-600 hover:text-neutral-900',
+              ? 'border border-edge bg-surface-raised text-ink-strong'
+              : 'border border-transparent text-ink-muted hover:text-ink-strong',
           )}
         >
           {item.label}

@@ -1,5 +1,6 @@
 import { Heading, PageContainer, Pagination } from '@repo/ui';
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { publicBlogIndexPath, publicBlogPostPath } from '@repo/config';
@@ -38,6 +39,21 @@ function single(value: string | string[] | undefined): string | null {
  * A cursor page and a filtered view are both the same blog seen from a different angle, so indexing each one would
  * spend a crawler's budget on near-duplicates of a page that is already indexed.
  */
+/** One read per request, shared by `generateMetadata` and the page body. */
+const lookup = cache(async (input: { locale: string; category: string | null; tag: string | null; cursor: string | null }) =>
+  readBlogIndex(input),
+);
+
+/** The index read's input, built identically in both halves so the shared read is keyed the same. */
+function indexInput(
+  locale: string,
+  query: Record<string, string | string[] | undefined>,
+): { locale: string; category: string | null; tag: string | null; cursor: string | null } {
+  const one = (value: string | string[] | undefined): string | null =>
+    typeof value === 'string' && value !== '' ? value : null;
+  return { locale, category: one(query['category']), tag: one(query['tag']), cursor: one(query['cursor']) };
+}
+
 export async function generateMetadata({ params, searchParams }: PageParams): Promise<Metadata> {
   const { locale } = await params;
   const query = await searchParams;
@@ -57,7 +73,12 @@ export async function generateMetadata({ params, searchParams }: PageParams): Pr
       languages: { en: '/blog', ar: '/ar/blog' },
       // Stated on both branches: the root layout's default is `noindex, nofollow`, and metadata is merged from the
       // root down, so saying nothing here would inherit that refusal and the page would never be indexed.
-      index: !narrowed,
+      // **`noindex` when the read failed.** The page still answers 200 and still renders its unavailable
+      // region — that is the approved behaviour and a visitor should see an explanation rather than an error
+      // code — but a crawler must not be allowed to index that explanation as the page's content. The reads
+      // are shared with the body through `cache`, so asking the question here costs no second request. This
+      // is the pattern `category/[slug]` already follows.
+      index: !narrowed && (await lookup(indexInput(locale, query))) !== null,
       follow: true,
     },
   );
@@ -75,7 +96,7 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
   const language = locale === 'ar' ? 'ar' : 'en';
 
   const [page, taxonomy] = await Promise.all([
-    readBlogIndex({ locale, category, tag, cursor }),
+    lookup({ locale, category, tag, cursor }),
     readBlogTaxonomy(locale),
   ]);
 
@@ -88,12 +109,12 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
     <PageContainer>
       <div className="py-10">
         <Heading level={1}>{t('indexTitle')}</Heading>
-        <p className="mt-2 max-w-prose text-neutral-600">{t('indexDescription')}</p>
+        <p className="mt-2 max-w-prose text-ink-muted">{t('indexDescription')}</p>
 
         {/* The index could not be read. Said plainly rather than rendered as an empty blog, which would be a
             different and wrong statement. */}
         {page === null ? (
-          <p className="mt-8 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-neutral-700">
+          <p className="mt-8 rounded-md border border-hairline bg-surface-sunken p-4 text-ink-body">
             {t('unavailable')}
           </p>
         ) : (
@@ -103,8 +124,8 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
                 <Link
                   className={`rounded-full border px-3 py-1 ${
                     category === null && tag === null
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-300 text-neutral-700'
+                      ? 'border-edge-strong bg-surface-ink text-on-ink'
+                      : 'border-edge text-ink-body'
                   }`}
                   href={base}
                 >
@@ -114,8 +135,8 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
                   <Link
                     className={`rounded-full border px-3 py-1 ${
                       category === entry.slug
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-300 text-neutral-700'
+                        ? 'border-edge-strong bg-surface-ink text-on-ink'
+                        : 'border-edge text-ink-body'
                     }`}
                     href={`${base}?category=${encodeURIComponent(entry.slug)}`}
                     key={`category-${entry.slug}`}
@@ -127,8 +148,8 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
                   <Link
                     className={`rounded-full border px-3 py-1 ${
                       tag === entry.slug
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-300 text-neutral-700'
+                        ? 'border-edge-strong bg-surface-ink text-on-ink'
+                        : 'border-edge text-ink-body'
                     }`}
                     href={`${base}?tag=${encodeURIComponent(entry.slug)}`}
                     key={`tag-${entry.slug}`}
@@ -140,7 +161,7 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
             )}
 
             {page.items.length === 0 ? (
-              <p className="mt-8 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-neutral-700">
+              <p className="mt-8 rounded-md border border-hairline bg-surface-sunken p-4 text-ink-body">
                 {category !== null || tag !== null ? t('noMatches') : t('empty')}
               </p>
             ) : (
@@ -157,17 +178,17 @@ export default async function BlogIndexPage({ params, searchParams }: PageParams
                       >
                         <Heading level={2}>
                           <Link
-                            className="text-neutral-900 underline"
+                            className="text-ink-strong underline"
                             href={publicBlogPostPath(language, post.slug)}
                           >
                             {post.title}
                           </Link>
                         </Heading>
                         {post.excerpt === null ? null : (
-                          <p className="mt-2 text-neutral-700">{post.excerpt}</p>
+                          <p className="mt-2 text-ink-body">{post.excerpt}</p>
                         )}
                       </div>
-                      <p className="mt-2 text-sm text-neutral-500">
+                      <p className="mt-2 text-sm text-ink-muted">
                         <time dateTime={post.publishedAt}>{post.publishedAt.slice(0, 10)}</time>
                         {post.categoryName === null ? null : <> · {post.categoryName}</>}
                         {post.isFeatured ? <> · {t('featured')}</> : null}

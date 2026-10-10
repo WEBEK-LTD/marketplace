@@ -92,10 +92,10 @@ export interface SellerListingArchiveLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 const BUTTON_CLASS =
-  'inline-flex items-center rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'inline-flex items-center rounded-md border border-edge px-3 py-1.5 text-sm font-medium text-ink-strong disabled:opacity-60';
 
 /** The two interface locales, as 6-C and 6-D render them. `public.locales` remains the authority. */
 const LANGUAGES: readonly { readonly code: string; readonly label: string }[] = [
@@ -214,22 +214,22 @@ export function SellerListingRow({
   }
 
   return (
-    <li className="border-b border-neutral-200 py-6">
-      <h3 className="text-base font-semibold text-neutral-900">{listing.title}</h3>
-      <p className="mt-1 text-sm text-neutral-600">{listing.slug}</p>
+    <li className="border-b border-hairline py-6">
+      <h3 className="text-base font-semibold text-ink-strong">{listing.title}</h3>
+      <p className="mt-1 text-sm text-ink-muted">{listing.slug}</p>
 
       <dl className="mt-3 grid max-w-xl grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.status}</dt>
-          <dd className="text-sm font-medium text-neutral-900">{labels.statusLabel}</dd>
+          <dt className="text-sm text-ink-muted">{labels.status}</dt>
+          <dd className="text-sm font-medium text-ink-strong">{labels.statusLabel}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.category}</dt>
-          <dd className="text-sm text-neutral-900">{listing.categorySlug}</dd>
+          <dt className="text-sm text-ink-muted">{labels.category}</dt>
+          <dd className="text-sm text-ink-strong">{listing.categorySlug}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.price}</dt>
-          <dd className="text-sm text-neutral-900">
+          <dt className="text-sm text-ink-muted">{labels.price}</dt>
+          <dd className="text-sm text-ink-strong">
             {listing.priceMinor === null
               ? labels.noPrice
               : `${String(listing.priceMinor)} ${listing.currencyCode}`}
@@ -237,15 +237,15 @@ export function SellerListingRow({
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.mediaCount}</dt>
-          <dd className="text-sm text-neutral-900">
+          <dt className="text-sm text-ink-muted">{labels.mediaCount}</dt>
+          <dd className="text-sm text-ink-strong">
             {listing.mediaCount === 0 ? labels.noMedia : String(listing.mediaCount)}
           </dd>
         </div>
       </dl>
 
       {listing.status === 'pending_review' ? (
-        <p role="status" className="mt-3 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-3 max-w-prose text-sm text-ink-muted">
           {labels.awaitingReview}
         </p>
       ) : null}
@@ -254,7 +254,7 @@ export function SellerListingRow({
         <p className="mt-3">
           <Link
             href={details.href}
-            className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
           >
             {details.label}
           </Link>
@@ -305,8 +305,8 @@ export function SellerListingRow({
 
       {confirming !== null ? (
         // The sentence says what will happen, and the action needs a second, deliberate press.
-        <div role="group" className="mt-4 rounded-md border border-neutral-300 p-4">
-          <p className="max-w-prose text-sm text-neutral-900">
+        <div role="group" className="mt-4 rounded-md border border-edge p-4">
+          <p className="max-w-prose text-sm text-ink-strong">
             {confirming === 'submit' ? (submit?.submitConfirm ?? '') : (archive?.archiveConfirm ?? '')}
           </p>
           <div className="mt-3 flex items-center gap-3">
@@ -314,7 +314,7 @@ export function SellerListingRow({
               type="button"
               onClick={() => void onConfirm()}
               disabled={pending}
-              className="inline-flex items-center rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+              className="inline-flex items-center rounded-md bg-surface-ink px-3 py-1.5 text-sm font-medium text-on-ink disabled:opacity-60"
             >
               {pending
                 ? confirming === 'submit'
@@ -381,7 +381,7 @@ export function SellerListingRow({
               onChange={(event) => set('priceMinor', event.target.value)}
               className={FIELD_CLASS}
             />
-            <p className="mt-1 max-w-prose text-sm text-neutral-600">{edit.priceHint}</p>
+            <p className="mt-1 max-w-prose text-sm text-ink-muted">{edit.priceHint}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -391,9 +391,9 @@ export function SellerListingRow({
               type="checkbox"
               checked={values.isNegotiable !== ''}
               onChange={(event) => set('isNegotiable', event.target.checked ? 'yes' : '')}
-              className="h-4 w-4 rounded border-neutral-300"
+              className="h-4 w-4 rounded border-edge"
             />
-            <label htmlFor={`edit-negotiable-${listing.slug}`} className="text-sm text-neutral-900">
+            <label htmlFor={`edit-negotiable-${listing.slug}`} className="text-sm text-ink-strong">
               {edit.negotiable}
             </label>
           </div>
@@ -487,7 +487,7 @@ export function SellerListingRow({
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
           >
             {pending ? edit.saving : edit.save}
           </button>
@@ -500,7 +500,7 @@ export function SellerListingRow({
         </p>
       ) : null}
       {notice !== null ? (
-        <p role="status" className="mt-3 text-sm text-neutral-900">
+        <p role="status" className="mt-3 text-sm text-ink-strong">
           {notice}
         </p>
       ) : null}

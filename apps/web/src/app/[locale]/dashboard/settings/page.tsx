@@ -47,7 +47,7 @@ export default async function SettingsPage({
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('intro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('intro')}</p>
 
           <Suspense fallback={<AccountSkeleton label={t('title')} />}>
             <SettingsSection base={`${prefix}/dashboard/settings`} t={t} />

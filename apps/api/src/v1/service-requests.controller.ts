@@ -1,17 +1,13 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query, Req } from '@nestjs/common';
 import {
   CreateAdminOnlyServiceRequestSchema,
-  CreateServiceQuoteSchema,
   CreateServiceRequestSchema,
   SERVICE_REQUESTS_DEFAULT_LIMIT,
   SERVICE_REQUESTS_MAX_LIMIT,
   SESSION_TOKEN_HEADER,
   parseMessagingLimit,
   type CreateAdminOnlyServiceRequest,
-  type CreateServiceQuote,
   type CreateServiceRequest,
-  type ServiceQuoteDecisionResponse,
-  type ServiceQuoteMutationResponse,
   type ServiceRequestDetailResponse,
   type ServiceRequestMutationResponse,
   type ServiceRequestStatusResponse,
@@ -75,21 +71,6 @@ export class ServiceRequestsController {
   ): Promise<ServiceRequestsResponse> {
     const userId = await this.caller(request);
     const page = await this.requests.made({
-      userId,
-      limit: this.limit(limit),
-      cursor: cursor === undefined || cursor === '' ? null : cursor,
-    });
-    return { items: [...page.items], nextCursor: page.nextCursor };
-  }
-
-  @Get('received')
-  async received(
-    @Req() request: ServiceRequestContext,
-    @Query('limit') limit?: string,
-    @Query('cursor') cursor?: string,
-  ): Promise<ServiceRequestsResponse> {
-    const userId = await this.caller(request);
-    const page = await this.requests.received({
       userId,
       limit: this.limit(limit),
       cursor: cursor === undefined || cursor === '' ? null : cursor,
@@ -172,92 +153,6 @@ export class ServiceRequestsController {
     return await this.requests.cancel({
       userId,
       requestId: this.identifier(requestId, 'requestId'),
-    });
-  }
-
-  @Post(':requestId/decline')
-  @HttpCode(200)
-  async decline(
-    @Param('requestId') requestId: string,
-    @Req() request: ServiceRequestContext,
-  ): Promise<ServiceRequestStatusResponse> {
-    const userId = await this.caller(request);
-    return await this.requests.decline({
-      userId,
-      requestId: this.identifier(requestId, 'requestId'),
-    });
-  }
-
-  /**
-   * Quotes on one brief.
-   *
-   * The request is the one in the route; there is no `serviceRequestId` in the body. The currency is copied
-   * from the request inside the database, so there is no currency field either.
-   */
-  @Post(':requestId/quotes')
-  @HttpCode(201)
-  async quote(
-    @Param('requestId') requestId: string,
-    @Body(new ZodValidationPipe(CreateServiceQuoteSchema)) body: CreateServiceQuote,
-    @Req() request: ServiceRequestContext,
-  ): Promise<ServiceQuoteMutationResponse> {
-    const userId = await this.caller(request);
-    return await this.requests.quote({
-      userId,
-      requestId: this.identifier(requestId, 'requestId'),
-      amountMinor: body.amountMinor,
-      deliveryDays: body.deliveryDays,
-      revisionsIncluded: body.revisionsIncluded,
-      scope: body.scope,
-      validForDays: body.validForDays,
-    });
-  }
-
-  /** The buyer accepts. The only transition that records an obligation. */
-  @Post(':requestId/quotes/:quoteId/accept')
-  @HttpCode(200)
-  async acceptQuote(
-    @Param('requestId') requestId: string,
-    @Param('quoteId') quoteId: string,
-    @Req() request: ServiceRequestContext,
-  ): Promise<ServiceQuoteDecisionResponse> {
-    const userId = await this.caller(request);
-    return await this.requests.acceptQuote({
-      userId,
-      requestId: this.identifier(requestId, 'requestId'),
-      quoteId: this.identifier(quoteId, 'quoteId'),
-    });
-  }
-
-  /** The buyer declines one quote. The brief stays open to another. */
-  @Post(':requestId/quotes/:quoteId/reject')
-  @HttpCode(200)
-  async rejectQuote(
-    @Param('requestId') requestId: string,
-    @Param('quoteId') quoteId: string,
-    @Req() request: ServiceRequestContext,
-  ): Promise<ServiceQuoteDecisionResponse> {
-    const userId = await this.caller(request);
-    return await this.requests.rejectQuote({
-      userId,
-      requestId: this.identifier(requestId, 'requestId'),
-      quoteId: this.identifier(quoteId, 'quoteId'),
-    });
-  }
-
-  /** The seller takes their own quote back. */
-  @Post(':requestId/quotes/:quoteId/withdraw')
-  @HttpCode(200)
-  async withdrawQuote(
-    @Param('requestId') requestId: string,
-    @Param('quoteId') quoteId: string,
-    @Req() request: ServiceRequestContext,
-  ): Promise<ServiceQuoteDecisionResponse> {
-    const userId = await this.caller(request);
-    return await this.requests.withdrawQuote({
-      userId,
-      requestId: this.identifier(requestId, 'requestId'),
-      quoteId: this.identifier(quoteId, 'quoteId'),
     });
   }
 

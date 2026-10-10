@@ -449,14 +449,19 @@ select is(app_private.audit_actor(), null::uuid, 'the seller attribution ended w
 -- ---------------------------------------------------------------------------------------------------
 -- The writers in scope, and only those
 -- ---------------------------------------------------------------------------------------------------
-select is((select count(*) from app_private.audit_attribution_contract where role = 'writer'), 4::bigint,
-  '8-B brings exactly four writers into attribution');
+-- 8-B brought four. 0109's amendment brought the fifth: `office_receipt_record`, a staff member recording
+-- money the office received in person (OD-A1, OD-A2). It is the same class of action as
+-- `transition_withdrawal` — a human financial decision, not a system step — which is why it belongs in this
+-- contract rather than outside it.
+select is((select count(*) from app_private.audit_attribution_contract where role = 'writer'), 5::bigint,
+  'five writers are in attribution: 8-B''s four and 0109''s office receipt');
 
 select set_eq(
   $q$select function_name || ':' || actor_parameter from app_private.audit_attribution_contract where role = 'writer'$q$,
   array['transition_withdrawal:p_actor_user_id', 'request_withdrawal:p_seller_user_id',
-        'reconcile_settlement:p_actor_user_id', 'close_settlement:p_actor_user_id'],
-  'and each names the parameter it publishes: a staff decision, a seller asking for their own funds, and two settlement steps');
+        'reconcile_settlement:p_actor_user_id', 'close_settlement:p_actor_user_id',
+        'office_receipt_record:p_actor_user_id'],
+  'and each names the parameter it publishes: a staff decision, a seller asking for their own funds, two settlement steps and the office receipt');
 
 select ok(
   (select bool_and(
@@ -497,6 +502,8 @@ select is(
       -- The guard names the setter in order to police it, which is why the contract lists it.
       and p.proname not in ('set_audit_actor', 'restore_audit_actor', 'transition_withdrawal',
                             'request_withdrawal', 'reconcile_settlement', 'close_settlement',
+                            -- 0109, OD-A2: the office receipt, contracted above.
+                            'office_receipt_record',
                             'audit_attribution_problems')),
   0::bigint,
   'no other function was turned into an attribution writer');
@@ -635,8 +642,8 @@ select ok((select relrowsecurity from pg_class where oid = 'app_private.audit_at
 select is((select count(*) from pg_policies where schemaname = 'app_private'
             and tablename = 'audit_attribution_contract'), 0::bigint,
   'and no policy, so it is reachable only through the guard');
-select is((select count(*) from app_private.audit_attribution_contract), 9::bigint,
-  'nine functions may name the channel: two scope helpers, one reader, the trigger, the guard and four writers');
+select is((select count(*) from app_private.audit_attribution_contract), 10::bigint,
+  'ten functions may name the channel: two scope helpers, one reader, the trigger, the guard and five writers');
 select set_eq(
   $$select role from app_private.audit_attribution_contract group by role$$,
   array['setter', 'reader', 'writer', 'guard'],
@@ -649,9 +656,11 @@ select is((select count(*) from information_schema.role_table_grants
 -- ---------------------------------------------------------------------------------------------------
 -- Nothing else moved
 -- ---------------------------------------------------------------------------------------------------
+-- Forty-three when 8-B closed; forty-four since 0109's `public.office_receipts`, which is audited for the
+-- obvious reason. No existing trigger was attached or detached, which is what this count is really for.
 select is((select count(*) from pg_trigger tg join pg_proc p on p.oid = tg.tgfoid
-            where p.proname = 'tg_record_change'), 43::bigint,
-  'the same forty-three tables are audited: no trigger was attached or detached');
+            where p.proname = 'tg_record_change'), 44::bigint,
+  'forty-four tables are audited: 8-B''s forty-three plus 0109''s office receipts, with nothing detached');
 
 select ok(pg_get_functiondef('audit.tg_record_change'::regproc) ~ 'jsonb_set\(old_row, array\[key\]',
   'the trigger still redacts the columns its arguments name');

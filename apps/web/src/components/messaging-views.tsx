@@ -87,7 +87,7 @@ export function renderableConversation(item: InboxItem): RenderableConversation 
 /** A small neutral chip, used for every state a row can carry. */
 function Chip({ children }: { readonly children: string }) {
   return (
-    <span className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs text-neutral-700">{children}</span>
+    <span className="rounded border border-edge px-1.5 py-0.5 text-xs text-ink-body">{children}</span>
   );
 }
 
@@ -110,26 +110,26 @@ export function ConversationRow({
     conversation.listingTitleSnapshot ?? labels.subjectLabel(conversation.subjectType);
 
   return (
-    <li className="rounded-lg border border-neutral-200 p-5">
-      <h2 className="text-base font-medium text-neutral-900">
+    <li className="rounded-lg border border-hairline p-5">
+      <h2 className="text-base font-medium text-ink-strong">
         <Link
           href={href}
-          className="underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+          className="underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
         >
           {name}
         </Link>
       </h2>
 
-      <p className="mt-1 text-sm text-neutral-600">{labels.subjectLabel(conversation.subjectType)}</p>
+      <p className="mt-1 text-sm text-ink-muted">{labels.subjectLabel(conversation.subjectType)}</p>
 
       {conversation.lastMessageAt === null ? (
-        <p className="mt-2 text-sm text-neutral-600">{labels.noMessages}</p>
+        <p className="mt-2 text-sm text-ink-muted">{labels.noMessages}</p>
       ) : (
         <>
           {conversation.lastMessageBody === null ? null : (
-            <p className="mt-2 line-clamp-2 text-sm text-neutral-900">{conversation.lastMessageBody}</p>
+            <p className="mt-2 line-clamp-2 text-sm text-ink-strong">{conversation.lastMessageBody}</p>
           )}
-          <p className="mt-1 text-xs text-neutral-600">
+          <p className="mt-1 text-xs text-ink-muted">
             <time dateTime={conversation.lastMessageAt}>{conversation.lastMessageAt}</time>
           </p>
         </>
@@ -158,8 +158,8 @@ export function ConversationList({
   if (conversations.length === 0) {
     return (
       <div className="mt-8">
-        <p className="text-neutral-900">{labels.empty}</p>
-        <p className="mt-2 text-sm text-neutral-600">{labels.emptyHint}</p>
+        <p className="text-ink-strong">{labels.empty}</p>
+        <p className="mt-2 text-sm text-ink-muted">{labels.emptyHint}</p>
       </div>
     );
   }
@@ -182,10 +182,10 @@ export function ConversationList({
 export function ConversationListSkeleton({ label }: { readonly label: string }) {
   return (
     <div aria-busy="true" aria-live="polite" className="mt-8">
-      <p className="text-sm text-neutral-600">{label}</p>
+      <p className="text-sm text-ink-muted">{label}</p>
       <div aria-hidden="true" className="mt-3 grid grid-cols-1 gap-4">
         {[0, 1, 2].map((index) => (
-          <div key={index} className="h-28 rounded-lg border border-neutral-200 bg-neutral-50" />
+          <div key={index} className="h-28 rounded-lg border border-hairline bg-surface-sunken" />
         ))}
       </div>
     </div>
@@ -274,10 +274,10 @@ export function MessageReferenceCard({
   readonly labels: MessageLabels;
 }) {
   return (
-    <div className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-3">
-      <p className="text-sm text-neutral-900">{title ?? labels.noLongerAvailable}</p>
+    <div className="mt-2 rounded-md border border-hairline bg-surface-sunken p-3">
+      <p className="text-sm text-ink-strong">{title ?? labels.noLongerAvailable}</p>
       {title === null ? null : (
-        <p className="mt-1 text-xs text-neutral-600">{labels.noLongerAvailable}</p>
+        <p className="mt-1 text-xs text-ink-muted">{labels.noLongerAvailable}</p>
       )}
     </div>
   );
@@ -306,7 +306,7 @@ export function MessageRow({
 }) {
   if (message.messageType === 'system') {
     return (
-      <li className="py-3 text-center text-xs text-neutral-600">
+      <li className="py-3 text-center text-xs text-ink-muted">
         <span className="sr-only">{labels.system}: </span>
         {message.body}
         <p className="mt-1">
@@ -320,14 +320,14 @@ export function MessageRow({
   // sender uuid, which the caller is entitled to receive and has no business reading on a page: it
   // names nobody to a human and would be an internal identifier printed into the document.
   return (
-    <li className="border-s-2 border-neutral-200 ps-4 py-3">
-      <p className="text-xs text-neutral-600">
+    <li className="border-s-2 border-hairline ps-4 py-3">
+      <p className="text-xs text-ink-muted">
         {message.isOwnMessage ? labels.you : labels.otherParty}
         {' · '}
         <time dateTime={message.createdAt}>{message.createdAt}</time>
       </p>
       {message.body === null ? null : (
-        <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-900">{message.body}</p>
+        <p className="mt-1 whitespace-pre-wrap text-sm text-ink-strong">{message.body}</p>
       )}
       {message.messageType === 'reference' ? (
         <MessageReferenceCard title={referenceTitle} labels={labels} />
@@ -335,9 +335,9 @@ export function MessageRow({
       {message.attachments.length === 0 ? null : (
         <ul className="mt-2 space-y-1" aria-label={labels.attachments}>
           {message.attachments.map((attachment) => (
-            <li key={attachment.id} className="text-xs text-neutral-700">
+            <li key={attachment.id} className="text-xs text-ink-body">
               <span>{labels.attachmentTypes[attachment.contentType] ?? attachment.contentType}</span>
-              <span className="ms-2 text-neutral-500">{formatBytes(attachment.byteSize, labels)}</span>
+              <span className="ms-2 text-ink-muted">{formatBytes(attachment.byteSize, labels)}</span>
               {attachmentAction === undefined ? null : (
                 <span className="ms-2">{attachmentAction(attachment)}</span>
               )}
@@ -389,7 +389,7 @@ export function ConversationThread({
         <p className="mb-4">
           <Link
             href={olderHref}
-            className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+            className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
           >
             {labels.loadOlder}
           </Link>
@@ -397,7 +397,7 @@ export function ConversationThread({
       )}
 
       {messages.length === 0 ? (
-        <p className="text-neutral-600">{labels.noMessages}</p>
+        <p className="text-ink-muted">{labels.noMessages}</p>
       ) : (
         <ul>
           {messages.map((message) => (
@@ -414,9 +414,9 @@ export function ConversationThread({
       )}
 
       {isClosed ? (
-        <div role="status" className="mt-8 rounded-md border border-neutral-200 bg-neutral-50 p-4">
-          <p className="text-sm font-medium text-neutral-900">{labels.closed}</p>
-          <p className="mt-1 text-sm text-neutral-600">{labels.closedHint}</p>
+        <div role="status" className="mt-8 rounded-md border border-hairline bg-surface-sunken p-4">
+          <p className="text-sm font-medium text-ink-strong">{labels.closed}</p>
+          <p className="mt-1 text-sm text-ink-muted">{labels.closedHint}</p>
         </div>
       ) : null}
     </div>
@@ -439,7 +439,7 @@ export function UnreadBadge({
   if (count === null || count === 0) return null;
   return (
     <p className="mt-2">
-      <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs text-neutral-700">
+      <span className="rounded-full border border-edge px-2 py-0.5 text-xs text-ink-body">
         {label(count)}
       </span>
     </p>
@@ -458,11 +458,11 @@ export function MessagingError({
 }) {
   return (
     <div role="alert" className="mt-8">
-      <p className="text-neutral-900">{title}</p>
+      <p className="text-ink-strong">{title}</p>
       <p className="mt-2">
         <Link
           href={retryHref}
-          className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+          className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
         >
           {retryLabel}
         </Link>

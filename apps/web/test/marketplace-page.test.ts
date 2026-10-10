@@ -4,6 +4,26 @@ import { startBuiltApp, type RunningApp } from './support/next-server.js';
 import { startStubApi, type StubApi } from './support/stub-api.js';
 
 /**
+ * The text a reader actually gets, with the markup taken out.
+ *
+ * 0110 sets a price as a composed figure — the currency code in a small raised mark, the amount large and
+ * tabular — so "EGP 2500.00" is no longer one contiguous run in the HTML source: there is a `</span>` between
+ * the code and the number, and React puts its own separator between adjacent text nodes. The invariant was
+ * never about the markup, though. It is that the price **reads** as "EGP 2500.00" — to a person, to a screen
+ * reader, and to anyone who copies it — and that is what this asserts.
+ */
+function textOf(html: string): string {
+  return html
+    .replace(/<!--.*?-->/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+
+
+
+/**
  * The public marketplace discovery hub, over real HTTP against the built app (Phase 4-G, V1).
  *
  * The page owns no data and adds no contract, so what is worth proving is the orchestration: that it
@@ -152,7 +172,7 @@ describe('the two sections', () => {
     // Fields only the service card has, proving the existing cards are reused rather than flattened.
     expect(page.html).toContain('14 days');
     expect(page.html).toContain('Fixed price');
-    expect(page.html).toContain('EGP 2500.00');
+    expect(textOf(page.html)).toContain('EGP 2500.00');
   });
 
   it('links each item to the surface that owns it, in the right locale', async () => {
@@ -265,6 +285,28 @@ describe('each section stands or falls on its own', () => {
     apiServesBoth({ listings: 'fails', services: 'fails' });
     const page = await load('/marketplace');
     expect(page.status).toBe(200);
+  });
+
+  it('is unindexable only when both sections failed and there is nothing to index', async () => {
+    // The 200 and the visible explanation are the approved behaviour — a visitor should be told, not shown
+    // an error code. What must not happen is a crawler indexing that explanation as the hub's content.
+    apiServesBoth({ listings: 'fails', services: 'fails' });
+    const broken = await load('/marketplace');
+    expect(broken.status).toBe(200);
+    expect(broken.robotsMeta ?? '').toContain('noindex');
+
+    // One section failing does not empty the page, so the page is still worth indexing. The two sections
+    // are independent by design and that independence has to survive into the robots decision.
+    apiServesBoth({ listings: 'fails', services: 'ok' });
+    const half = await load('/marketplace');
+    expect(half.robotsMeta ?? '').not.toContain('noindex');
+
+    apiServesBoth({ listings: 'ok', services: 'fails' });
+    expect((await load('/marketplace')).robotsMeta ?? '').not.toContain('noindex');
+
+    // And an empty catalogue is not a broken one: nothing to show is still a page worth indexing.
+    apiServesBoth({ listings: 'empty', services: 'empty' });
+    expect((await load('/marketplace')).robotsMeta ?? '').not.toContain('noindex');
   });
 });
 

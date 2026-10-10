@@ -72,7 +72,7 @@ export default async function SellerPromotionsPage({
       signInLabel={session('signIn')}
     >
       {lookup.kind !== 'ok' ? null : lookup.data.promotions.length === 0 ? (
-        <p role="status" className="mt-6 text-neutral-600">
+        <p role="status" className="mt-6 text-ink-muted">
           {t('empty')}
         </p>
       ) : (
@@ -87,11 +87,11 @@ export default async function SellerPromotionsPage({
             return (
               <li
                 key={`${promotion.listingSlug}-${promotion.createdAt}`}
-                className="rounded-lg border border-neutral-200 p-4"
+                className="rounded-lg border border-hairline p-4"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-sm">
-                    <span className="text-neutral-500">{t('listing')} </span>
+                    <span className="text-ink-muted">{t('listing')} </span>
                     <span className="font-medium">{promotion.listingTitle}</span>
                   </p>
                   <p className="text-sm font-medium">{statusLabel(promotion.status)}</p>

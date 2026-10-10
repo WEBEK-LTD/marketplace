@@ -21,10 +21,10 @@ export type AlertTone = 'info' | 'warning' | 'error' | 'success';
  * screen-reader user and letting them reach the message in their own time.
  */
 const TONES: Record<AlertTone, string> = {
-  info: 'border border-neutral-200 bg-neutral-50',
-  success: 'border border-neutral-200 border-s-2 border-s-neutral-900 bg-neutral-50',
-  warning: 'border border-neutral-400 border-s-2 border-s-neutral-900 bg-neutral-50',
-  error: 'border-2 border-neutral-900 bg-neutral-0',
+  info: 'border border-hairline bg-surface-sunken',
+  success: 'border border-hairline border-s-2 border-s-edge-strong bg-surface-sunken',
+  warning: 'border border-edge border-s-2 border-s-edge-strong bg-surface-sunken',
+  error: 'border-2 border-edge-strong bg-surface-raised',
 };
 
 export interface AlertProps {
@@ -72,7 +72,7 @@ export function Alert({ tone = 'info', title, children, action, announce = 'auto
     >
       <AlertMark tone={tone} />
       <div className="flex-1 space-y-1">
-        {title === undefined ? null : <p className="text-sm font-semibold text-neutral-900">{title}</p>}
+        {title === undefined ? null : <p className="text-sm font-semibold text-ink-strong">{title}</p>}
         {children === undefined ? null : <div className={TYPE.hint}>{children}</div>}
       </div>
       {action === undefined ? null : <div className="shrink-0">{action}</div>}
@@ -92,19 +92,19 @@ function AlertMark({ tone }: { readonly tone: AlertTone }) {
   if (tone === 'success') {
     return (
       <span aria-hidden="true" className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-        <span className="mt-[-2px] size-2.5 rotate-45 border-e-2 border-b-2 border-neutral-900" />
+        <span className="mt-[-2px] size-2.5 rotate-45 border-e-2 border-b-2 border-edge-strong" />
       </span>
     );
   }
   if (tone === 'info') {
     return (
-      <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full border-2 border-neutral-500" />
+      <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full border-2 border-edge" />
     );
   }
   return (
     <span aria-hidden="true" className="mt-0.5 flex size-4 shrink-0 flex-col items-center gap-0.5">
-      <span className="h-2 w-0.5 bg-neutral-900" />
-      <span className="size-0.5 rounded-full bg-neutral-900" />
+      <span className="h-2 w-0.5 bg-surface-ink" />
+      <span className="size-0.5 rounded-full bg-surface-ink" />
     </span>
   );
 }

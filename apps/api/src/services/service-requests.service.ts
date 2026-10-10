@@ -2,7 +2,6 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type {
   ServiceQuote,
   ServiceQuoteDecisionResponse,
-  ServiceQuoteMutationResponse,
   ServiceQuoteStatus,
   ServiceRequestDetail,
   ServiceRequestMutationResponse,
@@ -137,13 +136,6 @@ export interface ServiceRequestsStore {
     cursorCreatedAt: Date | null;
     cursorId: string | null;
   }): Promise<readonly ServiceRequestRow[]>;
-  /** `app_private.service_requests_for_seller(...)` (0071). */
-  serviceRequestsForSeller(input: {
-    userId: string;
-    limit: number;
-    cursorCreatedAt: Date | null;
-    cursorId: string | null;
-  }): Promise<readonly ServiceRequestRow[]>;
   /** `app_private.service_request_detail(uuid, uuid)` (0071). */
   serviceRequestDetail(input: {
     userId: string;
@@ -170,24 +162,6 @@ export interface ServiceRequestsStore {
   }): Promise<ServiceRequestMutationRow>;
   /** `app_private.service_request_cancel(uuid, uuid)` (0071). */
   serviceRequestCancel(input: { buyerId: string; requestId: string }): Promise<ServiceRequestStatusRow>;
-  /** `app_private.service_request_decline(uuid, uuid)` (0071). */
-  serviceRequestDecline(input: { sellerId: string; requestId: string }): Promise<ServiceRequestStatusRow>;
-  /** `app_private.service_quote_create(...)` (0071). */
-  serviceQuoteCreate(input: {
-    sellerId: string;
-    requestId: string;
-    amountMinor: string;
-    deliveryDays: number;
-    revisionsIncluded: number;
-    scope: string;
-    validForDays: number;
-  }): Promise<ServiceQuoteMutationRow>;
-  /** `app_private.service_quote_accept(uuid, uuid)` (0071). */
-  serviceQuoteAccept(input: { buyerId: string; quoteId: string }): Promise<ServiceQuoteDecisionRow>;
-  /** `app_private.service_quote_reject(uuid, uuid)` (0071). */
-  serviceQuoteReject(input: { buyerId: string; quoteId: string }): Promise<ServiceQuoteDecisionRow>;
-  /** `app_private.service_quote_withdraw(uuid, uuid)` (0071). */
-  serviceQuoteWithdraw(input: { sellerId: string; quoteId: string }): Promise<ServiceQuoteDecisionRow>;
 }
 
 export const SERVICE_REQUESTS_STORE = Symbol('SERVICE_REQUESTS_STORE');
@@ -205,15 +179,6 @@ export class ServiceRequestsService {
     cursor: string | null;
   }): Promise<{ items: ServiceRequestSummary[]; nextCursor: string | null }> {
     return await this.#page(input, (query) => this.store.serviceRequestsForBuyer(query), 'sent');
-  }
-
-  /** One page of the briefs sent to the caller's storefront. */
-  async received(input: {
-    userId: string;
-    limit: number;
-    cursor: string | null;
-  }): Promise<{ items: ServiceRequestSummary[]; nextCursor: string | null }> {
-    return await this.#page(input, (query) => this.store.serviceRequestsForSeller(query), 'received');
   }
 
   /** One brief in full, with its quotes, for whichever party is asking. */
@@ -356,93 +321,6 @@ export class ServiceRequestsService {
       () => this.store.serviceRequestCancel({ buyerId: input.userId, requestId: input.requestId }),
       'cancelled',
       'A service request could not be cancelled.',
-    );
-  }
-
-  /** The seller declines to quote. */
-  async decline(input: { userId: string; requestId: string }): Promise<ServiceRequestStatusResponse> {
-    return await this.#requestStatus(
-      () => this.store.serviceRequestDecline({ sellerId: input.userId, requestId: input.requestId }),
-      'declined',
-      'A service request could not be declined.',
-    );
-  }
-
-  /** The seller answers a brief. */
-  async quote(input: {
-    userId: string;
-    requestId: string;
-    amountMinor: string;
-    deliveryDays: number;
-    revisionsIncluded: number;
-    scope: string;
-    validForDays: number;
-  }): Promise<ServiceQuoteMutationResponse> {
-    let row: ServiceQuoteMutationRow;
-    try {
-      row = await this.store.serviceQuoteCreate({
-        sellerId: input.userId,
-        requestId: input.requestId,
-        amountMinor: input.amountMinor,
-        deliveryDays: input.deliveryDays,
-        revisionsIncluded: input.revisionsIncluded,
-        scope: input.scope,
-        validForDays: input.validForDays,
-      });
-    } catch (error) {
-      this.logger.error('A service quote could not be sent.');
-      throw new ServiceRequestsUnavailableError(error);
-    }
-
-    if (row.outcome === 'created') {
-      if (row.quoteId === null || row.status === null) {
-        this.logger.error('A service quote write came back incomplete.');
-        throw new ServiceRequestsUnavailableError(new Error('incomplete service quote write'));
-      }
-      return { quoteId: row.quoteId, status: row.status as ServiceQuoteStatus };
-    }
-    this.#refusal(row.outcome);
-  }
-
-  /** The buyer accepts a quote. The only transition that records an obligation. */
-  async acceptQuote(input: {
-    userId: string;
-    requestId: string;
-    quoteId: string;
-  }): Promise<ServiceQuoteDecisionResponse> {
-    return await this.#quoteDecision(
-      () => this.store.serviceQuoteAccept({ buyerId: input.userId, quoteId: input.quoteId }),
-      'accepted',
-      input.requestId,
-      'A service quote could not be accepted.',
-    );
-  }
-
-  /** The buyer declines a quote, leaving the brief open to another. */
-  async rejectQuote(input: {
-    userId: string;
-    requestId: string;
-    quoteId: string;
-  }): Promise<ServiceQuoteDecisionResponse> {
-    return await this.#quoteDecision(
-      () => this.store.serviceQuoteReject({ buyerId: input.userId, quoteId: input.quoteId }),
-      'rejected',
-      input.requestId,
-      'A service quote could not be rejected.',
-    );
-  }
-
-  /** The seller takes their own quote back. */
-  async withdrawQuote(input: {
-    userId: string;
-    requestId: string;
-    quoteId: string;
-  }): Promise<ServiceQuoteDecisionResponse> {
-    return await this.#quoteDecision(
-      () => this.store.serviceQuoteWithdraw({ sellerId: input.userId, quoteId: input.quoteId }),
-      'withdrawn',
-      input.requestId,
-      'A service quote could not be withdrawn.',
     );
   }
 

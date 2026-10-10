@@ -108,10 +108,10 @@ export interface SellerServiceArchiveLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 const BUTTON_CLASS =
-  'inline-flex items-center rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'inline-flex items-center rounded-md border border-edge px-3 py-1.5 text-sm font-medium text-ink-strong disabled:opacity-60';
 
 const LANGUAGES: readonly { readonly code: string; readonly label: string }[] = [
   { code: 'en', label: 'English' },
@@ -235,52 +235,52 @@ export function SellerServiceRow({
   const pricingStated = values.pricingModel !== '';
 
   return (
-    <li className="border-b border-neutral-200 py-6">
-      <h3 className="text-base font-semibold text-neutral-900">{service.title}</h3>
-      <p className="mt-1 text-sm text-neutral-600">{service.slug}</p>
+    <li className="border-b border-hairline py-6">
+      <h3 className="text-base font-semibold text-ink-strong">{service.title}</h3>
+      <p className="mt-1 text-sm text-ink-muted">{service.slug}</p>
 
       <dl className="mt-3 grid max-w-xl grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.status}</dt>
-          <dd className="text-sm font-medium text-neutral-900">{labels.statusLabel}</dd>
+          <dt className="text-sm text-ink-muted">{labels.status}</dt>
+          <dd className="text-sm font-medium text-ink-strong">{labels.statusLabel}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.category}</dt>
-          <dd className="text-sm text-neutral-900">{service.categorySlug}</dd>
+          <dt className="text-sm text-ink-muted">{labels.category}</dt>
+          <dd className="text-sm text-ink-strong">{service.categorySlug}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.price}</dt>
-          <dd className="text-sm text-neutral-900">
+          <dt className="text-sm text-ink-muted">{labels.price}</dt>
+          <dd className="text-sm text-ink-strong">
             {amount ?? labels.noPrice}
             {service.isNegotiable && amount !== null ? ` · ${labels.negotiable}` : ''}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.pricing}</dt>
-          <dd className="text-sm text-neutral-900">{pricingLabel(service.pricingModel)}</dd>
+          <dt className="text-sm text-ink-muted">{labels.pricing}</dt>
+          <dd className="text-sm text-ink-strong">{pricingLabel(service.pricingModel)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.deliveryDays}</dt>
-          <dd className="text-sm text-neutral-900">
+          <dt className="text-sm text-ink-muted">{labels.deliveryDays}</dt>
+          <dd className="text-sm text-ink-strong">
             {service.deliveryDays === null ? labels.noDelivery : String(service.deliveryDays)}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.revisions}</dt>
-          <dd className="text-sm text-neutral-900">
+          <dt className="text-sm text-ink-muted">{labels.revisions}</dt>
+          <dd className="text-sm text-ink-strong">
             {service.revisionsIncluded === null ? labels.noPricing : String(service.revisionsIncluded)}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-sm text-neutral-600">{labels.mediaCount}</dt>
-          <dd className="text-sm text-neutral-900">
+          <dt className="text-sm text-ink-muted">{labels.mediaCount}</dt>
+          <dd className="text-sm text-ink-strong">
             {service.mediaCount === 0 ? labels.noMedia : String(service.mediaCount)}
           </dd>
         </div>
       </dl>
 
       {service.status === 'pending_review' ? (
-        <p role="status" className="mt-3 max-w-prose text-sm text-neutral-600">
+        <p role="status" className="mt-3 max-w-prose text-sm text-ink-muted">
           {labels.awaitingReview}
         </p>
       ) : null}
@@ -289,7 +289,7 @@ export function SellerServiceRow({
         <p className="mt-3">
           <Link
             href={details.href}
-            className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
           >
             {details.label}
           </Link>
@@ -339,8 +339,8 @@ export function SellerServiceRow({
       ) : null}
 
       {confirming !== null ? (
-        <div role="group" className="mt-4 rounded-md border border-neutral-300 p-4">
-          <p className="max-w-prose text-sm text-neutral-900">
+        <div role="group" className="mt-4 rounded-md border border-edge p-4">
+          <p className="max-w-prose text-sm text-ink-strong">
             {confirming === 'submit' ? (submit?.submitConfirm ?? '') : (archive?.archiveConfirm ?? '')}
           </p>
           <div className="mt-3 flex items-center gap-3">
@@ -348,7 +348,7 @@ export function SellerServiceRow({
               type="button"
               onClick={() => void onConfirm()}
               disabled={pending}
-              className="inline-flex items-center rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+              className="inline-flex items-center rounded-md bg-surface-ink px-3 py-1.5 text-sm font-medium text-on-ink disabled:opacity-60"
             >
               {pending
                 ? confirming === 'submit'
@@ -415,7 +415,7 @@ export function SellerServiceRow({
               onChange={(event) => set('priceMinor', event.target.value)}
               className={FIELD_CLASS}
             />
-            <p className="mt-1 max-w-prose text-sm text-neutral-600">{edit.priceHint}</p>
+            <p className="mt-1 max-w-prose text-sm text-ink-muted">{edit.priceHint}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -425,9 +425,9 @@ export function SellerServiceRow({
               type="checkbox"
               checked={values.isNegotiable !== ''}
               onChange={(event) => set('isNegotiable', event.target.checked ? 'yes' : '')}
-              className="h-4 w-4 rounded border-neutral-300"
+              className="h-4 w-4 rounded border-edge"
             />
-            <label htmlFor={`svc-negotiable-${service.slug}`} className="text-sm text-neutral-900">
+            <label htmlFor={`svc-negotiable-${service.slug}`} className="text-sm text-ink-strong">
               {edit.negotiable}
             </label>
           </div>
@@ -518,8 +518,8 @@ export function SellerServiceRow({
             />
           </div>
 
-          <fieldset className="border-t border-neutral-200 pt-4">
-            <legend className="text-sm font-semibold text-neutral-900">{edit.pricing}</legend>
+          <fieldset className="border-t border-hairline pt-4">
+            <legend className="text-sm font-semibold text-ink-strong">{edit.pricing}</legend>
 
             <div className="mt-3">
               <label htmlFor={`svc-pricing-model-${service.slug}`} className={LABEL_CLASS}>
@@ -536,7 +536,7 @@ export function SellerServiceRow({
                 <option value="fixed">{edit.pricingFixed}</option>
                 <option value="custom">{edit.pricingCustom}</option>
               </select>
-              <p className="mt-1 max-w-prose text-sm text-neutral-600">{edit.pricingHint}</p>
+              <p className="mt-1 max-w-prose text-sm text-ink-muted">{edit.pricingHint}</p>
             </div>
 
             {pricingStated ? (
@@ -555,7 +555,7 @@ export function SellerServiceRow({
                     onChange={(event) => set('deliveryDays', event.target.value)}
                     className={FIELD_CLASS}
                   />
-                  <p className="mt-1 max-w-prose text-sm text-neutral-600">{edit.deliveryDaysHint}</p>
+                  <p className="mt-1 max-w-prose text-sm text-ink-muted">{edit.deliveryDaysHint}</p>
                 </div>
 
                 <div className="mt-4">
@@ -580,9 +580,9 @@ export function SellerServiceRow({
                     type="checkbox"
                     checked={values.requiresBrief !== ''}
                     onChange={(event) => set('requiresBrief', event.target.checked ? 'yes' : '')}
-                    className="h-4 w-4 rounded border-neutral-300"
+                    className="h-4 w-4 rounded border-edge"
                   />
-                  <label htmlFor={`svc-brief-${service.slug}`} className="text-sm text-neutral-900">
+                  <label htmlFor={`svc-brief-${service.slug}`} className="text-sm text-ink-strong">
                     {edit.requiresBrief}
                   </label>
                 </div>
@@ -608,7 +608,7 @@ export function SellerServiceRow({
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
           >
             {pending ? edit.saving : edit.save}
           </button>
@@ -621,7 +621,7 @@ export function SellerServiceRow({
         </p>
       ) : null}
       {notice !== null ? (
-        <p role="status" className="mt-3 text-sm text-neutral-900">
+        <p role="status" className="mt-3 text-sm text-ink-strong">
           {notice}
         </p>
       ) : null}

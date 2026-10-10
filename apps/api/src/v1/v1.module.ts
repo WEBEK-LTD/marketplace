@@ -21,7 +21,6 @@ import { NotificationsController } from './notifications.controller.js';
 import { BuyerAccountController } from './buyer-account.controller.js';
 import { AdminSessionController } from './admin-session.controller.js';
 import { VerificationReviewController } from './verification-review.controller.js';
-import { OffersController } from './offers.controller.js';
 import { ServiceRequestsController } from './service-requests.controller.js';
 import { AdminServiceRequestsController } from './service-requests-admin.controller.js';
 import { SupportController } from './support.controller.js';
@@ -97,7 +96,6 @@ export class V1Module {
         BuyerAccountController,
         AdminSessionController,
         VerificationReviewController,
-        OffersController,
         ServiceRequestsController,
         AdminServiceRequestsController,
         SupportController,

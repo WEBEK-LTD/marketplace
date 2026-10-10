@@ -53,17 +53,17 @@ export default async function BecomeASellerPage({
       <div className="py-12">
         <Heading level={1}>{t('title')}</Heading>
 
-        <p className="mt-4 max-w-prose text-neutral-700">{t('createProfile')}</p>
+        <p className="mt-4 max-w-prose text-ink-body">{t('createProfile')}</p>
 
         {/* The permanence of the public address is said here as well as on the form itself: it is the one
             decision on the next screen that cannot be undone, and somebody deciding whether to start
             deserves to know that before they start. */}
-        <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('slugPermanent')}</p>
+        <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('slugPermanent')}</p>
 
         <p className="mt-8">
           <Link
             href={`${prefix}/dashboard/seller`}
-            className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
           >
             {t('submit')}
           </Link>

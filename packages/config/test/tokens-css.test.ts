@@ -34,13 +34,21 @@ describe('design tokens as CSS variables', () => {
       .filter((line) => line.toLowerCase().includes('shadow'))
       .map((line) => line.trim());
     expect(shadowLines.map((line) => line.split(':')[0])).toEqual([
+      '--token-shadow-xs',
       '--token-shadow-sm',
       '--token-shadow-md',
       '--token-shadow-lg',
+      '--token-shadow-inkEdge',
     ]);
     for (const line of shadowLines) {
+      if (line.startsWith('--token-shadow-inkEdge')) {
+        // The one inset: a top-edge highlight in white, which is how a dark surface gets an edge without a
+        // border drawn round it. It is a hairline by construction — no blur and no spread.
+        expect(line).toBe('--token-shadow-inkEdge: inset 0 1px 0 0 rgb(255 255 255 / 0.06);');
+        continue;
+      }
       // An offset-and-blur triple in `rgb(... / alpha)`. A glow would have no vertical offset.
-      expect(line).toMatch(/^--token-shadow-(?:sm|md|lg): .*rgb\(0 0 0 \/ 0\.\d+\);$/);
+      expect(line).toMatch(/^--token-shadow-(?:xs|sm|md|lg): .*rgb\(0 0 0 \/ 0\.\d+\);$/);
       expect(line).not.toMatch(/ 0 0 \d+px/);
     }
   });

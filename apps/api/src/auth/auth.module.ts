@@ -109,7 +109,6 @@ import {
   VERIFICATION_REVIEW_STORE,
   VerificationReviewService,
 } from '../admin/verification-review.service.js';
-import { OFFERS_STORE, OffersService } from '../offers/offers.service.js';
 import {
   SERVICE_REQUESTS_STORE,
   ServiceRequestsService,
@@ -223,7 +222,6 @@ export class AuthModule {
         // Phase 7-H: the two offer readers and the five writers of migration 0070, through that same
         // gateway. No throttle counter is wired to them: 0015's one-open-per-buyer index is the rate
         // limit the schema itself imposes on opening offers.
-        { provide: OFFERS_STORE, useExisting: AppSystemStore },
         // Phase 7-I: the three service-request readers and the seven writers of migration 0071, through
         // that same gateway.
         { provide: SERVICE_REQUESTS_STORE, useExisting: AppSystemStore },
@@ -380,7 +378,6 @@ export class AuthModule {
         BuyerAccountService,
         StaffConsoleService,
         VerificationReviewService,
-        OffersService,
         ServiceRequestsService,
         AdminServiceRequestsService,
         SupportService,
@@ -479,7 +476,6 @@ export class AuthModule {
         BuyerAccountService,
         StaffConsoleService,
         VerificationReviewService,
-        OffersService,
         ServiceRequestsService,
         AdminServiceRequestsService,
         SupportService,

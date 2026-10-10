@@ -290,9 +290,8 @@ async function load(path: string, cookie: string | null = SESSION): Promise<Page
 
 const BUYER_LIST = '/dashboard/service-requests';
 const BUYER_DETAIL = `${BUYER_LIST}/${REQUEST}`;
-const SELLER_LIST = '/dashboard/seller/service-requests';
-const SELLER_DETAIL = `${SELLER_LIST}/${REQUEST}`;
-const ALL = [BUYER_LIST, BUYER_DETAIL, SELLER_LIST, SELLER_DETAIL];
+// OD-A4 closed the seller's two pages; the buyer's two are the whole surface now.
+const ALL = [BUYER_LIST, BUYER_DETAIL];
 
 /** Everything a signed-out response must not contain, in markup or flight data. */
 const SECRETS = [REQUEST_TITLE, SERVICE_TITLE, SELLER_NAME, BUYER_NAME, BRIEF, SCOPE];
@@ -332,17 +331,19 @@ describe('who may see a brief', () => {
   });
 });
 
-describe('the two sides are separate', () => {
-  it('reads the buyer’s briefs from one operation and the seller’s from another', async () => {
+describe('there is one side, and it is the buyer’s', () => {
+  // This describe used to prove the two sides were kept apart. OD-A4 removed the other side, so what it
+  // proves now is the stronger thing: the only list this surface can read is the caller's own, and the
+  // seller's operation is not reached from anywhere.
+  it('reads the caller’s own briefs, and never the seller’s operation', async () => {
     apiServes();
     await load(BUYER_LIST);
     expect(api.seen.some((entry) => entry.url.startsWith('/v1/service-requests/made'))).toBe(true);
     expect(api.seen.some((entry) => entry.url.startsWith('/v1/service-requests/received'))).toBe(false);
 
     apiServes();
-    await load(SELLER_LIST);
-    expect(api.seen.some((entry) => entry.url.startsWith('/v1/service-requests/received'))).toBe(true);
-    expect(api.seen.some((entry) => entry.url.startsWith('/v1/service-requests/made'))).toBe(false);
+    await load(BUYER_DETAIL);
+    expect(api.seen.some((entry) => entry.url.startsWith('/v1/service-requests/received'))).toBe(false);
   });
 
   it('sends no role, side or account in any address', async () => {
@@ -357,68 +358,24 @@ describe('the two sides are separate', () => {
     }
   });
 
-  it('ships only the buyer’s words to the buyer’s detail page', async () => {
+  it('builds no quote control and no seller control anywhere in the detail page', async () => {
     apiServes({ detail: 'buyer' });
     const page = await load(BUYER_DETAIL);
-    expect(page.html).toContain('Accept quote');
-    // The seller's controls and their words are built nowhere in this document.
-    expect(page.html).not.toContain('Send a quote');
-    expect(page.html).not.toContain('Withdraw quote');
-    expect(page.html).not.toContain('Decline this request');
+    // Not one of these exists in the document now, whichever side the API says the caller is on: 0110
+    // closed every writer behind them, so a control would be a button that cannot work.
+    for (const words of ['Accept quote', 'Send a quote', 'Withdraw quote', 'Decline this request']) {
+      expect(page.html, words).not.toContain(words);
+    }
+    // What the buyer does still have is the one step that survived.
+    expect(page.html).toContain('Cancel this request');
   });
 
-  it('ships only the seller’s words to the seller’s detail page', async () => {
-    apiServes({ detail: 'seller' });
-    const page = await load(SELLER_DETAIL);
-    expect(page.html).toContain('Send a quote');
-    expect(page.html).toContain('Decline this request');
-    expect(page.html).not.toContain('Accept quote');
-    expect(page.html).not.toContain('Cancel this request');
-  });
-
-  it('reads the same operation for both detail pages, and lets the API decide the side', async () => {
+  it('reads one brief through its own address, and lets the API decide what to show', async () => {
     apiServes({ detail: 'buyer' });
     await load(BUYER_DETAIL);
-    apiServes({ detail: 'seller' });
-    await load(SELLER_DETAIL);
     for (const entry of api.seen.filter((request) => request.url.startsWith('/v1/service-requests/'))) {
       expect(entry.url).toBe(`/v1/service-requests/${REQUEST}`);
     }
-  });
-});
-
-describe('the validity window and the payment deadline stay apart', () => {
-  it('labels a live quote’s window and shows no deadline for it', async () => {
-    apiServes({ detail: 'buyer' });
-    const page = await load(BUYER_DETAIL);
-    expect(page.html).toContain('Quote stands until');
-    expect(page.html).toContain('2026-05-15 09:00');
-    expect(page.html).not.toContain('2026-05-05 09:00');
-  });
-
-  it('labels the payment deadline of an accepted quote separately, and says payment is not open yet', async () => {
-    apiServes({ detail: 'accepted' });
-    const page = await load(BUYER_DETAIL);
-    expect(page.html).toContain('Payment due by');
-    expect(page.html).toContain('2026-05-05 09:00');
-    expect(page.html).toContain('checkout opens');
-    // Never the two under one label.
-    expect(page.html).not.toContain('Payment stands until');
-  });
-
-  it('shows the accepted quote’s deadline on the list, and no window there', async () => {
-    apiServes({ made: 'accepted' });
-    const page = await load(BUYER_LIST);
-    expect(page.html).toContain('Payment due by');
-    expect(page.html).not.toContain('Quote stands until');
-  });
-
-  it('tells the truth about a lapsed quote without inventing a status', async () => {
-    apiServes({ detail: 'lapsed' });
-    const page = await load(BUYER_DETAIL);
-    expect(page.html).toContain('Deadline passed');
-    // A lapsed quote offers no decision, because the database would refuse one.
-    expect(page.html).not.toContain('Accept quote');
   });
 });
 
@@ -469,19 +426,16 @@ describe('nothing from Phase 8, and nothing for staff', () => {
 });
 
 describe('every state renders, in both languages', () => {
-  it('renders the empty state on both lists', async () => {
-    apiServes({ made: 'empty', received: 'empty' });
+  it('renders the empty state on the list', async () => {
+    apiServes({ made: 'empty' });
     expect((await load(BUYER_LIST)).html).toContain('No service requests yet');
-    expect((await load(SELLER_LIST)).html).toContain('No service requests yet');
   });
 
-  it('renders the error state and a way back on both lists', async () => {
-    apiServes({ made: 'fails', received: 'fails' });
-    for (const path of [BUYER_LIST, SELLER_LIST]) {
-      const page = await load(path);
-      expect(page.html, path).toContain('could not be loaded');
-      expect(page.html, path).toContain('Try again');
-    }
+  it('renders the error state and a way back on the list', async () => {
+    apiServes({ made: 'fails' });
+    const page = await load(BUYER_LIST);
+    expect(page.html).toContain('could not be loaded');
+    expect(page.html).toContain('Try again');
   });
 
   it('offers an older page only when there is one', async () => {
@@ -493,11 +447,9 @@ describe('every state renders, in both languages', () => {
 
   it('renders the same words for a brief that is absent and one that is not the reader’s', async () => {
     apiServes({ detail: 'missing' });
-    for (const path of [BUYER_DETAIL, SELLER_DETAIL]) {
-      const page = await load(path);
-      expect(page.html, path).toContain('could not be found');
-      expect(page.html, path).not.toContain(BRIEF);
-    }
+    const page = await load(BUYER_DETAIL);
+    expect(page.html).toContain('could not be found');
+    expect(page.html).not.toContain(BRIEF);
   });
 
   it('renders the error state when a brief could not be read', async () => {
@@ -506,22 +458,15 @@ describe('every state renders, in both languages', () => {
     expect(page.html).toContain('could not be loaded');
   });
 
-  it('says so when a brief has no quote yet, on each side in its own words', async () => {
+  // There is no "no quote yet" sentence any more, because there is no quote and no seller to send one.
+  // What the page says instead is who is handling the enquiry, which is 7-J's own wording for an
+  // admin-routed brief and is now the only wording this page has.
+  it('says who is handling the enquiry, rather than waiting for a quote', async () => {
     apiServes({ detail: 'noQuotes' });
-    expect((await load(BUYER_DETAIL)).html).toContain('No quote yet');
-
-    apiServes({ detail: 'seller' });
-    api.reply((request, response) => {
-      const path = request.url.split('?')[0] ?? '';
-      if (path === '/v1/users/me') return json(response, IDENTITY);
-      if (path === '/v1/messaging/unread-count') return json(response, { unreadCount: 0 });
-      if (path === '/v1/notifications/unread-count') return json(response, { unreadCount: 0 });
-      if (path === `/v1/service-requests/${REQUEST}`) {
-        return json(response, { request: { ...DETAIL, isBuyer: false, isSeller: true, status: 'open', quotes: [] } });
-      }
-      return problem(response, 404, 'NOT_FOUND');
-    });
-    expect((await load(SELLER_DETAIL)).html).toContain('have not sent a quote');
+    const page = await load(BUYER_DETAIL);
+    expect(page.html).not.toContain('No quote yet');
+    expect(page.html).not.toContain('have not sent a quote');
+    expect(page.html).toContain('Handled by the marketplace team');
   });
 
   it('offers no closing step once a brief is closed', async () => {
@@ -577,14 +522,15 @@ describe('the navigation offers both surfaces', () => {
     expect(page.html).toContain('/dashboard/service-requests');
   });
 
-  it('links the seller’s inbox from inside the seller shell', async () => {
+  // The seller shell no longer links a request inbox, because the seller no longer has one (OD-A4).
+  it('offers the seller no request inbox at all', async () => {
     apiServes();
-    const page = await load(SELLER_LIST);
-    expect(page.html).toContain('/dashboard/seller/service-requests');
+    const page = await load(BUYER_LIST);
+    expect(page.html).not.toContain('/dashboard/seller/service-requests');
   });
 });
 
-describe('the public service page’s request-a-quote action', () => {
+describe('the public service page’s enquiry action', () => {
   /** Serves one public service and nothing else. The middleware resolves the slug through the same read. */
   function serviceIs(overrides: Record<string, unknown> = {}): void {
     api.seen.length = 0;
@@ -600,11 +546,11 @@ describe('the public service page’s request-a-quote action', () => {
 
   const PAGE = `/service/${SERVICE.slug}`;
 
-  it('offers it on a custom-priced service that is available', async () => {
+  it('offers it on an available service', async () => {
     serviceIs();
     const page = await load(PAGE, null);
     expect(page.status).toBe(200);
-    expect(page.html).toContain('Request a quote');
+    expect(page.html).toContain('Enquire about this listing');
   });
 
   it('offers it to a signed-out visitor without reading a session, so the page stays cacheable', async () => {
@@ -616,21 +562,26 @@ describe('the public service page’s request-a-quote action', () => {
     }
   });
 
-  it('withholds it from a fixed-price service, which is bought rather than quoted', async () => {
+  // **Inverted, not deleted.** These two asserted that a fixed-price service withheld the action, because
+  // 7-I's action asked for a *quote* and a fixed price has nothing to quote. OD-A1 concludes every sale at
+  // the office whatever the listing's pricing says, so withholding it now would hide the only action the
+  // page has. Left as they were they would have gone on passing against the new wording while proving
+  // nothing, which is worse than failing.
+  it('offers it on a fixed-price service too, because the office concludes that sale as well', async () => {
     serviceIs({ pricingModel: 'fixed', priceMinor: '150000' });
     const page = await load(PAGE, null);
     expect(page.status).toBe(200);
-    expect(page.html).not.toContain('Request a quote');
+    expect(page.html).toContain('Enquire about this listing');
   });
 
-  it('withholds it from a service with no pricing model recorded', async () => {
+  it('offers it on a service with no pricing model recorded', async () => {
     serviceIs({ pricingModel: null });
-    expect((await load(PAGE, null)).html).not.toContain('Request a quote');
+    expect((await load(PAGE, null)).html).toContain('Enquire about this listing');
   });
 
   it('withholds it from a service that is no longer available', async () => {
     serviceIs({ availability: 'no_longer_available' });
-    expect((await load(PAGE, null)).html).not.toContain('Request a quote');
+    expect((await load(PAGE, null)).html).not.toContain('Enquire about this listing');
   });
 
   it('offers it in Arabic under /ar as well', async () => {
@@ -638,7 +589,7 @@ describe('the public service page’s request-a-quote action', () => {
     const page = await load(`/ar${PAGE}`, null);
     expect(page.status).toBe(200);
     expect(page.html).toContain('dir="rtl"');
-    expect(page.html).toContain('طلب عرض سعر');
+    expect(page.html).toContain('استفسر عن هذا الإعلان');
   });
 
   it('carries no checkout, cart or payment control beside it', async () => {
@@ -742,13 +693,13 @@ describe('the buyer’s Option 2 surface (Phase 7-J)', () => {
     }
   });
 
-  it('keeps it off the seller’s inbox and the seller’s detail entirely', async () => {
-    apiServes({ received: 'empty' });
-    const page = await load(SELLER_LIST);
-    expect(page.html).toContain('No service requests yet');
-    expect(page.html).not.toContain('Handled by the marketplace team');
-    // And the seller is never offered the entry point either.
-    expect(page.html).not.toContain('Ask the marketplace team');
+  // There is no seller inbox to keep it off. What is asserted instead is that the entry point is on the
+  // buyer's own list and the seller's closed addresses are not linked from it.
+  it('offers the entry point on the buyer’s own list, and links no seller address', async () => {
+    apiServes({ made: 'empty' });
+    const page = await load(BUYER_LIST);
+    expect(page.html).toContain('Ask the marketplace team');
+    expect(page.html).not.toContain('/dashboard/seller/');
   });
 
   it('serves the Option 2 form in Arabic under /ar, right-to-left', async () => {

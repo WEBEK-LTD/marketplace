@@ -56,7 +56,9 @@ export function EmptyState({ title, description, action, tone = 'empty', as: Tag
       aria-live={tone === 'unavailable' ? 'assertive' : 'polite'}
       className={cx(
         'flex flex-col items-center justify-center gap-3 rounded-lg px-6 py-14 text-center',
-        tone === 'empty' ? 'border border-dashed border-neutral-300 bg-neutral-0' : 'border border-neutral-200 bg-neutral-50',
+        tone === 'empty'
+          ? 'border border-dashed border-edge-brand bg-surface-sunken'
+          : 'border border-hairline bg-surface-muted',
         className,
       )}
     >
@@ -78,9 +80,9 @@ export function EmptyState({ title, description, action, tone = 'empty', as: Tag
  */
 function EmptyMark({ tone }: { readonly tone: EmptyTone }) {
   return (
-    <span aria-hidden="true" className="relative block size-10 rounded-lg border-2 border-dashed border-neutral-300">
+    <span aria-hidden="true" className="relative block size-12 rounded-xl border-2 border-dashed border-edge-brand">
       {tone === 'unavailable' ? (
-        <span className="absolute top-1/2 start-[-4px] h-0.5 w-12 -rotate-45 bg-neutral-300" />
+        <span className="absolute top-1/2 start-[-4px] h-0.5 w-12 -rotate-45 bg-edge" />
       ) : null}
     </span>
   );
@@ -94,7 +96,7 @@ function EmptyMark({ tone }: { readonly tone: EmptyTone }) {
  */
 export function EmptyLine({ children, className }: { readonly children: ReactNode; readonly className?: string }) {
   return (
-    <p className={cx('rounded-md border border-dashed border-neutral-300 px-4 py-6 text-center text-sm text-neutral-600', className)}>
+    <p className={cx('rounded-lg border border-dashed border-edge-brand bg-surface-sunken px-4 py-6 text-center text-sm text-ink-muted', className)}>
       {children}
     </p>
   );

@@ -108,7 +108,7 @@ export function CatalogFilterPanel({
   const activeCount = catalogFiltersToParams(filters).length;
 
   return (
-    <form method="get" action={action} className="rounded-lg border border-neutral-200 bg-neutral-0">
+    <form method="get" action={action} className="rounded-lg border border-hairline bg-surface-raised">
       {/*
         `<details>` with `open` from `lg` up: collapsed on a phone, where thirty rows above the first result made
         the catalogue unreachable, and always open on a desktop, where the panel is a column beside the grid.
@@ -120,19 +120,19 @@ export function CatalogFilterPanel({
           className={cx(
             'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-5 py-4 lg:hidden',
             'marker:content-none [&::-webkit-details-marker]:hidden',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary',
           )}
         >
           <span className={TYPE.h4}>{labels.heading}</span>
           <span className="flex items-center gap-2">
             {activeCount === 0 ? null : (
-              <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-xs font-medium text-neutral-0 tabular-nums">
+              <span className="rounded-full bg-surface-ink px-2 py-0.5 text-xs font-medium text-on-ink tabular-nums">
                 {activeCount}
               </span>
             )}
             <span
               aria-hidden="true"
-              className="-mt-1 size-2 rotate-45 border-e-2 border-b-2 border-neutral-500 transition-transform duration-150 group-open:mt-1 group-open:-rotate-135"
+              className="-mt-1 size-2 rotate-45 border-e-2 border-b-2 border-edge transition-transform duration-150 group-open:mt-1 group-open:-rotate-135"
             />
           </span>
         </summary>
@@ -173,14 +173,14 @@ export function CatalogFilterPanel({
               legend={
                 <>
                   {facet.label}
-                  {facet.unit === null ? null : <span className="font-normal text-neutral-600"> ({facet.unit})</span>}
+                  {facet.unit === null ? null : <span className="font-normal text-ink-muted"> ({facet.unit})</span>}
                 </>
               }
             >
               {/* Two boxes, because a span is what the facet carries; buckets would be a rule nobody wrote. */}
               <div className="mt-1 flex gap-3">
                 <label className="flex-1">
-                  <span className="mb-1 block text-xs text-neutral-600">{labels.from}</span>
+                  <span className="mb-1 block text-xs text-ink-muted">{labels.from}</span>
                   <Input
                     id={`${name}-min`}
                     name={`${name}.min`}
@@ -192,7 +192,7 @@ export function CatalogFilterPanel({
                   />
                 </label>
                 <label className="flex-1">
-                  <span className="mb-1 block text-xs text-neutral-600">{labels.to}</span>
+                  <span className="mb-1 block text-xs text-ink-muted">{labels.to}</span>
                   <Input
                     id={`${name}-max`}
                     name={`${name}.max`}
@@ -274,7 +274,7 @@ export function CatalogFilterPanel({
             />
           ) : (
                 <label className="mt-1 block">
-                  <span className="mb-1 block text-xs text-neutral-600">{labels.priceCurrency}</span>
+                  <span className="mb-1 block text-xs text-ink-muted">{labels.priceCurrency}</span>
                   <Select
                     id="price-currency"
                     name={CATALOG_FILTER_PARAMS.priceCurrency}
@@ -288,7 +288,7 @@ export function CatalogFilterPanel({
               )}
               <div className="mt-2 flex gap-3">
                 <label className="flex-1">
-                  <span className="mb-1 block text-xs text-neutral-600">{labels.priceFrom}</span>
+                  <span className="mb-1 block text-xs text-ink-muted">{labels.priceFrom}</span>
                   <Input
                     id="price-min"
                     name={CATALOG_FILTER_PARAMS.priceMin}
@@ -300,7 +300,7 @@ export function CatalogFilterPanel({
                   />
                 </label>
                 <label className="flex-1">
-                  <span className="mb-1 block text-xs text-neutral-600">{labels.priceTo}</span>
+                  <span className="mb-1 block text-xs text-ink-muted">{labels.priceTo}</span>
                   <Input
                     id="price-max"
                     name={CATALOG_FILTER_PARAMS.priceMax}
@@ -315,7 +315,7 @@ export function CatalogFilterPanel({
             </ChoiceGroup>
           )}
 
-          <div className="mt-6 flex items-center gap-2 border-t border-neutral-200 pt-5">
+          <div className="mt-6 flex items-center gap-2 border-t border-hairline pt-5">
             <Button type="submit" size="md">
               {labels.apply}
             </Button>
@@ -363,14 +363,14 @@ export function CatalogToolbar({
   return (
     <div
       className={cx(
-        'flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-neutral-200 pb-3',
+        'flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-hairline pb-3',
         className,
       )}
     >
-      <p className="text-sm font-medium text-neutral-900 tabular-nums" aria-live="polite">
+      <p className="text-sm font-medium text-ink-strong tabular-nums" aria-live="polite">
         {labels.resultCount(count)}
       </p>
-      <p className="text-sm text-neutral-600">{labels.ordering}</p>
+      <p className="text-sm text-ink-muted">{labels.ordering}</p>
     </div>
   );
 }

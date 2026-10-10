@@ -76,11 +76,11 @@ export default async function SellerReviewsPage({
       {lookup.kind !== 'ok' ? null : (
         <>
           <section aria-labelledby="seller-rating-heading" className="mt-6">
-            <h2 id="seller-rating-heading" className="text-lg font-semibold text-neutral-900">
+            <h2 id="seller-rating-heading" className="text-lg font-semibold text-ink-strong">
               {t('summary')}
             </h2>
             {lookup.data.summary === null ? (
-              <p role="status" className="mt-2 text-neutral-600">
+              <p role="status" className="mt-2 text-ink-muted">
                 {t('noSummary')}
               </p>
             ) : (
@@ -101,7 +101,7 @@ export default async function SellerReviewsPage({
                   />
                 </dl>
                 <h3 className="mt-4 text-sm font-medium">{t('distribution')}</h3>
-                <ul className="mt-1 text-sm text-neutral-700">
+                <ul className="mt-1 text-sm text-ink-body">
                   {(
                     [
                       [5, lookup.data.summary.fiveStarCount],
@@ -116,13 +116,13 @@ export default async function SellerReviewsPage({
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-xs text-neutral-500">{t('summaryNote')}</p>
+                <p className="mt-2 text-xs text-ink-muted">{t('summaryNote')}</p>
               </>
             )}
           </section>
 
           {lookup.data.reviews.length === 0 ? (
-            <p role="status" className="mt-6 text-neutral-600">
+            <p role="status" className="mt-6 text-ink-muted">
               {t('empty')}
             </p>
           ) : (
@@ -130,31 +130,31 @@ export default async function SellerReviewsPage({
               {lookup.data.reviews.map((review) => (
                 <li
                   key={review.orderNumber}
-                  className="rounded-lg border border-neutral-200 p-4"
+                  className="rounded-lg border border-hairline p-4"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="text-sm">
                       <span className="font-medium">
                         {review.rating} {t('stars')}
                       </span>
-                      <span className="text-neutral-500">
+                      <span className="text-ink-muted">
                         {' '}
                         · {t('orderNumber')} {review.orderNumber}
                       </span>
                     </p>
-                    <p className="text-sm text-neutral-600">{statusLabel(review.status)}</p>
+                    <p className="text-sm text-ink-muted">{statusLabel(review.status)}</p>
                   </div>
                   {review.title === null ? null : (
                     <p className="mt-2 text-sm font-medium">{review.title}</p>
                   )}
                   {review.body === null ? null : (
-                    <p className="mt-1 max-w-prose text-sm text-neutral-700">{review.body}</p>
+                    <p className="mt-1 max-w-prose text-sm text-ink-body">{review.body}</p>
                   )}
-                  <h3 className="mt-3 text-xs font-medium text-neutral-500">{t('yourReply')}</h3>
+                  <h3 className="mt-3 text-xs font-medium text-ink-muted">{t('yourReply')}</h3>
                   {review.replyBody === null ? (
-                    <p className="text-sm text-neutral-600">{t('noReply')}</p>
+                    <p className="text-sm text-ink-muted">{t('noReply')}</p>
                   ) : (
-                    <p className="max-w-prose text-sm text-neutral-700">{review.replyBody}</p>
+                    <p className="max-w-prose text-sm text-ink-body">{review.replyBody}</p>
                   )}
                 </li>
               ))}

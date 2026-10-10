@@ -5,12 +5,32 @@ import ar from '../messages/ar.json';
 import en from '../messages/en.json';
 import { ListingPrice, formatListingAmount } from '../src/components/listing-price';
 import {
+
+
   ListingCard,
   ListingDetailView,
   ListingGrid,
   ListingGridSkeleton,
   ListingMessage,
 } from '../src/components/listing-views';
+
+/**
+ * The text a reader actually gets, with the markup taken out.
+ *
+ * 0110 sets a price as a composed figure — the currency code in a small raised mark, the amount large and
+ * tabular — so "EGP 2500.00" is no longer one contiguous run in the HTML source: there is a `</span>` between
+ * the code and the number, and React puts its own separator between adjacent text nodes. The invariant was
+ * never about the markup, though. It is that the price **reads** as "EGP 2500.00" — to a person, to a screen
+ * reader, and to anyone who copies it — and that is what this asserts.
+ */
+function textOf(html: string): string {
+  return html
+    .replace(/<!--.*?-->/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
 
 /**
  * The public listing surfaces as markup (Phase 4-B).
@@ -93,7 +113,7 @@ describe('a listing price', () => {
     const withAmount = renderToStaticMarkup(
       <ListingPrice priceMinor="250000" currencyCode="EGP" currencyMinorUnit={2} isNegotiable labels={LABELS} />,
     );
-    expect(withAmount).toContain('EGP 2500.00');
+    expect(textOf(withAmount)).toContain('EGP 2500.00');
     expect(withAmount).toContain(EN.negotiable);
 
     const withoutAmount = renderToStaticMarkup(
@@ -114,7 +134,7 @@ describe('a listing card', () => {
     );
     expect(html).toContain('A listing title');
     expect(html).toContain('Cairo');
-    expect(html).toContain('EGP 2500.00');
+    expect(textOf(html)).toContain('EGP 2500.00');
     expect(html).toContain('href="/listing/a-listing"');
   });
 
@@ -219,7 +239,8 @@ describe('the listing detail', () => {
       EN.yes,
       'Red, Blue',
     ]) {
-      expect(html).toContain(expected);
+      // Against the rendered text, not the markup: a price is a composed figure and is split across elements.
+      expect(textOf(html), expected).toContain(expected);
     }
   });
 

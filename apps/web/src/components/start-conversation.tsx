@@ -87,13 +87,13 @@ export function StartConversationButton({
 
   return (
     <div>
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+      <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
         {message}
       </p>
       {signedOut ? (
         <Link
           href={loginPath}
-          className="mt-1 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+          className="mt-1 inline-block rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink"
         >
           {labels.signIn}
         </Link>
@@ -102,7 +102,7 @@ export function StartConversationButton({
           type="button"
           disabled={pending}
           onClick={() => void onClick()}
-          className="mt-1 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="mt-1 rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? labels.working : labels.action}
         </button>

@@ -1,28 +1,33 @@
 import type { ReactNode } from 'react';
-import { cx, FOCUS_RING, SURFACE_CARD, TYPE } from './recipes.js';
+import { CARD_HOVER, cx, FOCUS_RING, FOCUS_WITHIN, INTERACTIVE, SURFACE_CARD, SURFACE_CARD_INK, TYPE } from './recipes.js';
 
 export interface CardProps {
   readonly children: ReactNode;
   readonly as?: 'div' | 'article' | 'li' | 'section';
   readonly padding?: 'none' | 'sm' | 'md' | 'lg';
+  /** `ink` is the same card on an inverted band. */
+  readonly tone?: 'default' | 'ink';
   readonly className?: string;
 }
 
-const PADDING = { none: '', sm: 'p-3', md: 'p-4', lg: 'p-6' } as const;
+const PADDING = { none: '', sm: 'p-4', md: 'p-5 sm:p-6', lg: 'p-6 sm:p-8' } as const;
 
 /**
- * A flat surface, separated from the page by a hairline rather than a shadow.
+ * A surface separated from what is behind it by **value**, not by a drawn rectangle.
  *
- * That is the system's central structural decision. Identical rounded cards each wearing the same soft grey
- * shadow is the look every generated interface arrives at, and it also flattens hierarchy: when everything is
- * raised, nothing is. Here a border says "this content is a unit" and elevation is saved for the three things
- * that genuinely float — a stuck header, a popover, an overlay.
+ * This is the central correction 0110 makes. 0109 gave every card a 1px `neutral-200` border on all four sides;
+ * twenty of those down a grid is a table, and it is why the catalogue read as an internal tool. A card here is
+ * white on a recessed band with the faintest lift, so the grid reads as objects resting on a surface. The
+ * border survives only for the job it is good at — dividing two regions *inside* one card.
  *
- * `padding: 'none'` is for a card whose first child is edge-to-edge, which on this product means a listing's
- * media. {@link LinkCard} is the interactive version.
+ * `tone="ink"` is the same card on an ink band, where the lift has to come from a top-edge highlight instead:
+ * a shadow under a dark object on a dark ground is invisible, and a hairline of white along the top edge is how
+ * material actually reads there.
+ *
+ * {@link LinkCard} is the interactive version.
  */
-export function Card({ children, as: Tag = 'div', padding = 'md', className }: CardProps) {
-  return <Tag className={cx(SURFACE_CARD, PADDING[padding], className)}>{children}</Tag>;
+export function Card({ children, as: Tag = 'div', padding = 'md', tone = 'default', className }: CardProps) {
+  return <Tag className={cx(tone === 'ink' ? SURFACE_CARD_INK : SURFACE_CARD, PADDING[padding], className)}>{children}</Tag>;
 }
 
 export interface LinkCardProps {
@@ -49,8 +54,11 @@ export interface LinkCardProps {
  * `.strict()` with eight approved fields and no media among them, because the platform has no media origin to
  * address a picture with yet. A card built around a picture would therefore show a placeholder on every single
  * one, and a grid where nothing has an image does not read as a design — it reads as an outage. So the card is
- * typographic: the title leads, the price anchors, and the space a photograph would have taken goes to making
- * both legible. When a media field is added to the contract this is the component that gains it.
+ * typographic, and 0110 makes that a deliberate composition rather than a consolation: the **price is the
+ * largest element**, the title is second, and the metadata is a quiet line above both. A marketplace is scanned
+ * by price, so setting the price at 28px tabular and the title at 18px is simply the honest hierarchy; 0109 had
+ * it the other way round and the card had no focal point at all. When a media field is added to the contract,
+ * this is the component that gains it.
  *
  * **The whole card is the target, but only one element is the link.** The anchor is stretched over the card with
  * an absolutely positioned overlay, so a person can click anywhere, while the accessibility tree still sees a
@@ -58,9 +66,10 @@ export interface LinkCardProps {
  * reader read the price, the location and the seller as part of the link's name, which is unusable, and it
  * forbids a second link inside the card.
  *
- * **Hover is a border, not a lift.** The border steps 200 → 400 and the title's underline appears. A card that
- * rises on hover is the default treatment and it makes a grid of twenty of them twitch; moving the border is
- * quieter, reads instantly, and costs no layout. The press nudge is shared with every other control.
+ * **Hover is a small genuine lift.** Two pixels up and one step of elevation, on the product's single shared
+ * transition. 0109 moved a border colour instead, on the reasoning that a lifting card makes a grid twitch —
+ * which was over-corrected: 2px over 200ms reads as the card responding, and it is the affordance that tells a
+ * person the whole tile is clickable. The press nudge is shared with every other control.
  *
  * `focus-within` carries the ring to the whole card, so keyboard navigation of a grid shows the same target the
  * pointer gets.
@@ -71,15 +80,16 @@ export function LinkCard({ href, children, as: Tag = 'article', className, dataL
       className={cx(
         'group relative isolate flex flex-col overflow-hidden',
         SURFACE_CARD,
-        'transition-colors duration-150 hover:border-neutral-400',
-        'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-neutral-900',
+        INTERACTIVE,
+        CARD_HOVER,
+        FOCUS_WITHIN,
         className,
       )}
     >
       {children}
       <a
         href={href}
-        className="absolute inset-0 z-10 rounded-lg"
+        className="absolute inset-0 z-10 rounded-xl"
         {...(dataListingId === undefined ? {} : { 'data-listing-id': dataListingId })}
         {...aria}
       >
@@ -92,6 +102,8 @@ export function LinkCard({ href, children, as: Tag = 'article', className, dataL
 export interface CardTitleProps {
   readonly children: ReactNode;
   readonly as?: 'h2' | 'h3' | 'h4';
+  /** `large` is for the two-up service grid, where the card has the width to carry it. */
+  readonly size?: 'default' | 'large';
   /** Lines to show before truncating. Catalogue titles are long and the grid must stay on its rhythm. */
   readonly lines?: 1 | 2;
 }
@@ -106,13 +118,14 @@ export interface CardTitleProps {
  * The underline appears on the parent {@link LinkCard}'s hover, which is why the decoration classes are
  * `group-hover:` rather than `hover:` — the target is the card, not the text.
  */
-export function CardTitle({ children, as: Tag = 'h3', lines = 2 }: CardTitleProps) {
+export function CardTitle({ children, as: Tag = 'h3', size = 'default', lines = 2 }: CardTitleProps) {
   return (
     <Tag
       className={cx(
-        TYPE.cardTitle,
+        size === 'large' ? TYPE.cardTitleLarge : TYPE.cardTitle,
+        'text-ink-strong',
         lines === 1 ? 'truncate' : 'line-clamp-2',
-        'group-hover:underline group-hover:decoration-neutral-400 group-hover:underline-offset-2',
+        'decoration-edge underline-offset-4 group-hover:underline',
       )}
     >
       {children}
@@ -122,7 +135,7 @@ export function CardTitle({ children, as: Tag = 'h3', lines = 2 }: CardTitleProp
 
 /** A card's body: the padding and the vertical rhythm every catalogue card shares. */
 export function CardBody({ children, className }: { readonly children: ReactNode; readonly className?: string }) {
-  return <div className={cx('flex flex-1 flex-col gap-2 p-4', className)}>{children}</div>;
+  return <div className={cx('flex flex-1 flex-col gap-2.5 p-5', className)}>{children}</div>;
 }
 
 /**
@@ -133,7 +146,9 @@ export function CardBody({ children, className }: { readonly children: ReactNode
  * comparable and not.
  */
 export function CardFooter({ children, className }: { readonly children: ReactNode; readonly className?: string }) {
-  return <div className={cx('mt-auto flex items-end justify-between gap-3 px-4 pb-4', className)}>{children}</div>;
+  return (
+    <div className={cx('mt-auto flex items-end justify-between gap-3 px-5 pt-4 pb-5', className)}>{children}</div>
+  );
 }
 
 /**

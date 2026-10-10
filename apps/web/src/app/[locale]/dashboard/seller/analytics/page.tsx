@@ -78,14 +78,14 @@ export default async function SellerAnalyticsPage({
     >
       {lookup.kind !== 'ok' ? null : (
         <>
-          <p className="mt-6 text-sm text-neutral-500">
+          <p className="mt-6 text-sm text-ink-muted">
             {t('window', { days: lookup.data.days })}
           </p>
 
-          <h2 className="mt-8 text-lg font-medium text-neutral-900">{t('promotionsHeading')}</h2>
+          <h2 className="mt-8 text-lg font-medium text-ink-strong">{t('promotionsHeading')}</h2>
 
           {lookup.data.promotions.length === 0 ? (
-            <p role="status" className="mt-2 text-neutral-600">
+            <p role="status" className="mt-2 text-ink-muted">
               {t('empty')}
             </p>
           ) : (
@@ -93,10 +93,10 @@ export default async function SellerAnalyticsPage({
               {lookup.data.promotions.map((row) => (
                 <li
                   key={`${row.listingSlug}-${row.firstDay}`}
-                  className="rounded-lg border border-neutral-200 p-4"
+                  className="rounded-lg border border-hairline p-4"
                 >
                   <p className="text-sm">
-                    <span className="text-neutral-500">{t('listing')} </span>
+                    <span className="text-ink-muted">{t('listing')} </span>
                     <span className="font-medium">{row.listingTitle}</span>
                   </p>
                   <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -108,7 +108,7 @@ export default async function SellerAnalyticsPage({
                       value={`${row.firstDay} — ${row.lastDay}`}
                     />
                   </dl>
-                  <p className="mt-2 text-xs text-neutral-500">
+                  <p className="mt-2 text-xs text-ink-muted">
                     {t('status')}: {statusLabel(row.status)}
                   </p>
                 </li>
@@ -116,15 +116,15 @@ export default async function SellerAnalyticsPage({
             </ul>
           )}
 
-          <h2 className="mt-10 text-lg font-medium text-neutral-900">{t('listingsHeading')}</h2>
+          <h2 className="mt-10 text-lg font-medium text-ink-strong">{t('listingsHeading')}</h2>
 
           {listings.kind !== 'ok' ? (
             // Its own failure, reported where it happened: the promotion section above still rendered.
-            <p role="status" className="mt-2 text-neutral-600">
+            <p role="status" className="mt-2 text-ink-muted">
               {t('errorUnavailable')}
             </p>
           ) : listings.data.listings.length === 0 ? (
-            <p role="status" className="mt-2 text-neutral-600">
+            <p role="status" className="mt-2 text-ink-muted">
               {t('listingsEmpty')}
             </p>
           ) : (
@@ -132,10 +132,10 @@ export default async function SellerAnalyticsPage({
               {listings.data.listings.map((row) => (
                 <li
                   key={`${row.listingSlug}-${row.firstDay}`}
-                  className="rounded-lg border border-neutral-200 p-4"
+                  className="rounded-lg border border-hairline p-4"
                 >
                   <p className="text-sm">
-                    <span className="text-neutral-500">{t('listing')} </span>
+                    <span className="text-ink-muted">{t('listing')} </span>
                     <span className="font-medium">{row.listingTitle}</span>
                   </p>
                   <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -151,7 +151,7 @@ export default async function SellerAnalyticsPage({
           )}
 
           {/* What is still not here, said plainly rather than filled in with a number nobody agreed. */}
-          <p className="mt-6 max-w-prose text-sm text-neutral-600">{t('listingNote')}</p>
+          <p className="mt-6 max-w-prose text-sm text-ink-muted">{t('listingNote')}</p>
         </>
       )}
     </SellerReadSurface>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 const LINK_CLASS =
-  'text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900';
+  'text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary';
 
 /**
  * The authenticated dashboard's navigation (Phase 5-D, extended in 7-E).
@@ -30,7 +30,6 @@ export async function DashboardNav({ locale }: { readonly locale: string }) {
   const [
     account,
     messages,
-    offers,
     serviceRequests,
     notifications,
     support,
@@ -64,7 +63,6 @@ export async function DashboardNav({ locale }: { readonly locale: string }) {
   const links: readonly { readonly href: string; readonly label: string }[] = [
     { href: `${prefix}/dashboard`, label: account('title') },
     { href: `${prefix}/dashboard/messages`, label: messages('title') },
-    { href: `${prefix}/dashboard/offers`, label: offers('title') },
     { href: `${prefix}/dashboard/service-requests`, label: serviceRequests('title') },
     { href: `${prefix}/dashboard/notifications`, label: notifications('title') },
     { href: `${prefix}/dashboard/support`, label: support('title') },
@@ -79,7 +77,7 @@ export async function DashboardNav({ locale }: { readonly locale: string }) {
   ];
 
   return (
-    <nav aria-label={account('title')} className="border-b border-neutral-200">
+    <nav aria-label={account('title')} className="border-b border-hairline">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 py-3">
           {links.map((link) => (

@@ -124,8 +124,14 @@ select is(
     where t.tgrelid = 'public.support_tickets'::regclass and not t.tgisinternal),
   5, 'support_tickets still carries 0028''s five triggers');
 
-select is((select count(*)::int from public.permissions), 85,
-  'the permission catalogue is unchanged: this surface adds no permission');
+-- What this assertion means is "0074 added no permission", and a total count is the wrong instrument for
+-- that: it breaks whenever any later increment adds a key of its own, which 0109 did (OD-A8). Narrowed to
+-- the invariant that actually belongs to this surface — the support module still holds exactly 0028's two
+-- keys — it now proves the same thing and cannot be disturbed from outside.
+select set_eq(
+  $$select key from public.permissions where module = 'support'$$,
+  $$values ('support.ticket.manage'), ('support.ticket.read')$$,
+  'the support module still holds 0028''s two keys: this surface adds no permission');
 select is(
   (select count(*)::int from public.permissions where module = 'support'), 2,
   'and support still has exactly its two keys');

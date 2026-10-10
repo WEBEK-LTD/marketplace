@@ -52,7 +52,7 @@ export interface RequestPlatformHelpCopy {
   readonly failedGeneric: string;
 }
 
-const FIELD = 'mt-1 w-full rounded-md border border-neutral-300 p-2 text-sm';
+const FIELD = 'mt-1 w-full rounded-md border border-edge p-2 text-sm';
 
 export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlatformHelpCopy }) {
   const router = useRouter();
@@ -125,12 +125,12 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
             setError(null);
             setOpen(true);
           }}
-          className="rounded-md border border-neutral-900 px-4 py-2 text-sm font-medium text-neutral-900"
+          className="rounded-md border border-edge-strong px-4 py-2 text-sm font-medium text-ink-strong"
         >
           {copy.action}
         </button>
         {error !== null && (
-          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-neutral-900">
+          <p role="alert" className="mt-2 max-w-prose text-sm font-medium text-ink-strong">
             {error}
           </p>
         )}
@@ -140,16 +140,16 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
 
   return (
     <form
-      className="max-w-prose rounded-lg border border-neutral-300 p-4"
+      className="max-w-prose rounded-lg border border-edge p-4"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
-      <p className="text-base font-medium text-neutral-900">{copy.heading}</p>
-      <p className="mt-1 max-w-prose text-sm text-neutral-600">{copy.intro}</p>
+      <p className="text-base font-medium text-ink-strong">{copy.heading}</p>
+      <p className="mt-1 max-w-prose text-sm text-ink-muted">{copy.intro}</p>
 
-      <label htmlFor="platform-title" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="platform-title" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.titleLabel}
       </label>
       <input
@@ -162,12 +162,12 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         className={FIELD}
       />
       {title !== '' && titleInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.titleRequired}
         </p>
       )}
 
-      <label htmlFor="platform-brief" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="platform-brief" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.briefLabel}
       </label>
       <textarea
@@ -181,15 +181,15 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         className={FIELD}
       />
       {brief !== '' && briefInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.briefRequired}
         </p>
       )}
 
-      <label htmlFor="platform-method" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="platform-method" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.methodLabel}
       </label>
-      <p id="platform-method-hint" className="mt-1 max-w-prose text-xs text-neutral-600">
+      <p id="platform-method-hint" className="mt-1 max-w-prose text-xs text-ink-muted">
         {copy.methodHint}
       </p>
       <input
@@ -204,12 +204,12 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         className={FIELD}
       />
       {method !== '' && methodInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.methodRequired}
         </p>
       )}
 
-      <label htmlFor="platform-notes" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="platform-notes" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.notesLabel}
       </label>
       <textarea
@@ -224,15 +224,15 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         className={FIELD}
       />
       {notesInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.notesTooLong}
         </p>
       )}
 
-      <label htmlFor="platform-budget" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="platform-budget" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.budgetLabel}
       </label>
-      <p id="platform-budget-hint" className="mt-1 text-xs text-neutral-600">
+      <p id="platform-budget-hint" className="mt-1 text-xs text-ink-muted">
         {copy.budgetHint}
       </p>
       <input
@@ -246,12 +246,12 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         className={FIELD}
       />
       {budgetInvalid && (
-        <p role="alert" className="mt-1 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-1 text-sm font-medium text-ink-strong">
           {copy.budgetInvalid}
         </p>
       )}
 
-      <label htmlFor="platform-needed-by" className="mt-3 block text-sm font-medium text-neutral-900">
+      <label htmlFor="platform-needed-by" className="mt-3 block text-sm font-medium text-ink-strong">
         {copy.neededByLabel}
       </label>
       <input
@@ -260,10 +260,10 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         type="date"
         value={neededBy}
         onChange={(event) => setNeededBy(event.target.value)}
-        className="mt-1 rounded-md border border-neutral-300 p-2 text-sm"
+        className="mt-1 rounded-md border border-edge p-2 text-sm"
       />
 
-      <p className="mt-4 max-w-prose rounded-md border border-neutral-300 p-3 text-sm text-neutral-800" role="note">
+      <p className="mt-4 max-w-prose rounded-md border border-edge p-3 text-sm text-ink-body" role="note">
         {copy.noSellerNote}
       </p>
 
@@ -271,7 +271,7 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
         <button
           type="submit"
           disabled={pending || blocked}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? copy.working : copy.send}
         </button>
@@ -282,14 +282,14 @@ export function RequestPlatformHelpButton({ copy }: { readonly copy: RequestPlat
             setOpen(false);
             setError(null);
           }}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-900 disabled:opacity-60"
+          className="rounded-md border border-edge px-4 py-2 text-sm text-ink-strong disabled:opacity-60"
         >
           {copy.cancel}
         </button>
       </div>
 
       {error !== null && (
-        <p role="alert" className="mt-3 text-sm font-medium text-neutral-900">
+        <p role="alert" className="mt-3 text-sm font-medium text-ink-strong">
           {error}
         </p>
       )}

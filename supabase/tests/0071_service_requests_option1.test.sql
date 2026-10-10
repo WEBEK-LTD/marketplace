@@ -41,7 +41,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(202);
+select plan(203);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Fixtures
@@ -154,15 +154,28 @@ select is(
 -- Named one by one rather than counted over a prefix, so that a later migration adding a function of its
 -- own under the same prefix — 0072's two staff predicates do — cannot make this assertion pass or fail for
 -- a reason that has nothing to do with these ten.
+-- All ten when 0071 closed. Since 0110 the ten are split by OD-A4: a buyer still reaches their own
+-- requests, but nothing that needs a seller on the other side is reachable by the API. Both halves are
+-- asserted by name, so neither can pass because the other changed.
+select set_eq(
+  $q$select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'app_private'
+        and p.proname in (
+          'service_requests_for_buyer', 'service_requests_for_seller', 'service_request_detail',
+          'service_request_create', 'service_request_cancel', 'service_request_decline',
+          'service_quote_create', 'service_quote_withdraw', 'service_quote_reject', 'service_quote_accept')
+        and has_function_privilege('app_system', p.oid, 'execute')$q$,
+  $q$values ('service_requests_for_buyer'), ('service_request_detail'), ('service_request_cancel')$q$,
+  'app_system reaches only the buyer''s own three: their list, one request, and withdrawing it');
+
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app_private'
       and p.proname in (
-        'service_requests_for_buyer', 'service_requests_for_seller', 'service_request_detail',
-        'service_request_create', 'service_request_cancel', 'service_request_decline',
+        'service_requests_for_seller', 'service_request_create', 'service_request_decline',
         'service_quote_create', 'service_quote_withdraw', 'service_quote_reject', 'service_quote_accept')
       and has_function_privilege('app_system', p.oid, 'execute')),
-  10, 'app_system may execute all ten');
+  0, 'and none of the seven that need a seller on the other side — the quote path is closed (OD-A4)');
 
 -- 0015's model is untouched. Asserted by name rather than by count, because 0072 adds the two staff
 -- policies D7-10's keys are enforced by — which is a foundation for Option 2, not a change to these three.

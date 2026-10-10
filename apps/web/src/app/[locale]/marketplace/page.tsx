@@ -1,7 +1,7 @@
 import { Heading, PageContainer } from '@repo/ui';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import { ListingClickBeacon } from '../../../components/listing-beacon';
 import { ListingGrid, ListingGridSkeleton, ListingMessage } from '../../../components/listing-views';
 import { ServiceGrid, ServiceGridSkeleton } from '../../../components/service-views';
@@ -33,6 +33,10 @@ function prefix(locale: string): string {
   return locale === 'ar' ? '/ar' : '';
 }
 
+/** One read each per request, shared by `generateMetadata` and the two sections that render them. */
+const lookupListings = cache(async () => readListings({}));
+const lookupServices = cache(async () => readServices({}));
+
 export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Marketplace' });
@@ -47,7 +51,14 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
       languages: { en: '/marketplace', ar: '/ar/marketplace' },
       // Stated explicitly: the root layout's default is `noindex, nofollow`, and metadata is merged from
       // the root down, so a page that says nothing about robots inherits that refusal.
-      index: true,
+      // **`noindex` when the read failed.** The page still answers 200 and still renders its unavailable
+      // region — that is the approved behaviour and a visitor should see an explanation rather than an error
+      // code — but a crawler must not be allowed to index that explanation as the page's content. The reads
+      // are shared with the body through `cache`, so asking the question here costs no second request. This
+      // is the pattern `category/[slug]` already follows.
+      // The hub's two sections are independent by design — one failing must not take the other down — so
+      // the page is only unindexable when **both** failed and there is genuinely nothing on it to index.
+      index: (await lookupListings()) !== null || (await lookupServices()) !== null,
       follow: true,
     },
   );
@@ -59,7 +70,7 @@ function ViewAll({ href, label }: { readonly href: string; readonly label: strin
     <p className="mt-6">
       <a
         href={href}
-        className="inline-block rounded border border-neutral-300 px-4 py-2 text-sm text-neutral-900 hover:border-neutral-900"
+        className="inline-block rounded border border-edge px-4 py-2 text-sm text-ink-strong hover:border-edge-strong"
       >
         {label}
       </a>
@@ -71,7 +82,7 @@ function ViewAll({ href, label }: { readonly href: string; readonly label: strin
 async function ListingsSection({ locale }: { readonly locale: string }) {
   const t = await getTranslations({ locale, namespace: 'Marketplace' });
   const tListings = await getTranslations({ locale, namespace: 'Listings' });
-  const page = await readListings({});
+  const page = await lookupListings();
 
   if (page === null) {
     return (
@@ -106,7 +117,7 @@ async function ListingsSection({ locale }: { readonly locale: string }) {
 async function ServicesSection({ locale }: { readonly locale: string }) {
   const t = await getTranslations({ locale, namespace: 'Marketplace' });
   const tServices = await getTranslations({ locale, namespace: 'Services' });
-  const page = await readServices({});
+  const page = await lookupServices();
 
   if (page === null) {
     return (
@@ -147,10 +158,10 @@ export default async function MarketplacePage({ params }: PageParams) {
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('title')}</Heading>
-        <p className="mt-2 max-w-prose text-neutral-600">{t('description')}</p>
+        <p className="mt-2 max-w-prose text-ink-muted">{t('description')}</p>
 
         <section aria-labelledby="marketplace-listings" className="mt-12">
-          <h2 id="marketplace-listings" className="text-lg font-semibold text-neutral-900">
+          <h2 id="marketplace-listings" className="text-lg font-semibold text-ink-strong">
             {t('listingsHeading')}
           </h2>
           <Suspense fallback={<ListingGridSkeleton label={t('listingsLoading')} />}>
@@ -159,7 +170,7 @@ export default async function MarketplacePage({ params }: PageParams) {
         </section>
 
         <section aria-labelledby="marketplace-services" className="mt-16">
-          <h2 id="marketplace-services" className="text-lg font-semibold text-neutral-900">
+          <h2 id="marketplace-services" className="text-lg font-semibold text-ink-strong">
             {t('servicesHeading')}
           </h2>
           <Suspense fallback={<ServiceGridSkeleton label={t('servicesLoading')} />}>

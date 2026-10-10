@@ -35,9 +35,9 @@ export function NotificationsEmpty({
   readonly hint: string;
 }) {
   return (
-    <div role="status" className="mt-8 rounded-md border border-neutral-200 px-4 py-10 text-center">
-      <p className="text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-600">{hint}</p>
+    <div role="status" className="mt-8 rounded-md border border-hairline px-4 py-10 text-center">
+      <p className="text-ink-strong">{title}</p>
+      <p className="mt-1 text-sm text-ink-muted">{hint}</p>
     </div>
   );
 }
@@ -59,8 +59,8 @@ export function NotificationsError({
   readonly href: string;
 }) {
   return (
-    <div role="alert" className="mt-8 rounded-md border border-neutral-300 px-4 py-6">
-      <p className="text-neutral-900">{title}</p>
+    <div role="alert" className="mt-8 rounded-md border border-edge px-4 py-6">
+      <p className="text-ink-strong">{title}</p>
       <Link href={href} className="mt-3 inline-block text-sm underline underline-offset-4">
         {retry}
       </Link>
@@ -73,9 +73,9 @@ export function NotificationsSkeleton({ label }: { readonly label: string }) {
   return (
     <ul aria-busy="true" aria-label={label} className="mt-8 space-y-3">
       {[0, 1, 2].map((row) => (
-        <li key={row} className="rounded-md border border-neutral-200 px-4 py-5">
-          <div className="h-3 w-24 rounded bg-neutral-200" />
-          <div className="mt-3 h-4 w-3/4 rounded bg-neutral-100" />
+        <li key={row} className="rounded-md border border-hairline px-4 py-5">
+          <div className="h-3 w-24 rounded bg-surface-muted" />
+          <div className="mt-3 h-4 w-3/4 rounded bg-surface-muted" />
         </li>
       ))}
     </ul>
@@ -86,7 +86,7 @@ export function NotificationsSkeleton({ label }: { readonly label: string }) {
 export function UnreadBadge({ count, label }: { readonly count: number | null; readonly label: string }) {
   if (count === null || count <= 0) return null;
   return (
-    <span className="ms-2 inline-flex min-w-6 items-center justify-center rounded-full bg-neutral-900 px-2 py-0.5 text-xs font-medium text-white">
+    <span className="ms-2 inline-flex min-w-6 items-center justify-center rounded-full bg-surface-ink px-2 py-0.5 text-xs font-medium text-on-ink">
       <span className="sr-only">{label}</span>
       {count}
     </span>
@@ -120,14 +120,14 @@ export function NotificationRow({
   return (
     <li
       className={`rounded-md border px-4 py-4 ${
-        isUnread ? 'border-neutral-900 bg-neutral-0' : 'border-neutral-200'
+        isUnread ? 'border-edge-strong bg-surface-raised' : 'border-hairline'
       }`}
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-sm font-medium text-neutral-900">{category}</span>
-        {subject !== null && <span className="text-sm text-neutral-600">{subject}</span>}
+        <span className="text-sm font-medium text-ink-strong">{category}</span>
+        {subject !== null && <span className="text-sm text-ink-muted">{subject}</span>}
         {isUnread && (
-          <span className="rounded-full border border-neutral-900 px-2 py-0.5 text-xs font-medium text-neutral-900">
+          <span className="rounded-full border border-edge-strong px-2 py-0.5 text-xs font-medium text-ink-strong">
             {copy.unread}
           </span>
         )}
@@ -135,12 +135,12 @@ export function NotificationRow({
 
       {/* The event type is metadata, shown as the token it is. Left to right in every locale: it is an
           identifier, not a sentence, and an RTL run would reorder its dotted segments. */}
-      <p dir="ltr" className="mt-2 break-all font-mono text-xs text-neutral-600">
+      <p dir="ltr" className="mt-2 break-all font-mono text-xs text-ink-muted">
         {item.eventType}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <time dateTime={item.createdAt} className="text-xs text-neutral-600">
+        <time dateTime={item.createdAt} className="text-xs text-ink-muted">
           {item.createdAt.slice(0, 10)}
         </time>
         {item.actionPath !== null && (

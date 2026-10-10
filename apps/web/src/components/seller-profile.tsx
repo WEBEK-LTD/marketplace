@@ -1,4 +1,5 @@
 import type { PublicSellerProfile, SellerAvailability } from '@repo/contracts';
+import type { ReactNode } from 'react';
 import { Alert, Avatar, Card, EmptyLine, Heading, TYPE, cx } from '@repo/ui';
 
 /**
@@ -28,10 +29,19 @@ export function SellerProfileView({
   seller,
   availability,
   labels,
+  actions,
 }: {
   readonly seller: PublicSellerProfile;
   readonly availability: SellerAvailability;
   readonly labels: SellerLabels;
+  /**
+   * Contacting or blocking this seller, rendered with the profile rather than below it.
+   *
+   * A slot, for the same reason the listing page has one: the actions need a session and client components
+   * that have no place in a presentational view. Rendered here they sit against the bio; rendered after the
+   * view, as they were, they floated half a screen under it with nothing in between.
+   */
+  readonly actions?: ReactNode;
 }) {
   const unavailable = availability === 'unavailable';
 
@@ -54,7 +64,7 @@ export function SellerProfileView({
         </div>
       </header>
 
-      <div className="mt-8 max-w-prose">
+      <div className="mt-10 max-w-prose">
         {seller.bio === null ? (
           /*
             Not an apology and not a blank space: the page states that this seller has written nothing yet. A
@@ -78,6 +88,7 @@ export function SellerProfileView({
             </p>
           </Card>
         )}
+        {actions === undefined ? null : <div className="mt-8 flex flex-wrap items-center gap-3">{actions}</div>}
       </div>
     </article>
   );

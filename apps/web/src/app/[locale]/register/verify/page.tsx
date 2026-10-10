@@ -42,10 +42,10 @@ export default async function RegisterVerifyPage({
       <PageContainer>
         <div className="py-12" role="status">
           <Heading level={1}>{t('expiredTitle')}</Heading>
-          <p className="mt-4 max-w-prose text-neutral-600">{t('expiredBody')}</p>
+          <p className="mt-4 max-w-prose text-ink-muted">{t('expiredBody')}</p>
           <Link
             href={`${prefix}/register`}
-            className="mt-6 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm"
+            className="mt-6 inline-block rounded-md border border-edge px-4 py-2 text-sm"
           >
             {t('startAgain')}
           </Link>
@@ -58,7 +58,7 @@ export default async function RegisterVerifyPage({
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('verifyTitle')}</Heading>
-        <p className="mt-2 max-w-sm text-neutral-600">{t('verifyIntro')}</p>
+        <p className="mt-2 max-w-sm text-ink-muted">{t('verifyIntro')}</p>
         <RegisterVerifyForm
           action="/api/auth/register/verify"
           resendAction="/api/auth/register/resend"

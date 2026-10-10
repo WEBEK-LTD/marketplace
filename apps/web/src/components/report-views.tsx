@@ -41,7 +41,7 @@ function minute(value: string): string {
 
 function Badge({ label }: { readonly label: string }) {
   return (
-    <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+    <span className="rounded-full border border-edge px-2 py-0.5 text-xs font-medium text-ink-body">
       {label}
     </span>
   );
@@ -75,33 +75,33 @@ export function ReportHistoryList({
         const href = subjectHref(report, prefix);
         const kind = report.subjectType === 'seller' ? copy.subjectSeller : copy.subjectListing;
         return (
-          <li key={report.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={report.id} className="rounded-lg border border-hairline p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-medium text-neutral-900">
+                <p className="text-base font-medium text-ink-strong">
                   {/* The label the reader already saw on the page they reported, or the kind of thing it was. */}
                   {report.subjectLabel ?? copy.subjectGone}
                 </p>
-                <p className="mt-1 text-xs text-neutral-600">{kind}</p>
+                <p className="mt-1 text-xs text-ink-muted">{kind}</p>
               </div>
               <Badge label={copy.statuses[report.status] ?? report.status} />
             </div>
 
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
               <div>
-                <dt className="text-xs text-neutral-600">{copy.reasonLabel}</dt>
-                <dd className="text-neutral-900">{copy.reasons[report.reasonCode] ?? report.reasonCode}</dd>
+                <dt className="text-xs text-ink-muted">{copy.reasonLabel}</dt>
+                <dd className="text-ink-strong">{copy.reasons[report.reasonCode] ?? report.reasonCode}</dd>
               </div>
               <div>
-                <dt className="text-xs text-neutral-600">{copy.filedAt}</dt>
-                <dd className="text-neutral-900">{minute(report.createdAt)}</dd>
+                <dt className="text-xs text-ink-muted">{copy.filedAt}</dt>
+                <dd className="text-ink-strong">{minute(report.createdAt)}</dd>
               </div>
             </dl>
 
             {report.details !== null && (
               <div className="mt-3">
-                <p className="text-xs text-neutral-600">{copy.yourWords}</p>
-                <p className="mt-1 max-w-prose whitespace-pre-line text-sm text-neutral-900">
+                <p className="text-xs text-ink-muted">{copy.yourWords}</p>
+                <p className="mt-1 max-w-prose whitespace-pre-line text-sm text-ink-strong">
                   {report.details}
                 </p>
               </div>

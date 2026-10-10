@@ -36,9 +36,9 @@ export function CmsPageView({ page }: CmsPageViewProps) {
     <article lang={page.resolvedLocale} dir={page.resolvedLocale === 'ar' ? 'rtl' : 'ltr'}>
       <Heading level={1}>{page.title}</Heading>
       {page.excerpt === null ? null : (
-        <p className="mt-3 max-w-prose text-lg text-neutral-700">{page.excerpt}</p>
+        <p className="mt-3 max-w-prose text-lg text-ink-body">{page.excerpt}</p>
       )}
-      <div className="mt-6 max-w-prose space-y-4 text-neutral-800">
+      <div className="mt-6 max-w-prose space-y-4 text-ink-body">
         {paragraphs.map((paragraph, index) => (
           // The index is the key because a paragraph has no identity of its own: this list is derived from one
           // string and is replaced whole whenever that string changes.

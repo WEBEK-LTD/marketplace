@@ -315,3 +315,27 @@ describe('the contact action (Phase 5-E)', () => {
     expect(page.html).toContain('مراسلة البائع');
   });
 });
+
+describe('the enquiry action (OD-A4)', () => {
+  // This replaced 7-H's "make an offer" when the buyer→seller negotiation was closed. It is asserted on the
+  // *listing* page as well as the service page because property is a listing, and because an action that
+  // exists on one detail surface and not the other is the kind of gap nothing else here would catch.
+  it('offers an enquiry about a live listing, and no offer', async () => {
+    apiAnswers('found');
+    const page = await load('/listing/a-chair');
+    expect(page.html).toContain('Enquire about this listing');
+    expect(page.html).not.toContain('Make an offer');
+  });
+
+  it('offers nothing about a listing that is no longer available', async () => {
+    apiAnswers('sold');
+    const page = await load('/listing/a-chair');
+    expect(page.html).not.toContain('Enquire about this listing');
+  });
+
+  it('carries the action in Arabic', async () => {
+    apiAnswers('found');
+    const page = await load('/ar/listing/a-chair');
+    expect(page.html).toContain('استفسر عن هذا الإعلان');
+  });
+});

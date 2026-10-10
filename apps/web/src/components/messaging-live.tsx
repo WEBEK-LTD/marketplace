@@ -169,7 +169,7 @@ export function LiveInbox({
               <p className="mt-6">
                 <Link
                   href={moreHref}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
                 >
                   {copy.more}
                 </Link>

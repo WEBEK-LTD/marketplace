@@ -54,7 +54,7 @@ export default async function AddressesPage({
       <PageContainer>
         <div className="py-12">
           <Heading level={1}>{t('title')}</Heading>
-          <p className="mt-2 max-w-prose text-neutral-600">{t('intro')}</p>
+          <p className="mt-2 max-w-prose text-ink-muted">{t('intro')}</p>
 
           <Suspense fallback={<AccountSkeleton label={t('title')} />}>
             <ListSection base={`${prefix}/dashboard/addresses`} locale={locale} t={t} />
@@ -163,7 +163,7 @@ async function ListSection({
       ) : (
         <ul className="mt-6 space-y-3" aria-label={t('listLabel')}>
           {addresses.data.items.map((address) => (
-            <li key={address.id} className="rounded-lg border border-neutral-200 p-4">
+            <li key={address.id} className="rounded-lg border border-hairline p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <AddressSummary address={address} copy={copy} />

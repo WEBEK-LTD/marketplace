@@ -11,7 +11,7 @@ import { cx } from './recipes.js';
  * block reads as a badge that never arrived.
  */
 export function Skeleton({ className }: { readonly className?: string }) {
-  return <span aria-hidden="true" className={cx('block rounded-md bg-neutral-100 mp-pulse', className)} />;
+  return <span aria-hidden="true" className={cx('block rounded-md bg-surface-muted mp-pulse', className)} />;
 }
 
 /**
@@ -40,7 +40,7 @@ export function SkeletonText({ lines = 3, className }: { readonly lines?: number
  */
 export function SkeletonCard() {
   return (
-    <div className="flex min-h-40 flex-col rounded-lg border border-neutral-200 bg-neutral-0 p-4">
+    <div className="flex min-h-40 flex-col rounded-lg border border-hairline bg-surface-raised p-4">
       <div className="flex flex-col gap-2">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/5" />

@@ -48,7 +48,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
         </div>
         {/* Phase 7-A: the way in for somebody who has no account yet. A link and nothing more — this page
             still reads no cookie and calls no API. */}
-        <p className="mt-8 border-t border-neutral-200 pt-6 text-sm text-neutral-600">
+        <p className="mt-8 border-t border-hairline pt-6 text-sm text-ink-muted">
           {t('noAccount')}{' '}
           <Link href={locale === 'ar' ? '/ar/register' : '/register'} className={LINK}>
             {t('createAccount')}

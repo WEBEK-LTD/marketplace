@@ -132,33 +132,33 @@ export default async function SellerProfilePage({
             <>
               {/* The read-only facts. Rendered here, on the server, so none of them is a form value. */}
               <dl className="mt-8 grid max-w-xl grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
-                <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-                  <dt className="text-sm text-neutral-600">{t('slug')}</dt>
-                  <dd className="text-sm font-medium text-neutral-900">{identity.seller.slug}</dd>
+                <div className="flex justify-between gap-4 border-b border-hairline py-2">
+                  <dt className="text-sm text-ink-muted">{t('slug')}</dt>
+                  <dd className="text-sm font-medium text-ink-strong">{identity.seller.slug}</dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-                  <dt className="text-sm text-neutral-600">{dashboard('status')}</dt>
-                  <dd className="text-sm font-medium text-neutral-900">
+                <div className="flex justify-between gap-4 border-b border-hairline py-2">
+                  <dt className="text-sm text-ink-muted">{dashboard('status')}</dt>
+                  <dd className="text-sm font-medium text-ink-strong">
                     {statusLabel(identity.seller.status)}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-                  <dt className="text-sm text-neutral-600">{dashboard('verificationStatus')}</dt>
-                  <dd className="text-sm font-medium text-neutral-900">
+                <div className="flex justify-between gap-4 border-b border-hairline py-2">
+                  <dt className="text-sm text-ink-muted">{dashboard('verificationStatus')}</dt>
+                  <dd className="text-sm font-medium text-ink-strong">
                     {verificationLabel(identity.seller.verificationStatus)}
                   </dd>
                 </div>
               </dl>
-              <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('slugPermanent')}</p>
+              <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('slugPermanent')}</p>
 
               {identity.seller.status === 'suspended' || identity.seller.status === 'closed' ? (
                 // State, and why there is no form. No reason, no moderation note, no appeal machinery —
                 // none of that is in the contract and none of it is this page's to invent.
                 <div role="status" className="mt-8">
-                  <p className="text-neutral-900">
+                  <p className="text-ink-strong">
                     {identity.seller.status === 'suspended' ? t('suspended') : t('closed')}
                   </p>
-                  <p className="mt-2 max-w-prose text-sm text-neutral-600">{t('notEditable')}</p>
+                  <p className="mt-2 max-w-prose text-sm text-ink-muted">{t('notEditable')}</p>
                 </div>
               ) : (
                 <>
@@ -182,11 +182,11 @@ export default async function SellerProfilePage({
           ) : identity.kind === 'not_a_seller' ? (
             // No storefront to edit. The way in is 6-C's, and it is a link rather than a second form.
             <div role="status" className="mt-8">
-              <p className="text-neutral-900">{dashboard('notASeller')}</p>
+              <p className="text-ink-strong">{dashboard('notASeller')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/dashboard/seller`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {dashboard('title')}
                 </Link>
@@ -194,11 +194,11 @@ export default async function SellerProfilePage({
             </div>
           ) : identity.kind === 'unauthenticated' ? (
             <div role="status" className="mt-8">
-              <p className="max-w-prose text-neutral-600">{session('expiredBody')}</p>
+              <p className="max-w-prose text-ink-muted">{session('expiredBody')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/login`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {session('signIn')}
                 </Link>

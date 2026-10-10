@@ -26,17 +26,17 @@ export interface CategoryTreeProps {
 function CategorySection({ node }: { readonly node: CategoryNode }) {
   const headingId = `category-${node.id}`;
   return (
-    <section className="rounded-lg border border-neutral-200 p-5">
-      <h2 id={headingId} className="text-lg font-semibold text-neutral-900">
+    <section className="rounded-lg border border-hairline p-5">
+      <h2 id={headingId} className="text-lg font-semibold text-ink-strong">
         {node.name}
       </h2>
       {node.children.length > 0 ? (
         <ul aria-labelledby={headingId} className="mt-3 space-y-2">
           {node.children.map((child) => (
             <li key={child.id}>
-              <span className="text-neutral-800">{child.name}</span>
+              <span className="text-ink-body">{child.name}</span>
               {child.children.length > 0 ? (
-                <ul className="mt-1 space-y-1 border-neutral-200 ps-4 text-sm text-neutral-600 border-s">
+                <ul className="mt-1 space-y-1 border-hairline ps-4 text-sm text-ink-muted border-s">
                   {child.children.map((grandchild) => (
                     <li key={grandchild.id}>{grandchild.name}</li>
                   ))}
@@ -76,13 +76,13 @@ export function CategoryTree({ nodes }: CategoryTreeProps) {
 export function CategoryTreeSkeleton({ label }: { readonly label: string }) {
   return (
     <div aria-busy="true" aria-live="polite" className="mt-8">
-      <p className="text-sm text-neutral-600">{label}</p>
+      <p className="text-sm text-ink-muted">{label}</p>
       <div aria-hidden="true" className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2].map((slot) => (
-          <div key={slot} className="rounded-lg border border-neutral-200 p-5">
-            <div className="h-5 w-1/2 rounded bg-neutral-200" />
-            <div className="mt-4 h-3 w-3/4 rounded bg-neutral-100" />
-            <div className="mt-2 h-3 w-2/3 rounded bg-neutral-100" />
+          <div key={slot} className="rounded-lg border border-hairline p-5">
+            <div className="h-5 w-1/2 rounded bg-surface-muted" />
+            <div className="mt-4 h-3 w-3/4 rounded bg-surface-muted" />
+            <div className="mt-2 h-3 w-2/3 rounded bg-surface-muted" />
           </div>
         ))}
       </div>
@@ -109,10 +109,10 @@ export function CategoryTreeMessage({
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
-      className="mt-8 rounded-lg border border-neutral-200 p-8 text-center"
+      className="mt-8 rounded-lg border border-hairline p-8 text-center"
     >
-      <p className="text-base font-medium text-neutral-900">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600">{description}</p>
+      <p className="text-base font-medium text-ink-strong">{title}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">{description}</p>
     </div>
   );
 }

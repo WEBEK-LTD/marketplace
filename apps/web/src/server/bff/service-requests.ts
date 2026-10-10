@@ -1,12 +1,9 @@
 import 'server-only';
 import {
   CreateAdminOnlyServiceRequestSchema,
-  CreateServiceQuoteSchema,
   CreateServiceRequestSchema,
   PROBLEM_JSON_MEDIA_TYPE,
   SESSION_TOKEN_HEADER,
-  ServiceQuoteDecisionResponseSchema,
-  ServiceQuoteMutationResponseSchema,
   ServiceRequestDetailResponseSchema,
   ServiceRequestMutationResponseSchema,
   ServiceRequestStatusResponseSchema,
@@ -197,14 +194,6 @@ export async function readServiceRequestsMade(
   options: ServiceRequestsHandlerOptions = {},
 ): Promise<ServiceRequestsResult<ServiceRequestsResponse>> {
   return await read(`/v1/service-requests/made${query(input)}`, ServiceRequestsResponseSchema, options);
-}
-
-/** The briefs sent to the caller's storefront. A separate operation, so neither page can show the other. */
-export async function readServiceRequestsReceived(
-  input: { limit?: string | null; cursor?: string | null } = {},
-  options: ServiceRequestsHandlerOptions = {},
-): Promise<ServiceRequestsResult<ServiceRequestsResponse>> {
-  return await read(`/v1/service-requests/received${query(input)}`, ServiceRequestsResponseSchema, options);
 }
 
 /**
@@ -398,45 +387,6 @@ export async function handleCreateAdminOnlyServiceRequest(
 }
 
 /**
- * `POST /api/service-requests/{requestId}/quotes` — answer one brief with a price.
- *
- * The brief is the one in the route; the contract has no `serviceRequestId`, so a quote cannot be pointed at
- * a different brief. `validForDays` is how long the quote stands and is the only duration a seller states;
- * the payment deadline is derived in the database on acceptance and appears nowhere in this body.
- */
-export async function handleCreateServiceQuote(
-  request: Request,
-  requestId: string | undefined,
-  options: ServiceRequestsHandlerOptions = {},
-): Promise<Response> {
-  const accepted = await acceptWrite(request, options);
-  if ('refusal' in accepted) return accepted.refusal;
-
-  const id = identifier(requestId);
-  if (id === null) return VALIDATION_FAILED();
-
-  const fields = (accepted.body ?? {}) as Record<string, unknown>;
-  const validated = CreateServiceQuoteSchema.safeParse({
-    amountMinor: fields['amountMinor'],
-    deliveryDays: fields['deliveryDays'],
-    ...(fields['revisionsIncluded'] === undefined
-      ? {}
-      : { revisionsIncluded: fields['revisionsIncluded'] }),
-    scope: fields['scope'],
-    validForDays: fields['validForDays'],
-  });
-  if (!validated.success) return VALIDATION_FAILED();
-
-  const upstream = await callWrite(
-    `/v1/service-requests/${encodeURIComponent(id)}/quotes`,
-    accepted.accessToken,
-    validated.data,
-    options,
-  );
-  return await writeOutcome(upstream, 201, ServiceQuoteMutationResponseSchema);
-}
-
-/**
  * The two request closures that take no body at all.
  *
  * One helper, because they differ only in the segment they address and in who the database will let
@@ -471,73 +421,4 @@ export async function handleCancelServiceRequest(
   options: ServiceRequestsHandlerOptions = {},
 ): Promise<Response> {
   return await handleRequestClosure('cancel', request, requestId, options);
-}
-
-/** `POST /api/service-requests/{requestId}/decline` — the seller declines to quote. */
-export async function handleDeclineServiceRequest(
-  request: Request,
-  requestId: string | undefined,
-  options: ServiceRequestsHandlerOptions = {},
-): Promise<Response> {
-  return await handleRequestClosure('decline', request, requestId, options);
-}
-
-/**
- * The three quote decisions, each addressed through its own brief.
- *
- * Both identifiers are checked for shape and both travel in the path, so the API can refuse a quote that
- * belongs to a different brief. Which side may take which step is the database's to decide, not this
- * layer's.
- */
-async function handleQuoteDecision(
-  step: 'accept' | 'reject' | 'withdraw',
-  request: Request,
-  requestId: string | undefined,
-  quoteId: string | undefined,
-  options: ServiceRequestsHandlerOptions,
-): Promise<Response> {
-  const accepted = await acceptWrite(request, options);
-  if ('refusal' in accepted) return accepted.refusal;
-
-  const id = identifier(requestId);
-  const quote = identifier(quoteId);
-  if (id === null || quote === null) return VALIDATION_FAILED();
-
-  const upstream = await callWrite(
-    `/v1/service-requests/${encodeURIComponent(id)}/quotes/${encodeURIComponent(quote)}/${step}`,
-    accepted.accessToken,
-    undefined,
-    options,
-  );
-  return await writeOutcome(upstream, 200, ServiceQuoteDecisionResponseSchema);
-}
-
-/** The buyer accepts a quote. The only step that records a payment obligation. */
-export async function handleAcceptServiceQuote(
-  request: Request,
-  requestId: string | undefined,
-  quoteId: string | undefined,
-  options: ServiceRequestsHandlerOptions = {},
-): Promise<Response> {
-  return await handleQuoteDecision('accept', request, requestId, quoteId, options);
-}
-
-/** The buyer declines one quote. The brief stays open to another. */
-export async function handleRejectServiceQuote(
-  request: Request,
-  requestId: string | undefined,
-  quoteId: string | undefined,
-  options: ServiceRequestsHandlerOptions = {},
-): Promise<Response> {
-  return await handleQuoteDecision('reject', request, requestId, quoteId, options);
-}
-
-/** The seller takes their own quote back. */
-export async function handleWithdrawServiceQuote(
-  request: Request,
-  requestId: string | undefined,
-  quoteId: string | undefined,
-  options: ServiceRequestsHandlerOptions = {},
-): Promise<Response> {
-  return await handleQuoteDecision('withdraw', request, requestId, quoteId, options);
 }

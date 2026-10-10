@@ -44,15 +44,15 @@ export async function FaqList({
   const t = await getTranslations({ locale, namespace: 'Faq' });
 
   return (
-    <section className="mt-12 border-t border-neutral-200 pt-8">
+    <section className="mt-12 border-t border-hairline pt-8">
       <Heading level={2}>{t('heading')}</Heading>
       <dl className="mt-6 space-y-8">
         {entries.map((entry) => (
           <div key={entry.faqId}>
-            <dt className="text-base font-semibold text-neutral-900">{entry.question}</dt>
+            <dt className="text-base font-semibold text-ink-strong">{entry.question}</dt>
             <dd className="mt-2 max-w-prose">
               {paragraphsOf(entry.answer).map((paragraph, index) => (
-                <p className={index === 0 ? 'text-neutral-700' : 'mt-3 text-neutral-700'} key={index}>
+                <p className={index === 0 ? 'text-ink-body' : 'mt-3 text-ink-body'} key={index}>
                   {paragraph}
                 </p>
               ))}

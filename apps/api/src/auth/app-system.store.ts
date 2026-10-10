@@ -195,8 +195,6 @@ import type { TotpStepUpStore } from './totp/totp.service.js';
 import type { NotificationRow, NotificationsStore } from '../notifications/notifications.service.js';
 import type { StaffConsoleRow, StaffConsoleStore } from '../admin/staff-console.service.js';
 import type {
-  ServiceQuoteDecisionRow,
-  ServiceQuoteMutationRow,
   ServiceRequestDetailRow,
   ServiceRequestMutationRow,
   ServiceRequestRow,
@@ -210,13 +208,6 @@ import type {
   AdminServiceRequestsStore,
   ServiceRequestPaymentInformationRow,
 } from '../admin/service-requests-admin.service.js';
-import type {
-  OfferDecisionRow,
-  OfferMutationRow,
-  OfferRow,
-  OffersStore,
-  SellerOfferRow,
-} from '../offers/offers.service.js';
 import type {
   SupportAssignedRow,
   SupportAssignmentRow,
@@ -441,7 +432,6 @@ export class AppSystemStore
     BuyerAccountStore,
     StaffConsoleStore,
     VerificationReviewStore,
-    OffersStore,
     ServiceRequestsStore,
     AdminServiceRequestsStore,
     SupportStore,
@@ -3501,264 +3491,6 @@ export class AppSystemStore
   /* Phase 7-H — the offer functions of migration 0070                                                 */
   /* ------------------------------------------------------------------------------------------------ */
 
-  /**
-   * `app_private.offers_for_buyer(...)` (0070).
-   *
-   * The account is a parameter and appears in the function's own predicate, so this call cannot ask about
-   * anybody else's negotiations. `amount_minor` is a `bigint` and arrives as a string; it stays one.
-   */
-  async offersForBuyer(input: {
-    userId: string;
-    limit: number;
-    cursorCreatedAt: Date | null;
-    cursorId: string | null;
-  }): Promise<readonly OfferRow[]> {
-    const result = await sql<{
-      id: string;
-      listing_id: string;
-      listing_slug: string | null;
-      listing_title: string | null;
-      seller_slug: string | null;
-      seller_display_name: string | null;
-      amount_minor: string | number | null;
-      currency_code: string | null;
-      currency_minor_unit: number | null;
-      quantity: number | null;
-      message: string | null;
-      status: string;
-      is_lapsed: boolean | null;
-      expires_at: Date | null;
-      responded_at: Date | null;
-      accepted_at: Date | null;
-      payment_due_at: Date | null;
-      parent_offer_id: string | null;
-      created_at: Date | null;
-    }>`
-      select id, listing_id, listing_slug, listing_title, seller_slug, seller_display_name,
-             amount_minor, currency_code, currency_minor_unit, quantity, message, status, is_lapsed,
-             expires_at, responded_at, accepted_at, payment_due_at, parent_offer_id, created_at
-        from app_private.offers_for_buyer(
-          ${input.userId}::uuid,
-          ${input.limit}::integer,
-          ${input.cursorCreatedAt}::timestamptz,
-          ${input.cursorId}::uuid
-        )
-    `.execute(this.db);
-
-    return result.rows.map((row) => ({
-      id: row.id,
-      listingId: row.listing_id,
-      listingSlug: row.listing_slug ?? null,
-      listingTitle: row.listing_title ?? null,
-      sellerSlug: row.seller_slug ?? null,
-      sellerDisplayName: row.seller_display_name ?? null,
-      amountMinor: row.amount_minor ?? null,
-      currencyCode: row.currency_code ?? null,
-      currencyMinorUnit: row.currency_minor_unit === null || row.currency_minor_unit === undefined
-        ? null
-        : Number(row.currency_minor_unit),
-      quantity: row.quantity === null || row.quantity === undefined ? null : Number(row.quantity),
-      message: row.message ?? null,
-      status: row.status,
-      isLapsed: row.is_lapsed ?? null,
-      expiresAt: row.expires_at ?? null,
-      respondedAt: row.responded_at ?? null,
-      acceptedAt: row.accepted_at ?? null,
-      paymentDueAt: row.payment_due_at ?? null,
-      parentOfferId: row.parent_offer_id ?? null,
-      createdAt: row.created_at ?? null,
-    }));
-  }
-
-  /** `app_private.offers_for_seller(...)` (0070): the same page from the other side. */
-  async offersForSeller(input: {
-    userId: string;
-    limit: number;
-    cursorCreatedAt: Date | null;
-    cursorId: string | null;
-  }): Promise<readonly SellerOfferRow[]> {
-    const result = await sql<{
-      id: string;
-      listing_id: string;
-      listing_slug: string | null;
-      listing_title: string | null;
-      buyer_display_name: string | null;
-      amount_minor: string | number | null;
-      currency_code: string | null;
-      currency_minor_unit: number | null;
-      quantity: number | null;
-      message: string | null;
-      status: string;
-      is_lapsed: boolean | null;
-      expires_at: Date | null;
-      responded_at: Date | null;
-      accepted_at: Date | null;
-      payment_due_at: Date | null;
-      parent_offer_id: string | null;
-      created_at: Date | null;
-    }>`
-      select id, listing_id, listing_slug, listing_title, buyer_display_name,
-             amount_minor, currency_code, currency_minor_unit, quantity, message, status, is_lapsed,
-             expires_at, responded_at, accepted_at, payment_due_at, parent_offer_id, created_at
-        from app_private.offers_for_seller(
-          ${input.userId}::uuid,
-          ${input.limit}::integer,
-          ${input.cursorCreatedAt}::timestamptz,
-          ${input.cursorId}::uuid
-        )
-    `.execute(this.db);
-
-    return result.rows.map((row) => ({
-      id: row.id,
-      listingId: row.listing_id,
-      listingSlug: row.listing_slug ?? null,
-      listingTitle: row.listing_title ?? null,
-      buyerDisplayName: row.buyer_display_name ?? null,
-      amountMinor: row.amount_minor ?? null,
-      currencyCode: row.currency_code ?? null,
-      currencyMinorUnit: row.currency_minor_unit === null || row.currency_minor_unit === undefined
-        ? null
-        : Number(row.currency_minor_unit),
-      quantity: row.quantity === null || row.quantity === undefined ? null : Number(row.quantity),
-      message: row.message ?? null,
-      status: row.status,
-      isLapsed: row.is_lapsed ?? null,
-      expiresAt: row.expires_at ?? null,
-      respondedAt: row.responded_at ?? null,
-      acceptedAt: row.accepted_at ?? null,
-      paymentDueAt: row.payment_due_at ?? null,
-      parentOfferId: row.parent_offer_id ?? null,
-      createdAt: row.created_at ?? null,
-    }));
-  }
-
-  /**
-   * `app_private.offer_create(...)` (0070).
-   *
-   * Five arguments and not one of them is a seller, a currency or an expiry: all three are derived in the
-   * database from the listing, which is why a caller cannot name a seller who is not the listing's.
-   */
-  async offerCreate(input: {
-    buyerId: string;
-    listingId: string;
-    amountMinor: string;
-    quantity: number;
-    message: string | null;
-  }): Promise<OfferMutationRow> {
-    const result = await sql<{ outcome: string; offer_id: string | null; status: string | null }>`
-      select outcome, offer_id, status
-        from app_private.offer_create(
-          ${input.buyerId}::uuid,
-          ${input.listingId}::uuid,
-          ${input.amountMinor}::bigint,
-          ${input.quantity}::integer,
-          ${input.message}::text
-        )
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Opening an offer returned no row.');
-    return { outcome: row.outcome, offerId: row.offer_id ?? null, status: row.status ?? null };
-  }
-
-  /**
-   * `app_private.offer_counter(...)` (0070).
-   *
-   * The parent is the only thing named, and the listing, seller and currency of the replacement are copied
-   * from it inside the function — so there is no argument here through which a cross-listing or
-   * cross-seller counter could be constructed.
-   */
-  async offerCounter(input: {
-    buyerId: string;
-    parentOfferId: string;
-    amountMinor: string;
-    quantity: number;
-    message: string | null;
-  }): Promise<OfferMutationRow> {
-    const result = await sql<{ outcome: string; offer_id: string | null; status: string | null }>`
-      select outcome, offer_id, status
-        from app_private.offer_counter(
-          ${input.buyerId}::uuid,
-          ${input.parentOfferId}::uuid,
-          ${input.amountMinor}::bigint,
-          ${input.quantity}::integer,
-          ${input.message}::text
-        )
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Countering an offer returned no row.');
-    return { outcome: row.outcome, offerId: row.offer_id ?? null, status: row.status ?? null };
-  }
-
-  /**
-   * `app_private.offer_accept(uuid, uuid)` (0070).
-   *
-   * The obligation transition. No deadline is passed in and none is computed here: the function locks the
-   * row, reads the admin-configured window and writes `accepted_at` and `payment_due_at` from one
-   * timestamp, and what comes back is what it wrote.
-   */
-  async offerAccept(input: { sellerId: string; offerId: string }): Promise<OfferDecisionRow> {
-    return await this.#offerDecision(
-      sql<{
-        outcome: string;
-        status: string | null;
-        accepted_at: Date | null;
-        payment_due_at: Date | null;
-      }>`
-        select outcome, status, accepted_at, payment_due_at
-          from app_private.offer_accept(${input.sellerId}::uuid, ${input.offerId}::uuid)
-      `,
-      'Accepting an offer returned no row.',
-    );
-  }
-
-  /** `app_private.offer_reject(uuid, uuid)` (0070). */
-  async offerReject(input: { sellerId: string; offerId: string }): Promise<OfferDecisionRow> {
-    const result = await sql<{ outcome: string; status: string | null }>`
-      select outcome, status from app_private.offer_reject(${input.sellerId}::uuid, ${input.offerId}::uuid)
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Rejecting an offer returned no row.');
-    return { outcome: row.outcome, status: row.status ?? null, acceptedAt: null, paymentDueAt: null };
-  }
-
-  /** `app_private.offer_withdraw(uuid, uuid)` (0070). */
-  async offerWithdraw(input: { buyerId: string; offerId: string }): Promise<OfferDecisionRow> {
-    const result = await sql<{ outcome: string; status: string | null }>`
-      select outcome, status from app_private.offer_withdraw(${input.buyerId}::uuid, ${input.offerId}::uuid)
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Withdrawing an offer returned no row.');
-    return { outcome: row.outcome, status: row.status ?? null, acceptedAt: null, paymentDueAt: null };
-  }
-
-  async #offerDecision(
-    query: {
-      execute: (db: Kysely<Database>) => Promise<{
-        rows: readonly {
-          outcome: string;
-          status: string | null;
-          accepted_at: Date | null;
-          payment_due_at: Date | null;
-        }[];
-      }>;
-    },
-    missing: string,
-  ): Promise<OfferDecisionRow> {
-    const result = await query.execute(this.db);
-    const row = result.rows[0];
-    if (row === undefined) throw new Error(missing);
-    return {
-      outcome: row.outcome,
-      status: row.status ?? null,
-      acceptedAt: row.accepted_at ?? null,
-      paymentDueAt: row.payment_due_at ?? null,
-    };
-  }
-
   /* ------------------------------------------------------------------------------------------------ */
   /* Phase 7-I — the service request and quote functions of migration 0071                              */
   /* ------------------------------------------------------------------------------------------------ */
@@ -3783,26 +3515,6 @@ export class AppSystemStore
              listing_slug, listing_title, counterparty_name, quote_count, live_quote_count,
              accepted_payment_due_at, closed_at, created_at
         from app_private.service_requests_for_buyer(
-          ${input.userId}::uuid,
-          ${input.limit}::integer,
-          ${input.cursorCreatedAt}::timestamptz,
-          ${input.cursorId}::uuid
-        )
-    `.execute(this.db);
-    return result.rows.map(serviceRequestRow);
-  }
-
-  async serviceRequestsForSeller(input: {
-    userId: string;
-    limit: number;
-    cursorCreatedAt: Date | null;
-    cursorId: string | null;
-  }): Promise<readonly ServiceRequestRow[]> {
-    const result = await sql<ServiceRequestRawRow>`
-      select id, status, routing_mode, title, budget_minor, currency_code, currency_minor_unit, needed_by,
-             listing_slug, listing_title, counterparty_name, quote_count, live_quote_count,
-             accepted_payment_due_at, closed_at, created_at
-        from app_private.service_requests_for_seller(
           ${input.userId}::uuid,
           ${input.limit}::integer,
           ${input.cursorCreatedAt}::timestamptz,
@@ -3875,10 +3587,17 @@ export class AppSystemStore
   }
 
   /**
-   * `app_private.service_request_create(...)` (0071).
+   * `app_private.listing_enquiry_create(...)` (0109).
    *
-   * Six arguments and not one of them is a seller or a currency: both are derived in the database from the
-   * listing, which is what makes it impossible to brief somebody who does not own the service.
+   * **Repointed, not replaced.** This method used to call 0071's `service_request_create`, which routed a
+   * brief to the listing's seller. OD-A4 removed that path and 0110 revoked the function, so the same six
+   * arguments now go to the enquiry writer instead: the row that comes back is `admin_only` with no seller
+   * on it, and the office answers it. The arguments, the outcome vocabulary and the return shape are
+   * identical, which is why nothing above this line had to change.
+   *
+   * Six arguments and not one of them is a seller, a currency or a routing mode: all three are derived in
+   * the database from the listing and from literals inside the function, which is what makes it impossible
+   * for a caller to reach a seller.
    */
   async serviceRequestCreate(input: {
     buyerId: string;
@@ -3890,7 +3609,7 @@ export class AppSystemStore
   }): Promise<ServiceRequestMutationRow> {
     const result = await sql<{ outcome: string; request_id: string | null; status: string | null }>`
       select outcome, request_id, status
-        from app_private.service_request_create(
+        from app_private.listing_enquiry_create(
           ${input.buyerId}::uuid,
           ${input.listingId}::uuid,
           ${input.title}::text,
@@ -3901,7 +3620,7 @@ export class AppSystemStore
     `.execute(this.db);
 
     const row = result.rows[0];
-    if (row === undefined) throw new Error('Sending a service request returned no row.');
+    if (row === undefined) throw new Error('Sending a listing enquiry returned no row.');
     return { outcome: row.outcome, requestId: row.request_id ?? null, status: row.status ?? null };
   }
 
@@ -3952,131 +3671,6 @@ export class AppSystemStore
     const row = result.rows[0];
     if (row === undefined) throw new Error('Cancelling a service request returned no row.');
     return { outcome: row.outcome, status: row.status ?? null };
-  }
-
-  /** `app_private.service_request_decline(uuid, uuid)` (0071). */
-  async serviceRequestDecline(input: {
-    sellerId: string;
-    requestId: string;
-  }): Promise<ServiceRequestStatusRow> {
-    const result = await sql<{ outcome: string; status: string | null }>`
-      select outcome, status
-        from app_private.service_request_decline(${input.sellerId}::uuid, ${input.requestId}::uuid)
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Declining a service request returned no row.');
-    return { outcome: row.outcome, status: row.status ?? null };
-  }
-
-  /**
-   * `app_private.service_quote_create(...)` (0071).
-   *
-   * The request is the only thing named; the currency is copied from it inside the function, so 0015's
-   * composite foreign key cannot be violated from here. `p_valid_for_days` is the validity window the schema
-   * leaves to the writer, bounded in the function by 0015's own 1..365.
-   */
-  async serviceQuoteCreate(input: {
-    sellerId: string;
-    requestId: string;
-    amountMinor: string;
-    deliveryDays: number;
-    revisionsIncluded: number;
-    scope: string;
-    validForDays: number;
-  }): Promise<ServiceQuoteMutationRow> {
-    const result = await sql<{ outcome: string; quote_id: string | null; status: string | null }>`
-      select outcome, quote_id, status
-        from app_private.service_quote_create(
-          ${input.sellerId}::uuid,
-          ${input.requestId}::uuid,
-          ${input.amountMinor}::bigint,
-          ${input.deliveryDays}::smallint,
-          ${input.revisionsIncluded}::smallint,
-          ${input.scope}::text,
-          ${input.validForDays}::smallint
-        )
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Sending a service quote returned no row.');
-    return { outcome: row.outcome, quoteId: row.quote_id ?? null, status: row.status ?? null };
-  }
-
-  /**
-   * `app_private.service_quote_accept(uuid, uuid)` (0071).
-   *
-   * The obligation transition. No deadline is passed in and none is computed here: the function locks both
-   * rows, reads the admin-configured window and writes `accepted_at` and `payment_due_at` from one timestamp,
-   * and what comes back is what it wrote — plus the request the quote belongs to, so the API can refuse a
-   * quote spent against a different one.
-   */
-  async serviceQuoteAccept(input: {
-    buyerId: string;
-    quoteId: string;
-  }): Promise<ServiceQuoteDecisionRow> {
-    const result = await sql<{
-      outcome: string;
-      status: string | null;
-      request_id: string | null;
-      accepted_at: Date | null;
-      payment_due_at: Date | null;
-    }>`
-      select outcome, status, request_id, accepted_at, payment_due_at
-        from app_private.service_quote_accept(${input.buyerId}::uuid, ${input.quoteId}::uuid)
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Accepting a service quote returned no row.');
-    return {
-      outcome: row.outcome,
-      status: row.status ?? null,
-      requestId: row.request_id ?? null,
-      acceptedAt: row.accepted_at ?? null,
-      paymentDueAt: row.payment_due_at ?? null,
-    };
-  }
-
-  /** `app_private.service_quote_reject(uuid, uuid)` (0071). */
-  async serviceQuoteReject(input: {
-    buyerId: string;
-    quoteId: string;
-  }): Promise<ServiceQuoteDecisionRow> {
-    const result = await sql<{ outcome: string; status: string | null; request_id: string | null }>`
-      select outcome, status, request_id
-        from app_private.service_quote_reject(${input.buyerId}::uuid, ${input.quoteId}::uuid)
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Rejecting a service quote returned no row.');
-    return {
-      outcome: row.outcome,
-      status: row.status ?? null,
-      requestId: row.request_id ?? null,
-      acceptedAt: null,
-      paymentDueAt: null,
-    };
-  }
-
-  /** `app_private.service_quote_withdraw(uuid, uuid)` (0071). */
-  async serviceQuoteWithdraw(input: {
-    sellerId: string;
-    quoteId: string;
-  }): Promise<ServiceQuoteDecisionRow> {
-    const result = await sql<{ outcome: string; status: string | null; request_id: string | null }>`
-      select outcome, status, request_id
-        from app_private.service_quote_withdraw(${input.sellerId}::uuid, ${input.quoteId}::uuid)
-    `.execute(this.db);
-
-    const row = result.rows[0];
-    if (row === undefined) throw new Error('Withdrawing a service quote returned no row.');
-    return {
-      outcome: row.outcome,
-      status: row.status ?? null,
-      requestId: row.request_id ?? null,
-      acceptedAt: null,
-      paymentDueAt: null,
-    };
   }
 
   async onApplicationShutdown(): Promise<void> {

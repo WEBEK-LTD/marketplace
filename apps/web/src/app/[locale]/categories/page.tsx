@@ -83,7 +83,7 @@ export default async function CategoriesPage({ params }: PageParams) {
     <PageContainer>
       <div className="py-12">
         <Heading level={1}>{t('title')}</Heading>
-        <p className="mt-2 max-w-prose text-neutral-600">{t('description')}</p>
+        <p className="mt-2 max-w-prose text-ink-muted">{t('description')}</p>
         <Suspense fallback={<CategoryTreeSkeleton label={t('loading')} />}>
           <CategoryTreeSection locale={locale} />
         </Suspense>

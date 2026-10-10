@@ -43,8 +43,8 @@ export interface SellerMediaFormLabels {
   readonly allowedTypes: string;
 }
 
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
-const FIELD_CLASS = 'mt-1 block w-full text-sm text-neutral-900';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
+const FIELD_CLASS = 'mt-1 block w-full text-sm text-ink-strong';
 
 function MediaField({
   mediaKind,
@@ -97,7 +97,7 @@ function MediaField({
   const inputId = `seller-media-${mediaKind}`;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="border-t border-neutral-100 py-4">
+    <form onSubmit={onSubmit} noValidate className="border-t border-hairline py-4">
       <label htmlFor={inputId} className={LABEL_CLASS}>
         {heading}
       </label>
@@ -110,7 +110,7 @@ function MediaField({
         aria-describedby={`${inputId}-types`}
         className={FIELD_CLASS}
       />
-      <p id={`${inputId}-types`} className="mt-1 text-sm text-neutral-600">
+      <p id={`${inputId}-types`} className="mt-1 text-sm text-ink-muted">
         {labels.allowedTypes}
       </p>
 
@@ -120,7 +120,7 @@ function MediaField({
         </p>
       )}
       {done && message === null ? (
-        <p role="status" className="mt-2 text-sm text-neutral-900">
+        <p role="status" className="mt-2 text-sm text-ink-strong">
           {labels.uploaded}
         </p>
       ) : null}
@@ -128,7 +128,7 @@ function MediaField({
       <button
         type="submit"
         disabled={pending}
-        className="mt-3 inline-flex items-center rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+        className="mt-3 inline-flex items-center rounded-md border border-edge px-4 py-2 text-sm font-medium text-ink-strong disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
       >
         {pending ? labels.uploading : labels.upload}
       </button>
@@ -141,7 +141,7 @@ export function SellerMediaForm({ labels }: { readonly labels: SellerMediaFormLa
 
   return (
     <section aria-labelledby="seller-media-heading" className="mt-8 max-w-xl">
-      <h2 id="seller-media-heading" className="text-lg font-semibold text-neutral-900">
+      <h2 id="seller-media-heading" className="text-lg font-semibold text-ink-strong">
         {labels.title}
       </h2>
 

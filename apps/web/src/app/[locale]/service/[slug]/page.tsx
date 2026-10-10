@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 import { ReportForm } from '../../../../components/report-form';
 import { reportCopy } from '../../../../components/report-copy';
-import { RequestQuoteButton } from '../../../../components/request-quote';
+import { EnquireButton } from '../../../../components/listing-enquiry';
 import { ServiceDetailView, ServiceMessage } from '../../../../components/service-views';
 import { CATALOG_OUTCOME_HEADER } from '../../../../proxy';
 import { readService, type ServiceLookup } from '../../../../server/bff';
@@ -93,9 +93,9 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
 
 export default async function ServicePage({ params }: PageParams) {
   const { locale, slug } = await params;
-  const [t, quote, session, tAccessibility] = await Promise.all([
+  const [t, enquiry, session, tAccessibility] = await Promise.all([
     getTranslations({ locale, namespace: 'Services' }),
-    getTranslations({ locale, namespace: 'RequestQuote' }),
+    getTranslations({ locale, namespace: 'Enquiry' }),
     getTranslations({ locale, namespace: 'Session' }),
     getTranslations({ locale, namespace: 'Accessibility' }),
   ]);
@@ -175,51 +175,56 @@ export default async function ServicePage({ params }: PageParams) {
             yes: t('yes'),
             no: t('no'),
           }}
-        />
-
+          actions={
+            <>
         {/*
-          The request-a-quote action (7-I).
-
-          Two conditions, and both are the repository's own rather than this increment's: the service must be
-          purchasable, and it must be **custom-priced**. v5.2 divides services exactly there — a fixed-price
-          service is bought through the cart, a custom one runs brief → quote → accepted quote — so the action
-          appears only where the flow it starts exists. A fixed-price service offered a brief would be a
-          promise the database refuses, and it says so with its own code if one arrives anyway.
+          The enquiry action (OD-A4), which was 7-I's request-a-quote action until the office replaced the
+          seller as the party that answers.
 
           No session is read here: the page is public and cacheable, and the markup is the same for everyone.
-          Whether this visitor is the seller is the database's to answer, not this page's to guess.
+          Whether this visitor owns the listing is the database's to answer, not this page's to guess.
         */}
-        {found.service.availability === 'available' && found.service.pricingModel === 'custom' ? (
-          <div className="mt-8">
-            <RequestQuoteButton
+        {/*
+          The enquiry is offered on any available service, not only a custom-priced one. The pricing-model
+          gate belonged to 7-I, where a brief was a request for a *quote* and a fixed-price service had
+          nothing to quote. Under OD-A1 every sale is concluded at the office whatever the listing says, so
+          gating on the pricing model would hide the only action the page has.
+        */}
+        {found.service.availability === 'available' ? (
+          <>
+            <EnquireButton
               listingId={found.service.id}
               currencyCode={found.service.currencyCode}
               requestsPath={`${locale === 'ar' ? '/ar' : ''}/dashboard/service-requests`}
               loginPath={`${locale === 'ar' ? '/ar' : ''}/login`}
               copy={{
-                action: quote('action'),
-                heading: quote('heading'),
-                titleLabel: quote('titleLabel'),
-                briefLabel: quote('briefLabel'),
-                budgetLabel: quote('budgetLabel'),
-                budgetHint: quote('budgetHint'),
-                neededByLabel: quote('neededByLabel'),
-                send: quote('send'),
-                cancel: quote('cancel'),
-                working: quote('working'),
-                titleRequired: quote('titleRequired'),
-                briefRequired: quote('briefRequired'),
-                budgetInvalid: quote('budgetInvalid'),
+                action: enquiry('action'),
+                heading: enquiry('heading'),
+                titleLabel: enquiry('titleLabel'),
+                briefLabel: enquiry('briefLabel'),
+                budgetLabel: enquiry('budgetLabel'),
+                budgetHint: enquiry('budgetHint'),
+                neededByLabel: enquiry('neededByLabel'),
+                send: enquiry('send'),
+                cancel: enquiry('cancel'),
+                working: enquiry('working'),
+                titleRequired: enquiry('titleRequired'),
+                briefRequired: enquiry('briefRequired'),
+                budgetInvalid: enquiry('budgetInvalid'),
                 signIn: session('signIn'),
-                failedNotCustom: quote('failedNotCustom'),
-                failedOwnListing: quote('failedOwnListing'),
-                failedNotAvailable: quote('failedNotAvailable'),
-                failedBlocked: quote('failedBlocked'),
-                failedGeneric: quote('failedGeneric'),
+                failedNotCustom: enquiry('failedNotCustom'),
+                failedOwnListing: enquiry('failedOwnListing'),
+                failedNotAvailable: enquiry('failedNotAvailable'),
+                failedBlocked: enquiry('failedBlocked'),
+                failedGeneric: enquiry('failedGeneric'),
               }}
             />
-          </div>
+          </>
         ) : null}
+            </>
+          }
+        />
+
 
         {/*
           Reporting the service. **The subject type is `listing`**, not a type of its own: a service is a row
@@ -228,7 +233,7 @@ export default async function ServicePage({ params }: PageParams) {
           type; using `listing` is naming the row as the schema names it. Offered whatever the availability,
           for the reason the listing page gives.
         */}
-        <div className="mt-8 border-t border-neutral-200 pt-6">
+        <div className="mt-8 border-t border-hairline pt-6">
           <ReportForm
             subject={{ subjectType: 'listing', subjectSlug: found.service.slug }}
             loginPath={`${locale === 'ar' ? '/ar' : ''}/login`}

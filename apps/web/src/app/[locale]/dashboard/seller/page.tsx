@@ -131,7 +131,7 @@ export default async function SellerDashboardPage({
             // only in this branch, so a seller who already has a storefront is never offered a second
             // creation control anywhere on this page.
             <>
-              <p role="status" className="mt-8 text-neutral-900">
+              <p role="status" className="mt-8 text-ink-strong">
                 {t('notASeller')}
               </p>
               <SellerOnboardingForm labels={onboardingLabels} />
@@ -139,11 +139,11 @@ export default async function SellerDashboardPage({
           ) : identity.kind === 'unauthenticated' ? (
             // The session ended between this page's own gate and the seller read. Not a storefront state.
             <div role="status" className="mt-8">
-              <p className="max-w-prose text-neutral-600">{session('expiredBody')}</p>
+              <p className="max-w-prose text-ink-muted">{session('expiredBody')}</p>
               <p className="mt-4">
                 <Link
                   href={`${prefix}/login`}
-                  className="text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  className="text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
                   {session('signIn')}
                 </Link>

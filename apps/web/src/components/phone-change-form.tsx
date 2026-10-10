@@ -42,9 +42,9 @@ export interface PhoneChangeFormProps {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
 const BUTTON_CLASS =
-  'mt-6 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'mt-6 rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 
 /**
  * The complete status-to-sentence map, exported so a test can pin it.
@@ -143,14 +143,14 @@ export function PhoneChangeForm({ labels, startAction, verifyAction }: PhoneChan
 
   return (
     <div className="mt-8 max-w-sm">
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+      <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
         {message}
       </p>
 
       {!awaitingCode ? (
         <form onSubmit={onStart} noValidate>
           <div className="mt-4">
-            <label htmlFor="contact-phone" className="block text-sm font-medium text-neutral-900">
+            <label htmlFor="contact-phone" className="block text-sm font-medium text-ink-strong">
               {labels.newPhone}
             </label>
             <input
@@ -165,7 +165,7 @@ export function PhoneChangeForm({ labels, startAction, verifyAction }: PhoneChan
               onChange={(event) => setPhone(event.target.value)}
               className={FIELD_CLASS}
             />
-            <p id="contact-phone-hint" className="mt-1 text-sm text-neutral-600">
+            <p id="contact-phone-hint" className="mt-1 text-sm text-ink-muted">
               {labels.newPhoneHint}
             </p>
           </div>
@@ -176,7 +176,7 @@ export function PhoneChangeForm({ labels, startAction, verifyAction }: PhoneChan
       ) : (
         <form onSubmit={onVerify} noValidate>
           <div className="mt-4">
-            <label htmlFor="contact-code" className="block text-sm font-medium text-neutral-900">
+            <label htmlFor="contact-code" className="block text-sm font-medium text-ink-strong">
               {labels.code}
             </label>
             <input
@@ -192,7 +192,7 @@ export function PhoneChangeForm({ labels, startAction, verifyAction }: PhoneChan
               onChange={(event) => setCode(event.target.value)}
               className={FIELD_CLASS}
             />
-            <p id="contact-code-hint" className="mt-1 text-sm text-neutral-600">
+            <p id="contact-code-hint" className="mt-1 text-sm text-ink-muted">
               {labels.codeHint}
             </p>
           </div>

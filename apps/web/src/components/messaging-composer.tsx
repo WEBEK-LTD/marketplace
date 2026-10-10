@@ -37,9 +37,9 @@ import {
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
 const SECONDARY_CLASS =
-  'rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-900 disabled:opacity-60';
+  'rounded-md border border-edge px-3 py-2 text-sm font-medium text-ink-strong disabled:opacity-60';
 
 export interface ComposerLabels extends WriteFailureLabels {
   readonly placeholder: string;
@@ -102,8 +102,8 @@ export function MessageComposer({ conversationId, isClosed, hasLeft, labels }: M
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-8 border-t border-neutral-200 pt-6">
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+    <form onSubmit={onSubmit} noValidate className="mt-8 border-t border-hairline pt-6">
+      <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
         {message ?? (state === 'closed' ? labels.closedHint : state === 'left' ? labels.leftHint : null)}
       </p>
       <label htmlFor="message-body" className="sr-only">
@@ -118,7 +118,7 @@ export function MessageComposer({ conversationId, isClosed, hasLeft, labels }: M
         placeholder={labels.placeholder}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none disabled:bg-neutral-50"
+        className="mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none disabled:bg-surface-sunken"
       />
       <div className="mt-3 flex justify-end">
         <button type="submit" disabled={!writable || pending} className={BUTTON_CLASS}>
@@ -191,7 +191,7 @@ export function ConversationControls({
 
   return (
     <section aria-label={labels.groupLabel} className="mt-6">
-      <p aria-live="polite" role="status" className="min-h-6 text-sm text-neutral-900">
+      <p aria-live="polite" role="status" className="min-h-6 text-sm text-ink-strong">
         {message}
       </p>
       <div className="mt-1 flex flex-wrap gap-2">

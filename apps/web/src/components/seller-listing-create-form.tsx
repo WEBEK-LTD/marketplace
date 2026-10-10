@@ -66,8 +66,8 @@ export interface RenderableCategory {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 
 /** The two interface locales, as 6-C and 6-D render them. `public.locales` remains the authority. */
 const LANGUAGES: readonly { readonly code: string; readonly label: string }[] = [
@@ -139,7 +139,7 @@ export function SellerListingCreateForm({
 
   return (
     <section aria-labelledby="seller-listing-create-heading" className="mt-10 max-w-xl">
-      <h2 id="seller-listing-create-heading" className="text-lg font-semibold text-neutral-900">
+      <h2 id="seller-listing-create-heading" className="text-lg font-semibold text-ink-strong">
         {labels.create}
       </h2>
 
@@ -157,7 +157,7 @@ export function SellerListingCreateForm({
             onChange={(event) => set('slug', event.target.value)}
             className={FIELD_CLASS}
           />
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.slugPermanent}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.slugPermanent}</p>
         </div>
 
         <div>
@@ -228,7 +228,7 @@ export function SellerListingCreateForm({
               </option>
             ))}
           </select>
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.categoryHint}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.categoryHint}</p>
         </div>
 
         <div>
@@ -282,7 +282,7 @@ export function SellerListingCreateForm({
               className={FIELD_CLASS}
             />
           )}
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.currencyHint}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.currencyHint}</p>
         </div>
 
         <div>
@@ -318,7 +318,7 @@ export function SellerListingCreateForm({
             onChange={(event) => set('priceMinor', event.target.value)}
             className={FIELD_CLASS}
           />
-          <p className="mt-1 max-w-prose text-sm text-neutral-600">{labels.priceHint}</p>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">{labels.priceHint}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -328,9 +328,9 @@ export function SellerListingCreateForm({
             type="checkbox"
             checked={values.isNegotiable !== ''}
             onChange={(event) => set('isNegotiable', event.target.checked ? 'yes' : '')}
-            className="h-4 w-4 rounded border-neutral-300"
+            className="h-4 w-4 rounded border-edge"
           />
-          <label htmlFor="listing-negotiable" className="text-sm text-neutral-900">
+          <label htmlFor="listing-negotiable" className="text-sm text-ink-strong">
             {labels.negotiable}
           </label>
         </div>
@@ -369,7 +369,7 @@ export function SellerListingCreateForm({
           </p>
         ) : null}
         {created ? (
-          <p role="status" className="text-sm text-neutral-900">
+          <p role="status" className="text-sm text-ink-strong">
             {labels.created}
           </p>
         ) : null}
@@ -377,7 +377,7 @@ export function SellerListingCreateForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60"
         >
           {pending ? labels.creating : labels.createSubmit}
         </button>

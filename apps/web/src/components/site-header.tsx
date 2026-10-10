@@ -1,5 +1,5 @@
 import type { Locale } from '@repo/shared-types';
-import { PageContainer, cx, FOCUS_RING } from '@repo/ui';
+import { cx, firstGrapheme, FOCUS_RING, PageContainer } from '@repo/ui';
 import type { ReactNode } from 'react';
 import { SiteMenu } from './site-menu';
 
@@ -39,10 +39,14 @@ export interface SiteHeaderProps {
 /**
  * The site header.
  *
- * **Sticky, and the one surface in the product that carries elevation permanently.** A marketplace is browsed by
- * scrolling a long grid, and the search field and the language switch are wanted at the bottom of it as much as
- * at the top. It genuinely floats above the content, so `shadow-sm` is a statement of fact rather than
- * decoration — which is the rule the elevation scale exists to keep.
+ * **Sticky and translucent.** A marketplace is browsed by scrolling a long grid, and the brand and the language
+ * switch are wanted at the bottom of it as much as at the top. The backdrop blur is what makes that read
+ * correctly: content scrolling under a solid bar looks like it disappeared, where content scrolling under a
+ * translucent one looks like it went behind something.
+ *
+ * **It is 72px tall and the brand is set at 20–22px.** That sounds like trimming, and it is the difference
+ * between a header that frames a product and the thin strip of 14px links this replaced, which read as browser
+ * chrome. A marketplace header is the first thing a visitor sees and it has to carry some weight.
  *
  * **One row at every width.** The entries move into a drawer on a narrow viewport rather than stacking under the
  * brand, which is what the previous header did and what pushed every phone's content down by the height of the
@@ -81,15 +85,39 @@ export function SiteHeader({
   const prefix = locale === 'ar' ? '/ar' : '';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-neutral-0 shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-hairline bg-surface-canvas/85 backdrop-blur-md">
       <PageContainer>
-        <div className="flex h-16 items-center justify-between gap-3 sm:gap-6">
-          <a href={prefix === '' ? '/' : prefix} className={cx('shrink-0 rounded-sm text-lg font-semibold text-neutral-900', FOCUS_RING)}>
-            {siteName}
+        <div className="flex h-[4.5rem] items-center justify-between gap-4 sm:gap-8">
+          {/*
+            The brand mark: a filled square carrying the site's first character, then the name. A wordmark
+            alone at 22px is indistinguishable from a heading, and this product has no logo asset to use —
+            a monogram built from the name it already has is the honest way to give the header an anchor,
+            and it is the one place the brand colour appears as a solid fill above the fold.
+          */}
+          <a
+            href={prefix === '' ? '/' : prefix}
+            className={cx('group flex shrink-0 items-center gap-2.5 rounded-lg', FOCUS_RING)}
+          >
+            <span
+              aria-hidden="true"
+              className="flex size-9 items-center justify-center rounded-lg bg-brand-700 text-base font-semibold text-on-ink transition-colors duration-200 group-hover:bg-brand-600"
+            >
+              {firstGrapheme(siteName)}
+            </span>
+            <span className="text-xl font-semibold text-ink-strong sm:text-[1.375rem]">{siteName}</span>
           </a>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-3">
             {navigation === undefined ? null : <div className="hidden lg:block">{navigation}</div>}
+
+            {/*
+              The locale switch is part of the application rather than of the navigation (owner decision 8), so
+              a hairline separates it from the composed menu instead of it sitting in that row as a peer. That
+              is the same distinction the drawer makes, drawn rather than stated.
+            */}
+            {navigation === undefined ? null : (
+              <span aria-hidden="true" className="hidden h-6 w-px bg-hairline lg:block" />
+            )}
 
             <a
               href={otherLocale === 'ar' ? '/ar' : '/'}
@@ -97,8 +125,8 @@ export function SiteHeader({
               lang={otherLocale}
               aria-label={languageLinkLabel}
               className={cx(
-                'rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-900',
-                'transition-colors duration-150 hover:border-neutral-400 hover:bg-neutral-50',
+                'rounded-lg px-3 py-2 text-sm font-medium text-ink-body',
+                'transition-colors duration-200 hover:bg-state-hover hover:text-ink-strong',
                 FOCUS_RING,
               )}
             >
@@ -136,13 +164,13 @@ function CatalogueDoors({
     { href: `${prefix}/categories`, label: labels.categories },
   ];
   return (
-    <ul className="flex list-none flex-col border-t border-neutral-200">
+    <ul className="flex list-none flex-col border-t border-hairline">
       {entries.map((entry) => (
-        <li key={entry.href} className="border-b border-neutral-200">
+        <li key={entry.href} className="border-b border-hairline">
           <a
             href={entry.href}
             className={cx(
-              'block py-3 text-base font-medium text-neutral-900 transition-colors duration-150 hover:text-neutral-600',
+              'block py-3 text-base font-medium text-ink-strong transition-colors duration-150 hover:text-ink-muted',
               FOCUS_RING,
             )}
           >

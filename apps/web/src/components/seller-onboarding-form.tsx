@@ -62,8 +62,8 @@ export interface SellerOnboardingLabels {
 }
 
 const FIELD_CLASS =
-  'mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
+  'mt-1 block w-full rounded-md border border-edge px-3 py-2 text-base text-ink-strong focus:border-edge-strong focus:outline-none';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
 
 /**
  * The languages a seller may write their storefront in: this interface's own two locales.
@@ -134,20 +134,20 @@ export function SellerOnboardingForm({ labels }: { readonly labels: SellerOnboar
   if (created !== null) {
     return (
       <section aria-labelledby="seller-created" className="mt-8">
-        <h2 id="seller-created" className="text-lg font-semibold text-neutral-900">
+        <h2 id="seller-created" className="text-lg font-semibold text-ink-strong">
           {created.displayName}
         </h2>
-        <p role="status" className="mt-2 max-w-prose text-neutral-700">
+        <p role="status" className="mt-2 max-w-prose text-ink-body">
           {labels.pending}
         </p>
         <dl className="mt-4 max-w-md">
-          <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-            <dt className="text-sm text-neutral-600">{labels.slugHint}</dt>
-            <dd className="text-sm text-neutral-900">{created.slug}</dd>
+          <div className="flex justify-between gap-4 border-b border-hairline py-2">
+            <dt className="text-sm text-ink-muted">{labels.slugHint}</dt>
+            <dd className="text-sm text-ink-strong">{created.slug}</dd>
           </div>
-          <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-            <dt className="text-sm text-neutral-600">{labels.country}</dt>
-            <dd className="text-sm text-neutral-900">{created.countryCode}</dd>
+          <div className="flex justify-between gap-4 border-b border-hairline py-2">
+            <dt className="text-sm text-ink-muted">{labels.country}</dt>
+            <dd className="text-sm text-ink-strong">{created.countryCode}</dd>
           </div>
         </dl>
       </section>
@@ -156,7 +156,7 @@ export function SellerOnboardingForm({ labels }: { readonly labels: SellerOnboar
 
   return (
     <section aria-labelledby="seller-onboarding" className="mt-8 max-w-xl">
-      <h2 id="seller-onboarding" className="text-lg font-semibold text-neutral-900">
+      <h2 id="seller-onboarding" className="text-lg font-semibold text-ink-strong">
         {labels.createProfile}
       </h2>
 
@@ -176,11 +176,11 @@ export function SellerOnboardingForm({ labels }: { readonly labels: SellerOnboar
             aria-describedby="seller-slug-hint seller-slug-permanent"
             className={FIELD_CLASS}
           />
-          <p id="seller-slug-hint" className="mt-1 text-sm text-neutral-600">
+          <p id="seller-slug-hint" className="mt-1 text-sm text-ink-muted">
             {labels.slugHint}
           </p>
           {/* The one warning this form makes, next to the one field that cannot be corrected later. */}
-          <p id="seller-slug-permanent" className="mt-1 text-sm font-medium text-neutral-900">
+          <p id="seller-slug-permanent" className="mt-1 text-sm font-medium text-ink-strong">
             {labels.slugPermanent}
           </p>
         </div>
@@ -337,7 +337,7 @@ export function SellerOnboardingForm({ labels }: { readonly labels: SellerOnboar
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="inline-flex items-center rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
         >
           {pending ? labels.submitting : labels.submit}
         </button>

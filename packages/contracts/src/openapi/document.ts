@@ -338,22 +338,9 @@ import {
 } from '../blocks.js';
 import { AdminSessionResponseSchema } from '../admin-session.js';
 import {
-  CounterOfferRequestSchema,
-  CreateOfferRequestSchema,
-  OFFERS_DEFAULT_LIMIT,
-  OFFERS_MAX_LIMIT,
-  OfferDecisionResponseSchema,
-  OfferMutationResponseSchema,
-  OffersResponseSchema,
-  SellerOffersResponseSchema,
-} from '../offers.js';
-import {
-  CreateServiceQuoteSchema,
   CreateServiceRequestSchema,
   SERVICE_REQUESTS_DEFAULT_LIMIT,
   SERVICE_REQUESTS_MAX_LIMIT,
-  ServiceQuoteDecisionResponseSchema,
-  ServiceQuoteMutationResponseSchema,
   ServiceRequestDetailResponseSchema,
   ServiceRequestMutationResponseSchema,
   ServiceRequestStatusResponseSchema,
@@ -3570,235 +3557,12 @@ function buildRegistry(): OpenAPIRegistry {
   });
 
   /* -------------------------------------------------------------------------------------------- */
-  /* Phase 7-H — offers: negotiation and acceptance                                                */
-  /* -------------------------------------------------------------------------------------------- */
-
-  const offerParam = {
-    params: z.object({
-      offerId: z.uuid().openapi({ description: 'One offer the caller is a party to.' }),
-    }),
-  } as const;
-  const offerListQuery = {
-    query: z.object({
-      limit: z
-        .string()
-        .optional()
-        .openapi({
-          description: `How many rows to return. Defaults to ${OFFERS_DEFAULT_LIMIT}; a larger value is clamped to ${OFFERS_MAX_LIMIT}.`,
-        }),
-      cursor: z
-        .string()
-        .optional()
-        .openapi({
-          description:
-            'An opaque cursor from a previous response’s nextCursor. Its contents are not part of the contract and must not be constructed or parsed by a client.',
-        }),
-    }),
-  } as const;
-  const offerCursorRefused = {
-    description:
-      'The cursor is malformed, altered or from a version this API no longer reads. One answer for all three: the remedy is to start again without it.',
-    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-  } as const;
-  const offerNotFound = {
-    description:
-      'There is no such offer for this caller. Identical to the answer for an offer belonging to two other people, so asking cannot reveal that one exists.',
-    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-  } as const;
-  const offerConflict = {
-    description:
-      'The offer is not in a state this operation acts on — already accepted, rejected, withdrawn, countered or expired (`OFFER_NOT_ACTIONABLE`) — or its negotiation window has passed (`OFFER_LAPSED`). Nothing is changed either way.',
-    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-  } as const;
-
-  registry.registerPath({
-    method: 'get',
-    path: '/v1/offers/made',
-    operationId: 'getV1OffersMade',
-    summary: 'The offers the caller has made',
-    description:
-      'Requires the internal BFF credential and the caller’s session. One page of the offers this account has made as a buyer, newest first. Scoped to the caller inside the statement, so another account’s offer is never matched. `isLapsed` is derived from the negotiation window and is not a status: the scheduled sweeper is what writes `expired`, and this is how a surface tells the truth in the minutes before it runs.',
-    request: { ...sessionHeader, ...offerListQuery },
-    responses: {
-      200: {
-        description: 'One page of the caller’s own offers, newest first.',
-        content: { 'application/json': { schema: OffersResponseSchema } },
-      },
-      400: offerCursorRefused,
-      401: authenticationRequired,
-      403: credentialRejected,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'get',
-    path: '/v1/offers/received',
-    operationId: 'getV1OffersReceived',
-    summary: 'The offers made to the caller’s storefront',
-    description:
-      'Requires the internal BFF credential and the caller’s session. One page of the offers made to this account’s storefront, newest first. A separate operation from the buyer’s list rather than the same one with a role parameter: each is scoped by a fixed predicate, so there is no argument a caller could supply that would show them the other side of a negotiation. The buyer is named by display name and by nothing else.',
-    request: { ...sessionHeader, ...offerListQuery },
-    responses: {
-      200: {
-        description: 'One page of the offers received, newest first.',
-        content: { 'application/json': { schema: SellerOffersResponseSchema } },
-      },
-      400: offerCursorRefused,
-      401: authenticationRequired,
-      403: credentialRejected,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/offers',
-    operationId: 'postV1Offers',
-    summary: 'Make an offer',
-    description:
-      'Requires the internal BFF credential and the caller’s session. Opens one offer on a listing, as the buyer. **The request names a listing, an amount, a quantity and an optional note, and nothing else** — the seller and the currency come out of the listing row and the negotiation window from the admin-configured default, all inside the database, so none of the three can be supplied. Refuses a listing that cannot be bought, the caller’s own listing, a blocked pair, and a listing the caller already has a live offer on, each with its own code.',
-    request: {
-      ...sessionHeader,
-      body: { content: { 'application/json': { schema: CreateOfferRequestSchema } }, required: true },
-    },
-    responses: {
-      201: {
-        description: 'The offer that was opened.',
-        content: { 'application/json': { schema: OfferMutationResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: {
-        description: 'There is no such listing.',
-        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-      },
-      409: {
-        description:
-          'The listing cannot be offered on (`OFFER_NOT_AVAILABLE`), it is the caller’s own (`OFFER_OWN_LISTING`), one party has blocked the other (`OFFER_BLOCKED`), or the caller already has a live offer on it (`OFFER_ALREADY_OPEN`).',
-        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-      },
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/offers/{offerId}/counter',
-    operationId: 'postV1OfferCounter',
-    summary: 'Replace your own offer with a new one',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The buyer replaces their own live offer: the offer named in the route moves to `countered` and the replacement is created with `parentOfferId` pointing at it, in one transaction. **The listing, the seller and the currency are copied from the offer being replaced**, and there is no field for any of them, so a counter cannot be pointed across listings, across sellers or at somebody else’s negotiation. Only the buyer of an offer may counter it; to a seller it answers 404.',
-    request: {
-      ...sessionHeader,
-      ...offerParam,
-      body: { content: { 'application/json': { schema: CounterOfferRequestSchema } }, required: true },
-    },
-    responses: {
-      201: {
-        description: 'The replacement offer.',
-        content: { 'application/json': { schema: OfferMutationResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: offerNotFound,
-      409: offerConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/offers/{offerId}/accept',
-    operationId: 'postV1OfferAccept',
-    summary: 'Accept an offer',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The seller accepts one live offer made to their storefront, recording the obligation the schema defines — `status`, `respondedAt`, `acceptedAt`, the snapshotted terms and `paymentDueAt` — in a single statement from one transaction-consistent timestamp. **`paymentDueAt` is the acceptance time plus the admin-configured payment window (`finance.payment_due_hours`), derived in the database.** There is no field for it in any request, the negotiation window is not reused for it, and there is no fallback: a missing or unusable setting answers 503 `OFFER_PAYMENT_POLICY_MISSING` and changes nothing. **No order, checkout, reservation, payment, ledger entry or payout is created** — the accepted offer records the payable obligation and nothing else. Only the seller may accept; to the buyer it answers 404. The row is locked, so of two simultaneous decisions exactly one wins and the other gets 409.',
-    request: { ...sessionHeader, ...offerParam },
-    responses: {
-      200: {
-        description: 'The obligation that was recorded.',
-        content: { 'application/json': { schema: OfferDecisionResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: offerNotFound,
-      409: offerConflict,
-      503: {
-        description:
-          'The service could not answer, or the admin-configured payment window is absent or unusable (`OFFER_PAYMENT_POLICY_MISSING`). Nothing is recorded in either case.',
-        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-      },
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/offers/{offerId}/reject',
-    operationId: 'postV1OfferReject',
-    summary: 'Reject an offer',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The seller declines one live offer made to their storefront. Records the response and no obligation: no acceptance time, no snapshot and no payment deadline. Only the seller may reject; to the buyer it answers 404.',
-    request: { ...sessionHeader, ...offerParam },
-    responses: {
-      200: {
-        description: 'The status the offer now holds.',
-        content: { 'application/json': { schema: OfferDecisionResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: offerNotFound,
-      409: offerConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/offers/{offerId}/withdraw',
-    operationId: 'postV1OfferWithdraw',
-    summary: 'Withdraw your own offer',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The buyer takes their own live offer back, which frees them to make another on the same listing. Only the buyer may withdraw; to the seller it answers 404.',
-    request: { ...sessionHeader, ...offerParam },
-    responses: {
-      200: {
-        description: 'The status the offer now holds.',
-        content: { 'application/json': { schema: OfferDecisionResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: offerNotFound,
-      409: offerConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  /* -------------------------------------------------------------------------------------------- */
   /* Phase 7-I — service requests and quotes, Option 1                                             */
   /* -------------------------------------------------------------------------------------------- */
 
   const requestParam = {
     params: z.object({
       requestId: z.uuid().openapi({ description: 'One service request the caller is a party to.' }),
-    }),
-  } as const;
-  const quoteParams = {
-    params: z.object({
-      requestId: z.uuid().openapi({ description: 'The request the quote answers.' }),
-      quoteId: z.uuid().openapi({ description: 'One quote on that request.' }),
     }),
   } as const;
   const serviceListQuery = {
@@ -3857,27 +3621,6 @@ function buildRegistry(): OpenAPIRegistry {
 
   registry.registerPath({
     method: 'get',
-    path: '/v1/service-requests/received',
-    operationId: 'getV1ServiceRequestsReceived',
-    summary: 'The service requests sent to the caller’s storefront',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The seller’s request inbox, newest first. A separate operation from the buyer’s list rather than the same one with a role parameter: each is scoped by a fixed predicate, so there is no argument a caller could supply that would show them the other side. The buyer is named by display name and by nothing else.',
-    request: { ...sessionHeader, ...serviceListQuery },
-    responses: {
-      200: {
-        description: 'One page of the requests received, newest first.',
-        content: { 'application/json': { schema: ServiceRequestsResponseSchema } },
-      },
-      400: serviceCursorRefused,
-      401: authenticationRequired,
-      403: credentialRejected,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'get',
     path: '/v1/service-requests/{requestId}',
     operationId: 'getV1ServiceRequest',
     summary: 'One service request and its quotes',
@@ -3902,9 +3645,9 @@ function buildRegistry(): OpenAPIRegistry {
     method: 'post',
     path: '/v1/service-requests',
     operationId: 'postV1ServiceRequests',
-    summary: 'Send a service request',
+    summary: 'Enquire about a listing',
     description:
-      'Requires the internal BFF credential and the caller’s session. Sends one brief to the seller of a **custom-priced** service, which is v5.2’s own division — a fixed-price service is bought through the cart and answers 409 `SERVICE_REQUEST_NOT_CUSTOM`. **The request names a listing, a title, a brief and optionally a budget and a date, and nothing else**: the seller and the currency come out of the listing row inside the database, so neither can be supplied. Refuses a service that cannot be bought, the caller’s own service and a blocked pair, each with its own code.',
+      'Requires the internal BFF credential and the caller’s session. Sends one enquiry about a live listing **to the office** (OD-A4): a buyer never reaches a seller, so this creates an `admin_only` request with no seller on it and the office answers. The body is unchanged from the seller-routed request this replaced — a listing, a title, a brief and optionally a budget and a date, and nothing else — and the currency still comes out of the listing row inside the database, so it cannot be supplied. A listing that is not live answers 404, identically to one that does not exist — and so does the caller’s own listing, deliberately: a distinguishable refusal there would be a way to ask who owns a listing. **The enquiry never expires** (OD-A3): nothing in the platform writes the expired status, and only the buyer or the office closes it.',
     request: {
       ...sessionHeader,
       body: { content: { 'application/json': { schema: CreateServiceRequestSchema } }, required: true },
@@ -3943,129 +3686,6 @@ function buildRegistry(): OpenAPIRegistry {
       200: {
         description: 'The status the request now holds.',
         content: { 'application/json': { schema: ServiceRequestStatusResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: serviceNotFound,
-      409: serviceConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/service-requests/{requestId}/decline',
-    operationId: 'postV1ServiceRequestDecline',
-    summary: 'Decline to quote on a service request',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The seller declines a brief sent to their own storefront, from either of its live states. Only the seller may decline; to the buyer it answers 404.',
-    request: { ...sessionHeader, ...requestParam },
-    responses: {
-      200: {
-        description: 'The status the request now holds.',
-        content: { 'application/json': { schema: ServiceRequestStatusResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: serviceNotFound,
-      409: serviceConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/service-requests/{requestId}/quotes',
-    operationId: 'postV1ServiceRequestQuotes',
-    summary: 'Quote on a service request',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The seller answers a brief sent to their own storefront. **The currency is copied from the request** — the schema’s composite foreign key means a quote can never disagree with the brief it answers — so there is no currency field. `validForDays` is how long the quote stands: the schema requires it because `service_quotes.expires_at` has no default, and its bound is the schema’s own 1–365. The existing database trigger is what moves the request from `open` to `quoted`; nothing in this operation does. Only the request’s own seller may quote; to anybody else it answers 404.',
-    request: {
-      ...sessionHeader,
-      ...requestParam,
-      body: { content: { 'application/json': { schema: CreateServiceQuoteSchema } }, required: true },
-    },
-    responses: {
-      201: {
-        description: 'The quote that was sent.',
-        content: { 'application/json': { schema: ServiceQuoteMutationResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: serviceNotFound,
-      409: serviceConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/service-requests/{requestId}/quotes/{quoteId}/accept',
-    operationId: 'postV1ServiceQuoteAccept',
-    summary: 'Accept a service quote',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The buyer accepts one live quote. In a single transaction the quote takes the obligation the schema defines — `status`, `respondedAt`, `acceptedAt`, the snapshotted terms and `paymentDueAt` — from one transaction-consistent timestamp, and the request is closed as `accepted`, which is the only way that status is ever reached. **`paymentDueAt` is the acceptance time plus the admin-configured payment window (`finance.payment_due_hours`), derived in the database** — the same key and the same value offers use. There is no field for it in any request, the quote’s own validity window is not reused for it, and there is no fallback: a missing or unusable setting answers 503 `SERVICE_QUOTE_PAYMENT_POLICY_MISSING` and changes nothing. **No order, checkout, delivery, payment, ledger entry or payout is created** — Phase 8 consumes the obligation later. The quote must belong to the request in the route, and both rows are locked, so of two simultaneous acceptances exactly one wins. Only the buyer may accept; to the seller it answers 404.',
-    request: { ...sessionHeader, ...quoteParams },
-    responses: {
-      200: {
-        description: 'The obligation that was recorded.',
-        content: { 'application/json': { schema: ServiceQuoteDecisionResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: serviceNotFound,
-      409: serviceConflict,
-      503: {
-        description:
-          'The service could not answer, or the admin-configured payment window is absent or unusable (`SERVICE_QUOTE_PAYMENT_POLICY_MISSING`). Nothing is recorded in either case.',
-        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
-      },
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/service-requests/{requestId}/quotes/{quoteId}/reject',
-    operationId: 'postV1ServiceQuoteReject',
-    summary: 'Reject a service quote',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The buyer declines one live quote. **The request deliberately stays open**, because the existing database trigger still admits further quotes while it is open or quoted. Records the response and no obligation. Only the buyer may reject; to the seller it answers 404.',
-    request: { ...sessionHeader, ...quoteParams },
-    responses: {
-      200: {
-        description: 'The status the quote now holds.',
-        content: { 'application/json': { schema: ServiceQuoteDecisionResponseSchema } },
-      },
-      400: validationFailed,
-      401: authenticationRequired,
-      403: credentialRejected,
-      404: serviceNotFound,
-      409: serviceConflict,
-      503: unavailable,
-      500: internalError,
-    },
-  });
-
-  registry.registerPath({
-    method: 'post',
-    path: '/v1/service-requests/{requestId}/quotes/{quoteId}/withdraw',
-    operationId: 'postV1ServiceQuoteWithdraw',
-    summary: 'Withdraw your own service quote',
-    description:
-      'Requires the internal BFF credential and the caller’s session. The seller takes their own live quote back, which leaves the request open to another. Only the seller may withdraw; to the buyer it answers 404.',
-    request: { ...sessionHeader, ...quoteParams },
-    responses: {
-      200: {
-        description: 'The status the quote now holds.',
-        content: { 'application/json': { schema: ServiceQuoteDecisionResponseSchema } },
       },
       400: validationFailed,
       401: authenticationRequired,

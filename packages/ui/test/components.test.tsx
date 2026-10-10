@@ -7,6 +7,7 @@ import {
   Alert,
   Avatar,
   Badge,
+  Band,
   Breadcrumb,
   Button,
   ButtonLink,
@@ -37,6 +38,17 @@ import {
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
 
 /**
+ * Every class token in a rendered fragment.
+ *
+ * Scanning the raw HTML for a word is not good enough: the product's shared transition names `border-color`
+ * among the properties it animates, so a text search for `border` matches a component that draws none. Splitting
+ * the `class` attributes into tokens asks the question that was actually meant — is `border` one of the classes.
+ */
+function classTokens(html: string): string[] {
+  return [...html.matchAll(/class="([^"]*)"/g)].flatMap((match) => (match[1] ?? '').split(/\s+/)).filter(Boolean);
+}
+
+/**
  * Comments explain the rules; only real code can break them.
  *
  * Every one of the scans below reads this, not the raw file. `recipes.ts` documents the logical-direction rule by
@@ -60,8 +72,11 @@ describe('structure primitives', () => {
         x
       </PageContainer>,
     );
-    expect(html).toBe('<main id="content" class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">x</main>');
+    expect(html).toBe('<main id="content" class="mx-auto w-full px-5 sm:px-8 lg:px-12 max-w-[80rem]">x</main>');
     expect(renderToStaticMarkup(<PageContainer>y</PageContainer>)).toMatch(/^<div /);
+    // The reading measure is a different thing from a small page: prose wants 65–75 characters a line whatever
+    // the viewport is, so an auth form or a policy page is centred rather than stretched across 80rem.
+    expect(renderToStaticMarkup(<PageContainer width="narrow">y</PageContainer>)).toContain('max-w-2xl');
   });
 
   it('SkipLink targets the content id and uses logical positioning', () => {
@@ -71,13 +86,16 @@ describe('structure primitives', () => {
   });
 
   it('Heading renders the requested level, and display size keeps the level', () => {
-    expect(renderToStaticMarkup(<Heading level={1}>Title</Heading>)).toContain('<h1 class="text-3xl');
+    expect(renderToStaticMarkup(<Heading level={1}>Title</Heading>)).toMatch(/^<h1 class="[^"]*text-3xl/);
     expect(renderToStaticMarkup(<Heading level={4}>Sub</Heading>)).toMatch(/^<h4 /);
     // The document outline must not have to follow the type scale: an h1 may be display-sized, and a display
     // heading is still an h1.
     const display = renderToStaticMarkup(<Heading level={1} display>Big</Heading>);
     expect(display).toMatch(/^<h1 /);
-    expect(display).toContain('sm:text-5xl');
+    expect(display).toContain('lg:text-7xl');
+    // The tracking hook, not a tracking utility: `globals.css` attaches Latin tracking to `.mp-display` under
+    // `[lang="en"]` only, so an Arabic heading cannot receive it and have its letter joins broken.
+    expect(display).toContain('mp-display');
   });
 
   it('SectionHeader renders no eyebrow label above the heading', () => {
@@ -90,8 +108,24 @@ describe('structure primitives', () => {
   });
 
   it('Section applies one of three named rhythms', () => {
-    expect(renderToStaticMarkup(<Section space="lg">a</Section>)).toContain('py-10 sm:py-14');
-    expect(renderToStaticMarkup(<Section space="sm">a</Section>)).toContain('py-6');
+    expect(renderToStaticMarkup(<Section space="lg">a</Section>)).toContain('py-14 sm:py-20');
+    expect(renderToStaticMarkup(<Section space="sm">a</Section>)).toContain('py-8');
+  });
+
+  it('Band is full-bleed, and carries one of the three page surfaces', () => {
+    // The band is the unit a public page is composed from (0110). `.mp-band` is what reaches the viewport
+    // edges; the tone is what makes a stack of them a composition rather than a column of divs.
+    for (const [tone, surface] of [
+      ['canvas', 'bg-surface-canvas'],
+      ['sunken', 'bg-surface-sunken'],
+      ['ink', 'bg-surface-ink'],
+    ] as const) {
+      const html = renderToStaticMarkup(<Band tone={tone}>x</Band>);
+      expect(html, tone).toContain('mp-band');
+      expect(html, tone).toContain(surface);
+    }
+    // An ink band inverts the text role with it, so no caller has to remember to.
+    expect(renderToStaticMarkup(<Band tone="ink">x</Band>)).toContain('text-on-ink');
   });
 });
 
@@ -99,15 +133,25 @@ describe('controls', () => {
   it('Button renders every variant and keeps one focus ring', () => {
     for (const variant of ['primary', 'secondary', 'ghost', 'danger'] as const) {
       const html = renderToStaticMarkup(<Button variant={variant}>Go</Button>);
-      expect(html, variant).toContain('focus-visible:outline-neutral-900');
-      expect(html, variant).toContain('rounded-md');
+      // The ring takes the brand accent, so the day two real colours arrive the keyboard ring is branded
+      // everywhere at once rather than in whichever components someone remembered.
+      expect(html, variant).toContain('focus-visible:outline-brand-primary');
+      expect(html, variant).toContain('rounded-lg');
+    }
+    // On an ink band the ring inverts, because the accent has no guaranteed contrast against near-black.
+    for (const variant of ['onInk', 'onInkGhost'] as const) {
+      expect(renderToStaticMarkup(<Button variant={variant}>Go</Button>), variant).toContain(
+        'focus-visible:outline-on-ink',
+      );
     }
   });
 
   it('a destructive button is marked by weight, because the palette has no red', () => {
     const html = renderToStaticMarkup(<Button variant="danger">Delete listing</Button>);
-    expect(html).toContain('border-2');
-    expect(html).toContain('hover:bg-neutral-900');
+    // Two steps of emphasis where every other control has one, and a full inversion at the moment of the click.
+    expect(html).toContain('ring-2');
+    expect(html).toContain('hover:bg-surface-ink');
+    expect(html).toContain('font-semibold');
     expect(html).not.toMatch(/red|rose|danger-/);
   });
 
@@ -133,11 +177,14 @@ describe('controls', () => {
   it('Input and Textarea share one field shell, and error raises weight without resizing', () => {
     const plain = renderToStaticMarkup(<Input id="q" name="q" />);
     const errored = renderToStaticMarkup(<Input id="q" name="q" error />);
-    expect(plain).toContain('border border-neutral-300');
-    expect(errored).toContain('border-2 border-neutral-900');
-    // The 2px replaces the 1px rather than adding to it, so a refused form does not reflow.
-    expect(errored).not.toContain('border border-neutral-300');
-    expect(renderToStaticMarkup(<Textarea id="d" name="d" />)).toContain('rounded-md');
+    expect(plain).toContain('ring-1 ring-edge');
+    expect(errored).toContain('ring-2 ring-edge-strong');
+    // The 2px replaces the 1px rather than adding to it, so a refused form does not reflow. A ring rather than
+    // a border is what guarantees that: a ring is painted outside the box and takes no part in layout, so a
+    // field and a button declared at the same height actually are the same height.
+    expect(errored).not.toContain('ring-1 ring-edge');
+    expect(classTokens(plain)).not.toContain('border');
+    expect(renderToStaticMarkup(<Textarea id="d" name="d" />)).toContain('rounded-lg');
   });
 
   it('Select is a native select with exactly one arrow', () => {
@@ -198,11 +245,16 @@ describe('the catalogue card', () => {
     expect(html).toContain('aria-label="A chair"');
   });
 
-  it('hover moves the border rather than lifting the card', () => {
+  it('hover lifts the card, which is the affordance that says the whole tile is the target', () => {
     const html = renderToStaticMarkup(<LinkCard href="/x">y</LinkCard>);
-    expect(html).toContain('hover:border-neutral-400');
-    // A grid of twenty cards that each rise on hover twitches, and the lift costs layout.
-    expect(html).not.toMatch(/hover:shadow|hover:-translate-y/);
+    expect(html).toContain('hover:-translate-y-0.5');
+    expect(html).toContain('hover:shadow-md');
+    // The card is separated from the band behind it by value and the faintest lift, never by a rectangle drawn
+    // on all four sides — twenty of those down a grid is a table, which is what 0109's catalogue looked like.
+    expect(html).toContain('bg-surface-raised');
+    expect(classTokens(html)).not.toContain('border');
+    // The focus ring reaches the whole card, so a keyboard shows the same target the pointer gets.
+    expect(html).toContain('focus-within:outline-brand-primary');
   });
 
   it('a card title clamps, so a grid keeps its rhythm in both scripts', () => {
@@ -233,9 +285,9 @@ describe('the catalogue card', () => {
 
 describe('badges and avatars', () => {
   it('Badge distinguishes its tones by fill, not by hue', () => {
-    expect(renderToStaticMarkup(<Badge tone="neutral">New</Badge>)).toContain('bg-neutral-100');
-    expect(renderToStaticMarkup(<Badge tone="solid">Verified</Badge>)).toContain('bg-neutral-900');
-    expect(renderToStaticMarkup(<Badge tone="outline">Sold</Badge>)).toContain('border-neutral-400');
+    expect(renderToStaticMarkup(<Badge tone="neutral">New</Badge>)).toContain('bg-surface-muted');
+    expect(renderToStaticMarkup(<Badge tone="solid">Verified</Badge>)).toContain('bg-surface-ink');
+    expect(renderToStaticMarkup(<Badge tone="outline">Sold</Badge>)).toContain('border-edge');
   });
 
   it('Badge is a pill in sentence case, never a tracked-out capital label', () => {
@@ -271,7 +323,7 @@ describe('navigation', () => {
     expect(html).not.toContain('role="tab"');
     expect(html).toContain('<nav aria-label="Catalogue"');
     // The selected tab is marked by weight and a border, so it survives a monochrome palette.
-    expect(html).toContain('border-neutral-900 font-semibold');
+    expect(html).toContain('border-edge-strong font-semibold');
   });
 
   it('Breadcrumb separates with a mirrored chevron rather than a slash or a middle dot', () => {
@@ -287,7 +339,11 @@ describe('navigation', () => {
     expect(html).toContain('<ol');
     expect(html).toContain('aria-current="page"');
     expect(html).not.toMatch(/·|&middot;|\/<\/|>\/</);
-    expect(html).toContain('rtl:rotate-135');
+    // The RTL rotation is `+45`, not the mirror of the LTR one: `border-e` has already moved to the other
+    // side in RTL, so the corner the chevron is drawn from starts 90° away. `breadcrumb.tsx` has the
+    // arithmetic. Both renderings were wrong before a screenshot settled it, so both halves are pinned here.
+    expect(html).toContain('-rotate-45');
+    expect(html).toContain('rtl:rotate-45');
   });
 
   it('Pagination offers what a forward-only cursor supports, and nothing it cannot', () => {
@@ -360,7 +416,10 @@ describe('states', () => {
     const container = (html: string) => /^<div[^>]*class="([^"]*)"/.exec(html)?.[1] ?? '';
     expect(container(empty)).toContain('border-dashed');
     expect(container(broken)).not.toContain('border-dashed');
-    expect(container(broken)).toContain('bg-neutral-50');
+    expect(container(broken)).toContain('bg-surface-muted');
+    // An empty result set sits on the brand's own pale wash — it is an ordinary state of a working
+    // catalogue. An outage sits on the neutral muted surface, because nothing about it belongs to the brand.
+    expect(container(empty)).toContain('bg-surface-sunken');
     // Both are announced, at the severity each deserves: an empty result set politely, an outage interrupting.
     expect(empty).toContain('role="status"');
     expect(empty).toContain('aria-live="polite"');
@@ -418,27 +477,70 @@ describe('the system’s own rules, enforced on every primitive', () => {
     }
   });
 
-  it('uses no gradient and no glow, and spends elevation only on what leaves the page', () => {
-    // 0109 replaced a blanket "no shadow" rule with this one. A shadow is now how the product says something
-    // floats — and it is still not decoration, so only the three overlay surfaces and the stuck header may use
-    // it, and a flat card may not.
-    // `recipes.ts` defines the three surfaces; `dialog.tsx` is the only primitive that names one directly.
-    const ALLOWED_SHADOW_FILES = new Set(['recipes.ts', 'dialog.tsx']);
+  it('uses no gradient and no glow, and names elevation only in the file that defines it', () => {
+    // 0110 widened what a shadow may say — a card now lifts off a recessed band, which 0109 forbade — and
+    // keeps it bounded to the five declared steps in three named places. `recipes.ts` declares the surfaces;
+    // `button.tsx` is the one control that is itself elevated, because a filled button on a flat page needs to
+    // read as pressable; `dialog.tsx` names one directly because the `<dialog>` element's own panel cannot
+    // take a surface constant. Anywhere else, a shadow is decoration.
+    const ALLOWED_SHADOW_FILES = new Set(['recipes.ts', 'button.tsx', 'dialog.tsx']);
     for (const file of files) {
       const text = withoutComments(readFileSync(file, 'utf8'));
       expect(/gradient|\bglow\b|drop-shadow/.test(text), `${file}: gradient or glow`).toBe(false);
       if (!ALLOWED_SHADOW_FILES.has(file.slice(SRC.length))) {
-        expect(/\bshadow-(?:sm|md|lg)\b/.test(text), `${file}: elevation outside an overlay`).toBe(false);
+        expect(/\bshadow-(?:xs|sm|md|lg)\b/.test(text), `${file}: elevation outside recipes.ts`).toBe(false);
       }
     }
   });
 
   it('declares every shared type-scale entry, so a surface never invents its own', () => {
-    expect(Object.keys(TYPE).sort()).toEqual(
-      ['body', 'cardTitle', 'display', 'h1', 'h2', 'h3', 'h4', 'hint', 'label', 'meta', 'price', 'priceLarge', 'prose'],
-    );
-    // No letter-spacing at any size: Arabic is cursive and negative tracking breaks its letter joins.
+    expect(Object.keys(TYPE).sort()).toEqual([
+      'body',
+      'cardTitle',
+      'cardTitleLarge',
+      'display',
+      'displaySm',
+      'eyebrow',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'hint',
+      'label',
+      'lead',
+      'meta',
+      'metaSmall',
+      'prose',
+    ]);
+    // The scale spans 0.75rem to 4.5rem. A page whose largest element is six times its smallest reads as
+    // composed; 0109's ran from 0.875rem to 3rem with almost everything between 1rem and 1.5rem, which is why
+    // every page looked like the same page.
+    expect(TYPE.metaSmall).toContain('text-xs');
+    expect(TYPE.display).toContain('lg:text-7xl');
+    // **No tracking utility reaches a component.** The tokens exist now, but `globals.css` attaches them to
+    // `.mp-display` under `[lang="en"]` only — so Arabic, which is cursive and whose joins negative tracking
+    // breaks, can never receive them. A `tracking-` class here would route around that scoping.
     for (const value of Object.values(TYPE)) expect(value).not.toMatch(/tracking-/);
+    for (const file of files) {
+      expect(/\btracking-/.test(withoutComments(readFileSync(file, 'utf8'))), `${file}: tracking utility`).toBe(
+        false,
+      );
+    }
+  });
+
+  it('speaks to the semantic ladder, never to the raw neutral ramp', () => {
+    // The rule that replaces 0109's "no default palette" check, and a stronger one. A component asking for
+    // `neutral-200` has made a value judgement that belongs in the token file; a component asking for
+    // `border-hairline` has named a role. Only the ladder can be re-valued from one place, and only the ladder
+    // makes it visible whether the design has enough distinct steps to hold a hierarchy.
+    for (const file of files) {
+      const text = withoutComments(readFileSync(file, 'utf8'));
+      expect(/\b(?:bg|text|border|ring|fill|decoration|accent|outline)-neutral-\d/.test(text), `${file}: raw ramp`).toBe(
+        false,
+      );
+      // And no hard-coded colour of any kind, which is D5: brand is an admin setting, never in a component.
+      expect(/#[0-9a-fA-F]{3,8}\b|\brgb\(|\bhsl\(/.test(text), `${file}: hard-coded colour`).toBe(false);
+    }
   });
 
   it('marks exactly the two interactive primitives as client components', () => {
@@ -457,9 +559,14 @@ describe('the system’s own rules, enforced on every primitive', () => {
     }
   });
 
-  it('renders Card and Dialog at their role’s radius, so the two cannot drift', () => {
-    expect(renderToStaticMarkup(<Card>x</Card>)).toContain('rounded-lg');
-    expect(renderToStaticMarkup(<Button>x</Button>)).toContain('rounded-md');
+  it('renders each thing at its role’s radius, so the scale cannot drift', () => {
+    // A 14px corner on a 320px card and a 6px corner on a 44px control are the same gesture at two scales.
+    // Using one value for both is what makes an interface look like a template, which is why the roles are
+    // pinned here rather than left to whoever writes the next component.
+    expect(renderToStaticMarkup(<Card>x</Card>)).toContain('rounded-xl');
+    expect(renderToStaticMarkup(<LinkCard href="/x">y</LinkCard>)).toContain('rounded-xl');
+    expect(renderToStaticMarkup(<Button>x</Button>)).toContain('rounded-lg');
+    expect(renderToStaticMarkup(<Input id="a" name="a" />)).toContain('rounded-lg');
     expect(renderToStaticMarkup(<Badge>x</Badge>)).toContain('rounded-full');
   });
 });

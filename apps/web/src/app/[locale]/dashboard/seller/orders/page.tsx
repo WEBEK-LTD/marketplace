@@ -83,7 +83,7 @@ export default async function SellerOrdersPage({
       signInLabel={session('signIn')}
     >
       {lookup.kind !== 'ok' ? null : lookup.data.orders.length === 0 ? (
-        <p role="status" className="mt-6 text-neutral-600">
+        <p role="status" className="mt-6 text-ink-muted">
           {t('empty')}
         </p>
       ) : (
@@ -92,12 +92,12 @@ export default async function SellerOrdersPage({
             const money = (amount: string): string =>
               formatListingAmount(amount, order.currencyCode, order.currencyDecimalPlaces) ?? amount;
             return (
-              <li key={order.orderNumber} className="rounded-lg border border-neutral-200 p-4">
+              <li key={order.orderNumber} className="rounded-lg border border-hairline p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-sm">
-                    <span className="text-neutral-500">{t('orderNumber')} </span>
+                    <span className="text-ink-muted">{t('orderNumber')} </span>
                     <span className="font-medium">{order.orderNumber}</span>
-                    <span className="text-neutral-500">
+                    <span className="text-ink-muted">
                       {' '}
                       · {order.orderType === 'service' ? t('typeService') : t('typeProduct')}
                     </span>
@@ -118,13 +118,13 @@ export default async function SellerOrdersPage({
 
                 <h3 className="mt-4 text-sm font-medium">{t('items')}</h3>
                 {order.items.length === 0 ? (
-                  <p className="mt-1 text-sm text-neutral-600">{t('noItems')}</p>
+                  <p className="mt-1 text-sm text-ink-muted">{t('noItems')}</p>
                 ) : (
-                  <ul className="mt-1 divide-y divide-neutral-100">
+                  <ul className="mt-1 divide-y divide-hairline">
                     {order.items.map((item) => (
                       <li key={`${item.slug}-${item.title}`} className="py-2 text-sm">
                         <span className="font-medium">{item.title}</span>
-                        <span className="text-neutral-600">
+                        <span className="text-ink-muted">
                           {' '}
                           — {t('quantity')} {item.quantity}
                           {item.cancelledQuantity > 0

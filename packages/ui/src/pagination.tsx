@@ -51,7 +51,7 @@ export function Pagination({ nextHref, firstHref, paged, labels, className }: Pa
     <nav
       aria-label={labels.navigation}
       className={cx(
-        'flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-6',
+        'flex flex-wrap items-center gap-3 border-t border-hairline pt-6',
         labels.position === undefined ? 'justify-end' : 'justify-between',
         className,
       )}

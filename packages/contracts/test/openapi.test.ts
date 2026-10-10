@@ -286,13 +286,6 @@ describe('OpenAPI document', () => {
       '/v1/notifications/unread-count',
       // 7-H: two reads, one create and four named transitions. There is no path that assigns a status
       // and none that accepts a payment deadline.
-      '/v1/offers',
-      '/v1/offers/made',
-      '/v1/offers/received',
-      '/v1/offers/{offerId}/accept',
-      '/v1/offers/{offerId}/counter',
-      '/v1/offers/{offerId}/reject',
-      '/v1/offers/{offerId}/withdraw',
       '/v1/reference/countries',
       // 7-M: one create and one read, and no third. A report is a request for a look, so nothing here
       // updates or withdraws one, and the reporter names a subject by its public slug rather than by an id.
@@ -343,14 +336,8 @@ describe('OpenAPI document', () => {
       // caller holds — the server writes the routing mode either way.
       '/v1/service-requests/admin-only',
       '/v1/service-requests/made',
-      '/v1/service-requests/received',
       '/v1/service-requests/{requestId}',
       '/v1/service-requests/{requestId}/cancel',
-      '/v1/service-requests/{requestId}/decline',
-      '/v1/service-requests/{requestId}/quotes',
-      '/v1/service-requests/{requestId}/quotes/{quoteId}/accept',
-      '/v1/service-requests/{requestId}/quotes/{quoteId}/reject',
-      '/v1/service-requests/{requestId}/quotes/{quoteId}/withdraw',
       '/v1/services',
       '/v1/services/{slug}',
       // 7-K: the requester side of support. One list, one create, one detail, one conversation, one reply,

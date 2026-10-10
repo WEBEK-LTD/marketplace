@@ -107,7 +107,10 @@ select is((select count(*) from public.roles where btrim(name_ar) = '' or name_a
 -- ---------------------------------------------------------------------------------------------------
 -- Permissions — compared with what the schema actually enforces, not with the migration
 -- ---------------------------------------------------------------------------------------------------
-select is((select count(*) from public.permissions), 85::bigint, 'eighty-five permissions are seeded');
+-- 0109 added `payments.office_receipt.manage` (OD-A8), the amendment's one new key. The count is kept
+-- rather than replaced by a predicate: a number that has to be edited is a number somebody has to think
+-- about, which is the point of asserting it.
+select is((select count(*) from public.permissions), 86::bigint, 'eighty-six permissions are seeded');
 select is(
   (select coalesce(string_agg(distinct e.k, ', ' order by e.k), '')
      from (select (regexp_matches(pg_get_expr(p.polqual, p.polrelid) || ' ' ||
@@ -240,8 +243,8 @@ select ok(
      from public.roles where key in ('moderator', 'support_agent')),
   'both roles still require TOTP and open the admin console'
 );
-select is((select count(*) from public.role_permissions), 184::bigint,
-  'the mapping is 85 + 85 + 9 + 5, and nothing else');
+select is((select count(*) from public.role_permissions), 186::bigint,
+  'the mapping is 86 + 86 + 9 + 5, and nothing else — 0109''s key went to admin and super_admin alone');
 select is(
   (select count(*) from public.role_permissions rp
     where not exists (select 1 from public.roles r where r.key = rp.role_key)

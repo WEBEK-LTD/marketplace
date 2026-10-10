@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 const LINK_CLASS =
-  'text-sm underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900';
+  'text-sm underline decoration-edge underline-offset-4 hover:decoration-ink-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary';
 
 /**
  * The seller area's own navigation (Phase 6-B).
@@ -27,8 +27,6 @@ export async function SellerDashboardNav({ locale }: { readonly locale: string }
     listings,
     services,
     verification,
-    offers,
-    serviceRequests,
     orders,
     reviews,
     earnings,
@@ -52,7 +50,7 @@ export async function SellerDashboardNav({ locale }: { readonly locale: string }
   const prefix = locale === 'ar' ? '/ar' : '';
 
   return (
-    <nav aria-label={t('title')} className="mt-6 border-y border-neutral-200">
+    <nav aria-label={t('title')} className="mt-6 border-y border-hairline">
       <div className="mx-auto w-full max-w-6xl">
         <ul className="flex flex-wrap items-center gap-6 py-3">
           <li>
@@ -78,16 +76,6 @@ export async function SellerDashboardNav({ locale }: { readonly locale: string }
           <li>
             <Link href={`${prefix}/dashboard/seller/verification`} className={LINK_CLASS}>
               {verification('title')}
-            </Link>
-          </li>
-          <li>
-            <Link href={`${prefix}/dashboard/seller/offers`} className={LINK_CLASS}>
-              {offers('title')}
-            </Link>
-          </li>
-          <li>
-            <Link href={`${prefix}/dashboard/seller/service-requests`} className={LINK_CLASS}>
-              {serviceRequests('title')}
             </Link>
           </li>
           <li>

@@ -136,8 +136,8 @@ export default async function SellerPage({ params }: PageParams) {
           seller={found.seller}
           availability={found.availability}
           labels={{ unavailable: t('unavailable'), noDescription: t('noDescription') }}
-        />
-
+          actions={
+            <>
         {/*
           The contact action, and only on a profile that is actually trading: a suspended seller cannot be
           contacted, so offering the button there would be offering something that always refuses. The
@@ -145,7 +145,6 @@ export default async function SellerPage({ params }: PageParams) {
           it, and this page needs none.
         */}
         {found.availability === 'available' ? (
-          <div className="mt-8">
             <StartConversationButton
               subject={{ kind: 'seller', sellerSlug: found.seller.slug }}
               messagesPath={`${prefix}/dashboard/messages`}
@@ -158,7 +157,6 @@ export default async function SellerPage({ params }: PageParams) {
                 failed: messages('actionFailed'),
               })}
             />
-          </div>
         ) : null}
 
         {/*
@@ -172,14 +170,16 @@ export default async function SellerPage({ params }: PageParams) {
           turns out not to be signed in is offered the way in instead.
         */}
         {found.availability === 'available' ? (
-          <p className="mt-4">
             <BlockPerson
               handle={{ sellerSlug: found.seller.slug }}
               loginPath={`${prefix}/login`}
               copy={blockCopy(blocks)}
             />
-          </p>
         ) : null}
+            </>
+          }
+        />
+
 
         {/*
           Reporting the storefront, and unlike the contact action it is offered on a suspended profile too:
@@ -187,7 +187,7 @@ export default async function SellerPage({ params }: PageParams) {
           a page they can see can report it. The seller travels as the slug already in this page's URL — the
           profile contract has no identifier in it, and neither does this form.
         */}
-        <div className="mt-8 border-t border-neutral-200 pt-6">
+        <div className="mt-8 border-t border-hairline pt-6">
           <ReportForm
             subject={{ subjectType: 'seller', subjectSlug: found.seller.slug }}
             loginPath={`${prefix}/login`}

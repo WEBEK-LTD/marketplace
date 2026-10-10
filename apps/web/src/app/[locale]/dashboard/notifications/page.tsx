@@ -79,7 +79,7 @@ export default async function NotificationsPage({
               <BadgeSection label={t('unreadBadge')} />
             </Suspense>
           </div>
-          <p className="mt-2 text-neutral-600">{t('intro')}</p>
+          <p className="mt-2 text-ink-muted">{t('intro')}</p>
 
           <nav aria-label={t('title')} className="mt-6 flex flex-wrap gap-4">
             {VIEWS.map((candidate) => (
@@ -89,8 +89,8 @@ export default async function NotificationsPage({
                 aria-current={candidate === view ? 'page' : undefined}
                 className={
                   candidate === view
-                    ? 'text-sm font-medium text-neutral-900 underline underline-offset-4'
-                    : 'text-sm text-neutral-600 underline decoration-neutral-300 underline-offset-4'
+                    ? 'text-sm font-medium text-ink-strong underline underline-offset-4'
+                    : 'text-sm text-ink-muted underline decoration-edge underline-offset-4'
                 }
               >
                 {candidate === 'inbox' ? t('tabInbox') : t('tabArchived')}

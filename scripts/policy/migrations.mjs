@@ -52,6 +52,55 @@ const BTRIM_CHARSET_FROM = 106;
  * The name is matched on a word boundary, so a function of somebody else's called `safe_btrim(` is not this
  * one. A structural gate that refuses a legitimate migration is as much a defect as one that admits a bad one.
  */
+/**
+ * SQL with its comments blanked out, for the checks that must read code rather than prose.
+ *
+ * A corrective migration has to **quote** the defect it is fixing — "`btrim(coalesce(x, \'\'))` trims spaces
+ * only" is the clearest way to say what went wrong — and a scanner that reads raw text then reports the
+ * explanation as a fresh violation. 0105 was exempted from its own check for exactly this reason; that
+ * exemption was the workaround and this is the fix, so no future corrective migration needs one.
+ *
+ * Characters are replaced with spaces rather than removed, so every offset in the result still matches the
+ * original file and a reported position stays true. Dollar-quoted bodies are left alone: `$$ … $$` is code,
+ * and a `--` inside one is still a comment, which the line rule below handles correctly either way.
+ */
+export function withoutSqlComments(text) {
+  let out = '';
+  for (let i = 0; i < text.length; i += 1) {
+    const two = text.slice(i, i + 2);
+    if (two === '--') {
+      const end = text.indexOf('\n', i);
+      const stop = end === -1 ? text.length : end;
+      out += ' '.repeat(stop - i);
+      i = stop - 1;
+      continue;
+    }
+    if (two === '/*') {
+      const end = text.indexOf('*/', i + 2);
+      const stop = end === -1 ? text.length : end + 2;
+      out += ' '.repeat(stop - i);
+      i = stop - 1;
+      continue;
+    }
+    if (text[i] === "'") {
+      // A quoted literal is code and is copied through, so `btrim(x, E' \t\r\n')` keeps its character set.
+      let j = i + 1;
+      while (j < text.length) {
+        if (text[j] === "'") {
+          if (text[j + 1] === "'") j += 1;
+          else break;
+        }
+        j += 1;
+      }
+      out += text.slice(i, Math.min(j + 1, text.length));
+      i = j;
+      continue;
+    }
+    out += text[i];
+  }
+  return out;
+}
+
 export function looseBtrimCalls(text) {
   const found = [];
   // The name on a word boundary, and whitespace allowed before the parenthesis, which PostgreSQL permits and
@@ -168,7 +217,10 @@ export function contentProblems(name, text) {
   // 0105, owner decision 6: a migration from 0106 on may not introduce a `btrim()` without a character set.
   const version = Number.parseInt(FILE_NAME.exec(name)?.[1] ?? '0', 10);
   if (version >= BTRIM_CHARSET_FROM) {
-    for (const call of looseBtrimCalls(text)) {
+    // Over the code only. A corrective migration quotes the loose form in its own comments to say what it
+    // is fixing, and reading those back as violations is the false positive this repository has produced
+    // four times in other detectors.
+    for (const call of looseBtrimCalls(withoutSqlComments(text))) {
       at(`btrim() must name its character set, as E' \\t\\r\\n' (${call}). btrim(x) trims spaces only, so tabs and newlines survive it — see 0105.`);
     }
   }

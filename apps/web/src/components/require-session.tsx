@@ -58,13 +58,13 @@ export async function RequireSession({ children }: { readonly children: ReactNod
     <PageContainer>
       <div className="py-12" role="status">
         <Heading level={1}>{unavailable ? t('unavailableTitle') : t('expiredTitle')}</Heading>
-        <p className="mt-4 max-w-prose text-neutral-600">
+        <p className="mt-4 max-w-prose text-ink-muted">
           {unavailable ? t('unavailableBody') : t('expiredBody')}
         </p>
         {!unavailable && (
           <Link
             href={locale === 'ar' ? '/ar/login' : '/login'}
-            className="mt-6 inline-block rounded-md border border-neutral-300 px-4 py-2 text-sm"
+            className="mt-6 inline-block rounded-md border border-edge px-4 py-2 text-sm"
           >
             {t('signIn')}
           </Link>

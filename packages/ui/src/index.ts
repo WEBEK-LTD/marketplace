@@ -13,18 +13,27 @@
 
 /* the visual grammar */
 export {
+  ACCENT_BAR,
+  BAND,
+  BAND_SPACE,
+  CARD_HOVER,
   cx,
   DISABLED,
   FOCUS_RING,
   FOCUS_RING_INVERTED,
+  FOCUS_WITHIN,
   INTERACTIVE,
   LINK,
+  LINK_INVERTED,
+  PRICE,
   SCRIM,
   SURFACE_CARD,
+  SURFACE_CARD_INK,
   SURFACE_OVERLAY,
   SURFACE_POPOVER,
   SURFACE_WELL,
   TYPE,
+  type BandTone,
 } from './recipes.js';
 
 /* structure */
@@ -32,12 +41,14 @@ export { Heading, type HeadingProps } from './heading.js';
 export { PageContainer, type PageContainerProps } from './page-container.js';
 export { SkipLink, type SkipLinkProps } from './skip-link.js';
 export {
+  Band,
   CardGrid,
   DetailLayout,
   DetailList,
   MetaRow,
   Section,
   SectionHeader,
+  type BandProps,
   type SectionHeaderProps,
   type SectionProps,
 } from './layout.js';
@@ -52,7 +63,7 @@ export {
   type ButtonSize,
   type ButtonVariant,
 } from './button.js';
-export { Input, Textarea, fieldClasses, type InputProps, type InputType, type TextareaProps } from './input.js';
+export { FIELD_HERO, Input, Textarea, fieldClasses, type InputProps, type InputType, type TextareaProps } from './input.js';
 export { Select, type SelectOption, type SelectProps } from './select.js';
 export { FormField, fieldAria, type FormFieldProps } from './form-field.js';
 export { Choice, ChoiceGroup, type ChoiceProps } from './choice.js';

@@ -34,10 +34,10 @@ import {
  */
 
 const BUTTON_CLASS =
-  'rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-0 disabled:opacity-60';
-const FIELD_CLASS = 'mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900';
-const LABEL_CLASS = 'block text-sm font-medium text-neutral-900';
-const HINT_CLASS = 'mt-1 max-w-prose text-sm text-neutral-600';
+  'rounded-md bg-surface-ink px-4 py-2 text-sm font-medium text-on-ink disabled:opacity-60';
+const FIELD_CLASS = 'mt-1 w-full rounded-md border border-edge px-3 py-2 text-sm text-ink-strong';
+const LABEL_CLASS = 'block text-sm font-medium text-ink-strong';
+const HINT_CLASS = 'mt-1 max-w-prose text-sm text-ink-muted';
 
 /** One question, projected field by field on the server. No identifier reaches a browser. */
 export interface RenderableAttribute {
@@ -239,12 +239,12 @@ export function SellerVocabularyForm({
   return (
     <>
       <section aria-labelledby="seller-attributes-heading" className="mt-8">
-        <h2 id="seller-attributes-heading" className="text-lg font-semibold text-neutral-900">
+        <h2 id="seller-attributes-heading" className="text-lg font-semibold text-ink-strong">
           {labels.attributesHeading}
         </h2>
 
         {attributes.length === 0 ? (
-          <p role="status" className="mt-2 max-w-prose text-neutral-600">
+          <p role="status" className="mt-2 max-w-prose text-ink-muted">
             {labels.noQuestions}
           </p>
         ) : (
@@ -269,7 +269,7 @@ export function SellerVocabularyForm({
                   {savingAttributes ? editLabels.saving : editLabels.save}
                 </button>
                 {attributeMessage === null ? null : (
-                  <p role="status" className="text-sm text-neutral-700">
+                  <p role="status" className="text-sm text-ink-body">
                     {attributeMessage}
                   </p>
                 )}
@@ -279,8 +279,8 @@ export function SellerVocabularyForm({
                 <dl className="mt-4 max-w-xl space-y-3">
                   {attributes.map((attribute) => (
                     <div key={attribute.key}>
-                      <dt className="text-sm text-neutral-600">{attribute.label}</dt>
-                      <dd className="text-neutral-900">{answerText(attribute, labels)}</dd>
+                      <dt className="text-sm text-ink-muted">{attribute.label}</dt>
+                      <dd className="text-ink-strong">{answerText(attribute, labels)}</dd>
                     </div>
                   ))}
                 </dl>
@@ -294,12 +294,12 @@ export function SellerVocabularyForm({
       </section>
 
       <section aria-labelledby="seller-tags-heading" className="mt-8">
-        <h2 id="seller-tags-heading" className="text-lg font-semibold text-neutral-900">
+        <h2 id="seller-tags-heading" className="text-lg font-semibold text-ink-strong">
           {labels.tagsHeading}
         </h2>
 
         {tags.length === 0 ? (
-          <p role="status" className="mt-2 max-w-prose text-neutral-600">
+          <p role="status" className="mt-2 max-w-prose text-ink-muted">
             {labels.noTags}
           </p>
         ) : editLabels !== null ? (
@@ -318,21 +318,21 @@ export function SellerVocabularyForm({
                     )
                   }
                 />
-                <span className="text-sm text-neutral-900">{tag.name}</span>
+                <span className="text-sm text-ink-strong">{tag.name}</span>
               </label>
             ))}
             <button className={BUTTON_CLASS} type="submit" disabled={savingTags}>
               {savingTags ? editLabels.saving : editLabels.saveTags}
             </button>
             {tagMessage === null ? null : (
-              <p role="status" className="text-sm text-neutral-700">
+              <p role="status" className="text-sm text-ink-body">
                 {tagMessage}
               </p>
             )}
           </form>
         ) : (
           <>
-            <p className="mt-2 text-neutral-900">
+            <p className="mt-2 text-ink-strong">
               {tags
                 .filter((tag) => tag.isSelected)
                 .map((tag) => tag.name)
@@ -364,8 +364,8 @@ function AttributeField({
   const title = (
     <>
       {attribute.label}
-      {attribute.unit === null ? null : <span className="text-neutral-600"> ({attribute.unit})</span>}
-      {attribute.isRequired ? <span className="text-neutral-600"> — {labels.required}</span> : null}
+      {attribute.unit === null ? null : <span className="text-ink-muted"> ({attribute.unit})</span>}
+      {attribute.isRequired ? <span className="text-ink-muted"> — {labels.required}</span> : null}
     </>
   );
 
@@ -378,7 +378,7 @@ function AttributeField({
           checked={draft.boolean}
           onChange={(event) => onChange({ boolean: event.target.checked })}
         />
-        <span className="text-sm text-neutral-900">{title}</span>
+        <span className="text-sm text-ink-strong">{title}</span>
       </label>
     );
   }
@@ -394,7 +394,7 @@ function AttributeField({
             checked={draft.options.length === 0}
             onChange={() => onChange({ options: [] })}
           />
-          <span className="text-sm text-neutral-600">{labels.noAnswer}</span>
+          <span className="text-sm text-ink-muted">{labels.noAnswer}</span>
         </label>
         {attribute.choices.map((choice) => (
           <label key={choice.value} className="mt-1 flex items-center gap-2">
@@ -404,7 +404,7 @@ function AttributeField({
               checked={draft.options[0] === choice.value}
               onChange={() => onChange({ options: [choice.value] })}
             />
-            <span className="text-sm text-neutral-900">{choice.label}</span>
+            <span className="text-sm text-ink-strong">{choice.label}</span>
           </label>
         ))}
       </fieldset>
@@ -429,7 +429,7 @@ function AttributeField({
                 })
               }
             />
-            <span className="text-sm text-neutral-900">{choice.label}</span>
+            <span className="text-sm text-ink-strong">{choice.label}</span>
           </label>
         ))}
       </fieldset>

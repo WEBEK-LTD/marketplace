@@ -9,7 +9,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { cache } from 'react';
+import { cache, type ReactNode } from 'react';
 import { CatalogFilterPanel, CatalogToolbar } from '../../../../components/catalog-filter-panel';
 import { CategoryDetailView } from '../../../../components/category-detail';
 import { ListingMessage } from '../../../../components/listing-views';
@@ -276,16 +276,13 @@ async function CategoryListings({
 
   if (feed.items.length === 0) {
     return (
-      <>
-        <div className="mt-8">
-          <ListingMessage
-            tone="empty"
-            title={feed.facets.length === 0 ? t('feedEmptyTitle') : t('feedNoMatchesTitle')}
-            description={feed.facets.length === 0 ? t('feedEmpty') : t('feedNoMatches')}
-          />
-        </div>
-        {panel}
-      </>
+      <CatalogLayout panel={panel}>
+        <ListingMessage
+          tone="empty"
+          title={feed.facets.length === 0 ? t('feedEmptyTitle') : t('feedNoMatchesTitle')}
+          description={feed.facets.length === 0 ? t('feedEmpty') : t('feedNoMatches')}
+        />
+      </CatalogLayout>
     );
   }
 
@@ -298,8 +295,8 @@ async function CategoryListings({
   const firstQuery = firstParams.toString();
 
   return (
-    <>
-      <h2 className="mt-10 text-lg font-semibold text-neutral-900">{t('feedHeading')}</h2>
+    <CatalogLayout panel={panel}>
+      <h2 className="sr-only">{t('feedHeading')}</h2>
       <CatalogToolbar
         count={feed.items.length}
         labels={{ ordering: tFilters('ordering'), resultCount: (count) => tFilters('resultCount', { count }) }}
@@ -336,7 +333,28 @@ async function CategoryListings({
         }}
         className="mt-10"
       />
-      {panel}
-    </>
+    </CatalogLayout>
+  );
+}
+
+/**
+ * A browse surface: the results, and the panel that narrows them.
+ *
+ * **The panel is a column on `lg` and a disclosure above the results below it.** 0109 rendered it after the
+ * pager at the foot of the page, which is a filter nobody finds — a visitor had to scroll past every result
+ * and the pagination to reach the control that would have changed them. It sticks, so it stays reachable down
+ * a long grid, and it is `order`-ed first in the source on narrow viewports so the disclosure is the first
+ * thing after the heading rather than the last thing on the page.
+ *
+ * The column sits at the inline start, which puts it on the left in English and the right in Arabic with no
+ * second rule — a filter panel pinned to the physical left in an RTL layout is one of the clearest signs that
+ * a design was mirrored rather than written for both scripts.
+ */
+function CatalogLayout({ panel, children }: { readonly panel: ReactNode; readonly children: ReactNode }) {
+  return (
+    <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-12">
+      <div className="lg:sticky lg:top-28 lg:self-start">{panel}</div>
+      <div className="min-w-0">{children}</div>
+    </div>
   );
 }

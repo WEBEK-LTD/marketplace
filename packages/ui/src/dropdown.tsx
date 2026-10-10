@@ -153,7 +153,7 @@ export function Dropdown({
   );
 }
 
-const ITEM_CLASSES = `flex w-full items-center gap-2 px-3 py-2 text-start text-sm text-neutral-700 transition-colors duration-150 hover:bg-neutral-100 hover:text-neutral-900 ${FOCUS_RING}`;
+const ITEM_CLASSES = `flex w-full items-center gap-2 px-3 py-2 text-start text-sm text-ink-body transition-colors duration-150 hover:bg-surface-muted hover:text-ink-strong ${FOCUS_RING}`;
 
 /** A menu entry that navigates. */
 export function DropdownLink({
@@ -170,7 +170,7 @@ export function DropdownLink({
       href={href}
       role="menuitem"
       aria-current={current ? 'page' : undefined}
-      className={cx(ITEM_CLASSES, current && 'font-semibold text-neutral-900')}
+      className={cx(ITEM_CLASSES, current && 'font-semibold text-ink-strong')}
     >
       {children}
     </a>
@@ -193,7 +193,7 @@ export function DropdownButton({
       role="menuitem"
       disabled={disabled}
       onClick={onClick}
-      className={cx(ITEM_CLASSES, 'disabled:pointer-events-none disabled:text-neutral-400')}
+      className={cx(ITEM_CLASSES, 'disabled:pointer-events-none disabled:text-ink-faint')}
     >
       {children}
     </button>
@@ -203,8 +203,8 @@ export function DropdownButton({
 /** A labelled group inside a menu, for when a menu holds two kinds of thing. */
 export function DropdownGroup({ label, children }: { readonly label: string; readonly children: ReactNode }) {
   return (
-    <div role="group" aria-label={label} className="border-t border-neutral-200 py-1 first:border-t-0">
-      <p className="px-3 pb-1 text-xs font-medium text-neutral-500">{label}</p>
+    <div role="group" aria-label={label} className="border-t border-hairline py-1 first:border-t-0">
+      <p className="px-3 pb-1 text-xs font-medium text-ink-muted">{label}</p>
       {children}
     </div>
   );

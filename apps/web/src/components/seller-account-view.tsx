@@ -36,33 +36,33 @@ export function SellerAccountView({
 }) {
   return (
     <section aria-labelledby="seller-account" className="mt-8">
-      <h2 id="seller-account" className="text-lg font-semibold text-neutral-900">
+      <h2 id="seller-account" className="text-lg font-semibold text-ink-strong">
         {labels.account}
       </h2>
 
       {/* The storefront's own name, which is the one piece of free text on this page. */}
-      <p className="mt-2 text-base text-neutral-900">{seller.displayName}</p>
+      <p className="mt-2 text-base text-ink-strong">{seller.displayName}</p>
 
       <dl className="mt-4 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
-        <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-          <dt className="text-sm text-neutral-600">{labels.status}</dt>
-          <dd className="text-sm font-medium text-neutral-900">{labels.statusLabel(seller.status)}</dd>
+        <div className="flex justify-between gap-4 border-b border-hairline py-2">
+          <dt className="text-sm text-ink-muted">{labels.status}</dt>
+          <dd className="text-sm font-medium text-ink-strong">{labels.statusLabel(seller.status)}</dd>
         </div>
-        <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-          <dt className="text-sm text-neutral-600">{labels.verificationStatus}</dt>
-          <dd className="text-sm font-medium text-neutral-900">
+        <div className="flex justify-between gap-4 border-b border-hairline py-2">
+          <dt className="text-sm text-ink-muted">{labels.verificationStatus}</dt>
+          <dd className="text-sm font-medium text-ink-strong">
             {labels.verificationLabel(seller.verificationStatus)}
           </dd>
         </div>
         {seller.city === null ? null : (
-          <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-            <dt className="text-sm text-neutral-600">{labels.city}</dt>
-            <dd className="text-sm text-neutral-900">{seller.city}</dd>
+          <div className="flex justify-between gap-4 border-b border-hairline py-2">
+            <dt className="text-sm text-ink-muted">{labels.city}</dt>
+            <dd className="text-sm text-ink-strong">{seller.city}</dd>
           </div>
         )}
-        <div className="flex justify-between gap-4 border-b border-neutral-100 py-2">
-          <dt className="text-sm text-neutral-600">{labels.country}</dt>
-          <dd className="text-sm text-neutral-900">{seller.countryCode}</dd>
+        <div className="flex justify-between gap-4 border-b border-hairline py-2">
+          <dt className="text-sm text-ink-muted">{labels.country}</dt>
+          <dd className="text-sm text-ink-strong">{seller.countryCode}</dd>
         </div>
       </dl>
     </section>

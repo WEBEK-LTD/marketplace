@@ -30,28 +30,28 @@ export function CategoryDetailView({
   return (
     <div>
       {category.parent === null ? null : (
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-ink-muted">
           <span>{labels.parentHeading} </span>
           <a
             href={hrefFor(category.parent.slug)}
-            className="underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+            className="underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
           >
             {category.parent.name}
           </a>
         </p>
       )}
 
-      <h1 className="mt-2 text-3xl font-semibold text-neutral-900">{category.name}</h1>
+      <h1 className="mt-2 text-3xl font-semibold text-ink-strong">{category.name}</h1>
       {category.description === null ? null : (
-        <p className="mt-2 max-w-prose text-neutral-600">{category.description}</p>
+        <p className="mt-2 max-w-prose text-ink-muted">{category.description}</p>
       )}
 
-      <h2 className="mt-10 text-lg font-semibold text-neutral-900">{labels.subcategoriesHeading}</h2>
+      <h2 className="mt-10 text-lg font-semibold text-ink-strong">{labels.subcategoriesHeading}</h2>
 
       {category.children.length === 0 ? (
-        <div role="status" className="mt-4 rounded-lg border border-neutral-200 p-8 text-center">
-          <p className="text-base font-medium text-neutral-900">{labels.emptyChildrenTitle}</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-neutral-600">{labels.emptyChildren}</p>
+        <div role="status" className="mt-4 rounded-lg border border-hairline p-8 text-center">
+          <p className="text-base font-medium text-ink-strong">{labels.emptyChildrenTitle}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">{labels.emptyChildren}</p>
         </div>
       ) : (
         <ul
@@ -59,10 +59,10 @@ export function CategoryDetailView({
           className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
         >
           {category.children.map((child) => (
-            <li key={child.id} className="rounded-lg border border-neutral-200">
+            <li key={child.id} className="rounded-lg border border-hairline">
               <a
                 href={hrefFor(child.slug)}
-                className="block px-4 py-3 text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
+                className="block px-4 py-3 text-ink-strong underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
               >
                 {child.name}
               </a>

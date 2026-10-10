@@ -4,6 +4,26 @@ import { startBuiltApp, type RunningApp } from './support/next-server.js';
 import { startStubApi, type StubApi } from './support/stub-api.js';
 
 /**
+ * The text a reader actually gets, with the markup taken out.
+ *
+ * 0110 sets a price as a composed figure — the currency code in a small raised mark, the amount large and
+ * tabular — so "EGP 2500.00" is no longer one contiguous run in the HTML source: there is a `</span>` between
+ * the code and the number, and React puts its own separator between adjacent text nodes. The invariant was
+ * never about the markup, though. It is that the price **reads** as "EGP 2500.00" — to a person, to a screen
+ * reader, and to anyone who copies it — and that is what this asserts.
+ */
+function textOf(html: string): string {
+  return html
+    .replace(/<!--.*?-->/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+
+
+
+/**
  * The public homepage, over real HTTP against the built app (0093).
  *
  * What this suite exists to prove:
@@ -235,7 +255,7 @@ describe('a composed homepage', () => {
 
   it('formats a price from its own currencys minor unit, with the catalogues own words', async () => {
     const hit = await load('/');
-    expect(hit.html).toContain('EGP 2500.00');
+    expect(textOf(hit.html)).toContain('EGP 2500.00');
     // The same component the browse list uses, so the negotiable badge appears here too.
     expect(hit.html).toContain('Negotiable');
   });
@@ -245,7 +265,7 @@ describe('a composed homepage', () => {
     expect(hit.html).toContain('Some help');
     expect(hit.html).toContain('Contact for price');
     // The defect this guards: a null amount coerced to '0' would advertise a free item on the front page.
-    expect(hit.html).not.toContain('EGP 0.00');
+    expect(textOf(hit.html)).not.toContain('EGP 0.00');
   });
 
   it('links a service card to the service surface and a listing card to the listing one', async () => {
@@ -337,6 +357,20 @@ describe('a homepage nobody has composed', () => {
     // The same entry points, because a visitor needs somewhere to go either way — plus the admission.
     expect(hit.html).toContain('href="/listings"');
     expect(hit.html).toContain('could not be loaded');
+  });
+
+  it('refuses to be indexed while it is an outage, and is indexable otherwise', async () => {
+    // The front page answers 200 and says what happened, which is right for a visitor. A crawler must not
+    // take that admission for the page's content, so the read decides the robots value.
+    mode = 'unavailable';
+    expect(meta((await load('/')).html, 'robots') ?? '').toContain('noindex');
+
+    // An uncomposed homepage is not a broken one — a fresh marketplace has a front page — so it stays
+    // indexable, and so does a composed one.
+    mode = 'empty';
+    expect(meta((await load('/')).html, 'robots') ?? '').not.toContain('noindex');
+    mode = 'composed';
+    expect(meta((await load('/')).html, 'robots') ?? '').not.toContain('noindex');
   });
 
   it('renders the Arabic fallback with Arabic entry points', async () => {

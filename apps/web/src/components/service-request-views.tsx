@@ -1,9 +1,7 @@
 import Link from 'next/link';
-import type { ServiceQuote, ServiceRequestDetail, ServiceRequestSummary } from '@repo/contracts';
+import type { ServiceRequestDetail, ServiceRequestSummary } from '@repo/contracts';
 import { formatListingAmount } from './listing-price';
 import {
-  ServiceQuoteDecision,
-  ServiceQuoteForm,
   ServiceRequestClosure,
   type ServiceRequestActionCopy,
 } from './service-request-actions';
@@ -94,41 +92,41 @@ function SummaryCard({
   const budget = formatListingAmount(request.budgetMinor, request.currencyCode, request.currencyMinorUnit);
 
   return (
-    <li className="rounded-lg border border-neutral-200 p-4">
+    <li className="rounded-lg border border-hairline p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-base font-medium text-neutral-900">
+          <p className="text-base font-medium text-ink-strong">
             <Link href={href} className="underline underline-offset-4">
               {request.title}
             </Link>
           </p>
           {request.routingMode === 'admin_only' ? (
             /* 7-J: no storefront answers this one, so the card says who does rather than showing a gap. */
-            <p className="mt-1 text-sm text-neutral-600">{copy.platformHandled}</p>
+            <p className="mt-1 text-sm text-ink-muted">{copy.platformHandled}</p>
           ) : (
             request.counterpartyName !== null && (
-              <p className="mt-1 text-sm text-neutral-600">
-                <span className="text-xs text-neutral-600">{copy.counterparty}: </span>
+              <p className="mt-1 text-sm text-ink-muted">
+                <span className="text-xs text-ink-muted">{copy.counterparty}: </span>
                 {request.counterpartyName}
               </p>
             )
           )}
         </div>
-        <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+        <span className="rounded-full border border-edge px-2 py-0.5 text-xs font-medium text-ink-body">
           {copy.statuses[request.status] ?? request.status}
         </span>
       </div>
 
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
         <div>
-          <dt className="text-xs text-neutral-600">{copy.budget}</dt>
-          <dd className="font-semibold text-neutral-900">
+          <dt className="text-xs text-ink-muted">{copy.budget}</dt>
+          <dd className="font-semibold text-ink-strong">
             {budget ?? copy.budgetNone}
           </dd>
         </div>
         {request.neededBy !== null && (
           <div>
-            <dt className="text-xs text-neutral-600">{copy.neededBy}</dt>
+            <dt className="text-xs text-ink-muted">{copy.neededBy}</dt>
             <dd>
               <time dateTime={request.neededBy}>{request.neededBy}</time>
             </dd>
@@ -137,15 +135,15 @@ function SummaryCard({
         {/* An Admin Only brief has no quotes and never will, so a count of them is not shown. */}
         {request.routingMode !== 'admin_only' && (
           <div>
-            <dt className="text-xs text-neutral-600">{copy.quotesLabel}</dt>
+            <dt className="text-xs text-ink-muted">{copy.quotesLabel}</dt>
             <dd>{copy.quotesCount(request.quoteCount)}</dd>
           </div>
         )}
         {/* The payment deadline of the accepted quote, if this brief has one. The only obligation a list shows. */}
         {request.acceptedPaymentDueAt !== null && (
           <div>
-            <dt className="text-xs text-neutral-600">{copy.paymentDeadline}</dt>
-            <dd className="font-medium text-neutral-900">
+            <dt className="text-xs text-ink-muted">{copy.paymentDeadline}</dt>
+            <dd className="font-medium text-ink-strong">
               <time dateTime={request.acceptedPaymentDueAt}>{minute(request.acceptedPaymentDueAt)}</time>
             </dd>
           </div>
@@ -207,89 +205,6 @@ export function ServiceRequestList({
 /* The detail                                                                                        */
 /* ------------------------------------------------------------------------------------------------ */
 
-function QuoteCard({
-  quote,
-  requestId,
-  currencyCode,
-  currencyMinorUnit,
-  copy,
-  requestLive,
-}: {
-  readonly quote: ServiceQuote;
-  readonly requestId: string;
-  readonly currencyCode: string;
-  readonly currencyMinorUnit: number;
-  readonly copy: ServiceRequestCopy;
-  readonly requestLive: boolean;
-}) {
-  const amount = formatListingAmount(quote.amountMinor, currencyCode, currencyMinorUnit);
-  // A quote past its window is closed whatever the stored status still says, and a quote on a closed brief
-  // cannot be acted on either. Both are what the database will answer, so neither offers a control.
-  const decidable = quote.status === 'sent' && !quote.isLapsed && requestLive;
-
-  return (
-    <li className="rounded-lg border border-neutral-200 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-base font-semibold text-neutral-900">{amount ?? '—'}</p>
-        <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
-          {quote.isLapsed && quote.status === 'sent'
-            ? copy.quoteLapsed
-            : (copy.quoteStatuses[quote.status] ?? quote.status)}
-        </span>
-      </div>
-
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
-        <div>
-          <dt className="text-xs text-neutral-600">{copy.quoteDelivery}</dt>
-          <dd>{copy.days(quote.deliveryDays)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-neutral-600">{copy.quoteRevisions}</dt>
-          <dd>{quote.revisionsIncluded}</dd>
-        </div>
-        {/* The validity window: when this quote stops standing. */}
-        {quote.status === 'sent' && (
-          <div>
-            <dt className="text-xs text-neutral-600">{copy.quoteValidUntil}</dt>
-            <dd>
-              <time dateTime={quote.expiresAt}>{minute(quote.expiresAt)}</time>
-            </dd>
-          </div>
-        )}
-        {/* The payment deadline: a different thing, from a different place, under its own label. */}
-        {quote.paymentDueAt !== null && (
-          <div>
-            <dt className="text-xs text-neutral-600">{copy.paymentDeadline}</dt>
-            <dd className="font-medium text-neutral-900">
-              <time dateTime={quote.paymentDueAt}>{minute(quote.paymentDueAt)}</time>
-            </dd>
-          </div>
-        )}
-      </dl>
-
-      <p className="mt-3 max-w-prose whitespace-pre-line text-sm text-neutral-700">
-        <span className="text-xs text-neutral-600">{copy.quoteScope}: </span>
-        {quote.scope}
-      </p>
-
-      {quote.status === 'accepted' && quote.paymentDueAt !== null && (
-        <p
-          role="status"
-          className="mt-3 max-w-prose rounded-md border border-neutral-300 p-3 text-sm text-neutral-800"
-        >
-          {copy.paymentDueNote}
-        </p>
-      )}
-
-      {decidable && (
-        <div className="mt-4">
-          <ServiceQuoteDecision requestId={requestId} quoteId={quote.id} copy={copy.actions.decision} />
-        </div>
-      )}
-    </li>
-  );
-}
-
 /** One brief in full, with its quotes and whatever steps this side may take on it. */
 export function ServiceRequestDetailView({
   request,
@@ -302,59 +217,44 @@ export function ServiceRequestDetailView({
 }) {
   const live = isLive(request);
   const budget = formatListingAmount(request.budgetMinor, request.currencyCode, request.currencyMinorUnit);
-  const platform = request.routingMode === 'admin_only';
-  const counterparty = request.isBuyer ? request.sellerName : request.buyerName;
-  // Only a seller's page is given a form at all, and whether another quote may be sent is the existing
-  // trigger's rule — restated here only to decide what to draw: a live brief takes another quote, a closed
-  // one does not.
-  const form = copy.actions.form;
-  const quotable = form !== null && live;
 
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-lg font-medium text-neutral-900">{request.title}</p>
-          {platform ? (
-            <p className="mt-1 text-sm text-neutral-600">{copy.platformHandled}</p>
-          ) : (
-            counterparty !== null && (
-              <p className="mt-1 text-sm text-neutral-600">
-                <span className="text-xs text-neutral-600">{copy.counterparty}: </span>
-                {counterparty}
-              </p>
-            )
-          )}
+          <p className="text-lg font-medium text-ink-strong">{request.title}</p>
+          {/* Every enquiry is handled by the office (OD-A4), so there is no counterparty to name. */}
+          <p className="mt-1 text-sm text-ink-muted">{copy.platformHandled}</p>
         </div>
-        <span className="rounded-full border border-neutral-400 px-2 py-0.5 text-xs font-medium text-neutral-800">
+        <span className="rounded-full border border-edge px-2 py-0.5 text-xs font-medium text-ink-body">
           {copy.statuses[request.status] ?? request.status}
         </span>
       </div>
 
-      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-700">
+      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-body">
         <div>
-          <dt className="text-xs text-neutral-600">{copy.budget}</dt>
-          <dd className="font-semibold text-neutral-900">
+          <dt className="text-xs text-ink-muted">{copy.budget}</dt>
+          <dd className="font-semibold text-ink-strong">
             {budget ?? copy.budgetNone}
           </dd>
         </div>
         {request.neededBy !== null && (
           <div>
-            <dt className="text-xs text-neutral-600">{copy.neededBy}</dt>
+            <dt className="text-xs text-ink-muted">{copy.neededBy}</dt>
             <dd>
               <time dateTime={request.neededBy}>{request.neededBy}</time>
             </dd>
           </div>
         )}
         <div>
-          <dt className="text-xs text-neutral-600">{copy.status}</dt>
+          <dt className="text-xs text-ink-muted">{copy.status}</dt>
           <dd>{copy.statuses[request.status] ?? request.status}</dd>
         </div>
       </dl>
 
       <section className="mt-6">
-        <h2 className="text-sm font-medium text-neutral-900">{copy.brief}</h2>
-        <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-neutral-700">{request.brief}</p>
+        <h2 className="text-sm font-medium text-ink-strong">{copy.brief}</h2>
+        <p className="mt-2 max-w-prose whitespace-pre-line text-sm text-ink-body">{request.brief}</p>
       </section>
 
       {request.listingSlug !== null && (
@@ -369,46 +269,16 @@ export function ServiceRequestDetailView({
       )}
 
       {/*
-        7-J: an Admin Only brief has no quote and no seller, so the quotes section is **absent** rather than
-        empty — an empty one would say "no quote yet, the seller will answer", which is not true of a brief no
-        seller ever sees. What replaces it is a sentence saying who is handling it.
+        **There is no quotes section, and that is the model rather than an empty state.** 7-J had already
+        dropped it for an Admin Only brief, on the grounds that "no quote yet, the seller will answer" is
+        untrue of a brief no seller sees. OD-A4 made every enquiry that kind, so what used to be a branch is
+        now simply the page: a sentence saying who is handling it, and no quote list, decision or form
+        anywhere. The contract still carries a `quotes` array because the database reader is unchanged; it
+        can only ever be empty, since 0110 closed every writer that could add to it.
       */}
-      {platform ? (
-        <p role="status" className="mt-8 max-w-prose rounded-md border border-neutral-300 p-3 text-sm text-neutral-800">
-          {copy.platformNote}
-        </p>
-      ) : (
-      <section className="mt-8">
-        <h2 aria-label={copy.quotesLabel} className="text-sm font-medium text-neutral-900">
-          {copy.quotesLabel}
-        </h2>
-        {request.quotes.length === 0 ? (
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">
-            {copy.actions.side === 'buyer' ? copy.awaitingQuote : copy.noQuotes}
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-4">
-            {request.quotes.map((quote) => (
-              <QuoteCard
-                key={quote.id}
-                quote={quote}
-                requestId={request.id}
-                currencyCode={request.currencyCode}
-                currencyMinorUnit={request.currencyMinorUnit}
-                copy={copy}
-                requestLive={live}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
-      )}
-
-      {quotable && !platform && (
-        <div className="mt-6">
-          <ServiceQuoteForm requestId={request.id} currencyCode={request.currencyCode} copy={form} />
-        </div>
-      )}
+      <p role="status" className="mt-8 max-w-prose rounded-md border border-edge p-3 text-sm text-ink-body">
+        {copy.platformNote}
+      </p>
 
       {live && (
         <div className="mt-6">

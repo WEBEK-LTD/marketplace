@@ -196,8 +196,11 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- Financial isolation and the append-only ledger
 -- ---------------------------------------------------------------------------------------------------
-select is((select count(*) from app_private.append_only_contract), 30::bigint,
-  'thirty tables are contracted append-only');
+-- Thirty when 0031 closed; thirty-one since 0109 entered `public.office_receipts`. The contract is checked
+-- in both directions, so the trigger and the contract row are one change — a table that refuses writes and
+-- is missing here is itself a violation.
+select is((select count(*) from app_private.append_only_contract), 31::bigint,
+  'thirty-one tables are contracted append-only');
 select is(
   (select coalesce(string_agg(format('%s.%s', g.table_schema, g.table_name), ', '), '')
      from information_schema.role_table_grants g

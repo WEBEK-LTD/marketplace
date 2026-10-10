@@ -151,8 +151,12 @@ select is(
     where t.tgrelid = 'public.support_tickets'::regclass and not t.tgisinternal),
   5, 'support_tickets still carries 0028''s five triggers');
 
-select is((select count(*)::int from public.permissions), 85,
-  'the permission catalogue is unchanged: the console adds no permission');
+-- Narrowed for the reason given in 0074's suite: the claim is "this console adds no permission", and the
+-- support module's own key set says that without depending on how many keys the rest of the platform has.
+select set_eq(
+  $$select key from public.permissions where module = 'support'$$,
+  $$values ('support.ticket.manage'), ('support.ticket.read')$$,
+  'the support module still holds 0028''s two keys: the console adds no permission');
 select is(
   (select string_agg(key, ',' order by key) from public.permissions where module = 'support'),
   'support.ticket.manage,support.ticket.read',

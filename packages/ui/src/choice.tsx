@@ -42,9 +42,9 @@ export function Choice({
     <label
       className={cx(
         'flex cursor-pointer items-baseline gap-2.5 rounded-md py-1.5 text-sm',
-        'hover:text-neutral-900',
-        'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-neutral-900',
-        disabled ? 'cursor-not-allowed text-neutral-400' : 'text-neutral-700',
+        'hover:text-ink-strong',
+        'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-primary',
+        disabled ? 'cursor-not-allowed text-ink-faint' : 'text-ink-body',
         className,
       )}
     >
@@ -55,13 +55,13 @@ export function Choice({
         defaultChecked={defaultChecked}
         disabled={disabled}
         /* `accent-color` tints the platform control; `outline-none` hands the ring to the row above. */
-        className={cx('mt-0.5 size-4 shrink-0 accent-neutral-900', FOCUS_RING)}
+        className={cx('mt-0.5 size-4 shrink-0 accent-ink-strong', FOCUS_RING)}
       />
       <span className="flex-1" dir="auto">
         {children}
       </span>
       {detail === undefined ? null : (
-        <span className="shrink-0 text-xs text-neutral-500 tabular-nums">{detail}</span>
+        <span className="shrink-0 text-xs text-ink-muted tabular-nums">{detail}</span>
       )}
     </label>
   );
@@ -86,9 +86,9 @@ export function ChoiceGroup({
   readonly className?: string;
 }) {
   return (
-    <fieldset className={cx('border-t border-neutral-200 pt-4', className)}>
-      <legend className="text-sm font-semibold text-neutral-900">{legend}</legend>
-      {hint === undefined ? null : <p className="mt-1 text-xs text-neutral-600">{hint}</p>}
+    <fieldset className={cx('border-t border-hairline pt-4', className)}>
+      <legend className="text-sm font-semibold text-ink-strong">{legend}</legend>
+      {hint === undefined ? null : <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
       <div className="mt-1.5">{children}</div>
     </fieldset>
   );

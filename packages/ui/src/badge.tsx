@@ -14,9 +14,9 @@ export type BadgeTone = 'neutral' | 'solid' | 'outline';
  * That is three levels of loudness, which is as many as a badge can usefully have. A fourth would be decoration.
  */
 const TONES: Record<BadgeTone, string> = {
-  neutral: 'border-transparent bg-neutral-100 text-neutral-700',
-  solid: 'border-neutral-900 bg-neutral-900 text-neutral-0',
-  outline: 'border-neutral-400 bg-neutral-0 text-neutral-600',
+  neutral: 'border-transparent bg-surface-muted text-ink-body',
+  solid: 'border-edge-strong bg-surface-ink text-on-ink',
+  outline: 'border-edge bg-surface-raised text-ink-muted',
 };
 
 export interface BadgeProps {
