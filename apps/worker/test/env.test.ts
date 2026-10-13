@@ -36,8 +36,19 @@ describe('worker environment', () => {
     expect(Object.isFrozen(env)).toBe(true);
   });
 
-  it('requires NODE_ENV, APP_WORKER_DATABASE_URL, REDIS_URL, WORKER_HEALTH_HOST and WORKER_HEALTH_PORT', () => {
-    expect(invalid({}).variables).toEqual(['APP_WORKER_DATABASE_URL', 'NODE_ENV', 'PSEUDONYMOUS_USER_ID_KEY', 'REDIS_URL', 'WORKER_HEALTH_HOST', 'WORKER_HEALTH_PORT']);
+  it('requires NODE_ENV, APP_WORKER_DATABASE_URL, WORKER_HEALTH_HOST and WORKER_HEALTH_PORT', () => {
+    expect(invalid({}).variables).toEqual(['APP_WORKER_DATABASE_URL', 'NODE_ENV', 'PSEUDONYMOUS_USER_ID_KEY', 'WORKER_HEALTH_HOST', 'WORKER_HEALTH_PORT']);
+  });
+
+  it('still refuses to start without a Redis URL, which the inventory no longer makes it ask for', () => {
+    // 0117 made the shared variable optional because the API no longer needs it. The worker does: its
+    // runtime is BullMQ, so a worker with no Redis has no queues at all. The requirement moved into the
+    // worker's own loader, and the property that matters is unchanged — a worker started without one
+    // refuses at start-up, naming the variable, rather than failing later with a connection error.
+    expect(invalid({ ...base, REDIS_URL: undefined }).variables).toEqual(['REDIS_URL']);
+    // And it is still reported by name alone, with nothing of the value that was rejected.
+    expect(invalid({ ...base, REDIS_URL: 'redis://user:hunter2@redis.internal:6379', NODE_ENV: 'production' }).message)
+      .toBe('Invalid or missing environment variables: REDIS_URL');
   });
 
   it('accepts redis:// only in development and test', () => {

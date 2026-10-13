@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { acceptAttributes, withoutBrandChrome } from '../support/brand-chrome.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
@@ -272,7 +273,7 @@ describe('no image reaches the page until an operator asks', () => {
     // credentials into HTML nobody has looked at yet, and make a provider call per row.
     apiServes({ who: { kind: 'staff', permissions: ADMIN } });
     const { html } = await get('/cms/media');
-    expect(html).not.toContain('<img');
+    expect(withoutBrandChrome(html)).not.toContain('<img');
     expect(html).not.toContain('https://storage');
     expect(html).not.toContain('/storage/v1/');
     expect(html).not.toContain('X-Amz-');
@@ -327,7 +328,7 @@ describe('what the screen says out loud', () => {
     const { html } = await get('/cms/media');
     expect(html).toContain('image/jpeg');
     expect(html).toContain('image/avif');
-    expect(html).not.toContain('image/svg+xml');
+    for (const accept of acceptAttributes(html)) expect(accept).not.toContain('svg');
   });
 
   it('offers no delete control, and no word about deleting, until the references are asked for', async () => {

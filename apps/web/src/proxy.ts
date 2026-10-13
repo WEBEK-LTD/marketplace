@@ -18,6 +18,7 @@ import {
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
+import { readMediaPublicOrigin } from './server/config';
 import { readCategory } from './server/bff/categories';
 import { readCmsPage } from './server/bff/cms-pages';
 import { readListing } from './server/bff/listings';
@@ -58,6 +59,27 @@ export const CATALOG_OUTCOME_HEADER = 'x-catalog-outcome';
  */
 const SEO_ROUTES = new Set(['/robots.txt', '/sitemap.xml']);
 const SEO_PREFIX = '/sitemaps/';
+
+/**
+ * Static brand files, which have no locale and must reach their own path unrewritten.
+ *
+ * The matcher below admits everything that is not `_next/`, so a request for `/brand/icon-green.svg` arrives
+ * here and `handleLocale` rewrites it to `/en/brand/icon-green.svg` — which nothing serves. The logo rendered
+ * as a broken image on every page until this set existed, and the browser was right: the file was a 404.
+ *
+ * They are passed through rather than excluded from the matcher, because the response still has to be sealed
+ * with the same headers as everything else this origin serves. Excluding them would be the shorter fix and
+ * would quietly drop the security headers from a set of real responses.
+ */
+const BRAND_PREFIX = '/brand/';
+const ICON_ROUTES = new Set([
+  '/favicon.ico',
+  '/icon.svg',
+  '/apple-icon.png',
+  '/manifest.webmanifest',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+]);
 
 /** Server-side BFF route handlers. They have no locale and must reach their own path unrewritten. */
 const BFF_ROUTES = new Set([
@@ -161,7 +183,9 @@ function seal(response: NextResponse, csp: string, surface: AppKind): NextRespon
  */
 export default async function proxy(request: NextRequest) {
   const nonce = createNonce();
-  const csp = buildContentSecurityPolicy(nonce);
+  // 0116: the one host stored photographs are served from, named in `img-src` and nowhere else. Absent, the
+  // directive is exactly what it was and a stored photograph is blocked — fail-closed, by design.
+  const csp = buildContentSecurityPolicy(nonce, readMediaPublicOrigin());
   // Never trust an inbound copy: these headers are ours to set, so any value the client sent is dropped.
   request.headers.delete(CATALOG_OUTCOME_HEADER);
   request.headers.delete(SITE_CHROME_HEADER);
@@ -218,8 +242,10 @@ export default async function proxy(request: NextRequest) {
   // A crawler-facing document: no locale rewrite, no catalogue resolution, and the robots header below still
   // applies, because none of these three addresses is a public catalogue route.
   const isSeo = SEO_ROUTES.has(path) || path.startsWith(SEO_PREFIX);
+  const isStatic = path.startsWith(BRAND_PREFIX) || ICON_ROUTES.has(path);
   const isBff =
     isSeo ||
+    isStatic ||
     BFF_ROUTES.has(path) ||
     path.startsWith('/api/listings/') ||
     path.startsWith('/api/services/') ||

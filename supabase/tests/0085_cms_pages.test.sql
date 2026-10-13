@@ -135,6 +135,12 @@ delete from public.user_roles where user_id = pg_temp.nobody();
 -- ---------------------------------------------------------------------------------------------------
 -- Creating and writing
 -- ---------------------------------------------------------------------------------------------------
+-- The seeded static pages are cleared first. 0112 publishes the twenty-two addresses the route map fixes,
+-- `terms` among them, and this file creates a page at that slug and then drives it through every state the
+-- authoring functions have. It is testing those functions, not the catalogue, and it needs the slug free.
+-- The transaction is rolled back, so nothing is removed from anything.
+delete from public.pages where page_key is not null;
+
 select lives_ok(
   $q$ select app_private.cms_page_create_for_staff(pg_temp.author(), true, 'terms', 'terms', 'legal', 10, true) $q$,
   'the author creates a page');

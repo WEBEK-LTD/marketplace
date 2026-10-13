@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { withoutBrandChrome } from '../support/brand-chrome.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
@@ -402,7 +403,7 @@ describe('the cover image on the screen (0099)', () => {
   it('renders no image and no URL for it, because the bucket is private', async () => {
     apiServes({ who: { kind: 'staff', permissions: ADMIN }, data: 'withCover' });
     const { html } = await get(`/blog/${POST}`);
-    expect(html).not.toContain('<img');
+    expect(withoutBrandChrome(html)).not.toContain('<img');
     expect(html).not.toContain('token=');
     expect(html).not.toContain('/storage/v1/');
   });

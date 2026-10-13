@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { acceptAttributes } from './support/brand-chrome.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import ar from '../messages/ar.json';
 import en from '../messages/en.json';
@@ -375,7 +376,7 @@ describe('a draft (owner decision 1)', () => {
       expect(page.html, label).toContain(label);
     }
     expect(page.html).toContain('image/jpeg,image/png,application/pdf');
-    expect(page.html).not.toContain('image/svg+xml');
+    for (const accept of acceptAttributes(page.html)) expect(accept).not.toContain('svg');
   });
 });
 

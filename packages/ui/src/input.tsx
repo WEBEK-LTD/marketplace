@@ -10,7 +10,29 @@ import { cx, DISABLED, FOCUS_RING, INTERACTIVE } from './recipes.js';
  * emphasis. The 2px replaces the 1px rather than adding to it, so the control does not change size and a form
  * does not reflow when it is refused.
  */
-export function fieldClasses(options: { readonly error?: boolean; readonly className?: string } = {}): string {
+export function fieldClasses(
+  options: { readonly error?: boolean; readonly bare?: boolean; readonly className?: string } = {},
+): string {
+  /*
+    `bare` is a field that has no shell of its own because something around it is the control.
+
+    The one case is the fused search bar: a rounded container holds the field and its submit button, takes the
+    ring, and takes the focus ring through `FOCUS_WITHIN` — so the two read as one bar rather than as two
+    unrelated white boxes sitting next to each other, which is exactly what the home page showed. The field must
+    therefore draw no ring and no focus outline of its own; both would appear *inside* the bar's own edge.
+
+    This is an option on the shared recipe rather than a `className` override at the call site on purpose.
+    Overriding would mean emitting `ring-1` and `ring-0` together and relying on which rule Tailwind happens to
+    order last, which is not a thing a design system should depend on.
+  */
+  if (options.bare === true) {
+    return cx(
+      'w-full min-w-0 bg-transparent text-base text-ink-strong placeholder:text-ink-faint',
+      'outline-none focus:outline-none',
+      DISABLED,
+      options.className,
+    );
+  }
   return cx(
     'w-full rounded-lg bg-surface-raised text-base text-ink-strong',
     'placeholder:text-ink-faint',
@@ -57,6 +79,12 @@ export interface InputProps {
   readonly 'aria-describedby'?: string;
   readonly 'aria-label'?: string;
   readonly onChange?: (value: string) => void;
+  /**
+   * `bare` drops the field's own shell for a field that sits inside a control — the fused search bar.
+   *
+   * The container draws the edge and takes the focus ring, so the field inside it must draw neither.
+   */
+  readonly bare?: boolean;
 }
 
 /**
@@ -66,10 +94,10 @@ export interface InputProps {
  * language — a seller's name, a search query, a URL. The page is Arabic right-to-left, a URL is not, and letting
  * the browser decide per value is the only way both read correctly.
  */
-export function Input({ error = false, className, onChange, ...rest }: InputProps) {
+export function Input({ error = false, bare = false, className, onChange, ...rest }: InputProps) {
   return (
     <input
-      className={fieldClasses({ error, className: cx(CONTROL_HEIGHT, className) })}
+      className={fieldClasses({ error, bare, className: cx(bare ? '' : CONTROL_HEIGHT, className) })}
       {...(onChange === undefined ? {} : { onChange: (event) => onChange(event.target.value) })}
       {...rest}
     />

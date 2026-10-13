@@ -8,6 +8,8 @@ import {
   type PublicNavigationLink,
   type PublicNavigationMenu,
   type PublicNavigationTarget,
+  type PublicOfficeContact,
+  OfficeSocialLinkSchema,
 } from '@repo/contracts';
 import { CmsPublicUnavailableError } from './cms-errors.js';
 
@@ -54,7 +56,12 @@ export interface NavigationPublicStore {
     menuKeys: readonly string[];
     locale: PublicLocale;
   }): Promise<readonly PublicNavigationItemDbRow[]>;
+  /** `app_private.public_site_settings(text)`: one category's public settings that have a value (0113). */
+  publicSiteSettings(category: string): Promise<readonly { key: string; value: unknown }[]>;
 }
+
+/** The settings category the office's own details live under. */
+const OFFICE_CATEGORY = 'office';
 
 const SERVED: ReadonlySet<string> = new Set(NAVIGATION_MENU_KEYS);
 
@@ -159,5 +166,70 @@ export class NavigationPublicService {
       if (menu === undefined || menu.items.length === 0) return [];
       return [{ menuKey: key, label: menu.label, items: menu.items }];
     });
+  }
+
+  /**
+   * The office's own contact details, in the reader's language (0113).
+   *
+   * **The language picks between two stored values; it never translates one.** An address and a set of opening
+   * hours are written once per language by the office, because a machine translation of an address is a wrong
+   * address. A language the office has not written is absent rather than filled from the other one.
+   *
+   * **Absent means unset, all the way down.** The database omits a setting with no value, and this method omits
+   * a field it did not receive, so a field that reaches a renderer has something in it. Nothing here converts
+   * an empty string into a field.
+   *
+   * **A malformed social link costs that link, not the chrome** — the same rule a malformed menu item follows
+   * a few lines above. The settings table is editable from the console, so a value that does not parse is a
+   * thing that can happen, and the footer of every page on the site goes through here.
+   */
+  async officeContact(locale: PublicLocale): Promise<PublicOfficeContact> {
+    const rows = await this.store.publicSiteSettings(OFFICE_CATEGORY);
+    const byKey = new Map(rows.map((row) => [row.key, row.value]));
+
+    const text = (key: string): string | undefined => {
+      const value = byKey.get(key);
+      if (typeof value !== 'string') return undefined;
+      const trimmed = value.trim();
+      return trimmed === '' ? undefined : trimmed;
+    };
+
+    const socialLinks = ((): { label: string; url: string }[] | undefined => {
+      const raw = byKey.get('office.social_links');
+      if (!Array.isArray(raw)) return undefined;
+      const links = raw.flatMap((entry) => {
+        const parsed = OfficeSocialLinkSchema.safeParse(entry);
+        if (!parsed.success) {
+          this.logger.warn('An office social link could not be read and was skipped.');
+          return [];
+        }
+        return [parsed.data];
+      });
+      return links.length === 0 ? undefined : links.slice(0, 12);
+    })();
+
+    const address = text(locale === 'ar' ? 'office.address_ar' : 'office.address_en');
+    const hours = text(locale === 'ar' ? 'office.hours_ar' : 'office.hours_en');
+    const telephone = text('office.telephone');
+    const whatsapp = text('office.whatsapp');
+    const email = text('office.email');
+
+    // Built by assignment rather than with nullish fields: `exactOptionalPropertyTypes` is on, so an absent
+    // field has to be absent from the object and not present holding `undefined`.
+    const contact: {
+      telephone?: string;
+      whatsapp?: string;
+      email?: string;
+      address?: string;
+      hours?: string;
+      socialLinks?: { label: string; url: string }[];
+    } = {};
+    if (telephone !== undefined) contact.telephone = telephone;
+    if (whatsapp !== undefined) contact.whatsapp = whatsapp;
+    if (email !== undefined) contact.email = email;
+    if (address !== undefined) contact.address = address;
+    if (hours !== undefined) contact.hours = hours;
+    if (socialLinks !== undefined) contact.socialLinks = socialLinks;
+    return contact;
   }
 }

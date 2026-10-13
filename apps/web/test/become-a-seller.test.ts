@@ -114,12 +114,28 @@ function countOf(html: string, pattern: RegExp): number {
   return html.match(pattern)?.length ?? 0;
 }
 
-/** The document's rendered words: scripts, styles and attributes removed, lower-cased for matching. */
+/**
+ * The page's own rendered words: the head, the chrome, scripts, styles and attributes removed.
+ *
+ * **It no longer cuts at `</main>`, because that was only ever right for a document that did not stream.**
+ * This route has a `loading.tsx`, so Next wraps the page in a Suspense boundary; when the shell is ready before
+ * the page's own render is, React flushes `<main>` holding the *skeleton* and appends the real content in a
+ * hidden div after the footer. Whether that happens is a matter of microtask ordering and shifts with any
+ * change anywhere in the tree — so a helper that reads up to the first `</main>` is a helper that reads the
+ * fallback on some runs and the page on others. It was reading the fallback here, which is how an assertion
+ * about the page's words came to be made against no words at all.
+ *
+ * Taking the body and removing the two chrome landmarks is stable under streaming, because the appended
+ * content is inside `<body>` wherever React chose to put it. It is also a slightly *stronger* claim than
+ * before: the forbidden words must now be absent from the page region however it was delivered.
+ */
 function visibleText(html: string): string {
-  const main = /<main\b[^>]*>([\s\S]*?)<\/main>/.exec(html)?.[1] ?? '';
-  return main
+  const body = /<body\b[^>]*>([\s\S]*)<\/body>/.exec(html)?.[1] ?? '';
+  return body
     .replace(/<script\b[\s\S]*?<\/script>/g, ' ')
     .replace(/<style\b[\s\S]*?<\/style>/g, ' ')
+    .replace(/<header\b[\s\S]*?<\/header>/g, ' ')
+    .replace(/<footer\b[\s\S]*?<\/footer>/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

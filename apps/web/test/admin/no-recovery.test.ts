@@ -99,8 +99,23 @@ describe('the admin console, password reset and contact change', () => {
    * a site name, a crawl policy and metadata defaults. Nothing in it touches an account, a password, a contact
    * detail or a session, and its own suite asserts as much. So the ban is narrowed to the paths that would actually
    * be an account surface, and the SEO tree is exempted by name rather than the guard being dropped.
+   *
+   * **0113 adds `/settings/office`, and narrows the prefix ban rather than widening the exemption list.** That
+   * section is the office's own telephone, address and opening hours behind `settings.site.manage` — the
+   * platform's details, printed in the public footer, with no account, password, contact detail or session
+   * anywhere in it. But it sits under `app/admin/settings`, which the list below banned outright.
+   *
+   * The ban is now on the **shapes an account surface would actually take**: the bare `app/admin/settings`
+   * index page, which is where a personal settings screen lands in every console that has one, and the three
+   * account-named trees. A platform settings *category* — `settings/office`, and whatever category comes next —
+   * is a different thing and is allowed. That is a narrowing, not a loosening: before this, `app/admin/settings`
+   * as a prefix would have permitted nothing at all under it, including a personal page one directory down,
+   * while the index itself was only caught by the same prefix. Both are caught now, by name.
    */
-  const ACCOUNT_SETTINGS_PATHS = ['app/admin/account', 'app/admin/settings', 'app/admin/profile', 'app/admin/me'];
+  const ACCOUNT_SETTINGS_PATHS = ['app/admin/account', 'app/admin/profile', 'app/admin/me'];
+
+  /** The platform's own settings categories. Each is a marketplace setting and none is an account's. */
+  const PLATFORM_SETTINGS_PATHS = ['seo/settings', 'settings/office', 'api/settings'];
 
   it('has no reset or contact-change route or page', () => {
     const paths = consoleRouteSources().map((file) => file.slice(SRC.length));
@@ -108,11 +123,16 @@ describe('the admin console, password reset and contact change', () => {
       expect(path).not.toContain('forgot-password');
       expect(path).not.toContain('reset-password');
       expect(path).not.toContain('contact');
-      // Still banned everywhere except the SEO tree, which is the marketplace's settings and not an account's.
-      if (!path.includes('seo/settings')) expect(path).not.toContain('settings');
+      // Still banned everywhere except the platform's own settings categories, which are the marketplace's
+      // settings and not an account's.
+      if (!PLATFORM_SETTINGS_PATHS.some((allowed) => path.includes(allowed))) {
+        expect(path).not.toContain('settings');
+      }
       for (const banned of ACCOUNT_SETTINGS_PATHS) {
         expect(path, banned).not.toContain(banned);
       }
+      // The bare settings index is where a personal settings screen lands, so it is banned by name.
+      expect(path).not.toMatch(/app\/admin\/settings\/(page|route)\.tsx?$/);
     }
   });
 

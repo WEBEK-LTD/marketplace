@@ -148,13 +148,22 @@ test('the manifest says which surfaces have a deployment target and which do not
   assert.doesNotMatch(manifest, /#### Web site[^\n]*no deployment target/);
 });
 
-test('the one Netlify site needs the three variables the deployment runbook names', () => {
+test('the one Netlify site needs the four variables the deployment runbook names', () => {
   // The relationship the manifest exists to record: the site presents the internal credential to the API,
-  // addresses it through API_BASE_URL, and has an origin of its own for the sitemap and robots documents.
+  // addresses it through API_BASE_URL, has an origin of its own for the sitemap and robots documents, and —
+  // since 0116 — names the one host its stored photographs are served from so the CSP can allow them.
   // One list covers both surfaces, because one deployment serves both (0108).
+  //
+  // **Still no Supabase variable, and that is the assertion.** The photograph URLs are composed by the API
+  // from its own SUPABASE_URL and travel in the response body; MEDIA_PUBLIC_ORIGIN is a public image host
+  // named in one response header, and it is not a credential, a project key or a Supabase endpoint.
   assert.deepEqual(
     variablesFor('web').map((entry) => entry.name),
-    ['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'PUBLIC_WEB_ORIGIN'],
+    ['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'MEDIA_PUBLIC_ORIGIN', 'PUBLIC_WEB_ORIGIN'],
+  );
+  assert.deepEqual(
+    variablesFor('web').filter((entry) => entry.name.includes('SUPABASE')),
+    [],
   );
   // The console is no longer an app in the inventory, so asking for its variables asks for nothing. That is the
   // assertion, not an omission: a row keyed to it would be a second environment nobody provisions.

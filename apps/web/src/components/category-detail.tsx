@@ -1,4 +1,5 @@
 import type { CategoryDetail } from '@repo/contracts';
+import { CategoryRow } from './catalog-card';
 
 /**
  * The public category landing page's body (Phase 4-D).
@@ -54,19 +55,18 @@ export function CategoryDetailView({
           <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">{labels.emptyChildren}</p>
         </div>
       ) : (
+        /*
+          An index, not a grid of outlined boxes (0112). This drew one bordered rectangle per subcategory, three
+          across, each holding an underlined word — the same figure the home page's category block was rejected
+          for, and on a phone a column of four tall empty boxes before the reader reaches a single result. It is
+          the same component the home page uses now, so a category reads the same way wherever it is offered.
+        */
         <ul
           aria-label={labels.subcategoriesHeading}
-          className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-4 list-none border-t border-hairline sm:columns-2 sm:gap-x-16 [&>li]:break-inside-avoid"
         >
           {category.children.map((child) => (
-            <li key={child.id} className="rounded-lg border border-hairline">
-              <a
-                href={hrefFor(child.slug)}
-                className="block px-4 py-3 text-ink-strong underline decoration-edge underline-offset-4 hover:decoration-ink-strong"
-              >
-                {child.name}
-              </a>
-            </li>
+            <CategoryRow key={child.id} href={hrefFor(child.slug)} label={child.name} />
           ))}
         </ul>
       )}

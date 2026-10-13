@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { withoutBrandChrome } from '../support/brand-chrome.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
@@ -459,7 +460,7 @@ describe('nothing financial, promotional or visual is on these screens', () => {
         expect(html, name).not.toContain(`name="${name}"`);
       }
       // No image anywhere: `navigation_items` has no media column and there is no origin to address one with.
-      expect(html).not.toContain('<img');
+      expect(withoutBrandChrome(html)).not.toContain('<img');
       // And no word that could only come from a financial field.
       for (const word of ['wallet', 'payout', 'settlement', 'commission']) {
         expect(html.toLowerCase(), word).not.toContain(word);

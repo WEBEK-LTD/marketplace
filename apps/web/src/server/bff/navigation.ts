@@ -5,6 +5,7 @@ import {
   publicLocaleOf,
   type NavigationMenuKey,
   type PublicNavigationMenu,
+  type PublicOfficeContact,
 } from '@repo/contracts';
 import { readBffConfig } from './env';
 import { createInternalCredentialFetch } from './internal-credential';
@@ -25,6 +26,11 @@ import { createInternalCredentialFetch } from './internal-credential';
  * **Null means the navigation could not be read; an empty array means nobody has composed any.** The two are
  * different answers, and owner decision 7 is why: both fall back to the application's own plain chrome, and
  * neither may break the page — so a failure here is a value and never an exception.
+ *
+ * **Since 0113 the same answer carries the office's own contact details.** They belong to the footer, the
+ * footer is on every page, and this is already the one read for the whole chrome — so fetching them separately
+ * would be a second round trip for the same screen. `readSiteChrome` returns both; `readSiteNavigation` stays
+ * exactly as it was for every caller that only wants menus.
  */
 
 export interface NavigationFetchOptions {
@@ -34,11 +40,26 @@ export interface NavigationFetchOptions {
   readonly menuKeys?: readonly NavigationMenuKey[];
 }
 
+/** The chrome of a public page: the composed menus, and the office's own details. */
+export interface SiteChrome {
+  readonly menus: readonly PublicNavigationMenu[];
+  /** Absent when the office has set nothing, which is a different thing from having set it to empty. */
+  readonly office?: PublicOfficeContact;
+}
+
 /** The composed menus, or null when they could not be read at all. */
 export async function readSiteNavigation(
   locale: string,
   options: NavigationFetchOptions = {},
 ): Promise<readonly PublicNavigationMenu[] | null> {
+  return (await readSiteChrome(locale, options))?.menus ?? null;
+}
+
+/** The whole chrome, or null when it could not be read at all. */
+export async function readSiteChrome(
+  locale: string,
+  options: NavigationFetchOptions = {},
+): Promise<SiteChrome | null> {
   const query = new URLSearchParams({
     locale: publicLocaleOf(locale),
     menus: (options.menuKeys ?? NAVIGATION_MENU_KEYS).join(','),
@@ -69,7 +90,11 @@ export async function readSiteNavigation(
 
   try {
     const parsed = PublicNavigationResponseSchema.safeParse(JSON.parse(await upstream.text()));
-    return parsed.success ? parsed.data.menus : null;
+    if (!parsed.success) return null;
+    // `exactOptionalPropertyTypes`: an office that set nothing is an absent field, not one holding undefined.
+    return parsed.data.office === undefined
+      ? { menus: parsed.data.menus }
+      : { menus: parsed.data.menus, office: parsed.data.office };
   } catch {
     return null;
   }

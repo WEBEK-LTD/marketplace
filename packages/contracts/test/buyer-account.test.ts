@@ -42,6 +42,8 @@ const listing = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  // 0116. The card gained a photograph, nullable because most listings have none.
+  primaryImage: null,
 };
 
 const address = {

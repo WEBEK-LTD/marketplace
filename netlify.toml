@@ -42,7 +42,7 @@
 # Netlify does no such pre-step. `--filter "@repo/web..."` builds this app and exactly its own dependencies; the
 # root workspace build stays prohibited, which `scripts/toolchain/tool1-guards.mjs` enforces from the build log.
 [build]
-  command = "pnpm --filter \"@repo/web...\" run build"
+  command = "pnpm --filter \"@repo/web...\" --filter \"@repo/api...\" run build"
   publish = "apps/web/.next"
 
 # A backstop to .nvmrc: `engines` pins Node exactly and pnpm-workspace.yaml sets `engineStrict: true`, so a
@@ -52,3 +52,34 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# ---------------------------------------------------------------------------------------------------------------
+# The API, on this same site (0117, owner decision: Netlify and Supabase, nothing else)
+# ---------------------------------------------------------------------------------------------------------------
+#
+# The NestJS API has no long-running host, so it runs as one function. `netlify/functions/api.mts` boots the
+# application once per warm instance and injects each request into it; the application itself is untouched.
+#
+# **`/_api/*` is a public path, and that changes no authorization.** `InternalCredentialGuard` is registered
+# as an `APP_GUARD` over every route and refuses anything without the internal credential, which only the BFF
+# holds. That guard was the boundary before the API was reachable from the internet and it is the boundary now.
+#
+# `force = true` because the path must reach the function even though the Next.js plugin claims the site's
+# routing: without it, `/_api/...` would fall through to the Next.js catch-all and answer a 404 page.
+[[redirects]]
+  from = "/_api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[functions]
+  directory = "netlify/functions"
+  # **Not bundled.** NestJS resolves providers through decorators and loads several dependencies by name at
+  # runtime, which a bundler cannot see and therefore drops. Leaving the whole server stack external means the
+  # function ships the real `node_modules` tree and loads exactly what the application loads everywhere else.
+  external_node_modules = ["@nestjs/common", "@nestjs/core", "@nestjs/platform-fastify", "@fastify/helmet", "fastify", "reflect-metadata", "rxjs", "kysely", "pg", "ioredis", "zod"]
+  # The built application and the workspace packages it imports. `external_node_modules` keeps the published
+  # dependencies out of the bundle; these are the repository's own build output, which has to travel with it.
+  # One line each: the configuration check reads this file with a deliberately small TOML reader that does
+  # not follow an array across lines, and a check that cannot read the file is a check that is not running.
+  included_files = ["apps/api/dist/**", "packages/contracts/dist/**", "packages/db/dist/**", "packages/server-config/dist/**", "packages/telemetry/dist/**"]

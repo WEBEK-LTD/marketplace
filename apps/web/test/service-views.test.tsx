@@ -119,7 +119,9 @@ describe('a service card', () => {
     );
     expect(html).toContain('Logo design');
     expect(html).toContain('Cairo');
-    expect(textOf(html)).toContain('EGP 1500.00');
+    // Grouped in threes since 0112 — `PriceLockup` only, never `formatListingAmount`, which is asserted
+    // ungrouped a few lines above and is what the amount *is* rather than what it looks like.
+    expect(textOf(html)).toContain('EGP 1,500.00');
     expect(html).toContain(EN.fixedPrice);
     expect(html).toContain('5 days');
     expect(html).toContain(EN.revisionsIncluded);
@@ -192,7 +194,8 @@ describe('the service detail', () => {
     for (const expected of [
       'Logo design',
       'Cairo',
-      'EGP 1500.00',
+      // Grouped by `PriceLockup` since 0112.
+      'EGP 1,500.00',
       'A description long enough to be real.',
       'Three concepts, two rounds of revision.',
       EN.scope,

@@ -1,8 +1,8 @@
 import type { Locale } from '@repo/shared-types';
-import { PageContainer, SkipLink } from '@repo/ui';
+import { BrandLockup, PageContainer, SkipLink } from '@repo/ui';
 import type { ReactNode } from 'react';
 import { directionFor } from '../i18n/locale';
-import { ADMIN_FOOTER, ADMIN_HEADER, ADMIN_WORDMARK, ADMIN_WORDMARK_SECTION } from '../ui';
+import { ADMIN_FOOTER, ADMIN_HEADER, ADMIN_WORDMARK_SECTION } from '../ui';
 
 export interface AdminLabels {
   readonly siteName: string;
@@ -34,9 +34,11 @@ export function AdminDocument({ locale, labels, children }: { locale: Locale; la
         <SkipLink targetId="content">{labels.skipToContent}</SkipLink>
         <header className={ADMIN_HEADER}>
           <PageContainer>
-            <p className={`py-4 ${ADMIN_WORDMARK}`}>
-              {labels.siteName} <span className={ADMIN_WORDMARK_SECTION}>{labels.section}</span>
-            </p>
+            <div className="flex items-center gap-3 py-3">
+              <BrandLockup tone="ink" size="sm" />
+              {/* The section name beside the mark, so the console says what it is without a second logo. */}
+              <span className={ADMIN_WORDMARK_SECTION}>{labels.section}</span>
+            </div>
           </PageContainer>
         </header>
         <main id="content" className="flex-1">

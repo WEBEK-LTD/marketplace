@@ -5,6 +5,10 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ListingMessage } from '../../../../../../components/listing-views';
+import {
+  ListingPhotoManager,
+  type ListingPhotoCopy,
+} from '../../../../../../components/listing-photo-manager';
 import { RequireSession } from '../../../../../../components/require-session';
 import {
   SellerVocabularyForm,
@@ -13,7 +17,7 @@ import {
   type SellerVocabularyEditLabels,
   type SellerVocabularyLabels,
 } from '../../../../../../components/seller-vocabulary-form';
-import { readSellerListingVocabulary } from '../../../../../../server/bff';
+import { readListingMedia, readSellerListingVocabulary } from '../../../../../../server/bff';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('SellerVocabulary');
@@ -40,6 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
  *
  * **A slug that is not the caller's reads exactly as one that does not exist**, because the API answers both the
  * same way and this page does not try to tell them apart.
+ *
+ * **0116 adds the photographs to this screen**, for the reason the vocabulary is here rather than on the index:
+ * a listing's pictures are their own read and nobody wants twenty of them fetched for a page they came to
+ * browse. The two reads happen together, and the photographs section is independent of the vocabulary one — a
+ * category that asks no questions is still a listing somebody wants to put pictures on.
  */
 export const dynamic = 'force-dynamic';
 
@@ -48,16 +57,37 @@ export default async function Page({
 }: {
   readonly params: Promise<{ readonly locale: Locale; readonly slug: string }>;
 }) {
-  const [{ locale, slug }, t, sellers] = await Promise.all([
+  const [{ locale, slug }, t, sellers, photos] = await Promise.all([
     params,
     getTranslations('SellerVocabulary'),
     getTranslations('Sellers'),
+    getTranslations('ListingPhotos'),
   ]);
   const prefix = locale === 'ar' ? '/ar' : '';
   const cookieHeader = (await headers()).get('cookie');
-  const vocabulary = await readSellerListingVocabulary('listings', slug, locale === 'ar' ? 'ar' : 'en', {
-    cookieHeader,
-  });
+  // Both reads together: they are independent, and one round trip of latency is better than two.
+  const [vocabulary, media] = await Promise.all([
+    readSellerListingVocabulary('listings', slug, locale === 'ar' ? 'ar' : 'en', { cookieHeader }),
+    readListingMedia(slug, { cookieHeader }),
+  ]);
+
+  const photoCopy: ListingPhotoCopy = {
+    heading: photos('heading'),
+    intro: photos('intro'),
+    add: photos('add'),
+    working: photos('working'),
+    none: photos('none'),
+    primary: photos('primary'),
+    makePrimary: photos('makePrimary'),
+    remove: photos('remove'),
+    unpublished: photos('unpublished'),
+    wrongType: photos('wrongType'),
+    tooLarge: photos('tooLarge'),
+    tooSmall: photos('tooSmall'),
+    failed: photos('failed'),
+    unsupported: photos('unsupported'),
+    photoNumber: ({ number, total }) => photos('photoNumber', { number, total }),
+  };
 
   const labels: SellerVocabularyLabels = {
     attributesHeading: t('attributesHeading'),
@@ -138,13 +168,26 @@ export default async function Page({
               <ListingMessage tone="error" title={t('errorUnavailable')} description={sellers('error')} />
             </div>
           ) : vocabulary.kind === 'ok' ? (
-            <SellerVocabularyForm
-              path={`/api/sellers/me/listings/${encodeURIComponent(slug)}`}
-              attributes={attributes}
-              tags={tags}
-              labels={labels}
-              editing={editing}
-            />
+            <>
+              {/*
+                The photographs first: they are what a seller came to add, and a column of structured questions
+                above them would bury the one control they were looking for. Rendered only when the read
+                succeeded — a failed photographs read is not allowed to take the vocabulary form down with it,
+                and an empty section would claim the listing has no pictures when the truth is we could not ask.
+              */}
+              {media.kind === 'ok' ? (
+                <div className="mt-8">
+                  <ListingPhotoManager slug={slug} initial={media.items} copy={photoCopy} />
+                </div>
+              ) : null}
+              <SellerVocabularyForm
+                path={`/api/sellers/me/listings/${encodeURIComponent(slug)}`}
+                attributes={attributes}
+                tags={tags}
+                labels={labels}
+                editing={editing}
+              />
+            </>
           ) : null}
         </div>
       </PageContainer>

@@ -154,7 +154,10 @@ describe('the public response', () => {
     currencyCode: 'EGP',
     currencyMinorUnit: 2,
     isNegotiable: true,
-      } as const;
+    // 0116. A front-page card carries the same photograph the browse list does; a service card carries null,
+    // which the service case below asserts.
+    primaryImage: null,
+  } as const;
 
   /** Only what every member carries. Each member is strict, so a payload must not leak between types. */
   const base = { title: 'Welcome', subtitle: null } as const;

@@ -17,6 +17,20 @@ export interface CatalogCardProps {
   readonly badge?: { readonly label: string; readonly tone?: 'neutral' | 'solid' | 'outline' };
   /** A second line of facts: a service's delivery time, a listing's condition. */
   readonly meta?: ReactNode;
+  /**
+   * The item's photograph, where the surface rendering this card has one (0112).
+   *
+   * **It is a slot rather than a `src`,** and it is deliberately empty today. `public.listing_media` and
+   * `public.media_variants` have existed since 0011, but no public contract field, reader or upload surface
+   * addresses them yet, so no caller can pass anything here. The slot exists so that the component the whole
+   * catalogue is built from already has the right shape when that increment lands — the composition below is
+   * laid out around a 4:3 region at the head of the card, and gaining one later will not be a redesign.
+   *
+   * **Nothing is passed in the meantime, and nothing stands in for it.** A grey rectangle on every card in a
+   * grid of twenty does not read as a card waiting for a photograph; it reads as an outage, which is why the
+   * card renders without the region at all when the slot is empty.
+   */
+  readonly media?: ReactNode;
   /** A separately clickable link inside the card — a seller, a category. */
   readonly secondaryLink?: { readonly href: string; readonly label: string };
   /** The listing's id, for 0101's click beacon. Passed through to the card's own anchor. */
@@ -40,18 +54,22 @@ export interface CatalogCardProps {
  * person meets it: before 0109 the home page drew its own card, the listings list drew another, and services
  * drew a third, so the same listing looked like three different products depending on the route that showed it.
  *
- * **It is typographic, with no image.** `ListingSummarySchema` is `.strict()` and carries eight fields, none of
- * them media — the platform has no media origin to address a picture with. So the layout spends its space on the
- * two things a person actually compares across a grid:
+ * **0112 reorders it for property, and that reversal is the point of this revision.** 0110 made the price the
+ * largest element on the card and put it in a tinted band at the *head*, on the reasoning that a marketplace is
+ * scanned by price. That is true of a marketplace selling typewriters. It is not true of property: nobody
+ * shortlists a flat by its price before knowing where it is, and a column of cards that announce "EGP 2,750,000"
+ * before saying "Maadi" is answering the second question first. So the card now reads in the order a buyer
+ * actually reads one:
  *
- *   * **The price**, which 0110 makes the largest element on the card. A marketplace is scanned by price, so
- *     that is the honest hierarchy; 0109 set the price at 18px under an 18px title and the card had no focal
- *     point, which is most of why the catalogue read as rows of identical boxes. It is pinned to the bottom of
- *     the card so a row aligns its prices on one line however long the titles above them ran, and set in
- *     tabular figures so they align on their digits.
- *   * **The title**, second, clamped to two lines so a row keeps its rhythm in both scripts.
- *   * **A quiet line of metadata above both** — the city, a state badge — rather than a middle-dot string
- *     beneath them. Putting it first gives the card a top edge that is not its own border.
+ *   * **The media region**, where there is one — see the `media` slot, which is empty until the listing-media
+ *     contract lands.
+ *   * **Where it is**, as a quiet line, because for property that is the first filter a person applies.
+ *   * **The title**, clamped to two lines so a row keeps its rhythm in both scripts, at the larger step: it is
+ *     now the strongest *typographic* element on a card that has no photograph.
+ *   * **The price, in a tinted well at the foot.** Still prominent, still tabular so a row aligns on its digits,
+ *     and still pinned to the bottom so the prices in a row sit on one line however long the titles above them
+ *     ran — but reading as the card's closing fact rather than as its headline. The tint moved from the head to
+ *     the foot with it, which is also what gives the card a base rather than a cap.
  *
  * The price words come from the `Listings` namespace, which is where they already lived, so a card on the front
  * page reads exactly as the same card reads on the browse list — including "contact for price" where there is no
@@ -68,6 +86,7 @@ export function CatalogCard({
   labels,
   badge,
   meta,
+  media,
   secondaryLink,
   listingId,
   size = 'default',
@@ -87,61 +106,78 @@ export function CatalogCard({
       as="li"
       href={href}
       aria-label={title}
-      className={size === 'wide' ? 'min-h-48' : 'min-h-44'}
+      /*
+        No minimum height. A card used to need one because its content was a price band and a title, and a row
+        of them without it looked ragged; now the grid's own `stretch` makes every card in a row the height of
+        the tallest, and the price foot is pinned to the bottom by `mt-auto`. The minimum was adding empty space
+        in the middle of every card instead — which is what the screenshots showed.
+      */
       {...(listingId === undefined ? {} : { dataListingId: listingId })}
     >
       {/*
-        **The price band.** A marketplace card without a photograph has one thing a person's eye can land on,
-        and it should be the number they came to compare — so the price is given its own tinted region at the
-        head of the card rather than a line at the foot of it. That is the composition this revision turns on:
-        a grid of these reads as a run of priced objects, where a grid of white tiles with a price line reads
-        as a table. The tint deepens under the pointer, which is also the card's hover state.
+        The media region, where the surface passed one. Absent today — see the `media` prop — and absent rather
+        than filled with a placeholder, because twenty identical grey rectangles down a grid read as a failure
+        and not as a design. `4/3` is the ratio a property photograph is shot and cropped to.
+      */}
+      {media === undefined ? null : (
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-muted">{media}</div>
+      )}
+
+      <div className={cx('flex flex-1 flex-col', size === 'wide' ? 'gap-3 p-6' : 'gap-2.5 p-5')}>
+        {/*
+          Where it is, first. For property this is the filter a person applies before any other, which is why it
+          leads rather than sitting at the foot as it did before 0112. It also gives the card a top edge that is
+          not its own border.
+        */}
+        {place === null && badge === undefined ? null : (
+          <div className="flex items-center justify-between gap-2">
+            {place ?? <span />}
+            {badge === undefined ? null : (
+              <span className="relative z-20 shrink-0">
+                <Badge tone={badge.tone ?? 'neutral'}>{badge.label}</Badge>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* `dir="auto"` on the title: a listing may be written in either script whatever language the page is in. */}
+        <CardTitle size="large">
+          <span dir="auto">{title}</span>
+        </CardTitle>
+        {meta === undefined ? null : <div className={cx(TYPE.metaSmall)}>{meta}</div>}
+      </div>
+
+      {/*
+        **The price foot.** A tinted well across the base of the card, pushed to the bottom by `mt-auto` so a
+        row of cards aligns its prices on one line however long the titles above them ran. The tint sat at the
+        head of the card until 0112 and made the price the card's headline; at the foot it reads as the closing
+        fact and gives the card a base. It deepens under the pointer, which is also the card's hover state.
+
+        "Negotiable" sits beside the figure rather than under it, and only where there is a figure for it to
+        qualify — it shared a line with the price once and was the thing that got clipped at six digits.
       */}
       <div
         className={cx(
-          'relative bg-surface-sunken transition-colors duration-200 group-hover:bg-surface-brand-soft',
-          size === 'wide' ? 'px-6 pt-6 pb-5' : 'px-5 pt-5 pb-4',
+          /*
+            `flex-wrap`, because a 275px card is a real width. On the category page the grid shares its row
+            with the filter panel, and there "EGP 24,000,000.00" and "Negotiable" did not fit on one line —
+            the screenshot showed the qualifier clipped to "Negc". Wrapping drops it under the figure instead
+            of cutting it off; the price is never the thing that moves.
+          */
+          'relative mt-auto flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-hairline',
+          'bg-surface-sunken transition-colors duration-200 group-hover:bg-surface-brand-soft',
+          size === 'wide' ? 'px-6 py-5' : 'px-5 py-4',
         )}
       >
-        {/*
-          The price alone on this line. "Negotiable" shared it at first and was the thing that got clipped
-          when a price ran to six figures — the longest price and the longest qualifier competing for one
-          row. It belongs with the other facts about the listing, at the foot.
-        */}
         <PriceLockup
           priceMinor={priceMinor}
           currencyCode={currencyCode}
           currencyMinorUnit={currencyMinorUnit}
           labels={labels}
         />
-      </div>
-
-      <div className={cx('flex flex-1 flex-col', size === 'wide' ? 'gap-3 p-6' : 'gap-2.5 p-5')}>
-        {/* `dir="auto"` on the title: a listing may be written in either script whatever language the page is in. */}
-        <CardTitle size={size === 'wide' ? 'large' : 'default'}>
-          <span dir="auto">{title}</span>
-        </CardTitle>
-        {meta === undefined ? null : <div className={cx(TYPE.metaSmall)}>{meta}</div>}
-
-        {/*
-          The foot: where the thing is, and anything the platform is asserting about it. Pushed down by
-          `mt-auto`, so a row of cards aligns on this line however long the titles above them ran.
-        */}
-        {place === null && badge === undefined && !(isNegotiable === true && priced) ? null : (
-          <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-            {place}
-            <span className="flex shrink-0 items-center gap-2">
-              {isNegotiable === true && priced ? (
-                <span className={cx('font-medium text-ink-brand', TYPE.metaSmall)}>{labels.negotiable}</span>
-              ) : null}
-              {badge === undefined ? null : (
-                <span className="relative z-20">
-                  <Badge tone={badge.tone ?? 'neutral'}>{badge.label}</Badge>
-                </span>
-              )}
-            </span>
-          </div>
-        )}
+        {isNegotiable === true && priced ? (
+          <span className={cx('shrink-0 font-medium text-ink-brand', TYPE.metaSmall)}>{labels.negotiable}</span>
+        ) : null}
       </div>
     </LinkCard>
   );
@@ -187,60 +223,62 @@ export function SellerCard({ href, displayName, city, bio, badge }: SellerCardPr
   );
 }
 
-export interface CategoryTileProps {
+export interface CategoryRowProps {
   readonly href: string;
   readonly label: string;
   readonly count?: number;
-  /** The first tile in a mosaic spans two columns, which is what gives the block a composition. */
-  readonly wide?: boolean;
 }
 
 /**
- * A category, as a door.
+ * A category, as a row in an index (0112).
  *
- * **A tile, not a chip.** 0109 drew categories as a wrapped row of 32px pills, which read as leftover form
- * controls and gave the most important navigation on the home page less presence than a button. A tile is big
- * enough to aim at on a phone, big enough to carry a count, and — because the first one in a mosaic spans two
- * columns — produces a block with a composition rather than a uniform rhythm.
+ * **This replaced a tile, and the tile was the thing the owner rejected twice.** 0109 drew categories as 32px
+ * pills; 0110 corrected those into tiles, which was better and still produced the exact figure the brief calls
+ * out — eight identical white rectangles in a four-by-two grid, each with a chevron, no counts, nothing to tell
+ * one from another but the word inside it. A grid of boxes whose only content is a word is a grid that spends
+ * all of its space on the boxes.
+ *
+ * So the block is an index instead: full-width rows, the name set large, a hairline between them, two columns on
+ * a wide viewport. The same eight names now carry twice the type size and none of the furniture, and the block
+ * reads as a directory somebody composed rather than as a row of empty cards. It is also the shape that survives
+ * an odd number of categories, which the mosaic variant did not — a ragged last row of boxes looks broken, a
+ * last row of one list item looks like a list.
+ *
+ * **No icon.** `HomepageCategoryCardSchema` carries an `icon` string, but it is an operator-entered identifier
+ * with no icon set behind it anywhere in this application, so rendering it would mean either inventing a set of
+ * drawings or printing a slug where a picture should be. The type size is doing that work instead.
  *
  * The chevron is drawn from two logical borders rather than typed as an arrow character, so it points the way
  * the page reads in both scripts and no label ends with "→", which is the commonest piece of template chrome
  * there is.
  */
-export function CategoryTile({ href, label, count, wide = false }: CategoryTileProps) {
+export function CategoryRow({ href, label, count }: CategoryRowProps) {
   return (
-    <li className={wide ? 'col-span-2' : ''}>
+    <li className="border-b border-hairline">
       <a
         href={href}
         className={cx(
-          'group relative flex h-full min-h-28 flex-col justify-between gap-4 overflow-hidden rounded-xl p-5 sm:min-h-32 sm:p-6',
-          // Inverts under the pointer rather than nudging a border. A category is a destination, and a tile
-          // that commits to the brand when you aim at it says so far better than a grey hover does.
-          'bg-surface-raised ring-1 ring-edge-brand hover:bg-surface-ink hover:ring-transparent',
+          'group flex items-center justify-between gap-4 py-5 ps-1 pe-2 sm:py-6',
+          'hover:ps-3',
           INTERACTIVE,
           FOCUS_RING,
         )}
       >
-        <span className="flex items-start justify-between gap-3">
+        <span className="flex min-w-0 items-baseline gap-3">
           <span
-            className={cx(
-              'font-medium text-ink-strong transition-colors duration-200 group-hover:text-on-ink',
-              wide ? 'text-lg sm:text-xl' : 'text-base sm:text-lg',
-            )}
+            className="truncate text-lg font-medium text-ink-strong transition-colors duration-200 group-hover:text-ink-brand sm:text-xl"
             dir="auto"
           >
             {label}
           </span>
-          <span
-            aria-hidden="true"
-            className="mt-1.5 size-2 shrink-0 -rotate-45 rtl:rotate-45 border-e-2 border-b-2 border-edge-brand transition-all duration-200 group-hover:translate-x-0.5 group-hover:border-accent-400 rtl:group-hover:-translate-x-0.5"
-          />
+          {count === undefined ? null : (
+            <span className={cx('shrink-0 tabular-nums', TYPE.metaSmall)}>{count}</span>
+          )}
         </span>
-        {count === undefined ? null : (
-          <span className={cx('tabular-nums transition-colors duration-200 group-hover:text-on-ink-muted', TYPE.metaSmall)}>
-            {count}
-          </span>
-        )}
+        <span
+          aria-hidden="true"
+          className="size-2 shrink-0 -rotate-45 rtl:rotate-45 border-e-2 border-b-2 border-edge-brand transition-transform duration-200 group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
+        />
       </a>
     </li>
   );

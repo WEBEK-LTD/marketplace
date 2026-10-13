@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { acceptAttributes } from './support/brand-chrome.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { startBuiltApp, type RunningApp } from './support/next-server.js';
 import { problem, startStubApi, type StubApi } from './support/stub-api.js';
@@ -1045,7 +1046,7 @@ describe('the report actions', () => {
     const page = await load(`/dashboard/messages/${CONVERSATION}`);
 
     expect(page.html).toContain('accept="image/jpeg,image/png,image/webp,application/pdf"');
-    expect(page.html).not.toContain('svg');
+    for (const accept of acceptAttributes(page.html)) expect(accept).not.toContain('svg');
   });
 
   it('offers no attach control on a closed conversation, which takes nothing new', async () => {

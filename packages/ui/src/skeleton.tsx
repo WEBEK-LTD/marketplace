@@ -64,7 +64,7 @@ export function SkeletonCard() {
  */
 export function SkeletonCardGrid({ count = 12, label }: { readonly count?: number; readonly label: string }) {
   return (
-    <div role="status" aria-busy="true" aria-label={label} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div role="status" aria-busy="true" aria-label={label} className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
       {Array.from({ length: count }, (_, index) => (
         <SkeletonCard key={index} />
       ))}

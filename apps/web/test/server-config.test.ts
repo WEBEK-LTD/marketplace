@@ -19,6 +19,8 @@ describe('web server configuration', () => {
       apiBaseUrl: 'http://api.internal:8080',
       internalBffCredential: CREDENTIAL,
       publicWebOrigin: ORIGIN,
+      // 0116. Optional on the same terms as the origin above, and absent here.
+      mediaPublicOrigin: null,
     });
     expect(() => loadServerConfig({})).toThrow(
       'Invalid or missing environment variables: API_BASE_URL, INTERNAL_BFF_CREDENTIAL',
@@ -58,7 +60,7 @@ describe('web server configuration', () => {
     validateServerConfigAtStartup();
     expect(info).toHaveBeenCalledTimes(1);
     const line = String(info.mock.calls[0]?.[0]);
-    expect(JSON.parse(line)).toEqual({ event: 'config_loaded', component: 'web', variablesValidated: 3 });
+    expect(JSON.parse(line)).toEqual({ event: 'config_loaded', component: 'web', variablesValidated: 4 });
     expect(line).not.toMatch(/placeholder-internal-host|API_BASE_URL|INTERNAL_BFF_CREDENTIAL|PUBLIC_WEB_ORIGIN/);
     // The origin is not a secret, but the event carries no values at all, so it is not in there either.
     expect(line).not.toContain(ORIGIN);

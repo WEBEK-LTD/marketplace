@@ -124,13 +124,22 @@ function isAllowedRedisUrl(value: string, nodeEnv: NodeEnv): boolean {
  */
 export function loadEnv(source: Readonly<Record<string, string | undefined>> = process.env): WorkerEnv {
   const data = readEnv('worker', WORKER_ENV_FIELDS, source);
-  if (!isAllowedRedisUrl(data.REDIS_URL, data.NODE_ENV)) {
+  // **The worker requires Redis even though the inventory marks the variable optional** (0117).
+  //
+  // One inventory entry describes one variable, and this one is shared: the API uses it for a cache in
+  // front of a throttle that counts in PostgreSQL without it, so an API with no Redis is a supported
+  // deployment. The worker is the other case entirely — its runtime is BullMQ, and a worker with no Redis
+  // has no queues, no schedules and no dead-letter handling. So the requirement moves here, where it is
+  // true, and a worker started without one still refuses at start-up naming the variable rather than
+  // failing later with a connection error.
+  const redisUrl: string | undefined = data.REDIS_URL;
+  if (redisUrl === undefined || !isAllowedRedisUrl(redisUrl, data.NODE_ENV)) {
     throw new EnvValidationError(['REDIS_URL']);
   }
   return Object.freeze({
     nodeEnv: data.NODE_ENV,
     logLevel: data.LOG_LEVEL,
-    redisUrl: data.REDIS_URL,
+    redisUrl,
     pseudonymousUserIdKey: data.PSEUDONYMOUS_USER_ID_KEY,
     concurrency: data.WORKER_CONCURRENCY,
     health: Object.freeze({ host: data.WORKER_HEALTH_HOST, port: data.WORKER_HEALTH_PORT }),

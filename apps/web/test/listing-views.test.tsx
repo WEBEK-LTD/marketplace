@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import ar from '../messages/ar.json';
 import en from '../messages/en.json';
-import { ListingPrice, formatListingAmount } from '../src/components/listing-price';
+import { ListingPrice, formatListingAmount, groupDigits } from '../src/components/listing-price';
 import {
 
 
@@ -56,6 +56,10 @@ const LABELS = {
   descriptionHeading: EN.descriptionHeading,
   yes: EN.yes,
   no: EN.no,
+  // 0116. Interpolated the way the page interpolates it, so a test's label is the label a visitor reads.
+  photosHeading: EN.photosHeading,
+  photoNumber: ({ number, total }: { number: number; total: number }) =>
+    EN.photoNumber.replace('{number}', String(number)).replace('{total}', String(total)),
 } as const;
 
 const SUMMARY: ListingSummary = {
@@ -68,10 +72,13 @@ const SUMMARY: ListingSummary = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  // 0116: no photograph is the ordinary state of a listing whose seller has not uploaded one.
+  primaryImage: null,
 };
 
 const DETAIL: ListingDetail = {
   ...SUMMARY,
+  images: [],
   description: 'A description long enough to be real.',
   contentLanguage: 'ar',
   createdAt: '2026-01-01T12:00:00.000Z',
@@ -125,6 +132,23 @@ describe('a listing price', () => {
   it('shows "contact for price" rather than a broken string when an amount cannot be formatted', () => {
     expect(formatListingAmount('not-a-number', 'EGP', 2)).toBeNull();
   });
+
+  it('groups the figure in threes for display, and only for display (0112)', () => {
+    // Eight unbroken digits is the least legible thing on a property card — `EGP 425000000.00` cannot be read
+    // at a glance and a column of them cannot be compared at all. Grouping is applied in `PriceLockup`, which
+    // is the component whose job is setting a price as a figure.
+    expect(groupDigits('425000000.00')).toBe('425,000,000.00');
+    expect(groupDigits('2500.00')).toBe('2,500.00');
+    // Boundaries: nothing to group, a minor unit of zero, and a negative.
+    expect(groupDigits('0.01')).toBe('0.01');
+    expect(groupDigits('999.00')).toBe('999.00');
+    expect(groupDigits('1000')).toBe('1,000');
+    expect(groupDigits('7')).toBe('7');
+    expect(groupDigits('-1234567.89')).toBe('-1,234,567.89');
+    // And the canonical serialisation is untouched, because that is what an amount *is*: it travels, it is
+    // compared, and a separator in it would be a defect rather than a nicety.
+    expect(formatListingAmount('42500000000', 'EGP', 2)).toBe('EGP 425000000.00');
+  });
 });
 
 describe('a listing card', () => {
@@ -134,7 +158,9 @@ describe('a listing card', () => {
     );
     expect(html).toContain('A listing title');
     expect(html).toContain('Cairo');
-    expect(textOf(html)).toContain('EGP 2500.00');
+    // Grouped in threes since 0112 — `PriceLockup` only, never `formatListingAmount`, which is asserted
+    // ungrouped a few lines above and is what the amount *is* rather than what it looks like.
+    expect(textOf(html)).toContain('EGP 2,500.00');
     expect(html).toContain('href="/listing/a-listing"');
   });
 
@@ -229,7 +255,8 @@ describe('the listing detail', () => {
     for (const expected of [
       'A listing title',
       'Cairo',
-      'EGP 2500.00',
+      // Grouped by `PriceLockup` since 0112.
+      'EGP 2,500.00',
       'A description long enough to be real.',
       'Furniture',
       'Good Shop',

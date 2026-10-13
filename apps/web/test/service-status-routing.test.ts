@@ -57,6 +57,10 @@ const LISTING = {
   seller: { slug: 'good-shop', displayName: 'Good Shop' },
   attributes: [],
   tags: [],
+  // 0116. The listing contract carries the gallery; the service one above deliberately does not — a service
+  // has no `listing_media` row, and this fixture pair is where that difference stays visible.
+  primaryImage: null,
+  images: [],
 } as const;
 
 /** The card projections. The list schemas are strict, so a detail-shaped row would be refused. */
@@ -83,6 +87,7 @@ const LISTING_CARD = {
   currencyMinorUnit: LISTING.currencyMinorUnit,
   isNegotiable: LISTING.isNegotiable,
   listingTypeCode: LISTING.listingTypeCode,
+  primaryImage: LISTING.primaryImage,
 } as const;
 
 let api: StubApi;

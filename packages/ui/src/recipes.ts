@@ -197,9 +197,22 @@ export const PRICE = Object.freeze({
    * space is a wrap opportunity, which in a narrow card broke the figure across two lines with the code
    * stranded above the number. The price is one word as far as line-breaking is concerned.
    */
-  card: 'whitespace-nowrap text-2xl font-semibold leading-none tabular-nums text-ink-strong sm:text-[1.75rem]',
-  /** On a detail page, where the price is the largest thing on the screen after the title. */
-  detail: 'whitespace-nowrap text-4xl font-semibold leading-none tabular-nums text-ink-strong sm:text-5xl',
+  /*
+    One step down in 0112. At 28px in a tinted band at the head of the card the price *was* the card; now it
+    closes the card from a well at the foot, where the same figure at 20–24px is still the strongest thing in
+    its own region without out-shouting the title above it. See `CatalogCard` for why that order changed.
+  */
+  card: 'whitespace-nowrap text-xl font-semibold leading-none tabular-nums text-ink-strong sm:text-2xl',
+  /**
+   * On a detail page, where the price is the largest thing on the screen after the title.
+   *
+   * **It overflowed its own panel, and 0112 fixes that.** At 48px with `whitespace-nowrap`, a property price —
+   * `EGP 4,250,000.00` is sixteen characters — ran straight out through the inline-end edge of the 22rem aside
+   * it sits in. The nowrap was right when a price was `EGP 2500.00`; for property it guarantees an overflow
+   * sooner or later. Two steps down, and the wrap is allowed back: the amount itself contains no space, so the
+   * only place a line can break is between the currency mark and the figure, which is exactly where it should.
+   */
+  detail: 'text-3xl font-semibold leading-tight tabular-nums text-ink-strong sm:text-4xl',
   /** Where there is no amount: "Contact for price" is prose, not a figure, so it is not set as one. */
   absent: 'text-base font-medium leading-snug text-ink-muted',
 });

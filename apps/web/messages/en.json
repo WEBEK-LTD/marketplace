@@ -178,9 +178,22 @@
     "negotiable": "Negotiable"
   },
   "Footer": {
-    "copyright": "© {year} {name}"
+    "browseHeading": "Browse",
+    "contact": "Contact",
+    "cookies": "Cookies",
+    "copyright": "© {year} {name}",
+    "emailLabel": "Email",
+    "help": "Help",
+    "hoursLabel": "Open",
+    "legalHeading": "Help and policies",
+    "officeHeading": "The office",
+    "privacy": "Privacy",
+    "telephoneLabel": "Telephone",
+    "terms": "Terms",
+    "whatsappLabel": "WhatsApp"
   },
   "Header": {
+    "action": "List your property",
     "closeMenu": "Close menu",
     "languageLink": "العربية",
     "languageLinkLabel": "Switch to Arabic",
@@ -191,8 +204,9 @@
     "browseCategories": "All categories",
     "browseListings": "Browse listings",
     "browseServices": "Find a service",
-    "fallbackIntro": "Browse what people are selling, find a service, or look through the categories.",
-    "metaDescription": "Buy and sell products and services across Egypt.",
+    "heroLead": "Browse what is listed, then deal with our office team directly. Payment and paperwork are completed at the office.",
+    "heroTitle": "Apartments, villas and land across Egypt — at the real price",
+    "metaDescription": "Apartments, villas, land and commercial property across Egypt.",
     "unavailable": "Some of the homepage could not be loaded just now. Everything above still works."
   },
   "Listings": {
@@ -212,10 +226,29 @@
     "detailsHeading": "Details",
     "tagsHeading": "Tags",
     "descriptionHeading": "Description",
+    "photosHeading": "Photographs",
+    "photoNumber": "Photograph {number} of {total}",
     "yes": "Yes",
     "no": "No",
     "notFoundTitle": "Listing not found",
     "notFoundDescription": "This listing does not exist or is no longer published."
+  },
+  "ListingPhotos": {
+    "heading": "Photographs",
+    "intro": "The first photograph is the one buyers see on the listing card. Pictures are resized in your browser before they are uploaded, so no location data from your camera leaves your device.",
+    "add": "Add a photograph",
+    "working": "Working…",
+    "none": "No photographs yet.",
+    "primary": "On the card",
+    "makePrimary": "Show on the card",
+    "remove": "Remove",
+    "unpublished": "Not published yet",
+    "wrongType": "Choose a JPEG, PNG, WebP, AVIF or HEIC image.",
+    "tooLarge": "That file is larger than 25 MB.",
+    "tooSmall": "That picture is too small. Choose one at least 400 pixels wide.",
+    "failed": "That didn't work. Try again.",
+    "unsupported": "This browser cannot prepare images for upload. Try a different browser.",
+    "photoNumber": "Photograph {number} of {total}"
   },
   "Loading": {
     "label": "Loading"
@@ -1412,7 +1445,7 @@
     "genericFailure": "That did not work. Try again."
   },
   "Site": {
-    "name": "Marketplace"
+    "name": "BedonOver"
   },
   "Support": {
     "title": "Support",

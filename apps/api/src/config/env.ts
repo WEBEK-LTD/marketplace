@@ -57,8 +57,17 @@ export interface ApiEnv {
   readonly supabaseUrl: string;
   /** Server-only Supabase secret key for the password grant. Never logged; never sent to a browser. */
   readonly supabaseSecretKey: string;
-  /** Redis URL for the first login-throttle tier (C-1). Server-only. */
-  readonly redisUrl: string;
+  /**
+   * Redis URL for the first login-throttle tier (C-1), or `null` when none is configured. Server-only.
+   *
+   * **`null` is an ordinary deployment, not a degraded one** (0117). The throttle has always had two
+   * tiers — Redis, and the durable PostgreSQL counter `app_private.rate_limit_hit` — and
+   * {@link LoginThrottleService} already accepts a null first tier and counts in PostgreSQL instead.
+   * So an API with no Redis enforces exactly the same limits over exactly the same windows; what it
+   * loses is a fast shared cache in front of them, not the enforcement. The never-fail-open rule is
+   * untouched: a request that cannot be counted at all is still refused.
+   */
+  readonly redisUrl: string | null;
   /**
    * Origin of the public web app, used to build the password-reset recovery link (F3).
    *
@@ -104,6 +113,8 @@ export const API_ENV_FIELDS = Object.freeze({
   // Shape is the provider's, so only "present and not trivially empty" is checked here. It is never
   // logged and never leaves the server.
   SUPABASE_SECRET_KEY: z.string().min(20),
+  // Optional since 0117. Present-and-empty is still invalid, which is the rule every optional variable
+  // in this repository follows: only an unset variable counts as absent.
   REDIS_URL: z.string().min(1),
   // An origin: scheme and host only, no path, no credentials, no trailing slash of significance. The
   // recovery link is built by appending a path, so a value carrying one would produce a broken link.
@@ -132,7 +143,9 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>> = p
     internalBffCredentials: Object.freeze(values.INTERNAL_BFF_CREDENTIAL.split(',')),
     supabaseUrl: values.SUPABASE_URL.replace(/\/$/, ''),
     supabaseSecretKey: values.SUPABASE_SECRET_KEY,
-    redisUrl: values.REDIS_URL,
+    // The inventory makes it optional, so the reader's type is optimistic for this one entry. Widened
+    // here deliberately rather than asserted away, because its absence is a state the API carries.
+    redisUrl: (values.REDIS_URL as string | undefined) ?? null,
     webPublicOrigin: values.WEB_PUBLIC_ORIGIN.replace(/\/$/, ''),
   });
 }

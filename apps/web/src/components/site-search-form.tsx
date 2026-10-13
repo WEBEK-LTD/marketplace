@@ -1,5 +1,5 @@
 import { SEARCH_MIN_QUERY_LENGTH } from '@repo/contracts';
-import { Button, FIELD_HERO, Input, cx } from '@repo/ui';
+import { Button, FIELD_HERO, FOCUS_WITHIN, Input, cx } from '@repo/ui';
 
 export interface SiteSearchFormProps {
   /** `/search` or `/ar/search`, so the form posts to the reader's own language. */
@@ -11,6 +11,18 @@ export interface SiteSearchFormProps {
   readonly id?: string;
   /** `ink` is the home page's opening band, where the field sits on near-black. */
   readonly tone?: 'default' | 'ink';
+  /**
+   * How the field and its submit are put together.
+   *
+   * `split` is two controls in a row, which is what every form in the product uses. `fused` is one bar: a single
+   * rounded container holding the field and the button, with the container taking the edge and the focus ring.
+   *
+   * The distinction exists because of a real defect rather than for variety. On the home page's opening band the
+   * split form rendered as a white field and, beside it, a white button of the same height and radius — two
+   * unrelated controls that happened to be adjacent, and on a phone two stacked white boxes that read as *two
+   * fields*. A search bar is one object and has to look like one.
+   */
+  readonly shape?: 'split' | 'fused';
   readonly className?: string;
 }
 
@@ -42,22 +54,13 @@ export function SiteSearchForm({
   defaultValue,
   id = 'site-search',
   tone = 'default',
+  shape = 'split',
   className,
 }: SiteSearchFormProps) {
   const ink = tone === 'ink';
-  return (
-    <form
-      action={action}
-      method="get"
-      role="search"
-      /*
-        Stacked on a phone, side by side from `sm`. A field and a button sharing one row at 390px leaves the
-        field about 180px wide, which truncates its own placeholder — which is exactly what the first mobile
-        screenshot showed. A full-width field over a full-width button is the mobile layout, not a squeezed
-        version of the desktop one.
-      */
-      className={cx('flex w-full max-w-2xl flex-col items-stretch gap-3 sm:flex-row sm:items-stretch', className)}
-    >
+
+  const field = (
+    <>
       <label htmlFor={id} className="sr-only">
         {placeholder}
       </label>
@@ -72,8 +75,62 @@ export function SiteSearchForm({
         autoComplete="off"
         /* A query may be in either script whatever language the page is in, so the browser decides per value. */
         dir="auto"
-        className={FIELD_HERO}
+        {...(shape === 'fused'
+          ? { bare: true, className: 'h-12 px-4 text-base sm:h-14 sm:px-6 sm:text-lg' }
+          : { className: FIELD_HERO })}
       />
+    </>
+  );
+
+  if (shape === 'fused') {
+    return (
+      <form
+        action={action}
+        method="get"
+        role="search"
+        /*
+          One bar. The container carries the surface, the edge and — through `FOCUS_WITHIN` — the focus ring, so
+          tabbing into the field rings the whole bar rather than drawing a second outline inside it.
+
+          `rounded-2xl` rather than `rounded-full`: the bar holds a 56px button at a 12px radius, and a pill
+          container around a rounded-rectangle button leaves two crescents of background at the ends. On a phone
+          it becomes a column *inside the same container*, which is what keeps it one object at 390px instead of
+          reverting to two stacked boxes.
+        */
+        className={cx(
+          'flex w-full max-w-3xl flex-col gap-2 rounded-2xl bg-surface-raised p-2 ring-1 sm:flex-row sm:items-center sm:gap-2',
+          ink ? 'ring-transparent' : 'ring-edge',
+          FOCUS_WITHIN,
+          className,
+        )}
+      >
+        <div className="flex min-w-0 flex-1 items-center">{field}</div>
+        {/*
+          No `fullWidth`. In the column direction the form's default `align-items: stretch` already makes the
+          button span the bar; from `sm` the row is `items-center` and the button takes its own width. Asking for
+          `w-full` would have made it span the row on a desktop too.
+        */}
+        <Button type="submit" size="lg" variant="primary">
+          {submitLabel}
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <form
+      action={action}
+      method="get"
+      role="search"
+      /*
+        Stacked on a phone, side by side from `sm`. A field and a button sharing one row at 390px leaves the
+        field about 180px wide, which truncates its own placeholder — which is exactly what the first mobile
+        screenshot showed. A full-width field over a full-width button is the mobile layout, not a squeezed
+        version of the desktop one.
+      */
+      className={cx('flex w-full max-w-2xl flex-col items-stretch gap-3 sm:flex-row sm:items-stretch', className)}
+    >
+      {field}
       {/*
         On the ink band the submit inverts to a light fill. It is the one bright element on a near-black
         surface, which is what makes it the obvious thing to press without any colour being involved.

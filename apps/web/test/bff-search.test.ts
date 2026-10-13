@@ -26,6 +26,7 @@ const LISTING = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  primaryImage: null,
 };
 
 const SERVICE = {

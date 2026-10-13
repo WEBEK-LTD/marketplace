@@ -57,6 +57,7 @@ import type {
   FaqsStore,
 } from '../admin/faqs.service.js';
 import type { SeoSettingsDbRow, SeoSettingsStore } from '../admin/seo-settings.service.js';
+import type { SiteSettingDbRow, SiteSettingsStore } from '../admin/site-settings.service.js';
 import type {
   CmsCoverMediaDbRow,
   CmsMediaRow,
@@ -110,6 +111,12 @@ import type {
   SellerVocabularyStore,
   SellerVocabularyWriteResult,
 } from '../sellers/seller-vocabulary.service.js';
+import type { ListingMediaRow, ListingMediaStore } from '../catalog/listing-images.js';
+import type {
+  ListingMediaManagerRow,
+  ListingMediaTargetResult,
+  ListingMediaWriteStore,
+} from '../catalog/listing-media.service.js';
 import type { ListingDetailRow, ListingRow, ListingStore } from '../catalog/listings.service.js';
 import type { ServiceDetailRow, ServiceRow, ServiceStore } from '../catalog/services.service.js';
 import type { SellerProfileRow, SellerStore } from '../catalog/sellers.service.js';
@@ -460,6 +467,7 @@ export class AppSystemStore
     FaqsPublicStore,
     FaqsStore,
     SeoSettingsStore,
+    SiteSettingsStore,
     CmsMediaStore,
     SeoStore,
     SeoRedirectsStore,
@@ -469,6 +477,8 @@ export class AppSystemStore
     SellerVocabularyStore,
     CategoryFeedPort,
     ListingStore,
+    ListingMediaStore,
+    ListingMediaWriteStore,
     ServiceStore,
     SellerStore,
     SellerIdentityStore,
@@ -8641,7 +8651,8 @@ export class AppSystemStore
     limit: number;
   }): Promise<readonly HomepageListingDbRow[]> {
     const result = await sql<HomepageListingSqlRow>`
-      select result_type, slug, title, city, price_minor, currency_code, currency_minor_unit, is_negotiable
+      select result_type, id, slug, title, city, price_minor, currency_code, currency_minor_unit,
+             is_negotiable
         from app_private.public_homepage_listings(${[...input.ids]}::uuid[], ${input.limit}::integer)
        order by chosen_position
     `.execute(this.db);
@@ -8652,7 +8663,8 @@ export class AppSystemStore
   /** `app_private.public_homepage_latest_listings(integer)` (0093). */
   async publicHomepageLatestListings(limit: number): Promise<readonly HomepageListingDbRow[]> {
     const result = await sql<HomepageListingSqlRow>`
-      select result_type, slug, title, city, price_minor, currency_code, currency_minor_unit, is_negotiable
+      select result_type, id, slug, title, city, price_minor, currency_code, currency_minor_unit,
+             is_negotiable
         from app_private.public_homepage_latest_listings(${limit}::integer)
     `.execute(this.db);
 
@@ -8738,6 +8750,211 @@ export class AppSystemStore
       categorySlug: row.category_slug ?? null,
       categoryName: row.category_name ?? null,
       publishedAt: row.published_at,
+    }));
+  }
+
+  /* ------------------------------------------------------------------------------------------------ */
+  /* Listing photographs (0116, migration 0114)                                                        */
+  /* ------------------------------------------------------------------------------------------------ */
+
+  /** `app_private.listing_media_resolve(...)` (0114): a slug to an identifier, for a caller who may manage it. */
+  async listingMediaResolve(input: {
+    userId: string;
+    slug: string;
+    isAal2: boolean;
+  }): Promise<string | null> {
+    const result = await sql<{ listing_id: string | null }>`
+      select app_private.listing_media_resolve(
+        ${input.userId}::uuid,
+        ${input.slug}::text,
+        ${input.isAal2}::boolean
+      ) as listing_id
+    `.execute(this.db);
+    return result.rows[0]?.listing_id ?? null;
+  }
+
+  /** `app_private.listing_media_upload_target(...)` (0114): authorize one object of one photograph. */
+  async listingMediaUploadTarget(input: {
+    userId: string;
+    listingId: string;
+    variantKey: string;
+    contentType: string;
+    byteSize: number;
+    isAal2: boolean;
+  }): Promise<ListingMediaTargetResult> {
+    const result = await sql<{
+      outcome: string;
+      bucket_id: string | null;
+      object_path: string | null;
+      max_byte_size: string | number | null;
+    }>`
+      select outcome, bucket_id, object_path, max_byte_size
+        from app_private.listing_media_upload_target(
+          ${input.userId}::uuid,
+          ${input.listingId}::uuid,
+          ${input.variantKey}::text,
+          ${input.contentType}::text,
+          ${input.byteSize}::bigint,
+          ${input.isAal2}::boolean
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Authorizing a listing photograph upload returned no row.');
+    const limit = row.max_byte_size;
+    return {
+      outcome: row.outcome,
+      bucketId: row.bucket_id ?? null,
+      objectPath: row.object_path ?? null,
+      maxByteSize: limit === null || limit === undefined ? null : Number(limit),
+    };
+  }
+
+  /**
+   * `app_private.listing_media_attach(...)` (0114): record the four uploaded objects as one photograph.
+   *
+   * The variants go over as one JSON document because that is the function's own parameter: four objects
+   * are one photograph and one transaction, and four separate calls could leave two of three sizes stored.
+   */
+  async listingMediaAttach(input: {
+    userId: string;
+    listingId: string;
+    variants: readonly {
+      variantKey: string;
+      objectPath: string;
+      width: number;
+      height: number;
+      byteSize: number;
+    }[];
+    isAal2: boolean;
+  }): Promise<{ outcome: string; mediaId: string | null }> {
+    const document = input.variants.map((variant) => ({
+      variant_key: variant.variantKey,
+      object_path: variant.objectPath,
+      width: variant.width,
+      height: variant.height,
+      byte_size: variant.byteSize,
+    }));
+
+    const result = await sql<{ outcome: string; media_id: string | null }>`
+      select outcome, media_id
+        from app_private.listing_media_attach(
+          ${input.userId}::uuid,
+          ${input.listingId}::uuid,
+          ${JSON.stringify(document)}::jsonb,
+          ${input.isAal2}::boolean
+        )
+    `.execute(this.db);
+
+    const row = result.rows[0];
+    if (row === undefined) throw new Error('Recording a listing photograph returned no row.');
+    return { outcome: row.outcome, mediaId: row.media_id ?? null };
+  }
+
+  /** `app_private.listing_media_withdraw(...)` (0114). */
+  async listingMediaWithdraw(input: {
+    userId: string;
+    listingId: string;
+    mediaId: string;
+    isAal2: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ withdrawn: boolean }>`
+      select app_private.listing_media_withdraw(
+        ${input.userId}::uuid,
+        ${input.listingId}::uuid,
+        ${input.mediaId}::uuid,
+        ${input.isAal2}::boolean
+      ) as withdrawn
+    `.execute(this.db);
+    return result.rows[0]?.withdrawn === true;
+  }
+
+  /** `app_private.listing_media_set_primary(...)` (0114). */
+  async listingMediaSetPrimary(input: {
+    userId: string;
+    listingId: string;
+    mediaId: string;
+    isAal2: boolean;
+  }): Promise<boolean> {
+    const result = await sql<{ updated: boolean }>`
+      select app_private.listing_media_set_primary(
+        ${input.userId}::uuid,
+        ${input.listingId}::uuid,
+        ${input.mediaId}::uuid,
+        ${input.isAal2}::boolean
+      ) as updated
+    `.execute(this.db);
+    return result.rows[0]?.updated === true;
+  }
+
+  /** `app_private.listing_media_for_manager(...)` (0114). */
+  async listingMediaForManager(input: {
+    userId: string;
+    listingId: string;
+    isAal2: boolean;
+  }): Promise<readonly ListingMediaManagerRow[]> {
+    const result = await sql<{
+      media_id: string;
+      media_position: number;
+      is_primary: boolean;
+      status: string;
+      variant_key: string;
+      object_path: string;
+      width: number;
+      height: number;
+      is_public: boolean;
+    }>`
+      select media_id, media_position, is_primary, status, variant_key, object_path, width, height, is_public
+        from app_private.listing_media_for_manager(
+          ${input.userId}::uuid,
+          ${input.listingId}::uuid,
+          ${input.isAal2}::boolean
+        )
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      mediaId: row.media_id,
+      mediaPosition: Number(row.media_position),
+      isPrimary: row.is_primary,
+      status: row.status,
+      variantKey: row.variant_key,
+      objectPath: row.object_path,
+      width: Number(row.width),
+      height: Number(row.height),
+      isPublic: row.is_public,
+    }));
+  }
+
+  /**
+   * `app_private.public_listing_media(uuid[])` (0114).
+   *
+   * One call for a whole page of cards. The reader's own order — listing, then position, then variant width —
+   * is what `ListingImagesService` walks, so nothing is re-sorted here.
+   */
+  async publicListingMedia(listingIds: readonly string[]): Promise<readonly ListingMediaRow[]> {
+    const result = await sql<{
+      listing_id: string;
+      media_id: string;
+      media_position: number;
+      is_primary: boolean;
+      variant_key: string;
+      object_path: string;
+      width: number;
+      height: number;
+    }>`
+      select listing_id, media_id, media_position, is_primary, variant_key, object_path, width, height
+        from app_private.public_listing_media(${[...listingIds]}::uuid[])
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      listingId: row.listing_id,
+      mediaId: row.media_id,
+      mediaPosition: Number(row.media_position),
+      isPrimary: row.is_primary,
+      variantKey: row.variant_key,
+      objectPath: row.object_path,
+      width: Number(row.width),
+      height: Number(row.height),
     }));
   }
 
@@ -8877,6 +9094,22 @@ export class AppSystemStore
     `.execute(this.db);
 
     return result.rows[0]?.removed === true;
+  }
+
+  // -------------------------------------------------------------------------------------------------
+  // Public site settings (0113)
+  // -------------------------------------------------------------------------------------------------
+  /**
+   * `app_private.public_site_settings(text)` (0113).
+   *
+   * One category of public settings that actually have a value. The function decides both halves of that —
+   * `is_public` by predicate, and "has a value" by type — so this method filters nothing and sorts nothing.
+   */
+  async publicSiteSettings(category: string): Promise<readonly { key: string; value: unknown }[]> {
+    const result = await sql<{ key: string; value: unknown }>`
+      select key, value from app_private.public_site_settings(${category}::text)
+    `.execute(this.db);
+    return result.rows.map((row) => ({ key: row.key, value: row.value }));
   }
 
   // -------------------------------------------------------------------------------------------------
@@ -9588,6 +9821,63 @@ export class AppSystemStore
    * One row per active locale, authored or not. `robots_is_served` is the database's own answer about which
    * locale's body `/robots.txt` serves, and is read rather than recomputed anywhere above this line.
    */
+  // -------------------------------------------------------------------------------------------------
+  // Site settings, for the console (0113)
+  // -------------------------------------------------------------------------------------------------
+  /** `app_private.site_settings_for_staff(uuid, boolean, text)`: one category, in key order. */
+  async siteSettingsForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    category: string;
+  }): Promise<readonly SiteSettingDbRow[]> {
+    const result = await sql<{
+      key: string;
+      category: string;
+      value: unknown;
+      value_type: string;
+      is_public: boolean;
+      description_en: string;
+      description_ar: string;
+      updated_at: Date | string | null;
+    }>`
+      select key, category, value, value_type, is_public, description_en, description_ar, updated_at
+        from app_private.site_settings_for_staff(
+          ${input.userId}::uuid, ${input.isAal2}::boolean, ${input.category}::text)
+    `.execute(this.db);
+
+    return result.rows.map((row) => ({
+      key: row.key,
+      category: row.category,
+      value: row.value,
+      valueType: row.value_type,
+      isPublic: row.is_public === true,
+      descriptionEn: row.description_en,
+      descriptionAr: row.description_ar,
+      updatedAt: row.updated_at ?? null,
+    }));
+  }
+
+  /**
+   * `app_private.site_setting_save_for_staff(uuid, boolean, text, jsonb)`.
+   *
+   * The value is sent as `jsonb`, which is what the setting's declared type is checked against — in the
+   * function and again in 0008's own constraint. `JSON.stringify` rather than a cast of the raw value, so a
+   * string setting receives a JSON string and not a bare word.
+   */
+  async siteSettingSaveForStaff(input: {
+    userId: string;
+    isAal2: boolean;
+    key: string;
+    value: unknown;
+  }): Promise<boolean> {
+    const result = await sql<{ saved: boolean }>`
+      select app_private.site_setting_save_for_staff(
+        ${input.userId}::uuid, ${input.isAal2}::boolean, ${input.key}::text,
+        ${JSON.stringify(input.value ?? null)}::jsonb) as saved
+    `.execute(this.db);
+    return result.rows[0]?.saved === true;
+  }
+
   async seoSettingsForStaff(input: { userId: string; isAal2: boolean }): Promise<readonly SeoSettingsDbRow[]> {
     const result = await sql<{
       locale_code: string;
@@ -9733,6 +10023,7 @@ function faqRow(row: FaqSqlRow): FaqDetailDbRow {
 /** The card columns both homepage listing readers return; one shape, so one mapper. */
 interface HomepageListingSqlRow {
   readonly result_type: string;
+  readonly id: string;
   readonly slug: string;
   readonly title: string;
   readonly city: string | null;
@@ -9745,6 +10036,7 @@ interface HomepageListingSqlRow {
 function homepageListingRow(row: HomepageListingSqlRow): HomepageListingDbRow {
   return {
     resultType: row.result_type,
+    id: row.id,
     slug: row.slug,
     title: row.title,
     city: row.city ?? null,

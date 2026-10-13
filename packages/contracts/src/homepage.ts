@@ -1,6 +1,6 @@
 import { z } from './zod.js';
 import { PublicLocaleSchema } from './categories.js';
-import { MinorAmountSchema } from './listings.js';
+import { ListingImageSchema, MinorAmountSchema } from './listings.js';
 
 /**
  * The homepage — what it is made of, and how a console authors it (Phase 8, increment 0093).
@@ -198,6 +198,10 @@ export function homepageConfigIsValid(sectionType: string, config: unknown): boo
  * `resultType` is here because the two kinds live at different paths. `pricingModel`, `deliveryDays` and
  * `revisionsIncluded` are not: a compact card shows none of them, and a public contract should carry nothing no
  * renderer reads.
+ *
+ * **`primaryImage` is a listing's and only a listing's** (0116). A service has no `listing_media` row, so a
+ * service card carries `null` rather than a shape that could never be filled — and the field is nullable for
+ * the ordinary reason too: a listing whose seller has not added a photograph yet is a normal listing.
  */
 export const HomepageListingCardSchema = z
   .object({
@@ -211,6 +215,7 @@ export const HomepageListingCardSchema = z
     // Null for a service: `is_negotiable` is a product's field and 0089's reader says so rather than inventing a
     // `false` for a row that never had the column's meaning.
     isNegotiable: z.boolean().nullable(),
+    primaryImage: ListingImageSchema.nullable(),
   })
   .strict();
 export type HomepageListingCard = z.infer<typeof HomepageListingCardSchema>;

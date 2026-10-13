@@ -13,7 +13,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(82);
+select plan(84);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Shape
@@ -284,6 +284,27 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- CMS static pages
 -- ---------------------------------------------------------------------------------------------------
+-- **What the seeded catalogue does, before this file replaces it with its own.**
+--
+-- 0112 publishes the twenty-two addresses the route map fixes, in both languages and all indexable, so the
+-- sitemap now lists them. That is new behaviour and worth one assertion of its own rather than a silent
+-- deletion — this is the only file that reads the page sitemap, so if it did not say so nothing would.
+select cmp_ok(
+  (select count(*)::int from app_private.public_sitemap_pages(100, 0)), '>=', 22,
+  'the seeded static pages are in the sitemap: published, indexable and written in both languages');
+select is(
+  (select locales from app_private.public_sitemap_pages(100, 0) where slug = 'terms'),
+  array['en', 'ar'],
+  'and each is listed for both languages, because each was seeded in both');
+
+-- **Now the catalogue is cleared, and this file supplies its own.**
+--
+-- What follows tests the *reader's rules* — published, indexable, written, not scheduled for later — and
+-- each rule needs a page in exactly that state. The fixtures take the real slugs because they are standing
+-- in for the real pages; they can only do that if the seeded rows are not already holding them. The
+-- transaction is rolled back, so nothing is removed from anything.
+delete from public.pages where page_key is not null;
+
 insert into public.pages (id, slug, page_key, template, status, published_at, is_indexable, sort_order) values
   ('d1000000-0000-4000-8000-00000000ab01', 'terms', 'terms', 'legal', 'published', now() - interval '1 day', true, 1),
   ('d1000000-0000-4000-8000-00000000ab02', 'privacy', 'privacy', 'legal', 'published', now() - interval '1 day', true, 2),

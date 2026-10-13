@@ -178,9 +178,22 @@
     "negotiable": "قابل للتفاوض"
   },
   "Footer": {
-    "copyright": "© {year} {name}"
+    "browseHeading": "تصفّح",
+    "contact": "اتصل بنا",
+    "cookies": "ملفات تعريف الارتباط",
+    "copyright": "© {year} {name}",
+    "emailLabel": "البريد",
+    "help": "المساعدة",
+    "hoursLabel": "مواعيد العمل",
+    "legalHeading": "المساعدة والسياسات",
+    "officeHeading": "المكتب",
+    "privacy": "الخصوصية",
+    "telephoneLabel": "تليفون",
+    "terms": "الشروط",
+    "whatsappLabel": "واتساب"
   },
   "Header": {
+    "action": "أضف عقارك",
     "closeMenu": "إغلاق القائمة",
     "languageLink": "English",
     "languageLinkLabel": "التبديل إلى الإنجليزية",
@@ -191,8 +204,9 @@
     "browseCategories": "كل التصنيفات",
     "browseListings": "تصفّح الإعلانات",
     "browseServices": "ابحث عن خدمة",
-    "fallbackIntro": "تصفّح ما يبيعه الناس، أو ابحث عن خدمة، أو تنقّل بين التصنيفات.",
-    "metaDescription": "اشترِ وبِع المنتجات والخدمات في جميع أنحاء مصر.",
+    "heroLead": "اتصفّح المعروض، وتعامل مع فريق المكتب مباشرة. الدفع والتوثيق يتمّان في المكتب.",
+    "heroTitle": "شقق وفلل وأراضي في مصر — بسعرها الحقيقي",
+    "metaDescription": "شقق وفلل وأراضي ووحدات تجارية في جميع أنحاء مصر.",
     "unavailable": "تعذّر تحميل جزء من الصفحة الرئيسية الآن. كل ما بالأعلى يعمل."
   },
   "Listings": {
@@ -212,10 +226,29 @@
     "detailsHeading": "التفاصيل",
     "tagsHeading": "الوسوم",
     "descriptionHeading": "الوصف",
+    "photosHeading": "الصور",
+    "photoNumber": "صورة {number} من {total}",
     "yes": "نعم",
     "no": "لا",
     "notFoundTitle": "الإعلان غير موجود",
     "notFoundDescription": "هذا الإعلان غير موجود أو لم يعد منشورًا."
+  },
+  "ListingPhotos": {
+    "heading": "الصور",
+    "intro": "أول صورة هي الي تظهر للمشتري في كارت الإعلان. الصور بيتم تصغيرها في المتصفح قبل الرفع، فبيانات المكان الي الكاميرا بتسجلها مش بتسيب جهازك.",
+    "add": "أضف صورة",
+    "working": "جاري التنفيذ…",
+    "none": "مافيش صور لحد الآن.",
+    "primary": "على الكارت",
+    "makePrimary": "اعرضها على الكارت",
+    "remove": "حذف",
+    "unpublished": "لم تُنشر بعد",
+    "wrongType": "اختر صورة JPEG أو PNG أو WebP أو AVIF أو HEIC.",
+    "tooLarge": "حجم الملف أكبر من 25 ميجابايت.",
+    "tooSmall": "الصورة صغيرة جدًا. اختر صورة عرضها 400 بكسل على الأقل.",
+    "failed": "لم تنجح العملية. حاول مرة أخرى.",
+    "unsupported": "هذا المتصفح لا يستطيع تجهيز الصور للرفع. جرّب متصفحًا آخر.",
+    "photoNumber": "صورة {number} من {total}"
   },
   "Loading": {
     "label": "جارٍ التحميل"
@@ -1412,7 +1445,7 @@
     "genericFailure": "لم ينجح ذلك. حاول مرة أخرى."
   },
   "Site": {
-    "name": "السوق"
+    "name": "بدون أوفر"
   },
   "Support": {
     "title": "الدعم",

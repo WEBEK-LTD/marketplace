@@ -34,6 +34,7 @@ const LISTING = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  primaryImage: null,
   description: 'A description long enough to be real.',
   contentLanguage: 'en',
   createdAt: '2026-01-01T12:00:00.000Z',
@@ -41,6 +42,7 @@ const LISTING = {
   category: { slug: 'furniture', name: 'Furniture' },
   seller: { slug: 'good-shop', displayName: 'Good Shop' },
   attributes: [],
+  images: [],
   tags: [],
 } as const;
 
@@ -134,6 +136,7 @@ function serveApi(): void {
           slug: 'a-haircut',
           title: 'A haircut',
           listingTypeCode: 'service',
+          primaryImage: null,
           availability: listingAvailability,
         },
       });

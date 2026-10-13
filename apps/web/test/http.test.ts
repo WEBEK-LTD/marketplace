@@ -65,16 +65,22 @@ describe('locale routing', () => {
   it('serves English at the root, left-to-right', async () => {
     const html = await (await get('/')).text();
     expect(html).toContain('<html lang="en" dir="ltr">');
-    expect(html).toContain('>Marketplace</h1>');
+    // The `<h1>` is the page's proposition, not the site's name (0112). It was the name until then, repeated
+    // sixty pixels under the logo that had just said it, so the largest type on the front page told a visitor
+    // nothing. What this assertion is for is that the root serves the English catalogue, so it now checks the
+    // English heading — and checks that the name is *not* the heading, which is the thing that changed.
+    expect(html).toContain('>Apartments, villas and land across Egypt — at the real price</h1>');
+    expect(html).not.toContain('>BedonOver</h1>');
     expect(html).toMatch(/<a href="\/ar" hrefLang="ar" lang="ar" aria-label="Switch to Arabic"[^>]*>العربية<\/a>/);
-    expect(html).toContain(`© ${new Date().getFullYear()} Marketplace`);
+    expect(html).toContain(`© ${new Date().getFullYear()} BedonOver`);
     expect(html).toContain('href="#content"');
   });
 
   it('serves Arabic under /ar, right-to-left', async () => {
     const html = await (await get('/ar')).text();
     expect(html).toContain('<html lang="ar" dir="rtl">');
-    expect(html).toContain('>السوق</h1>');
+    expect(html).toContain('>شقق وفلل وأراضي في مصر — بسعرها الحقيقي</h1>');
+    expect(html).not.toContain('>بدون أوفر</h1>');
     expect(html).toMatch(/<a href="\/" hrefLang="en" lang="en"[^>]*>English<\/a>/);
   });
 

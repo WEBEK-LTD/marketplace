@@ -220,10 +220,12 @@
           "FAQ_NOT_ALLOWED",
           "SEO_SETTINGS_NOT_ALLOWED",
           "SEO_SETTINGS_MEDIA_MISSING",
+          "SITE_SETTING_NOT_ALLOWED",
           "CMS_MEDIA_NOT_ALLOWED",
           "CMS_MEDIA_OBJECT_MISSING",
           "CMS_MEDIA_PATH_TAKEN",
-          "LISTING_ANALYTICS_CURSOR_INVALID"
+          "LISTING_ANALYTICS_CURSOR_INVALID",
+          "LISTING_MEDIA_OBJECT_MISSING"
         ]
       },
       "ValidationIssue": {
@@ -486,6 +488,9 @@
           "listingTypeCode": {
             "type": "string",
             "minLength": 1
+          },
+          "primaryImage": {
+            "$ref": "#/components/schemas/ListingImage"
           }
         },
         "required": [
@@ -497,7 +502,64 @@
           "currencyCode",
           "currencyMinorUnit",
           "isNegotiable",
-          "listingTypeCode"
+          "listingTypeCode",
+          "primaryImage"
+        ],
+        "additionalProperties": false
+      },
+      "ListingImage": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingImageVariant"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "variants"
+        ],
+        "additionalProperties": false
+      },
+      "ListingImageVariant": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "thumb",
+              "card",
+              "full"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "width": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "height": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "key",
+          "url",
+          "width",
+          "height"
         ],
         "additionalProperties": false
       },
@@ -558,6 +620,9 @@
             "type": "string",
             "minLength": 1
           },
+          "primaryImage": {
+            "$ref": "#/components/schemas/ListingImage"
+          },
           "description": {
             "type": "string",
             "minLength": 1
@@ -594,6 +659,12 @@
             "items": {
               "$ref": "#/components/schemas/ListingTag"
             }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingImage"
+            }
           }
         },
         "required": [
@@ -606,6 +677,7 @@
           "currencyMinorUnit",
           "isNegotiable",
           "listingTypeCode",
+          "primaryImage",
           "description",
           "contentLanguage",
           "createdAt",
@@ -613,7 +685,8 @@
           "category",
           "seller",
           "attributes",
-          "tags"
+          "tags",
+          "images"
         ],
         "additionalProperties": false
       },
@@ -1065,6 +1138,9 @@
             "type": "string",
             "minLength": 1
           },
+          "primaryImage": {
+            "$ref": "#/components/schemas/ListingImage"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -1082,6 +1158,7 @@
           "currencyMinorUnit",
           "isNegotiable",
           "listingTypeCode",
+          "primaryImage",
           "type"
         ],
         "additionalProperties": false
@@ -1891,6 +1968,245 @@
             "pattern": "^\\+[1-9][0-9]{6,14}$"
           }
         },
+        "additionalProperties": false
+      },
+      "ListingMediaListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingMediaItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingImageVariant"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "isPrimary",
+          "status",
+          "isPublished",
+          "variants"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaUploadResponse": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingMediaUploadTarget"
+            }
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaUploadTarget": {
+        "type": "object",
+        "properties": {
+          "variantKey": {
+            "type": "string",
+            "enum": [
+              "original",
+              "thumb",
+              "card",
+              "full"
+            ]
+          },
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "objectPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxByteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "variantKey",
+          "uploadUrl",
+          "objectPath",
+          "expiresAt",
+          "maxByteSize"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaUploadRequest": {
+        "type": "object",
+        "properties": {
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingMediaUploadItem"
+            }
+          }
+        },
+        "required": [
+          "variants"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaUploadItem": {
+        "type": "object",
+        "properties": {
+          "variantKey": {
+            "type": "string",
+            "enum": [
+              "original",
+              "thumb",
+              "card",
+              "full"
+            ]
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/avif",
+              "image/heic"
+            ]
+          },
+          "byteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 26214400
+          }
+        },
+        "required": [
+          "variantKey",
+          "contentType",
+          "byteSize"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaAttachResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingMediaItem"
+            }
+          },
+          "attachedId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "items",
+          "attachedId"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaAttachRequest": {
+        "type": "object",
+        "properties": {
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingMediaAttachItem"
+            }
+          }
+        },
+        "required": [
+          "variants"
+        ],
+        "additionalProperties": false
+      },
+      "ListingMediaAttachItem": {
+        "type": "object",
+        "properties": {
+          "variantKey": {
+            "type": "string",
+            "enum": [
+              "original",
+              "thumb",
+              "card",
+              "full"
+            ]
+          },
+          "objectPath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "width": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 20000
+          },
+          "height": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 20000
+          },
+          "byteSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 26214400
+          }
+        },
+        "required": [
+          "variantKey",
+          "objectPath",
+          "width",
+          "height",
+          "byteSize"
+        ],
         "additionalProperties": false
       },
       "SellerMediaUploadResponse": {
@@ -15051,6 +15367,585 @@
           },
           "429": {
             "description": "The approved seller profile update limit rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/listings/{slug}/media": {
+      "get": {
+        "operationId": "getV1ListingMedia",
+        "summary": "One listing's photographs, for whoever manages them",
+        "description": "Requires the internal BFF credential and the caller’s session. The photographs of the listing a slug names, in order, with each one’s published state — a photograph added to a draft is stored unpublished and goes public with the listing, and this is where a screen can say so. Withdrawn photographs are absent. The addresses are the same public ones the catalogue serves: `listing-variants` is a public bucket whose read policy names the bucket rather than the row, so nothing is signed and nothing expires. A listing the caller may not manage answers 404, identically to one that does not exist.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photographs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingMediaListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing this caller may manage photographs for answers to this slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postV1ListingMedia",
+        "summary": "Confirm the four uploads as one photograph",
+        "description": "Requires the internal BFF credential and the caller’s session. The confirmation step: records the four objects that were uploaded to authorized paths as one photograph, in one transaction — all four or none, because a photograph missing one of its three sizes is a card the catalogue cannot render. Each path must lie under the prefix the authorizer itself would have issued for that key, so another listing’s object, a nested path and any traversal are refused; the three served widths must be distinct and ascending; and every object must actually exist in storage, so a confirmation cannot record bytes nobody uploaded. The first photograph a listing gets is its primary. A photograph attached to a listing that is not publicly visible is stored unpublished and is published with the listing. Answers with the listing’s photographs as they now stand.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingMediaAttachRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The photograph that was attached, and the listing’s photographs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingMediaAttachResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing this caller may manage photographs for answers to this slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "One of the four objects is not in storage, so nothing was recorded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/listings/{slug}/media/uploads": {
+      "post": {
+        "operationId": "postV1ListingMediaUploads",
+        "summary": "Authorize the four objects of one photograph",
+        "description": "Requires the internal BFF credential and the caller’s session. Authorizes the four objects one photograph is made of — a private original and the three served sizes `thumb`, `card` and `full` — and returns four short-lived, single-object upload URLs. The request describes each object by key, content type and size and never its destination: there is no `objectPath`, `bucket` or `fileName` to send, and the body is strict, so any of them is a validation failure. Each path is derived in the database from the listing’s own identifier plus a fresh random name, so no request can choose a path, traverse out of its namespace, overwrite an earlier upload or reach another listing. The type and size limits are the two buckets’ own. The response carries no storage credential and no project key, and nothing is written to the listing by this operation.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingMediaUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The four authorized upload targets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingMediaUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing this caller may manage photographs for answers to this slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/listings/{slug}/media/{mediaId}/primary": {
+      "put": {
+        "operationId": "putV1ListingMediaPrimary",
+        "summary": "Make one photograph the one the card shows",
+        "description": "Requires the internal BFF credential and the caller’s session. Makes this photograph the listing’s primary and the others not, in one statement, so a listing is never without a primary or with two. A withdrawn photograph is refused. Answers with the listing’s photographs as they now stand.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "mediaId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photographs, with the new primary first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingMediaListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing this caller may manage photographs for answers to this slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The delivery provider or the enforcement state could not be reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/listings/{slug}/media/{mediaId}": {
+      "delete": {
+        "operationId": "deleteV1ListingMedia",
+        "summary": "Withdraw one photograph",
+        "description": "Requires the internal BFF credential and the caller’s session. Withdraws one photograph and unpublishes its variants together, which 0011’s own constraint requires. Withdrawn rather than deleted: the object is still in a public bucket, so a row claiming the photograph is gone would claim more than the platform did. When the primary is withdrawn the next photograph in order takes its place, so a listing with pictures always has one. Answers with the listing’s photographs as they now stand.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "mediaId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The caller’s access token, supplied by the BFF from its session cookie."
+            },
+            "required": true,
+            "description": "The caller’s access token, supplied by the BFF from its session cookie.",
+            "name": "x-session-token",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photographs that remain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingMediaListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session was presented, so nothing was attempted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The internal BFF credential is missing, wrong or malformed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing this caller may manage photographs for answers to this slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request failed validation",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -34710,6 +35605,9 @@
                                         "boolean",
                                         "null"
                                       ]
+                                    },
+                                    "primaryImage": {
+                                      "$ref": "#/components/schemas/ListingImage"
                                     }
                                   },
                                   "required": [
@@ -34720,7 +35618,8 @@
                                     "priceMinor",
                                     "currencyCode",
                                     "currencyMinorUnit",
-                                    "isNegotiable"
+                                    "isNegotiable",
+                                    "primaryImage"
                                   ],
                                   "additionalProperties": false
                                 },
@@ -34808,6 +35707,9 @@
                                         "boolean",
                                         "null"
                                       ]
+                                    },
+                                    "primaryImage": {
+                                      "$ref": "#/components/schemas/ListingImage"
                                     }
                                   },
                                   "required": [
@@ -34818,7 +35720,8 @@
                                     "priceMinor",
                                     "currencyCode",
                                     "currencyMinorUnit",
-                                    "isNegotiable"
+                                    "isNegotiable",
+                                    "primaryImage"
                                   ],
                                   "additionalProperties": false
                                 },
@@ -36594,6 +37497,61 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "office": {
+                      "type": "object",
+                      "properties": {
+                        "telephone": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "whatsapp": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "email": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 320
+                        },
+                        "address": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "hours": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "socialLinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "format": "uri"
+                              }
+                            },
+                            "required": [
+                              "label",
+                              "url"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 12
+                        }
+                      },
+                      "additionalProperties": false
                     }
                   },
                   "required": [

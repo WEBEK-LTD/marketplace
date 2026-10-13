@@ -180,6 +180,12 @@ describe('failing safely', () => {
   });
 
   it('accepts a valid credential', () => {
-    expect(readBffConfig(ENV)).toEqual({ apiBaseUrl: BASE_URL, internalBffCredential: CREDENTIAL, publicWebOrigin: ORIGIN });
+    expect(readBffConfig(ENV)).toEqual({
+      apiBaseUrl: BASE_URL,
+      internalBffCredential: CREDENTIAL,
+      publicWebOrigin: ORIGIN,
+      // 0116. Optional, and this fixture does not set it.
+      mediaPublicOrigin: null,
+    });
   });
 });

@@ -16,10 +16,20 @@ import { SEO_STORE, SeoService } from '../seo/seo.service.js';
 import { SEO_REDIRECTS_STORE, SeoRedirectsAdminService } from '../admin/seo-redirects.service.js';
 import { SEO_METADATA_STORE, SeoMetadataAdminService } from '../admin/seo-metadata.service.js';
 import { SEO_SETTINGS_STORE, SeoSettingsAdminService } from '../admin/seo-settings.service.js';
+import { SITE_SETTINGS_STORE, SiteSettingsAdminService } from '../admin/site-settings.service.js';
 import { CMS_MEDIA_STORE, CmsMediaAdminService } from '../admin/cms-media.service.js';
 import { CATEGORIES_STORE, CategoriesAdminService } from '../admin/categories.service.js';
 import { ATTRIBUTES_STORE, AttributesAdminService } from '../admin/attributes.service.js';
 import { CATEGORY_FEED_PORT, CategoryFeedService } from '../catalog/category-feed.service.js';
+import {
+  LISTING_MEDIA_STORE,
+  MEDIA_PUBLIC_ORIGIN,
+  ListingImagesService,
+} from '../catalog/listing-images.js';
+import {
+  LISTING_MEDIA_WRITE_STORE,
+  ListingMediaService,
+} from '../catalog/listing-media.service.js';
 import {
   SELLER_VOCABULARY_STORE,
   SellerVocabularyService,
@@ -182,8 +192,14 @@ export class AuthModule {
         {
           // The first C-1 tier. If it cannot be constructed the durable counter still answers, so the
           // throttle degrades rather than disappearing.
+          //
+          // **And `null` when no URL is configured** (0117), which is not the same thing as a Redis that
+          // is down: there is nothing to connect to, nothing to time out, and nothing to log a warning
+          // about on every login. `LoginThrottleService` takes a null first tier and counts in the
+          // durable PostgreSQL counter, which is the same counter a Redis outage falls through to — so
+          // the limits, the windows and the refusal when neither answers are all unchanged.
           provide: REDIS_THROTTLE_COUNTER,
-          useFactory: () => RedisThrottleCounter.fromUrl(env.redisUrl),
+          useFactory: () => (env.redisUrl === null ? null : RedisThrottleCounter.fromUrl(env.redisUrl)),
         },
         {
           provide: SUPABASE_AUTH_CLIENT,
@@ -277,6 +293,15 @@ export class AuthModule {
         { provide: CATEGORY_STORE, useExisting: AppSystemStore },
         // Phase 8-D: the category feed and its facets, through the same single gateway.
         { provide: CATEGORY_FEED_PORT, useExisting: AppSystemStore },
+        // 0116: the published photographs of a page of listings, through the same single gateway. One
+        // reader for all four public card surfaces.
+        { provide: LISTING_MEDIA_STORE, useExisting: AppSystemStore },
+        // The origin that serves them. The project URL already validated and normalised by `env`, so a
+        // composed address never carries a double slash and never comes from `process.env` at use time.
+        { provide: MEDIA_PUBLIC_ORIGIN, useValue: env.supabaseUrl },
+        // 0116's write side: attaching, ordering and withdrawing a listing's photographs, through the same
+        // one gateway and the same storage client 6-E already uses.
+        { provide: LISTING_MEDIA_WRITE_STORE, useExisting: AppSystemStore },
         { provide: CMS_PAGES_STORE, useExisting: AppSystemStore },
         { provide: CMS_PUBLIC_STORE, useExisting: AppSystemStore },
         { provide: BLOG_STORE, useExisting: AppSystemStore },
@@ -294,6 +319,7 @@ export class AuthModule {
         { provide: SEO_METADATA_STORE, useExisting: AppSystemStore },
         // Phase 8, increment 0096: the site-wide SEO defaults, authoring only, through the same gateway.
         { provide: SEO_SETTINGS_STORE, useExisting: AppSystemStore },
+        { provide: SITE_SETTINGS_STORE, useExisting: AppSystemStore },
         // Phase 8, increment 0098: the CMS media library, through the same gateway. Its provider calls reuse
         // SELLER_MEDIA_STORAGE below for the private cms-media bucket rather than introducing a second client.
         { provide: CMS_MEDIA_STORE, useExisting: AppSystemStore },
@@ -335,8 +361,11 @@ export class AuthModule {
         // nobody and runs only through the scheduled-job dispatcher, so nothing here can write one.
         { provide: LISTING_ANALYTICS_STORE, useExisting: AppSystemStore },
         {
+          // Null when no Redis is configured (0117), which the comment above already describes as a
+          // supported deployment: ingestion falls to the durable direct path and nothing is lost but the
+          // buffer in front of it. `ListingEventsService` has always taken this port as nullable.
           provide: LISTING_EVENT_STREAM_PORT,
-          useFactory: () => RedisListingEventStream.fromUrl(env.redisUrl),
+          useFactory: () => (env.redisUrl === null ? null : RedisListingEventStream.fromUrl(env.redisUrl)),
         },
         // Its own key, never one of the other two (0101 owner decision 4).
         { provide: 'ANALYTICS_SESSION_KEY', useValue: env.analyticsSessionKey },
@@ -404,10 +433,13 @@ export class AuthModule {
         SeoRedirectsAdminService,
         SeoMetadataAdminService,
         SeoSettingsAdminService,
+        SiteSettingsAdminService,
         CmsMediaAdminService,
         CategoriesAdminService,
         AttributesAdminService,
         CategoryFeedService,
+        ListingImagesService,
+        ListingMediaService,
         SellerVocabularyService,
         PlatformOperationsService,
         DisputeManagementService,
@@ -425,6 +457,9 @@ export class AuthModule {
       exports: [
         CATEGORY_STORE,
         CATEGORY_FEED_PORT,
+        LISTING_MEDIA_STORE,
+        LISTING_MEDIA_WRITE_STORE,
+        MEDIA_PUBLIC_ORIGIN,
         CMS_PAGES_STORE,
         CMS_PUBLIC_STORE,
         BLOG_STORE,
@@ -439,6 +474,7 @@ export class AuthModule {
         SEO_REDIRECTS_STORE,
         SEO_METADATA_STORE,
         SEO_SETTINGS_STORE,
+        SITE_SETTINGS_STORE,
         CMS_MEDIA_STORE,
         CATEGORIES_STORE,
         ATTRIBUTES_STORE,
@@ -500,10 +536,13 @@ export class AuthModule {
         SeoRedirectsAdminService,
         SeoMetadataAdminService,
         SeoSettingsAdminService,
+        SiteSettingsAdminService,
         CmsMediaAdminService,
         CategoriesAdminService,
         AttributesAdminService,
         CategoryFeedService,
+        ListingImagesService,
+        ListingMediaService,
         SellerVocabularyService,
         PlatformOperationsService,
         DisputeManagementService,

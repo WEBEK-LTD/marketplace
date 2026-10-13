@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { acceptAttributes } from './support/brand-chrome.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import ar from '../messages/ar.json';
 import en from '../messages/en.json';
@@ -737,7 +738,7 @@ describe('the media controls (Phase 6-E)', () => {
 
     expect(page.html).toContain('accept="image/jpeg,image/png,image/webp,image/avif"');
     expect(page.html).not.toContain('accept="image/*"');
-    expect(page.html).not.toContain('image/svg');
+    for (const accept of acceptAttributes(page.html)) expect(accept).not.toContain('svg');
     expect(page.html).not.toContain('application/pdf');
   });
 

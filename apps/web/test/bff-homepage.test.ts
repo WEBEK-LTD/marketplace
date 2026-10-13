@@ -58,6 +58,9 @@ const CARD = {
   currencyCode: 'EGP',
   currencyMinorUnit: 2,
   isNegotiable: true,
+  // 0116. A listing card on the front page carries the same photograph field the browse list does, and a
+  // null is the ordinary state — a listing whose seller has not uploaded one.
+  primaryImage: null,
 };
 
 const PICKS = {

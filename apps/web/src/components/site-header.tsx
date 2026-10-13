@@ -1,5 +1,5 @@
 import type { Locale } from '@repo/shared-types';
-import { cx, firstGrapheme, FOCUS_RING, PageContainer } from '@repo/ui';
+import { BrandLockup, ButtonLink, cx, FOCUS_RING, PageContainer } from '@repo/ui';
 import type { ReactNode } from 'react';
 import { SiteMenu } from './site-menu';
 
@@ -24,6 +24,8 @@ export interface SiteHeaderProps {
     readonly listings: string;
     readonly services: string;
     readonly categories: string;
+    /** The one action in the chrome: where a person goes to put a property on the site. */
+    readonly action: string;
   };
   /**
    * Whether this is a public surface (0094, owner decision 2).
@@ -64,6 +66,14 @@ export interface SiteHeaderProps {
  * chose for exactly that job; duplicating it there would put two competing menus in one row. And they do not
  * appear at all on the account and authentication surfaces, which owner decision 2 keeps on the plain chrome.
  *
+ * **There is one action, and it is the only one** (0112). A marketplace header with a brand, four links and a
+ * language switch tells a visitor where to read and nowhere to act — the screenshots showed a header that read as
+ * browser chrome. The action points at `/become-a-seller`, which is a built route that has existed since Phase 8
+ * and is the one place a person can begin putting a property on the site. It is a real destination rather than an
+ * invented one, it is `publicSurface` only for the same reason the catalogue doors are (owner decision 2), and it
+ * is hidden below `sm`, where the drawer already carries the catalogue and a 44px button beside the lockup would
+ * leave neither room to breathe.
+ *
  * **There is deliberately no search field here.** 0109 built one and then took it out: a persistent header search
  * is standard for a marketplace, but nothing in the specification authorises it and two approved decisions
  * conflict with it — the marketplace hub is documented as having "no search box, no filters, no sorting", and the
@@ -89,22 +99,17 @@ export function SiteHeader({
       <PageContainer>
         <div className="flex h-[4.5rem] items-center justify-between gap-4 sm:gap-8">
           {/*
-            The brand mark: a filled square carrying the site's first character, then the name. A wordmark
-            alone at 22px is indistinguishable from a heading, and this product has no logo asset to use —
-            a monogram built from the name it already has is the honest way to give the header an anchor,
-            and it is the one place the brand colour appears as a solid fill above the fold.
+            The brand lockup. This was a monogram built from the site's first character for as long as there
+            was no logo to use — an honest stand-in, and the moment a real mark arrived it stopped being the
+            right answer. The link carries the accessible name; the lockup itself is decorative, so the brand
+            is announced once rather than three times.
           */}
           <a
             href={prefix === '' ? '/' : prefix}
-            className={cx('group flex shrink-0 items-center gap-2.5 rounded-lg', FOCUS_RING)}
+            aria-label={siteName}
+            className={cx('flex shrink-0 items-center rounded-lg', FOCUS_RING)}
           >
-            <span
-              aria-hidden="true"
-              className="flex size-9 items-center justify-center rounded-lg bg-brand-700 text-base font-semibold text-on-ink transition-colors duration-200 group-hover:bg-brand-600"
-            >
-              {firstGrapheme(siteName)}
-            </span>
-            <span className="text-xl font-semibold text-ink-strong sm:text-[1.375rem]">{siteName}</span>
+            <BrandLockup tone="light" />
           </a>
 
           <div className="flex items-center gap-1 sm:gap-3">
@@ -133,10 +138,27 @@ export function SiteHeader({
               {languageLink}
             </a>
 
+            {/*
+              The chrome's one action. An anchor styled as the primary control — `ButtonLink` — because it is a
+              navigation and has to behave as one: middle-click opens a tab, it appears in history, and it works
+              with no JavaScript. Hidden below `sm`, where the drawer carries the catalogue instead.
+            */}
+            {publicSurface ? (
+              <span className="hidden sm:block">
+                <ButtonLink href={`${prefix}/become-a-seller`} size="sm">
+                  {labels.action}
+                </ButtonLink>
+              </span>
+            ) : null}
+
             {publicSurface ? (
               <div className="lg:hidden">
                 <SiteMenu menuLabel={labels.menu} closeLabel={labels.closeMenu} title={siteName}>
                   <div className="space-y-6">
+                    {/* The action first in the drawer: on a phone it is the thing a visitor came to the menu for. */}
+                    <ButtonLink href={`${prefix}/become-a-seller`} size="md" fullWidth>
+                      {labels.action}
+                    </ButtonLink>
                     <CatalogueDoors prefix={prefix} labels={labels} />
                     {mobileNavigation ?? navigation}
                   </div>

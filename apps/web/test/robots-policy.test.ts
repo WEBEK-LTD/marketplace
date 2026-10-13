@@ -32,6 +32,7 @@ const LISTING = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  primaryImage: null,
   description: 'A description long enough to be real.',
   contentLanguage: 'en',
   createdAt: '2026-01-01T12:00:00.000Z',
@@ -39,13 +40,14 @@ const LISTING = {
   category: { slug: 'furniture', name: 'Furniture' },
   seller: { slug: 'good-shop', displayName: 'Good Shop' },
   attributes: [],
+  images: [],
   tags: [],
 } as const;
 
 /**
  * The card shape, which is **not** the detail shape.
  *
- * `ListingSummarySchema` is `.strict()` and carries nine fields; the browse list validates against it and a
+ * `ListingSummarySchema` is `.strict()` and carries ten fields since 0116; the browse list validates against it and a
  * body with the detail's extra fields is rejected, so a stub that answered the list with `LISTING` was
  * answering with something the reader throws away. That went unnoticed while nothing asserted more than the
  * robots value — the page rendered its unavailable region and still sent the header under test. It is a real
@@ -62,6 +64,10 @@ const SUMMARY = {
   currencyMinorUnit: LISTING.currencyMinorUnit,
   isNegotiable: LISTING.isNegotiable,
   listingTypeCode: LISTING.listingTypeCode,
+  // 0116 added the tenth field, and the note above is exactly why it has to be here: the browse list
+  // validates against the strict card, and a body missing one is thrown away — which shows up as a page
+  // saying noindex because it has nothing to show.
+  primaryImage: LISTING.primaryImage,
 } as const;
 
 let api: StubApi;

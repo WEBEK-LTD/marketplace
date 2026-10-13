@@ -12,6 +12,7 @@ import {
 } from '@repo/contracts';
 import { CatalogUnavailableError } from './catalog-errors.js';
 import { InvalidListingCursorError, decodeCursor, encodeCursor } from './listings.service.js';
+import { ListingImagesService } from './listing-images.js';
 import { toSearchResult, type SearchRow } from './search.service.js';
 
 /**
@@ -94,7 +95,10 @@ function dataTypeOf(value: string | null): AttributeDataType | null {
 export class CategoryFeedService {
   private readonly logger = new Logger(CategoryFeedService.name);
 
-  constructor(@Inject(CATEGORY_FEED_PORT) private readonly port: CategoryFeedPort) {}
+  constructor(
+    @Inject(CATEGORY_FEED_PORT) private readonly port: CategoryFeedPort,
+    private readonly images: ListingImagesService,
+  ) {}
 
   /**
    * One page of a category's listings, with its panel.
@@ -142,8 +146,13 @@ export class CategoryFeedService {
     const page = hasMore ? rows.slice(0, input.limit) : rows;
     const last = page.at(-1);
 
+    // The page's photographs, in one call, after the page is cut. Listing rows only: a service has none.
+    const byListing = await this.images.forListings(
+      page.filter((row) => row.resultType === 'listing').map((row) => row.id),
+    );
+
     return {
-      items: page.map((row) => toSearchResult(row)),
+      items: page.map((row) => toSearchResult(row, this.images.primaryOf(byListing.get(row.id)))),
       nextCursor: hasMore && last !== undefined ? encodeCursor(last.createdAt, last.id) : null,
       facets: this.#facets(facetRows),
     };

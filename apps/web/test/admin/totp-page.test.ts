@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { withoutBrandChrome } from '../support/brand-chrome.js';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
 import { TOTP_CHALLENGE_COOKIE } from '../../src/admin/server/bff/totp-challenge-cookie';
@@ -75,7 +76,7 @@ describe('/security/totp', () => {
     // as props and are in the flight data either way, which is fine — they are copy, not secrets.
     expect(html).not.toContain('totp-setup-code');
     expect(html).not.toContain('one-time-code');
-    expect(html).not.toContain('<img');
+    expect(withoutBrandChrome(html)).not.toContain('<img');
   });
 
   it('ships no secret, no factor identifier and no credential', async () => {

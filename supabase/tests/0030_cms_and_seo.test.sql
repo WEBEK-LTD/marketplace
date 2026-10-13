@@ -38,16 +38,26 @@ select is(
 );
 
 -- Publication lifecycle ------------------------------------------------------------------------------------
+-- A fixture slug that is obviously a fixture. It claimed `about` until 0112 seeded the twenty-two addresses
+-- the route map fixes, and a test that takes a production slug is a test that collides with its own platform.
+-- Every subquery below is narrowed to this row for the same reason: they were unqualified, which was only
+-- ever correct while `pages` held exactly one row.
 insert into public.pages (id, slug, page_key, template, created_by)
-values ('11111111-cccc-4ccc-8ccc-111111111111', 'about', 'about', 'standard',
+values ('11111111-cccc-4ccc-8ccc-111111111111', 'lifecycle-fixture', 'lifecycle_fixture', 'standard',
         'dddddddd-4444-4444-8444-444444444444');
 
-select is((select status from public.pages), 'draft', 'a page starts as a draft');
+select is((select status from public.pages where slug = 'lifecycle-fixture'), 'draft',
+  'a page starts as a draft');
 select ok(
-  not public.cms_content_is_public((select status from public.pages), (select published_at from public.pages)),
+  not public.cms_content_is_public(
+    (select status from public.pages where slug = 'lifecycle-fixture'),
+    (select published_at from public.pages where slug = 'lifecycle-fixture')),
   'and a draft is not public'
 );
-select is((select count(*) from public.outbox_events where aggregate_type = 'page'), 0::bigint,
+select is(
+  (select count(*) from public.outbox_events
+    where aggregate_type = 'page' and aggregate_id = '11111111-cccc-4ccc-8ccc-111111111111'),
+  0::bigint,
   'creating a draft announces nothing, because nothing a visitor sees changed');
 
 select throws_ok(
@@ -63,32 +73,39 @@ select throws_ok(
   'and a slug that is not a slug is refused'
 );
 
-update public.pages set status = 'published' where slug = 'about';
-select ok((select published_at is not null from public.pages), 'publishing stamps the moment');
+update public.pages set status = 'published' where slug = 'lifecycle-fixture';
+select ok((select published_at is not null from public.pages where slug = 'lifecycle-fixture'),
+  'publishing stamps the moment');
 select ok(
-  public.cms_content_is_public((select status from public.pages), (select published_at from public.pages)),
+  public.cms_content_is_public(
+    (select status from public.pages where slug = 'lifecycle-fixture'),
+    (select published_at from public.pages where slug = 'lifecycle-fixture')),
   'and the page becomes public'
 );
 select is(
-  (select event_type from public.outbox_events where aggregate_type = 'page'),
+  (select event_type from public.outbox_events
+    where aggregate_type = 'page' and aggregate_id = '11111111-cccc-4ccc-8ccc-111111111111'),
   'page.visibility_changed',
   'publication is announced through the existing outbox, in the same transaction (C11)'
 );
 select is(
-  (select payload ->> 'is_public' from public.outbox_events where aggregate_type = 'page'),
+  (select payload ->> 'is_public' from public.outbox_events
+    where aggregate_type = 'page' and aggregate_id = '11111111-cccc-4ccc-8ccc-111111111111'),
   'true',
   'and the event says what the public state became'
 );
 
-update public.pages set template = 'legal' where slug = 'about';
+update public.pages set template = 'legal' where slug = 'lifecycle-fixture';
 select is(
-  (select count(*) from public.outbox_events where aggregate_type = 'page'),
+  (select count(*) from public.outbox_events
+    where aggregate_type = 'page' and aggregate_id = '11111111-cccc-4ccc-8ccc-111111111111'),
   1::bigint,
   'an edit that changes nothing a visitor can see announces nothing'
 );
 
 select throws_ok(
-  $$update public.pages set status = 'scheduled', scheduled_for = now() + interval '1 day' where slug = 'about'$$,
+  $$update public.pages set status = 'scheduled', scheduled_for = now() + interval '1 day'
+      where slug = 'lifecycle-fixture'$$,
   '23514',
   null,
   'a published page cannot go back to scheduled'
@@ -136,18 +153,24 @@ select throws_ok(
 insert into public.page_translations (page_id, locale_code, title, body, meta_title)
 values ('11111111-cccc-4ccc-8ccc-111111111111', 'en', 'About us', 'We run a marketplace.', 'About us'),
        ('11111111-cccc-4ccc-8ccc-111111111111', 'ar', 'من نحن', 'نحن ندير سوقًا إلكترونية.', 'من نحن');
-select is((select count(*) from public.page_translations), 2::bigint,
+-- Narrowed to this page. The claim is about *a* page's translations, and it was written as a count of the
+-- whole table while the table held one page's worth; 0112 seeds twenty-two pages in both languages.
+select is(
+  (select count(*) from public.page_translations where page_id = '11111111-cccc-4ccc-8ccc-111111111111'),
+  2::bigint,
   'a page carries one row per locale someone actually wrote');
 select ok(
   (select search_vector is not null and search_vector <> ''::tsvector
-     from public.page_translations where locale_code = 'en'),
+     from public.page_translations where page_id = '11111111-cccc-4ccc-8ccc-111111111111' and locale_code = 'en'),
   'the English text is searchable through the existing PostgreSQL search foundation'
 );
 select ok(
   (select search_vector is not null and search_vector <> ''::tsvector
-     from public.page_translations where locale_code = 'ar'),
+     from public.page_translations where page_id = '11111111-cccc-4ccc-8ccc-111111111111' and locale_code = 'ar'),
   'and the Arabic text is indexed with the Arabic configuration, not translated'
 );
+-- Still asked of the whole table, deliberately: "nothing is machine translated" is a claim about the
+-- platform, and seeded content is as much a part of it as a fixture.
 select is(
   (select count(*) from public.page_translations where locale_code not in ('en', 'ar')),
   0::bigint,

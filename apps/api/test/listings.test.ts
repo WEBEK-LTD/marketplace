@@ -12,8 +12,10 @@ import {
   type ListingDetailRow,
   type ListingRow,
 } from '../src/catalog/listings.service.js';
+import { LISTING_MEDIA_STORE } from '../src/catalog/listing-images.js';
 import { INTERNAL_CREDENTIAL_HEADER } from '../src/v1/internal-credential.guard.js';
 import { TEST_ENV, TEST_INTERNAL_CREDENTIAL } from './support/app.js';
+import { mediaDouble, photoRows } from './support/listing-media.js';
 
 /**
  * `GET /v1/listings` and `GET /v1/listings/:slug` (Phase 4-B).
@@ -59,8 +61,18 @@ const DETAIL: Partial<ListingDetailRow> & Pick<ListingDetailRow, 'outcome' | 'ca
   tags: [{ slug: 'handmade', name: 'Handmade' }],
 };
 
+/**
+ * The photographs of `listing-1` (0116): one photograph, three variants, from the public bucket.
+ *
+ * Only the first row has one, which is the ordinary mixed state of a catalogue and is also what makes the
+ * null on every other card a fact this suite asserts rather than an accident of an empty double.
+ */
+const PHOTO = photoRows({ listingId: ROWS[0]!.id, mediaId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' });
+
 interface Doubles {
   readonly listThrows?: boolean;
+  /** Make the photographs unreadable, to assert that a page still answers 200 without them. */
+  readonly mediaThrows?: boolean;
   readonly detail?: Partial<ListingDetailRow> & Pick<ListingDetailRow, 'outcome' | 'canonicalSlug'>;
   readonly detailThrows?: boolean;
 }
@@ -68,13 +80,18 @@ interface Doubles {
 interface Recorded {
   readonly calls: Array<{ limit: number; cursorCreatedAt: Date | null; cursorId: string | null }>;
   readonly slugs: Array<{ slug: string; locale: string }>;
+  /** Every media read, so "one call per page" is asserted rather than assumed. */
+  readonly media: string[][];
 }
 
 let app: NestFastifyApplication | undefined;
 
 async function start(doubles: Doubles = {}): Promise<Recorded> {
-  const recorded: Recorded = { calls: [], slugs: [] };
+  const media = mediaDouble(PHOTO, { throws: doubles.mediaThrows === true });
+  const recorded: Recorded = { calls: [], slugs: [], media: media.calls };
   const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(TEST_ENV)] })
+    .overrideProvider(LISTING_MEDIA_STORE)
+    .useValue(media)
     .overrideProvider(LISTING_STORE)
     .useValue({
       publicListings: async (input: { limit: number; cursorCreatedAt: Date | null; cursorId: string | null }) => {
@@ -189,6 +206,8 @@ describe('GET /v1/listings', () => {
     await start();
     const { items } = ListingsResponseSchema.parse((await get('/v1/listings')).body);
     for (const item of items) {
+      // 0116 added exactly one field to the card: the primary photograph. The inventory stays closed — it is
+      // one item longer, and a tenth field appearing would still fail here.
       expect(Object.keys(item).sort()).toEqual([
         'city',
         'currencyCode',
@@ -197,10 +216,96 @@ describe('GET /v1/listings', () => {
         'isNegotiable',
         'listingTypeCode',
         'priceMinor',
+        'primaryImage',
         'slug',
         'title',
       ]);
     }
+  });
+
+  /* -------------------------------------------------------------------------------------------- */
+  /* The photographs (0116)                                                                        */
+  /* -------------------------------------------------------------------------------------------- */
+
+  it('carries the primary photograph as three public addresses, and a null where there is none', async () => {
+    await start();
+    const { items } = ListingsResponseSchema.parse((await get('/v1/listings')).body);
+
+    const photographed = items.find((item) => item.slug === 'listing-1');
+    expect(photographed?.primaryImage?.id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+    // The three stored sizes, smallest first, each an address under Supabase Storage's public object route.
+    // Nothing is signed and nothing carries a token: `listing-variants` is a public bucket, which is the
+    // whole reason a card's photograph can sit in a cached page without expiring.
+    expect(photographed?.primaryImage?.variants).toEqual([
+      {
+        key: 'thumb',
+        url: `https://supabase.invalid/storage/v1/object/public/listing-variants/${ROWS[0]!.id}/thumb/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp`,
+        width: 320,
+        height: 240,
+      },
+      {
+        key: 'card',
+        url: `https://supabase.invalid/storage/v1/object/public/listing-variants/${ROWS[0]!.id}/card/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp`,
+        width: 800,
+        height: 600,
+      },
+      {
+        key: 'full',
+        url: `https://supabase.invalid/storage/v1/object/public/listing-variants/${ROWS[0]!.id}/full/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp`,
+        width: 1600,
+        height: 1200,
+      },
+    ]);
+
+    // Every other listing has none, and says so as a null rather than as an empty object or a missing field.
+    for (const item of items.filter((candidate) => candidate.slug !== 'listing-1')) {
+      expect(item.primaryImage).toBeNull();
+    }
+  });
+
+  it('reads the photographs once for the whole page, and never for the probe row', async () => {
+    // The page is read one row longer than it is served. A media read that included the probe row would be
+    // fetching a photograph for a card nobody is shown.
+    const recorded = await start();
+    await get('/v1/listings?limit=2');
+    expect(recorded.media).toHaveLength(1);
+    expect(recorded.media[0]).toHaveLength(2);
+  });
+
+  it('asks for no photographs at all when the page is empty', async () => {
+    const recorded = await start();
+    await get(`/v1/listings?cursor=${encodeURIComponent(encodeCursor(ROWS[4]!.createdAt, ROWS[4]!.id))}`);
+    // An empty array of ids is a round trip that can only come back empty.
+    expect(recorded.media).toEqual([]);
+  });
+
+  it('still answers 200 when the photographs cannot be read', async () => {
+    // A photograph is decoration; the price, the place and the title are the card. A catalogue that answered
+    // 503 because a picture could not be read would be a worse answer than a card without one.
+    await start({ mediaThrows: true });
+    const result = await get('/v1/listings');
+    expect(result.status).toBe(200);
+    const { items } = ListingsResponseSchema.parse(result.body);
+    expect(items).not.toHaveLength(0);
+    for (const item of items) expect(item.primaryImage).toBeNull();
+  });
+
+  it('serves the whole gallery on the detail, primary first', async () => {
+    await start();
+    const { listing } = ListingDetailResponseSchema.parse((await get('/v1/listings/listing-1')).body);
+    expect(listing.images).toHaveLength(1);
+    expect(listing.images[0]?.id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+    // The card field and the gallery's first entry are the same photograph, not two reads that could differ.
+    expect(listing.primaryImage).toEqual(listing.images[0]);
+  });
+
+  it('never serves an original: the private bucket is not addressable from a public card', async () => {
+    await start();
+    const raw = (await get('/v1/listings')).raw;
+    // `listing-originals` is 0012's private bucket and the original is not a `media_variants` row at all, so
+    // no public response can name it. A `?token=` would mean something here was signed, which would expire.
+    expect(raw).not.toContain('listing-originals');
+    expect(raw).not.toContain('token=');
   });
 
   it('answers 503 when the catalogue cannot be read', async () => {
@@ -272,6 +377,7 @@ describe('GET /v1/listings/:slug', () => {
   it('carries no field outside the approved detail projection', async () => {
     await start();
     const { listing } = ListingDetailResponseSchema.parse((await get('/v1/listings/listing-1')).body);
+    // 0116 added two: the gallery, and the primary photograph the card shape already carries.
     expect(Object.keys(listing).sort()).toEqual([
       'attributes',
       'availability',
@@ -283,9 +389,11 @@ describe('GET /v1/listings/:slug', () => {
       'currencyMinorUnit',
       'description',
       'id',
+      'images',
       'isNegotiable',
       'listingTypeCode',
       'priceMinor',
+      'primaryImage',
       'seller',
       'slug',
       'tags',

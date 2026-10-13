@@ -124,6 +124,7 @@ const LISTING = {
     currencyMinorUnit: 2,
     isNegotiable: false,
     listingTypeCode: 'product',
+    primaryImage: null,
     description: 'A canary description long enough to satisfy the length rule.',
     contentLanguage: 'en',
     createdAt: '2026-05-01T09:00:00.000Z',
@@ -131,6 +132,7 @@ const LISTING = {
     category: { slug: 'design', name: 'Design' },
     seller: { slug: SELLER_SLUG, displayName: 'Canary Shop' },
     attributes: [],
+    images: [],
     tags: [],
   },
 };

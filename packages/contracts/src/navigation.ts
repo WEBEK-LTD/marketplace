@@ -140,8 +140,68 @@ export const PublicNavigationMenuSchema = z
   .strict();
 export type PublicNavigationMenu = z.infer<typeof PublicNavigationMenuSchema>;
 
+/**
+ * One social account the office keeps, as the footer shows it.
+ *
+ * A label and an absolute address, both the office's own. The label is stored rather than derived from the
+ * host, because "Facebook" is not reliably recoverable from a URL and because an office may want to call an
+ * account something other than the platform it is on.
+ */
+export const OfficeSocialLinkSchema = z
+  .object({
+    label: z.string().min(1).max(60),
+    url: z.string().url().max(2048),
+  })
+  .strict();
+export type OfficeSocialLink = z.infer<typeof OfficeSocialLinkSchema>;
+
+/**
+ * The office's own contact details, as the public site may show them (0113).
+ *
+ * **Every field is optional, and an absent field means the office has not set it** — not that it is empty.
+ * `app_private.public_site_settings` omits a setting with no value rather than returning a blank one, so a
+ * field that arrives here has something in it and a surface rendering these never has to decide what an empty
+ * string means. That is the whole reason the shape is optional fields rather than nullable ones.
+ *
+ * **The address and the opening hours are stored per language and not translated.** An address is a thing a
+ * courier reads; a machine translation of one is a wrong address. So the office writes both, and a language
+ * with nothing written shows nothing rather than the other language's text.
+ *
+ * Nothing here is a secret and nothing here is inferred. These are the details printed on a shop door, which
+ * is exactly why they are marked `is_public` in the settings table and why this schema is served to anybody.
+ */
+export const PublicOfficeContactSchema = z
+  .object({
+    telephone: z.string().min(1).max(60).optional(),
+    whatsapp: z.string().min(1).max(60).optional(),
+    email: z.string().min(1).max(320).optional(),
+    address: z.string().min(1).max(500).optional(),
+    hours: z.string().min(1).max(200).optional(),
+    socialLinks: z.array(OfficeSocialLinkSchema).max(12).optional(),
+  })
+  .strict();
+export type PublicOfficeContact = z.infer<typeof PublicOfficeContactSchema>;
+
+/**
+ * The chrome of a public page: the composed menus, and the office's own details.
+ *
+ * **The office details travel with the menus rather than on an endpoint of their own**, and that is this
+ * module's existing principle rather than a new one: "one read for the whole chrome", because every public
+ * page renders the header, the footer and the drawer together and a second round trip per request would be a
+ * second cost for one answer. The footer is the surface that needs both.
+ *
+ * The route is still called `/v1/navigation`, which is now a slightly narrow name for what it returns. Renaming
+ * a live route to improve a word is not worth the redirect; the name is historical and this comment is the
+ * record of why.
+ *
+ * `office` is optional so that an API that has not been deployed yet, or an office that has set nothing at all,
+ * is an absence rather than a parse failure that would cost the page its whole chrome.
+ */
 export const PublicNavigationResponseSchema = z
-  .object({ menus: z.array(PublicNavigationMenuSchema) })
+  .object({
+    menus: z.array(PublicNavigationMenuSchema),
+    office: PublicOfficeContactSchema.optional(),
+  })
   .strict();
 export type PublicNavigationResponse = z.infer<typeof PublicNavigationResponseSchema>;
 

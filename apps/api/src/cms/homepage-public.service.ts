@@ -3,11 +3,13 @@ import {
   HomepageSectionConfigSchema,
   type HomepageCategoryCard,
   type HomepageListingCard,
+  type ListingImage,
   type HomepagePostCard,
   type HomepageSellerCard,
   type PublicHomepageSection,
   type PublicLocale,
 } from '@repo/contracts';
+import { ListingImagesService } from '../catalog/listing-images.js';
 import { CmsPublicUnavailableError } from './cms-errors.js';
 
 /**
@@ -31,7 +33,8 @@ import { CmsPublicUnavailableError } from './cms-errors.js';
  * take the site's front page down with it.
  *
  * **`banner_strip` never arrives.** The database reader does not return one, and there is no branch here that
- * would know what to do with it — a banner is its image and this platform has no media origin.
+ * would know what to do with it — a banner is its image, and the one media origin this platform now has
+ * (0116) serves a listing's own photographs, not an authored banner nobody has a way to upload.
  */
 
 export const HOMEPAGE_PUBLIC_STORE = Symbol('HOMEPAGE_PUBLIC_STORE');
@@ -47,9 +50,16 @@ export interface PublicHomepageSectionDbRow {
   readonly config: unknown;
 }
 
-/** One row of either listing reader (0093). The card fields a homepage card actually shows. */
+/**
+ * One row of either listing reader (0093). The card fields a homepage card actually shows.
+ *
+ * `id` is read but not shown: both readers have always returned it, and 0116 needs it to ask for the row's
+ * photographs. It stays out of {@link HomepageListingCard}, because a slug is the public identifier of a
+ * listing and a card that carried both would be publishing a second one for nothing.
+ */
 export interface HomepageListingDbRow {
   readonly resultType: string;
+  readonly id: string;
   readonly slug: string;
   readonly title: string;
   readonly city: string | null;
@@ -113,7 +123,7 @@ function toNumber(value: number | string): number {
   return typeof value === 'number' ? value : Number(value);
 }
 
-function toListingCard(row: HomepageListingDbRow): HomepageListingCard {
+function toListingCard(row: HomepageListingDbRow, primaryImage: ListingImage | null): HomepageListingCard {
   return {
     resultType: row.resultType === 'service' ? 'service' : 'listing',
     slug: row.slug,
@@ -128,6 +138,7 @@ function toListingCard(row: HomepageListingDbRow): HomepageListingCard {
     currencyCode: row.currencyCode,
     currencyMinorUnit: toNumber(row.currencyMinorUnit),
     isNegotiable: row.isNegotiable,
+    primaryImage,
   };
 }
 
@@ -135,7 +146,10 @@ function toListingCard(row: HomepageListingDbRow): HomepageListingCard {
 export class HomepagePublicService {
   private readonly logger = new Logger(HomepagePublicService.name);
 
-  constructor(@Inject(HOMEPAGE_PUBLIC_STORE) private readonly store: HomepagePublicStore) {}
+  constructor(
+    @Inject(HOMEPAGE_PUBLIC_STORE) private readonly store: HomepagePublicStore,
+    private readonly images: ListingImagesService,
+  ) {}
 
   /**
    * The homepage, assembled.
@@ -172,6 +186,19 @@ export class HomepagePublicService {
     return sections;
   }
 
+  /**
+   * One shelf of listing cards, with their photographs.
+   *
+   * One media call per shelf rather than per card, and only for the listing rows: a service has no
+   * `listing_media` row, so asking for one could only come back empty.
+   */
+  async #cards(rows: readonly HomepageListingDbRow[]): Promise<readonly HomepageListingCard[]> {
+    const byListing = await this.images.forListings(
+      rows.filter((row) => row.resultType !== 'service').map((row) => row.id),
+    );
+    return rows.map((row) => toListingCard(row, this.images.primaryOf(byListing.get(row.id))));
+  }
+
   async #resolve(
     row: PublicHomepageSectionDbRow,
     parsed: ReturnType<typeof HomepageSectionConfigSchema.parse>,
@@ -204,14 +231,14 @@ export class HomepagePublicService {
           const found = await this.store.publicHomepageListings({ ids, limit: ids.length });
           return found.length === 0
             ? null
-            : { sectionType: 'featured_listings', ...shared, listings: found.map(toListingCard) };
+            : { sectionType: 'featured_listings', ...shared, listings: [...(await this.#cards(found))] };
         }
 
         case 'latest_listings': {
           const found = await this.store.publicHomepageLatestListings(parsed.config.count);
           return found.length === 0
             ? null
-            : { sectionType: 'latest_listings', ...shared, listings: found.map(toListingCard) };
+            : { sectionType: 'latest_listings', ...shared, listings: [...(await this.#cards(found))] };
         }
 
         case 'featured_categories': {

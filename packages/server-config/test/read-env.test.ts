@@ -63,13 +63,16 @@ describe('readEnv', () => {
   });
 
   it('lists missing and invalid variables by name only, sorted', () => {
+    // `REDIS_URL` is absent from this list since 0117, and that is the assertion rather than an omission:
+    // an optional variable that is unset is not missing, so it is not reported. Everything still required
+    // is still named.
     try {
       readEnv('api', apiFields, { API_PORT: 'secret-looking-value' });
       throw new Error('expected failure');
     } catch (error) {
       expect(error).toBeInstanceOf(EnvValidationError);
-      expect((error as EnvValidationError).variables).toEqual(['ANALYTICS_SESSION_KEY', 'API_HOST', 'API_PORT', 'APP_SYSTEM_DATABASE_URL', 'DEVICE_IDENTITY_KEY', 'INTERNAL_BFF_CREDENTIAL', 'NODE_ENV', 'OTP_PEPPER', 'PSEUDONYMOUS_USER_ID_KEY', 'REDIS_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_URL', 'WAABEK_API_KEY', 'WAABEK_BASE_URL', 'WEB_PUBLIC_ORIGIN']);
-      expect((error as Error).message).toBe('Invalid or missing environment variables: ANALYTICS_SESSION_KEY, API_HOST, API_PORT, APP_SYSTEM_DATABASE_URL, DEVICE_IDENTITY_KEY, INTERNAL_BFF_CREDENTIAL, NODE_ENV, OTP_PEPPER, PSEUDONYMOUS_USER_ID_KEY, REDIS_URL, SUPABASE_SECRET_KEY, SUPABASE_URL, WAABEK_API_KEY, WAABEK_BASE_URL, WEB_PUBLIC_ORIGIN');
+      expect((error as EnvValidationError).variables).toEqual(['ANALYTICS_SESSION_KEY', 'API_HOST', 'API_PORT', 'APP_SYSTEM_DATABASE_URL', 'DEVICE_IDENTITY_KEY', 'INTERNAL_BFF_CREDENTIAL', 'NODE_ENV', 'OTP_PEPPER', 'PSEUDONYMOUS_USER_ID_KEY', 'SUPABASE_SECRET_KEY', 'SUPABASE_URL', 'WAABEK_API_KEY', 'WAABEK_BASE_URL', 'WEB_PUBLIC_ORIGIN']);
+      expect((error as Error).message).toBe('Invalid or missing environment variables: ANALYTICS_SESSION_KEY, API_HOST, API_PORT, APP_SYSTEM_DATABASE_URL, DEVICE_IDENTITY_KEY, INTERNAL_BFF_CREDENTIAL, NODE_ENV, OTP_PEPPER, PSEUDONYMOUS_USER_ID_KEY, SUPABASE_SECRET_KEY, SUPABASE_URL, WAABEK_API_KEY, WAABEK_BASE_URL, WEB_PUBLIC_ORIGIN');
       expect(JSON.stringify(error)).not.toContain('secret-looking-value');
     }
   });
@@ -99,6 +102,8 @@ describe('Next.js server configuration', () => {
       apiBaseUrl: 'http://api.internal:8080',
       internalBffCredential: CREDENTIAL,
       publicWebOrigin: ORIGIN,
+      // 0116. Optional on the same terms, and absent here.
+      mediaPublicOrigin: null,
     });
     expect(readWebServerConfig({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL }).apiBaseUrl).toBe('https://api.example');
     for (const bad of [undefined, '', 'not a url', 'ftp://x', 'file:///etc/passwd', 'https://user:placeholder@api.internal', 'https://user@api.internal']) {
@@ -106,7 +111,12 @@ describe('Next.js server configuration', () => {
     }
     expect(httpUrlWithoutCredentials.safeParse(42).success).toBe(false);
     expect(Object.keys(NEXT_SERVER_FIELDS).sort()).toEqual(['API_BASE_URL', 'INTERNAL_BFF_CREDENTIAL']);
-    expect(Object.keys(WEB_SERVER_FIELDS).sort()).toEqual(['API_BASE_URL', 'INTERNAL_BFF_CREDENTIAL', 'PUBLIC_WEB_ORIGIN']);
+    expect(Object.keys(WEB_SERVER_FIELDS).sort()).toEqual([
+      'API_BASE_URL',
+      'INTERNAL_BFF_CREDENTIAL',
+      'MEDIA_PUBLIC_ORIGIN',
+      'PUBLIC_WEB_ORIGIN',
+    ]);
   });
 
   it('requires exactly one 43-character base64url internal BFF credential', () => {
@@ -211,10 +221,41 @@ describe('Next.js server configuration', () => {
       apiBaseUrl: 'https://api.example',
       internalBffCredential: CREDENTIAL,
       publicWebOrigin: null,
+      mediaPublicOrigin: null,
     });
     // And the two-field base map is still exactly that: the pair every Next.js BFF needs, with no origin in it.
     expect(Object.keys(NEXT_SERVER_FIELDS)).not.toContain('PUBLIC_WEB_ORIGIN');
     expect(Object.keys(NEXT_SERVER_FIELDS).sort()).toEqual(['API_BASE_URL', 'INTERNAL_BFF_CREDENTIAL']);
+  });
+
+  it('treats the media origin as genuinely optional, and validates a present one strictly (0116)', () => {
+    // Present and well formed: carried through unchanged.
+    expect(
+      readWebServerConfig({
+        API_BASE_URL: 'https://api.example',
+        INTERNAL_BFF_CREDENTIAL: CREDENTIAL,
+        MEDIA_PUBLIC_ORIGIN: 'https://project.supabase.co',
+      }).mediaPublicOrigin,
+    ).toBe('https://project.supabase.co');
+
+    // Absent: null, and the app still starts. Photographs are blocked by the CSP rather than the site being
+    // unable to boot, which is the fail-closed half of this decision.
+    expect(
+      readWebServerConfig({ API_BASE_URL: 'https://api.example', INTERNAL_BFF_CREDENTIAL: CREDENTIAL })
+        .mediaPublicOrigin,
+    ).toBeNull();
+
+    // Present and malformed: a named start-up failure, exactly as a malformed PUBLIC_WEB_ORIGIN is. The two
+    // questions stay separate — whether a value must be there, and whether a value that is there is usable.
+    for (const bad of ['https://host.example/', 'https://host.example/path', 'host.example', 'not a url', '*']) {
+      expect(() =>
+        readWebServerConfig({
+          API_BASE_URL: 'https://api.example',
+          INTERNAL_BFF_CREDENTIAL: CREDENTIAL,
+          MEDIA_PUBLIC_ORIGIN: bad,
+        }),
+      ).toThrow('Invalid or missing environment variables: MEDIA_PUBLIC_ORIGIN');
+    }
   });
 
   it('names no domain of its own', () => {

@@ -23,7 +23,7 @@ import {
 /** A compliant file, written the way the repository writes it: escaped quotes inside the command. */
 const GOOD = `# A comment.
 [build]
-  command = "pnpm --filter \\"@repo/web...\\" run build"
+  command = "pnpm --filter \\"@repo/web...\\" --filter \\"@repo/api...\\" run build"
   publish = "apps/web/.next"
 
 [build.environment]
@@ -100,7 +100,10 @@ test('an actual admin build command or publish directory fails', () => {
 test('the dependency-less filter fails, because it cannot build a clean checkout', () => {
   // The 0107 defect, kept reachable from here as well as from the build log: `--filter @repo/web` without `...`
   // builds no workspace dependency, so `next.config.ts` cannot load `@repo/config`.
-  const dependencyLess = GOOD.replace('pnpm --filter \\"@repo/web...\\" run build', 'pnpm --filter @repo/web run build');
+  const dependencyLess = GOOD.replace(
+    'pnpm --filter \\"@repo/web...\\" --filter \\"@repo/api...\\" run build',
+    'pnpm --filter @repo/web run build',
+  );
   const problems = netlifyConfigProblems({ files: { 'netlify.toml': dependencyLess, 'apps/web/netlify.toml': GOOD } });
   assert.match(problems.join('\n'), /build command is "pnpm --filter @repo\/web run build", expected/);
 });
@@ -148,13 +151,39 @@ test('a surviving admin app or a stray configuration fails', () => {
 });
 
 test('a value this parser cannot read is reported, never silently ignored', () => {
-  // A file that grows past the slice must fail the check rather than be misread by it.
-  const unreadable = `${GOOD}\n[build]\n  ignore = ["a", "b"]\n`;
-  const problems = netlifyConfigProblems({ files: { 'netlify.toml': unreadable, 'apps/web/netlify.toml': GOOD } });
-  assert.match(problems.join('\n'), /cannot be read by this check \(value is not a basic quoted string\)/);
+  // A file that grows past the slice must fail the check rather than be misread by it. 0117 taught the
+  // parser integers, booleans and inline string arrays — because the function configuration needs them —
+  // so the unreadable shapes it is still pinned on are the ones it genuinely cannot read.
+  for (const value of ['1.5', '2026-01-01', '{ a = "b" }', '[1, 2]', '[\n  "a"\n]']) {
+    const unreadable = `${GOOD}\n[build]\n  ignore = ${value}\n`;
+    const problems = netlifyConfigProblems({ files: { 'netlify.toml': unreadable, 'apps/web/netlify.toml': GOOD } });
+    assert.match(problems.join('\n'), /cannot be read by this check/, value);
+  }
 
   // And the parser says so itself, with a line number.
-  const parsed = parseTomlSubset('[build]\n  ignore = ["a"]\n');
+  const parsed = parseTomlSubset('[build]\n  ignore = 1.5\n');
   assert.equal(parsed.unsupported.length, 1);
   assert.equal(parsed.unsupported[0].line, 2);
+});
+
+test('the parser reads the values a function configuration needs, and scans inside an array', () => {
+  // The three shapes 0117 added, and the property that matters: an array's members are still scanned, so a
+  // path cannot hide inside `included_files` where the admin scan would never look.
+  const parsed = parseTomlSubset(
+    '[functions]\n  directory = "netlify/functions"\n  included_files = ["apps/api/dist/**", "packages/db/dist/**"]\n' +
+      '[[redirects]]\n  from = "/_api/*"\n  status = 200\n  force = true\n',
+  );
+  assert.deepEqual(parsed.unsupported, []);
+  assert.deepEqual(parsed.tables.get('functions').get('included_files'), [
+    'apps/api/dist/**',
+    'packages/db/dist/**',
+  ]);
+  assert.equal(parsed.arrays.get('redirects').at(-1).get('status'), 200);
+  assert.equal(parsed.arrays.get('redirects').at(-1).get('force'), true);
+
+  // The scan reaches into the array: an admin path there fails exactly as it would in a build command.
+  const hidden =
+    `${GOOD}\n[functions]\n  included_files = ["apps/admin/.next/**"]\n`;
+  const problems = netlifyConfigProblems({ files: { 'netlify.toml': hidden, 'apps/web/netlify.toml': GOOD } });
+  assert.match(problems.join('\n'), /apps\/admin/);
 });

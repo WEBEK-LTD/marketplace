@@ -51,6 +51,56 @@ describe('CSP', () => {
     expect(csp).not.toMatch(/unsafe-inline|unsafe-eval|\*/);
   });
 
+  /* ---------------------------------------------------------------------------------------------- */
+  /* The media origin (0116)                                                                         */
+  /* ---------------------------------------------------------------------------------------------- */
+
+  it('names a configured media origin in img-src, and in no other directive', () => {
+    const nonce = createNonce();
+    const csp = buildContentSecurityPolicy(nonce, 'https://project.supabase.co');
+    expect(csp).toContain("img-src 'self' blob: data: https://project.supabase.co");
+    // Nowhere else: nothing fetches from it, and a picture host has no business being a script fallback.
+    expect(csp.split('; ').filter((directive) => directive.includes('supabase.co'))).toHaveLength(1);
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("connect-src 'self'");
+  });
+
+  it('is byte-for-byte the old policy when no media origin is configured', () => {
+    const nonce = createNonce();
+    for (const absent of [undefined, null, '']) {
+      expect(buildContentSecurityPolicy(nonce, absent)).toBe(buildContentSecurityPolicy(nonce));
+    }
+    expect(buildContentSecurityPolicy(nonce)).toContain("img-src 'self' blob: data:;");
+  });
+
+  it.each([
+    // Not an origin: a path, a trailing slash, a query, a fragment.
+    'https://project.supabase.co/storage',
+    'https://project.supabase.co/',
+    'https://project.supabase.co?a=1',
+    'https://project.supabase.co#x',
+    // Not https. The policy upgrades insecure requests, so an http source would never match anyway.
+    'http://project.supabase.co',
+    // A wildcard, which is the whole thing this must never become.
+    'https://*.supabase.co',
+    '*',
+    // Credentials, whitespace and separators that would break out of the directive.
+    'https://user:pass@project.supabase.co',
+    'https://project.supabase.co https://evil.example',
+    "https://a.example'; script-src *",
+    // Not a URL at all.
+    'project.supabase.co',
+    'javascript:alert(1)',
+    'data:',
+  ])('fails closed on a media origin it cannot trust: %j', (origin) => {
+    const nonce = createNonce();
+    // Fail-closed, not fail-loud: a mistyped picture host must not stop the site serving responses, and it
+    // must not widen the policy either. So the directive is exactly the one it would have been.
+    const csp = buildContentSecurityPolicy(nonce, origin);
+    expect(csp).toBe(buildContentSecurityPolicy(nonce));
+    expect(csp).not.toMatch(/unsafe-inline|unsafe-eval|\*/);
+  });
+
   it('creates unpredictable 128-bit nonces', () => {
     const nonces = new Set(Array.from({ length: 1000 }, () => createNonce()));
     expect(nonces.size).toBe(1000);

@@ -938,6 +938,30 @@
     "unavailableTitle": "Could not be loaded",
     "untitled": "No title"
   },
+  "ListingAnalytics": {
+    "pageIntro": "What the daily rollup recorded for each listing, newest day first. Every number here was computed by a scheduled job.",
+    "readOnlyNote": "This section is read-only. A day is corrected by re-running the rollup, not from here.",
+    "notCountedNote": "Impressions and views are not counted, because what counts as one has not been settled. There is no rate, ratio or click-through anywhere on this page for the same reason.",
+    "windowLabel": "Window",
+    "windowValue": "Last {days} days",
+    "emptyTitle": "Nothing to show",
+    "emptyBody": "No listing activity has been rolled up in this window — or this account does not hold the key that opens it.",
+    "cursorTitle": "That list position could not be used",
+    "cursorBody": "Start again from the first page.",
+    "unavailableTitle": "Listing analytics unavailable",
+    "unavailableBody": "The rollup could not be read just now. Try again shortly.",
+    "nextPage": "Next page",
+    "dayHeading": "Day",
+    "listingHeading": "Listing",
+    "sellerHeading": "Seller",
+    "statusHeading": "Status",
+    "clicksHeading": "Clicks",
+    "contactsHeading": "Contacts",
+    "favoritesHeading": "Favourites",
+    "sharesHeading": "Shares",
+    "computedHeading": "Computed",
+    "noSeller": "No storefront"
+  },
   "Loading": {
     "label": "Loading"
   },
@@ -1370,6 +1394,10 @@
       "description": "Compose the site’s front page from the content already on it.",
       "title": "Homepage"
     },
+    "listingAnalytics": {
+      "title": "Listing analytics",
+      "description": "Daily clicks, contacts, favourites and shares per listing."
+    },
     "moderation": {
       "title": "Moderation",
       "description": "Reports raised on listings, messages and people."
@@ -1420,6 +1448,10 @@
       "title": "Service requests",
       "description": "Requests buyers sent for the marketplace team to handle. No seller is involved in any of them."
     },
+    "siteSettings": {
+      "description": "The office's telephone, address, hours and social accounts.",
+      "title": "Office settings"
+    },
     "support": {
       "title": "Support",
       "description": "Support tickets and the conversations on them."
@@ -1431,10 +1463,6 @@
     "users": {
       "title": "Users",
       "description": "Accounts, their roles and their security record."
-    },
-    "listingAnalytics": {
-      "title": "Listing analytics",
-      "description": "Daily clicks, contacts, favourites and shares per listing."
     }
   },
   "SeoMetadata": {
@@ -1695,8 +1723,25 @@
     "failedGeneric": "That could not be done. Try again."
   },
   "Site": {
-    "name": "Marketplace",
+    "name": "BedonOver",
     "section": "Admin"
+  },
+  "SiteSettings": {
+    "booleanOn": "On",
+    "empty": "There are no settings in this category.",
+    "invalidJson": "That is not valid JSON.",
+    "notFoundBody": "This setting is not available to you.",
+    "officeHeading": "Contact details",
+    "officeIntro": "The address and the opening hours are written once per language, because an address is not a thing to translate automatically. A language left empty shows nothing rather than the other language.",
+    "pageIntro": "The details the public site shows about the office. Everything here appears in the footer; a field left empty appears nowhere at all.",
+    "privateBadge": "Not shown publicly",
+    "publicBadge": "Shown publicly",
+    "refused": "That value is not allowed for this setting.",
+    "save": "Save",
+    "saved": "Saved",
+    "saving": "Saving...",
+    "sessionExpired": "Your session has expired. Sign in again.",
+    "unavailable": "The settings could not be loaded."
   },
   "SupportConsole": {
     "ticketTitle": "Support ticket",
@@ -1892,29 +1937,5 @@
     "failedConflict": "This application was decided by someone else. Reload to see the decision.",
     "failedContacts": "Approval needs both the email address and the phone number to be verified first.",
     "failedGeneric": "The decision could not be recorded. Try again."
-  },
-  "ListingAnalytics": {
-    "pageIntro": "What the daily rollup recorded for each listing, newest day first. Every number here was computed by a scheduled job.",
-    "readOnlyNote": "This section is read-only. A day is corrected by re-running the rollup, not from here.",
-    "notCountedNote": "Impressions and views are not counted, because what counts as one has not been settled. There is no rate, ratio or click-through anywhere on this page for the same reason.",
-    "windowLabel": "Window",
-    "windowValue": "Last {days} days",
-    "emptyTitle": "Nothing to show",
-    "emptyBody": "No listing activity has been rolled up in this window — or this account does not hold the key that opens it.",
-    "cursorTitle": "That list position could not be used",
-    "cursorBody": "Start again from the first page.",
-    "unavailableTitle": "Listing analytics unavailable",
-    "unavailableBody": "The rollup could not be read just now. Try again shortly.",
-    "nextPage": "Next page",
-    "dayHeading": "Day",
-    "listingHeading": "Listing",
-    "sellerHeading": "Seller",
-    "statusHeading": "Status",
-    "clicksHeading": "Clicks",
-    "contactsHeading": "Contacts",
-    "favoritesHeading": "Favourites",
-    "sharesHeading": "Shares",
-    "computedHeading": "Computed",
-    "noSeller": "No storefront"
   }
 }

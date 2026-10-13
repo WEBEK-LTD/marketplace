@@ -319,6 +319,19 @@ export const surface = {
    * emerald, correct by construction and anonymous in practice.
    */
   ink: brandScale['900'],
+  /**
+   * One step *below* the inverted band, for the surface that closes the page.
+   *
+   * This exists because of a defect a screenshot found and no test could: the home page's closing band and the
+   * footer were both `ink`, separated by a one-pixel hairline, so the page ended in roughly seven hundred pixels
+   * of unbroken emerald and appeared to have no footer at all. A hairline is the right device for dividing two
+   * regions inside one surface and the wrong one for saying "the page ends here" — that needs a change of value.
+   *
+   * `950` rather than black: the footer stays the brand's own hue at the darkest step the scale has, so the close
+   * reads as the same material one shade deeper rather than as a different colour. It is also the one place in the
+   * ladder where the step below `ink` is wanted, which is why there is no general `inkSunken`.
+   */
+  inkDeep: brandScale['950'],
   /** A card or panel sitting on an ink band: one step lighter, so it lifts off the ground it sits on. */
   inkRaised: brandScale['800'],
   /** A quiet filled area on an ink band. */
@@ -428,6 +441,7 @@ function buildColors(brand: BrandColors): DesignTokens['color'] {
       brandSoft: tintSurface(brand.brandPrimary, 0.96, 0.22),
       accentSoft: tintSurface(brand.brandSecondary, 0.932, 0.3),
       ink: scale['900'],
+      inkDeep: scale['950'],
       inkRaised: scale['800'],
       inkMuted: withAlpha('#FFFFFF', 0.07),
     },

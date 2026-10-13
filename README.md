@@ -80,8 +80,9 @@ status has no writer anywhere. The migration asserts that, so a future sweeper c
 | 3 | The console's receipt desk — the office's queue and the screen that records a payment | The database side exists (`office_receipts_for_staff`, `office_receipt_record`); the console screens do not |
 | 4 | The property catalogue (OD-A9) | **Done — `0111_property_catalogue.sql`.** See below |
 | 5 | The `/admin` visual redesign | **Done.** See below |
-| 6 | Listing photographs | Outstanding. `public.listing_media` and `public.media_variants` have existed since 0011; what is missing is the public contract field, the reader and the upload surface |
-| 7 | The home page: a hero photograph with the service explained over it, and the sections beneath it | Outstanding, and **waiting on photographs from the owner** — nothing in this repository may draw one and the sandbox cannot download one |
+| 6 | Listing photographs | **Done — `0114_listing_photographs.sql` and the code beside it.** See below |
+| 9 | The static pages' content, and the office's own contact details | **Done — `0112_static_page_content.sql` and `0113_office_contact_settings.sql`.** See below |
+| 7 | The home page: a hero photograph with the service explained over it, and the sections beneath it | **Built — 0112.** The band, the composition and the copy are done and the page is correct with no photograph at all; the photograph itself is one file the owner drops at `apps/web/public/brand/hero.jpg`. See below |
 | 8 | AI search, both kinds | Outstanding. Needs an OpenAI key, and the semantic half needs the `vector` extension, which `0001` does not create |
 
 ### What `0111_property_catalogue.sql` seeded
@@ -247,9 +248,257 @@ them is colour.
   border survives for the one job it is good at, dividing two regions inside a single surface.
 - **Scale contrast.** The type scale spans 0.75rem to 4.5rem, and most of what makes a hueless page read as
   composed is that span and the air around it.
-- **The price is the hero datum.** A marketplace is scanned by price, so on a card the price is the largest
-  element and the title is second. The currency code is set as a small raised mark (`.mp-currency`) and the
-  amount in tabular figures, so a column of prices aligns on its digits.
+- **The price is the hero datum** — **reversed in 0112, see below.** The currency code is still set as a small
+  raised mark (`.mp-currency`) and the amount still in tabular figures, so a column of prices aligns on its
+  digits.
+
+### 0112: the public design, reviewed against screenshots
+
+Every item below came out of a review the owner asked for, and most of them out of a screenshot rather than a
+test. Three thousand eight hundred passing assertions said nothing about any of them.
+
+**The hero.** It is now a photographic band: the photograph fills it, a flat scrim sits over it, and the
+proposition, the search and the doors settle against its lower edge. What it replaced put its content in a
+`max-w-3xl` column on one side of a 1440px viewport with the other 55% empty; floated a 64px accent rule above
+the content with nothing on it; and set the site's **own name** as the `<h1>`, sixty pixels below the logo that
+had just said it — so the largest type on the front page carried no information. The heading is now what the
+site is for, and the line under it is derived from approved decisions rather than invented: the money is paid
+at the office (OD-A1) and the buyer deals with the office team (OD-A4).
+
+*The photograph is one file.* Drop a landscape JPEG at `apps/web/public/brand/hero.jpg` and the band becomes
+photographic; nothing else changes. `.mp-hero-photo` in `globals.css` is the only place that address appears.
+It is a CSS background rather than an `<img>` because the first build used an `<img alt="">` on the assumption
+that a browser draws nothing for a broken decorative image — Chromium draws its broken-image mark, and the
+mobile screenshot showed it in the corner of the hero. A background that cannot be fetched paints nothing.
+The scrim is flat rather than a gradient on purpose: the photograph is the owner's and may be bright in any
+corner, so a uniform overlay is the only one that can be guaranteed to keep white type legible over it.
+
+**The search bar is one object.** The field and its submit were two separate white controls of the same height
+and radius; on a phone they stacked into what read as two empty fields. `SiteSearchForm` gained a `fused`
+shape: one rounded container holding both, taking the edge and — through `FOCUS_WITHIN` — the focus ring.
+`Input` gained `bare` for the field inside it, as an option on the shared recipe rather than a `className`
+override, because overriding would mean emitting `ring-1` and `ring-0` together and trusting the cascade.
+
+**The footer had no visible end.** It was `surface.ink`, and so was the band above it, separated by a one-pixel
+hairline — so a page closed with about seven hundred pixels of unbroken emerald. A hairline divides regions
+inside one surface; ending a page needs a change of value, so `surface.inkDeep` (`brandScale['950']`,
+`#03221D`) was added for the one surface that closes a page. The footer is also columns now, with headings, the
+policy addresses the route map fixes, and the brand's full horizontal lockup — tagline and all, which is
+legible at 56px and is why `BrandLockup` assembles the icon and wordmark separately everywhere else.
+
+**Eight sections stopped sharing one template.** `SectionHeader` gained `ornament` and `size`. A banded page
+passes `ornament="none"`, because the change of surface between one band and the next already marks where a
+section begins; drawing the hairline-and-tick as well meant the identical ornament above the identical heading
+size eight times down the page. The opening shelf takes the step above, so the stack below the `<h1>` has a
+hierarchy. The composed hero section became one column: it was a 7/4 split whose narrow side held two short
+lines and a button, which read as a column that did not fit.
+
+**Categories became an index.** Eight identical white rectangles in a four-by-two grid, each with a chevron and
+nothing else, is the figure the owner rejected twice. The same eight names are now full-width rows in two
+columns, set at twice the type size with a hairline between them and none of the furniture — and that shape
+survives an odd count, where the grid produced an orphan box in a ragged row.
+
+**The card was reordered for property, which reverses 0110's hierarchy.** A marketplace selling typewriters is
+scanned by price; property is not. Nobody shortlists a flat by its price before knowing where it is, and a card
+that announced `EGP 2,750,000` above `Maadi` was answering the second question first. So the card reads: the
+media region (a slot, empty until the listing-media contract lands), where it is, the title at the larger step,
+then the price in a tinted well at the foot — still prominent, no longer the headline. The grid dropped from
+four columns to three, because at four a card was 270px and truncated most real titles.
+
+**Prices are grouped in threes** — `EGP 425,000,000.00`, not `EGP 425000000.00`. Eight unbroken digits cannot be
+read at a glance and a column of them cannot be compared at all. `groupDigits` is applied in `PriceLockup`
+only; `toDecimalString` and `formatListingAmount` are untouched, because that is what an amount *is* rather
+than what it looks like, and it travels. `PRICE.detail` also came down two steps and lost its `whitespace-nowrap`:
+at 48px a property price ran straight out through the inline-end edge of the 22rem aside it sits in.
+
+**The header has one action.** A brand, four links and a language switch tell a visitor where to read and
+nowhere to act. It points at `/become-a-seller`, a route that has existed since Phase 8, and it is
+public-surface only for the same reason the catalogue doors are.
+
+**Two doors on the front page, not three.** `/services` keeps its route, its header entry and its footer entry;
+the home page stops advertising a shelf OD-A9 leaves empty in V1. Nothing was deleted — that is 1b's work.
+
+*One stale instrument was found and corrected rather than loosened.* `visibleText` in `become-a-seller.test.ts`
+read the document up to the first `</main>`, which is only right for a page that does not stream. This route
+has a `loading.tsx`, so React can flush `<main>` holding the skeleton and append the real content after the
+footer; whether it does shifts with any change anywhere in the tree. The helper was reading the fallback, so an
+assertion about the page's words was being made against no words at all. It now takes the body and removes the
+two chrome landmarks, which is stable under streaming and a slightly stronger claim than before.
+
+*Still outstanding after this increment, and each one needs something from outside the repository:* the hero
+photograph itself; listing photographs (increment 6 above); the footer's company details — a telephone number,
+an address, social accounts — which are the owner's to supply and which the composed footer menu is the
+mechanism for; and the `Message seller` button on a listing, which contradicts OD-A4 and is increment 2's work
+rather than a design change.
+
+### 0112–0113: the pages have words, and the office has details
+
+Two gaps that had the same shape: the platform had the machinery and no content, so every surface that read
+from the database said "not written yet".
+
+**Twenty-two static pages were empty.** The addresses have been in the route map since Phase 4 and the
+authoring console since 0085, but nothing had ever been authored, so `/about`, `/terms`, `/privacy` and
+nineteen others answered with an apology. `0112_static_page_content.sql` seeds all twenty-two in **both
+languages**, published rather than draft, as a first draft the owner edits in `/admin/cms/pages`. Every
+sentence describes what this platform actually does and the source is the owner's own amendment — the office
+handles the whole transaction (OD-A4), the full amount is paid at the office and the admin records it (OD-A1,
+OD-A2), commission is computed at that moment (OD-A7), an enquiry never expires (OD-A3), refunds are settled
+at the office (OD-A6), property only (OD-A9).
+
+*Nothing is invented.* Where a sentence needs a fact only the office has — the registered company name, the
+address, the commission rates, the governing law, the retention period — the text carries a bracketed
+placeholder **in both languages**, and the pgTAP suite counts them: ten pages in English and the same ten in
+Arabic. That number moving catches both mistakes it could catch — a placeholder quietly replaced by a
+plausible invention, and a page shipped with one nobody noticed. There are no invented rates, no invented
+addresses and no invented guarantees anywhere in the file.
+
+**`public.site_settings` had never had a writer.** The table has existed since 0008 with its key, its typed
+value and its `is_public` flag, and in five phases the only way a value had ever changed was direct SQL
+against the database — the same state 0096 found `seo_settings` in. `0113_office_contact_settings.sql` adds
+eight `office.*` rows, three named definer functions modelled on 0096's, and one public reader; the API, the
+BFF and a console screen at `/admin/settings/office` complete the path. **No permission key was invented**:
+`settings.site.manage` has been seeded since 0033 and consumed by nothing.
+
+Three properties are worth stating because each is load-bearing:
+
+- **The eight rows ship empty.** A plausible telephone number that ships is worse than none, because somebody
+  rings it. The public reader omits a setting with no value — an empty string, an empty array, an empty
+  object — so the footer renders exactly the details the office has filled in and nothing for the rest. There
+  is no placeholder row and no "not provided" anywhere on the public site.
+- **The console cannot create or delete a setting.** A key, its category, its declared type and its
+  `is_public` flag are decisions made in a migration where they can be reviewed. The database's writer refuses
+  an unknown key independently of the API, so that is a property of the system rather than a convention of a
+  controller — and it is why `is_public` can be trusted: a console that could mint a key could mint a public
+  one.
+- **Public by predicate, not by list.** `app_private.public_site_settings` filters on `is_public`, which
+  defaults to false, so a setting added to the `office` category tomorrow is private unless its own migration
+  says otherwise. A key list would have leaked the first one somebody forgot to update. That also settles
+  where a secret may not go: this table is audited and read back to the console in full, so a provider key or
+  a token is not a candidate for it, and the search increment gets storage of its own.
+
+*Two things a test caught that review would not have.* The office details travel with the menus on
+`/v1/navigation` rather than on an endpoint of their own, because that route is already "one read for the
+whole chrome" and the footer is on every page — the route's name is now slightly narrow for what it returns,
+and that is recorded rather than fixed with a redirect. And the console's setting form is a **client**
+component, so it was shipping both languages' descriptions to every reader; it now receives only the fields
+it renders, which an Arabic-console assertion found by finding English in it.
+
+*The account-settings guard was narrowed rather than loosened.* `no-recovery.test.ts` banned the whole
+`app/admin/settings` prefix, on the reasoning that it is where a self-service password or contact screen would
+land. The ban is now on the shapes an account surface would actually take — the bare settings index page by
+name, and the three account-named trees — and the platform's own settings categories are allowed. That catches
+strictly more than the prefix did: a personal page one directory down was previously only caught by the same
+prefix that also banned this.
+
+### 0116: listing photographs
+
+`public.listing_media` and `public.media_variants` have existed since 0011 and nothing had ever written to
+them. `0114_listing_photographs.sql` gives them the seven functions that were missing, and the code beside it
+gives a listing a picture on every public surface and a seller a way to put one there.
+
+**A photograph is four objects, and that is the central decision.** The seller's own file goes to
+`listing-originals`, which 0012 made private, and three WebP sizes — `thumb`, `card`, `full` — go to
+`listing-variants`, which 0012 made public. `listing_media_attach` takes all four or none: a photograph with
+two of its three sizes is a card the catalogue cannot render and a state every reader would have to handle.
+The three widths must be distinct and ascending, which is what makes them three sizes rather than one image
+three times.
+
+**The resizing happens in the browser, by owner decision** — a canvas draws each size and `toBlob` encodes it,
+so the platform needs no image pipeline, no worker and no new dependency. What that buys is that a canvas
+keeps pixels and nothing else, so the EXIF location a phone writes into a photograph never reaches the public
+bucket.
+
+**And `listing_media.metadata_stripped_at` is therefore never set.** It is the browser that drops the
+metadata, and the database cannot see what a caller actually uploaded to its own signed target — so the only
+honest value is one the server could stand behind, and there is no byte-level server check yet. A caller who
+bypassed the console and uploaded an untouched photograph to its own authorized path would have its EXIF
+served. That residual risk is recorded in the migration's header and in the contract, and closing it needs a
+server-side read of the bytes. A pgTAP assertion holds the claim down: the column is never non-null.
+
+**The variants of a listing that is not visible are *stored* unpublished, and that is not the same as
+unreachable.** `tg_media_variants_rule` refuses a public variant on a listing nobody may see, so a photograph
+added to a draft goes public with the listing — and §6 of the migration adds the publish branch 0011 never
+wrote, so `draft → active` publishes the variants and stamps them. But `listing-variants` is a public bucket
+whose read policy names *the bucket*, not the row: anyone holding a variant's URL can fetch it whatever
+`is_public` says. The random component in the path is what keeps one from being guessed, and it is not an
+access control. A draft's photographs are not confidential, and nothing in this increment pretends otherwise.
+
+**Every surface is addressed by slug, including the console's.** 0048's seller contract carries "no identifier
+of any kind" on purpose, so `listing_media_resolve` turns a slug into the identifier the other functions take
+— gated by the same predicate, so somebody else's slug and a slug that does not exist are one answer. One set
+of routes serves the seller and the staff moderator, because `listing_media_can_manage` is one predicate with
+two branches rather than two authorization models.
+
+**Nothing is signed for reading, and that is deliberate.** `listing-variants` is public, so a variant's
+address is an address: the API composes `{origin}/storage/v1/object/public/{path}` and that URL does not
+expire. A signed URL inside a cached page would.
+
+**A failed photographs read costs the photograph, not the page.** The price, the place and the title are the
+card's substance and they came back; a catalogue that answered 503 because a picture could not be read would
+be a worse answer than a card without one. That is the one thing `ListingImagesService` swallows, it is
+logged at error level, and it is asserted.
+
+**The one new deployment variable is `MEDIA_PUBLIC_ORIGIN`, and it is not a Supabase variable.** The
+photograph URLs are composed by the API from its own `SUPABASE_URL` and arrive in the response body; the web
+deployment still holds no Supabase value of any kind. What the web deployment needs is one host named in the
+`img-src` directive, and that is all this does. It is optional and **fail-closed**: unset, the policy is
+byte-for-byte the one it has always been, so a stored photograph is blocked by the browser rather than a
+wildcard being opened. Set, it is validated strictly — `https`, an origin with nothing after the host, no
+wildcard, no credentials, no whitespace — and anything else is treated as absent rather than widening the
+policy. **Until it is set on the deployment, photographs will not display.** That is an owner action.
+
+### 0117: one site — the API on Netlify, and no Redis
+
+**The owner's deployment decision, recorded: Netlify and Supabase, and nothing else.** No third host, no
+queue service, no cache. This increment is what that costs and what it does not.
+
+```
+Netlify   /        →  the public marketplace
+          /admin   →  the staff console
+          /_api/*  →  the API, as one function
+Supabase            →  PostgreSQL and Storage
+```
+
+**The API runs as one Netlify Function, and the application is unchanged.** `netlify/functions/api.mts`
+calls `createApp` — the same factory `main.ts` calls and every API test drives — boots it once per warm
+instance, and injects each request into the Fastify instance. There is no second application, no re-routing
+and no second copy of any guard: it is a different way to *invoke* the API rather than a different API.
+
+**`/_api/*` is reachable from the internet, and that changes no authorization.**
+`InternalCredentialGuard` is registered as an `APP_GUARD` over every route and refuses anything without the
+internal credential, which only the BFF holds. That guard was the boundary when the API was private and it is
+the boundary now — asserted in the deployment's own configuration, with no Redis, in `no-redis.test.ts`.
+
+**The pool is one connection per instance, against Supabase's transaction pooler.** Each warm instance holds
+its own pool and many can exist at once, so `APP_SYSTEM_DATABASE_MAX_CONNECTIONS` is `1` and the connection
+string is the pooler's. `@repo/db` already recorded why that is safe: node-postgres sends parameterised
+queries as unnamed statements, so no named prepared statement ever reaches a transaction-mode pooler.
+
+**Redis is optional, and its absence is an ordinary deployment rather than a degraded one.** The C-1 login
+throttle has always had two tiers — Redis, and the durable PostgreSQL counter `app_private.rate_limit_hit` —
+and `LoginThrottleService` has always accepted a null first tier. So an API with no Redis enforces the same
+limits over the same windows with the same buckets; what it loses is a shared cache in front of them, not the
+enforcement. **The never-fail-open rule is untouched**: a request that cannot be counted at all is still
+refused. The same is true of 0101's analytics stream, whose port was nullable from the day it was written —
+ingestion falls to the durable direct path.
+
+Null is not the same as a Redis that is down, and the distinction is the point: nothing is constructed, so
+nothing times out on every login and nothing logs a warning each time.
+
+**The worker is not deployed, and nothing is lost by that.** Its runtime is built on BullMQ, so it genuinely
+needs Redis — but it has nothing to do yet. Its outbox handler registry is empty by its own comment
+(*"Nothing is registered, so nothing is claimed"*) and no email transport has been chosen, so a deployed
+worker today would connect to Redis, hold queues open and process zero jobs. It stays in the repository,
+tested, for the increment that gives it work.
+
+**What this costs, stated plainly.** A cold instance pays a boot before its first request. Everything else —
+the routes, the headers, the authorization, the limits — is what it was.
+
+**The one thing not verifiable from here.** Whether Netlify's packager assembles a NestJS function correctly
+is a property of a real deploy. The configuration is written to avoid the known failure: the whole server
+stack is listed in `external_node_modules` so it is copied rather than bundled, because NestJS resolves
+providers through decorators and loads dependencies by name in ways a bundler cannot see. If a deploy fails,
+the function log names the module and it is a configuration fix, not a design one.
 
 ### Colour: the owner's brand, and the system derived from it
 
@@ -324,8 +573,11 @@ arithmetic.
 
 ### Where the design declines to invent
 
-- `ListingSummarySchema` is `.strict()` with eight fields and no media, so the catalogue card is typographic. A
-  grid where every card wears an empty image frame reads as an outage, not as a product.
+- `ListingSummarySchema` carries a photograph since 0116, and the reasoning behind the typographic card
+  survives in the part of it that was never about the contract: a grid where **every** card wears an empty
+  image frame reads as an outage, not as a product. So the picture region is a decision about the grid rather
+  than the card — a page where nothing has been photographed has no frames at all, and a page where something
+  has gives every card one, so the row reads as a row.
 - There is no sort parameter — ordering is 0051's approved newest-first — so `CatalogToolbar` *states* the
   ordering instead of offering a control that cannot change it.
 - Readers return `{ items, nextCursor }` with no total and no offset, so `Pagination` has no page numbers: it
@@ -364,7 +616,7 @@ arithmetic.
 | `SUPABASE_URL` | api | yes | — | no | local, ci, staging, production | current | Base URL of the Supabase project the API signs users in against (https, no credentials). Server-only: the browser never calls Supabase Auth (F2) |
 | `SUPABASE_SECRET_KEY` | api | yes | — | yes | local, ci, staging, production | current | Server-only Supabase secret key used for the password grant against Supabase Auth; never reaches a browser, a log or a response body (F2) |
 | `WEB_PUBLIC_ORIGIN` | api | yes | — | no | local, ci, staging, production | current | Origin of the public web app (https, no path), used server-side to build the password-reset recovery link (F3). Server-only: it is never returned by an API response and never reaches a client bundle |
-| `REDIS_URL` | api, worker | yes | — | yes | local, ci, staging, production | current | Redis connection URL; production requires rediss:// with a password. The API uses it for the first login-throttle tier (owner decision C-1) and falls back to the durable PostgreSQL counter when it is unreachable |
+| `REDIS_URL` | api, worker | no | — | yes | local, ci, staging, production | current | Redis connection URL; production requires rediss:// with a password. **Optional since 0117, and its absence is an ordinary deployment rather than a degraded one.** The API uses it for the first login-throttle tier (owner decision C-1) and already falls back to the durable PostgreSQL counter `app_private.rate_limit_hit` when it is unreachable — so when no URL is configured the API simply starts with that one tier absent and counts in PostgreSQL. The limits, the windows and the never-fail-open rule are unchanged: a request that cannot be counted at all is still refused. The worker is a different case and needs it for real: its runtime is built on BullMQ, so a worker deployment without Redis is a worker that cannot run. It is not deployed in the Netlify + Supabase topology (0117) and nothing is lost by that, because its outbox handler registry is empty and no email transport is chosen |
 | `WORKER_CONCURRENCY` | worker | no | `5` | no | local, ci, staging, production | current | Jobs processed in parallel per queue |
 | `WORKER_HEALTH_HOST` | worker | yes | — | no | local, ci, staging, production | current | Address of the internal health server |
 | `WORKER_HEALTH_PORT` | worker | yes | — | no | local, ci, staging, production | current | Port of the internal health server |
@@ -375,6 +627,7 @@ arithmetic.
 | `OUTBOX_RELAY_INTERVAL_MS` | worker | no | `15000` | no | local, ci, staging, production | current | How often the transactional outbox relay claims a batch, in milliseconds (1000-3600000). Transport only: it sets the polling cadence and no business, retry or completion rule |
 | `OUTBOX_SWEEPER_INTERVAL_MS` | worker | no | `300000` | no | local, ci, staging, production | current | How often the outbox sweeper runs, in milliseconds (1000-3600000). The default matches the 5-minute staleness threshold that sweep_outbox_events itself defines; the threshold, not this cadence, decides what is stale |
 | `API_BASE_URL` | web | yes | — | no | local, ci, staging, production | current | Server-only API base URL for the BFF (http or https, no credentials); required at runtime, not at build |
+| `MEDIA_PUBLIC_ORIGIN` | web | no | — | no | local, ci, staging, production | current | The origin that serves stored listing photographs — scheme and host only, no path, no trailing slash, no credentials (for example https://project.supabase.co). The only thing it is used for is the img-src directive of the Content-Security-Policy: the photograph URLs themselves are composed by the API from its own SUPABASE_URL and travel in the response, so this deployment needs no Supabase variable and is given none. Optional and with no default, and the behaviour while it is unset is fail-closed rather than permissive: the CSP keeps exactly the img-src it had, so a stored photograph is blocked by the browser rather than a wildcard being opened. Setting it to the storage origin is the only step needed to turn photographs on. When it IS set it is validated strictly, so a malformed value is a named start-up failure rather than a broken policy. Non-secret — it is a public image host and appears in a response header by design — but it is still read on the server and is not a NEXT_PUBLIC_ variable |
 | `PUBLIC_WEB_ORIGIN` | web | no | — | no | local, ci, staging, production | current | The public origin this site is served from — scheme and host only, no path, no trailing slash, no credentials (for example https://host.example). The sitemap protocol requires absolute URLs and the robots.txt Sitemap directive requires one, so they are built from this value and never from the request Host header, which a client controls. Deferred until the production domain is chosen: it is optional and has no default, and while it is unset the app runs normally, robots.txt is served without a Sitemap directive, and the sitemaps answer 404. Setting it is the only step needed to turn them on. When it IS set it is validated strictly, so a malformed value is a named start-up failure rather than a malformed document. Non-secret, but server-only all the same: it is read by the sitemap and robots routes, not shipped to a browser |
 | `TOOL3_POOLER_URL` | tooling | no | — | no | local, ci | tooling | TOOL-3: local Supabase pooler URL (fixture role, no password) |
 | `TOOL3_ADMIN_URL` | tooling | no | — | yes | local, ci | tooling | TOOL-3: direct local database URL with credentials |
@@ -425,6 +678,7 @@ outside it and set on the surface that reads it; a deployment is not ready until
 | --- | --- | --- | --- |
 | `INTERNAL_BFF_CREDENTIAL` | yes | yes | — |
 | `API_BASE_URL` | yes | no | — |
+| `MEDIA_PUBLIC_ORIGIN` | no | no | — |
 | `PUBLIC_WEB_ORIGIN` | no | no | — |
 
 #### API service — service environment (no deployment target yet)
@@ -447,7 +701,7 @@ outside it and set on the surface that reads it; a deployment is not ready until
 | `SUPABASE_URL` | yes | no | — |
 | `SUPABASE_SECRET_KEY` | yes | yes | — |
 | `WEB_PUBLIC_ORIGIN` | yes | no | — |
-| `REDIS_URL` | yes | yes | — |
+| `REDIS_URL` | no | yes | — |
 
 #### Worker service — service environment (no deployment target yet)
 
@@ -456,7 +710,7 @@ outside it and set on the surface that reads it; a deployment is not ready until
 | `NODE_ENV` | yes | no | — |
 | `LOG_LEVEL` | no | no | `info` |
 | `PSEUDONYMOUS_USER_ID_KEY` | yes | yes | — |
-| `REDIS_URL` | yes | yes | — |
+| `REDIS_URL` | no | yes | — |
 | `WORKER_CONCURRENCY` | no | no | `5` |
 | `WORKER_HEALTH_HOST` | yes | no | — |
 | `WORKER_HEALTH_PORT` | yes | no | — |
@@ -510,12 +764,24 @@ run* below).
 2. Set the variables from the manifest above on the site. `API_BASE_URL` may point at a host that does not exist
    yet. **Do not create a `PUBLIC_WEB_ORIGIN` field at all** unless you are setting a real origin: only an absent
    variable counts as deferred, and an empty field is a present value that fails its validator, which means every
-   request answers `500`.
-3. If pull-request previews are enabled, **a preview exposes `/admin` as well as `/`, so previews need access
+   request answers `500`. The same holds for `MEDIA_PUBLIC_ORIGIN` (0116), with one difference worth knowing:
+   **until it is set to the storage origin, listing photographs do not display.** The pages render correctly
+   without them — that is the case the design was built for — but a photograph a seller has uploaded is
+   blocked by the Content-Security-Policy, because the policy names one image host and will not name a
+   wildcard. The value is the bare origin of the Supabase project's storage host, scheme and host only, and
+   it is not a credential: it appears in a response header by design.
+3. Set the API's own variables on the **same site** (0117). The API runs as a function here, so its
+   environment is this site's environment: `APP_SYSTEM_DATABASE_URL` pointing at Supabase's **transaction
+   pooler**, `APP_SYSTEM_DATABASE_MAX_CONNECTIONS=1`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, the four
+   server-only keys, the two Waabek values, `WEB_PUBLIC_ORIGIN`, `NODE_ENV`, `API_HOST`, `API_PORT`, and the
+   same `INTERNAL_BFF_CREDENTIAL` the web half presents. `API_BASE_URL` is this site's own origin plus
+   `/_api`. **Leave `REDIS_URL` unset**: there is no Redis in this topology and its absence is the supported
+   state, not a missing step.
+4. If pull-request previews are enabled, **a preview exposes `/admin` as well as `/`, so previews need access
    protection**. A preview is a public URL unless something stops it, and the console's sign-in page on the open
    internet is the thing to avoid. This matters more than it did when the console had its own site: there is no
    longer a separate preview to protect, only the one that carries both surfaces.
-4. Note the default domain. Everything below is run against it.
+5. Note the default domain. Everything below is run against it.
 
 ### Phase 1 — the sites, before an API is hosted
 

@@ -1,7 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { CatalogFilters, PublicLocale, SearchResult, ServicePricingModel } from '@repo/contracts';
+import type {
+  CatalogFilters,
+  ListingImage,
+  PublicLocale,
+  SearchResult,
+  ServicePricingModel,
+} from '@repo/contracts';
 import { CatalogUnavailableError } from './catalog-errors.js';
 import { InvalidListingCursorError, decodeCursor, encodeCursor } from './listings.service.js';
+import { ListingImagesService } from './listing-images.js';
 
 /**
  * Public search (Phase 4-F, with 8-D's filters).
@@ -70,8 +77,13 @@ export interface SearchPage {
  *
  * Exported because 8-D's category feed returns the same rows from the same projection: one definition of
  * what a public card is, rather than two that could drift.
+ *
+ * `primaryImage` is the caller's to supply (0116): the photographs of a whole page come back in one call, so
+ * the caller holds the map and this stays a pure projection. A service result takes none — a service is not a
+ * listing and has no `listing_media` row — which is why it is a second parameter rather than a field of the
+ * row, and why the service branch below returns before it is used.
  */
-export function toSearchResult(row: SearchRow): SearchResult {
+export function toSearchResult(row: SearchRow, primaryImage: ListingImage | null = null): SearchResult {
   const shared = {
     id: row.id,
     slug: row.slug,
@@ -101,6 +113,7 @@ export function toSearchResult(row: SearchRow): SearchResult {
     ...shared,
     isNegotiable: row.isNegotiable,
     listingTypeCode: row.listingTypeCode,
+    primaryImage,
   };
 }
 
@@ -108,7 +121,10 @@ export function toSearchResult(row: SearchRow): SearchResult {
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
 
-  constructor(@Inject(SEARCH_PORT) private readonly port: SearchPort) {}
+  constructor(
+    @Inject(SEARCH_PORT) private readonly port: SearchPort,
+    private readonly images: ListingImagesService,
+  ) {}
 
   /**
    * One page of results.
@@ -147,8 +163,13 @@ export class SearchService {
     const hasMore = rows.length > input.limit;
     const page = hasMore ? rows.slice(0, input.limit) : rows;
     const last = page.at(-1);
+    // Only the listing rows: a service has no photograph, and asking for one would be a lookup that can
+    // only come back empty.
+    const byListing = await this.images.forListings(
+      page.filter((row) => row.resultType === 'listing').map((row) => row.id),
+    );
     return {
-      items: page.map(toSearchResult),
+      items: page.map((row) => toSearchResult(row, this.images.primaryOf(byListing.get(row.id)))),
       nextCursor: hasMore && last !== undefined ? encodeCursor(last.createdAt, last.id) : null,
     };
   }

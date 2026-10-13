@@ -14,7 +14,8 @@ import {
 import { getTranslations } from 'next-intl/server';
 import { publicBlogIndexPath, publicBlogPostPath, type PublicLocale } from '@repo/config';
 import type { HomepageListingCard, PublicHomepageSection } from '@repo/contracts';
-import { CatalogCard, CategoryTile, SellerCard } from './catalog-card';
+import { CatalogCard, CategoryRow, SellerCard } from './catalog-card';
+import { CARD_PHOTO_SIZES, ListingPhoto, anyPhotographed } from './listing-photo';
 import type { ListingPriceLabels } from './listing-price';
 
 /**
@@ -27,8 +28,11 @@ import type { ListingPriceLabels } from './listing-price';
  * **`rich_text` is rendered as text** — owner decision D. `whitespace-pre-wrap` keeps the author's line breaks and
  * nothing interprets the string as markup.
  *
- * **No section renders an image.** A banner strip is not served at all, and a seller's logo and a category's image
- * are absent from the contract, because this platform has no media origin to address one with.
+ * **A listing shelf renders its photographs (0116); nothing else on this page renders an image.** A banner strip
+ * is not served at all, and a seller's logo and a category's image are still absent from the contract — there is
+ * no upload surface for either, so there is nothing to address. A listing card's own photograph is different:
+ * `HomepageListingCardSchema` carries `primaryImage`, and a shelf of listings on the front page shows the same
+ * picture the same listing shows on the browse list.
  *
  * Every card is {@link CatalogCard} — the same component the browse lists and the search results use — so a
  * listing on the front page is visually the same object as the same listing anywhere else in the product.
@@ -61,17 +65,31 @@ function sellerPath(locale: PublicLocale, slug: string): string {
   return `${locale === 'ar' ? '/ar' : ''}/seller/${encodeURIComponent(slug)}`;
 }
 
-/** A composed section's own heading and subheading, where it has them. */
+/**
+ * A composed section's own heading and subheading, where it has them.
+ *
+ * **No accent rule** (0112). `SectionHeader`'s hairline-and-tick is the right device on a page whose sections
+ * share one surface, and the wrong one here: these sections are bands, and the change of surface between one band
+ * and the next already says where a section begins. Drawing the rule as well meant the identical ornament above
+ * the identical heading size eight times down the page, which is what made a composed home page read as one
+ * template run eight times rather than as a composition.
+ *
+ * **The first section gets the step above.** With every heading at the same size a page had no hierarchy below
+ * its `<h1>`; the opening shelf now leads at `TYPE.h1` and the ones after it sit at `h2`. The heading *level* is
+ * `h2` either way — the outline is a separate question from the type size.
+ */
 function ComposedHeader({
   title,
   subtitle,
   tone,
   action,
+  size,
 }: {
   readonly title: string | null;
   readonly subtitle: string | null;
   readonly tone?: 'default' | 'ink';
   readonly action?: React.ReactNode;
+  readonly size?: 'default' | 'lead';
 }) {
   if (title === null && subtitle === null) return null;
   return (
@@ -80,7 +98,9 @@ function ComposedHeader({
       {...(subtitle === null ? {} : { description: subtitle })}
       {...(tone === undefined ? {} : { tone })}
       {...(action === undefined ? {} : { action })}
+      {...(size === undefined ? {} : { size })}
       as="h2"
+      ornament="none"
       className="mb-10 sm:mb-12"
     />
   );
@@ -134,6 +154,9 @@ export async function HomepageSections({
                 : 'canvas';
         const ink = tone === 'ink';
         const key = section.sectionKey;
+        // The page's opening shelf takes the step above, so the stack below the `<h1>` has a hierarchy. A
+        // composed `hero` is not a shelf and sets its own scale, so the first shelf after it is still the lead.
+        const lead = sections.slice(0, index).every((s) => s.sectionType === 'hero');
 
         switch (section.sectionType) {
           case 'hero':
@@ -143,47 +166,41 @@ export async function HomepageSections({
               so the two do not compete for the same job on the same page.
             */
             /*
-              A composed hero sits on the accent wash and splits: the administrator's headline on the left,
-              their supporting line and call to action on the right. The single left-aligned column this
-              replaced was a thin strip of mostly empty space between two strong bands — it read as a gap in
-              the page rather than as a statement in it.
+              **One column, centred on the measure** (0112). This was a 7/4 split with the headline on one side
+              and the lead plus the call to action in a narrow column on the other, separated by a vertical rule.
+              The screenshots showed what that actually produces: a wide heading beside a 280px strip of two
+              short lines and a button, which reads as a column that did not fit rather than as a statement.
+
+              A composed hero is a statement, and a statement is one block. The headline, the lead under it and
+              the action under that, on the reading measure — which is also the only arrangement that is correct
+              whether the administrator filled one of those three fields or all of them.
             */
             return (
               <Band tone={tone} space="normal" key={key}>
                 <PageContainer>
-                  <div className="grid grid-cols-1 items-end gap-8 lg:grid-cols-12 lg:gap-12">
-                    <div className="lg:col-span-7">
-                      {section.title === null ? null : (
-                        <Heading level={2} className={cx(TYPE.displaySm, ink && 'text-on-ink')}>
-                          {section.title}
-                        </Heading>
-                      )}
-                      {section.subtitle === null ? null : (
-                        <p className={cx('mt-5 max-w-xl', ink ? 'text-lg leading-normal text-on-ink-muted' : TYPE.lead)}>
-                          {section.subtitle}
-                        </p>
-                      )}
-                    </div>
-                    <div className="lg:col-span-4 lg:col-start-9">
-                      {section.hero.lead === null ? null : (
-                        <p
-                          className={cx(
-                            'border-s-2 ps-5',
-                            ink ? 'border-accent-400 text-base text-on-ink-muted' : 'border-accent-400',
-                            !ink && TYPE.body,
-                          )}
-                        >
-                          {section.hero.lead}
-                        </p>
-                      )}
-                      {section.hero.ctaPath === null || section.hero.ctaLabel === null ? null : (
-                        <p className="mt-7">
-                          <ButtonLink href={section.hero.ctaPath} size="lg" variant={ink ? 'onInk' : 'primary'}>
-                            {section.hero.ctaLabel}
-                          </ButtonLink>
-                        </p>
-                      )}
-                    </div>
+                  <div className="max-w-3xl">
+                    {section.title === null ? null : (
+                      <Heading level={2} className={cx(TYPE.displaySm, ink && 'text-on-ink')}>
+                        {section.title}
+                      </Heading>
+                    )}
+                    {section.subtitle === null ? null : (
+                      <p className={cx('mt-6', ink ? 'text-lg leading-normal text-on-ink-muted' : TYPE.lead)}>
+                        {section.subtitle}
+                      </p>
+                    )}
+                    {section.hero.lead === null ? null : (
+                      <p className={cx('mt-5', ink ? 'text-base text-on-ink-muted' : TYPE.body)}>
+                        {section.hero.lead}
+                      </p>
+                    )}
+                    {section.hero.ctaPath === null || section.hero.ctaLabel === null ? null : (
+                      <p className="mt-9">
+                        <ButtonLink href={section.hero.ctaPath} size="lg" variant={ink ? 'onInk' : 'primary'}>
+                          {section.hero.ctaLabel}
+                        </ButtonLink>
+                      </p>
+                    )}
                   </div>
                 </PageContainer>
               </Band>
@@ -200,7 +217,11 @@ export async function HomepageSections({
             return (
               <Band tone={tone} space="normal" key={key}>
                 <PageContainer>
-                  <ComposedHeader title={section.title} subtitle={section.subtitle} />
+                  <ComposedHeader
+                    title={section.title}
+                    subtitle={section.subtitle}
+                    {...(lead ? { size: 'lead' as const } : {})}
+                  />
                   <CardGrid>
                     {section.listings.map((card) => (
                       <CatalogCard
@@ -213,6 +234,17 @@ export async function HomepageSections({
                         currencyMinorUnit={card.currencyMinorUnit}
                         isNegotiable={card.isNegotiable}
                         labels={priceLabels}
+                        /*
+                          One decision for the shelf, taken once above: either every card on it has a picture
+                          region or none does. `alt=""` — the card is one link already labelled with the title.
+                        */
+                        {...(anyPhotographed(section.listings)
+                          ? {
+                              media: (
+                                <ListingPhoto alt="" image={card.primaryImage} sizes={CARD_PHOTO_SIZES} />
+                              ),
+                            }
+                          : {})}
                       />
                     ))}
                   </CardGrid>
@@ -223,21 +255,24 @@ export async function HomepageSections({
 
           case 'featured_categories':
             /*
-              Tiles, not a row of pills. A category is a door, and 0109 drew twenty identical 32px-tall chips
-              that read as leftover form controls — the most important navigation on the home page given less
-              presence than a button. A tile is large enough to aim at on a phone and to carry a count.
+              **An index, not a grid of tiles** (0112). See `CategoryRow` for the whole argument; in short, the
+              four-by-two grid of identical white rectangles is the figure the brief rejects, and the same eight
+              names set large in two columns of hairline-separated rows carry twice the type and none of the
+              furniture.
 
-              They are deliberately uniform. A mosaic with a double-width first tile was tried and produced a
-              ragged last row — one orphan tile beside a gap — which reads as a layout that broke rather than
-              as composition. The page's asymmetry lives where it is robust: the opening band's 7/5 split.
+              `columns-*` rather than a CSS grid: a multi-column flow fills the first column before the second,
+              so an index reads down and then across the way a directory does, and an odd count leaves a short
+              second column instead of an orphan box in a ragged row. `break-inside-avoid` on the rows keeps a
+              name and its rule together at a column break. The top rule closes the list at its head, so the
+              first row is edged like every row after it.
             */
             return (
               <Band tone={tone} space="normal" key={key}>
                 <PageContainer>
                   <ComposedHeader title={section.title} subtitle={section.subtitle} />
-                  <ul className="grid list-none grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                  <ul className="list-none border-t border-hairline sm:columns-2 sm:gap-x-16 [&>li]:break-inside-avoid">
                     {section.categories.map((category) => (
-                      <CategoryTile
+                      <CategoryRow
                         key={category.slug}
                         href={categoryPath(locale, category.slug)}
                         label={category.name}

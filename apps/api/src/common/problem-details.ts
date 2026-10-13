@@ -217,8 +217,10 @@ const DETAILS: Readonly<Record<ProblemCode, string>> = {
   FAQ_NOT_ALLOWED: 'That is not an allowed value for a help-centre entry.',
   SEO_SETTINGS_NOT_ALLOWED: 'That is not an allowed value for a site-wide SEO setting.',
   SEO_SETTINGS_MEDIA_MISSING: 'The share image named does not exist.',
+  SITE_SETTING_NOT_ALLOWED: 'That value is not allowed for this setting.',
   CMS_MEDIA_NOT_ALLOWED: 'That is not an allowed value for a media upload.',
   CMS_MEDIA_OBJECT_MISSING: 'No uploaded file was found at that location.',
+  LISTING_MEDIA_OBJECT_MISSING: 'No uploaded file was found at that location.',
   CMS_MEDIA_PATH_TAKEN: 'That uploaded file already has a library entry.',
   // 0102. One sentence for a malformed position, an altered one, one of the wrong kind and one from a
   // retired version, because the remedy is the same in all four.

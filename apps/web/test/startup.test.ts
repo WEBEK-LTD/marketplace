@@ -115,7 +115,10 @@ describe('R4-B: instrumentation start-up validation (next start without the pref
       expect((await fetch(`${app.baseUrl}/`)).status).toBe(200);
       const lines = app.output().split('\n').filter((line) => line.includes('"config_loaded"'));
       expect(lines).toHaveLength(1);
-      expect(JSON.parse(lines[0] ?? '')).toEqual({ event: 'config_loaded', component: 'web', variablesValidated: 3 });
+      // Four since 0116: the two required ones, the deferred public origin, and the deferred media origin.
+      // A count rather than the names, which is the point of this event — it reports that configuration was
+      // validated without reporting what any of it is.
+      expect(JSON.parse(lines[0] ?? '')).toEqual({ event: 'config_loaded', component: 'web', variablesValidated: 4 });
       expect(app.output()).not.toContain('placeholder-internal-host');
       expect(app.output()).not.toContain(CREDENTIAL);
     } finally {

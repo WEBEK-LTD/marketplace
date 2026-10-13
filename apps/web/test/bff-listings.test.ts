@@ -30,6 +30,7 @@ const SUMMARY = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  primaryImage: null,
 } as const;
 
 const PAGE = { items: [SUMMARY], nextCursor: 'Y3Vyc29y' };
@@ -47,6 +48,9 @@ const DETAIL = {
       { key: 'width', label: 'Width', unit: 'cm', kind: 'number', text: '180', boolean: null, options: [] },
     ],
     tags: [{ slug: 'handmade', name: 'Handmade' }],
+    // 0116. A listing with no photographs is the ordinary case, and the contract carries the empty gallery
+    // rather than omitting the field — so this fixture carries it too.
+    images: [],
   },
 };
 

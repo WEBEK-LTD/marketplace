@@ -11,7 +11,7 @@ import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { FooterMenu, HeaderMenu, MobileMenu, resolveMenus } from '../components/site-navigation';
 import { directionFor } from '../i18n/routing';
-import { readSiteNavigation } from '../server/bff';
+import { readSiteChrome } from '../server/bff';
 import { SITE_CHROME_HEADER, SURFACE_ADMIN, SURFACE_HEADER } from '../proxy-headers';
 import { AdminDocument } from '../admin/components/admin-document';
 
@@ -87,8 +87,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   const language: PublicLocale = locale === 'ar' ? 'ar' : 'en';
   const isPublicSurface = requestHeaders.get(SITE_CHROME_HEADER) === 'navigation';
-  // One read for the whole chrome, and only where the chrome carries navigation at all.
-  const menus = isPublicSurface ? resolveMenus(language, (await readSiteNavigation(language)) ?? []) : [];
+  // One read for the whole chrome, and only where the chrome carries navigation at all. Since 0113 the same
+  // answer carries the office's own contact details, because the footer needs both and is on every page.
+  const chrome = isPublicSurface ? await readSiteChrome(language) : null;
+  const menus = isPublicSurface ? resolveMenus(language, chrome?.menus ?? []) : [];
   const menuFor = (key: string) => menus.find((menu) => menu.menuKey === key);
   const header = menuFor('header');
   const mobile = menuFor('mobile') ?? header;
@@ -113,6 +115,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               listings: t('Homepage.browseListings'),
               services: t('Homepage.browseServices'),
               categories: t('Homepage.browseCategories'),
+              action: t('Header.action'),
             }}
             {...(header === undefined ? {} : { navigation: <HeaderMenu menu={header} /> })}
             {...(mobile === undefined ? {} : { mobileNavigation: <MobileMenu menu={mobile} /> })}
@@ -128,8 +131,26 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               listings: t('Homepage.browseListings'),
               services: t('Homepage.browseServices'),
               categories: t('Homepage.browseCategories'),
+              // The footer's own columns (0112). The catalogue labels stay where they already lived; these are
+              // the headings over them and the policy addresses the specification's route map fixes.
+              browseHeading: t('Footer.browseHeading'),
+              legalHeading: t('Footer.legalHeading'),
+              terms: t('Footer.terms'),
+              privacy: t('Footer.privacy'),
+              cookies: t('Footer.cookies'),
+              help: t('Footer.help'),
+              contact: t('Footer.contact'),
+              // The site's own description, already written as the home page's meta description.
+              tagline: t('Homepage.metaDescription'),
+              officeHeading: t('Footer.officeHeading'),
+              telephoneLabel: t('Footer.telephoneLabel'),
+              whatsappLabel: t('Footer.whatsappLabel'),
+              emailLabel: t('Footer.emailLabel'),
+              hoursLabel: t('Footer.hoursLabel'),
             }}
             copyright={t('Footer.copyright', { year: new Date().getFullYear(), name: t('Site.name') })}
+            {...(/* absent until the office fills something in: the footer then renders no column at all */
+            chrome?.office === undefined ? {} : { office: chrome.office })}
             {...(footer === undefined ? {} : { navigation: <FooterMenu menu={footer} /> })}
           />
         </NextIntlClientProvider>

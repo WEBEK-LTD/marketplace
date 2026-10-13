@@ -1,5 +1,6 @@
 import type { SearchResult } from '@repo/contracts';
 import { ListingClickBeacon } from './listing-beacon';
+import { anyPhotographed } from './listing-photo';
 import { ListingCard, type ListingCardLabels } from './listing-views';
 import { ServiceCard, type ServiceLabels } from './service-views';
 
@@ -31,6 +32,14 @@ export function SearchResultList({
   readonly serviceHref: (slug: string) => string;
   readonly labels: SearchLabels;
 }) {
+  /*
+    One decision for the whole list (0116): either every listing card has a picture region or none does. The
+    service results are not consulted — a service has no `listing_media` row and its card has no picture
+    region to leave empty, so one photographed listing in a mixed list gives the listing cards their frames
+    and changes nothing about the service cards beside them.
+  */
+  const withPhoto = anyPhotographed(results.filter((result) => result.type === 'listing'));
+
   return (
     // 0101: one listener for the whole list, emitting a click for whichever listing was opened from here.
     <ListingClickBeacon source="search">
@@ -49,6 +58,7 @@ export function SearchResultList({
               listing={result}
               href={listingHref(result.slug)}
               labels={labels.listing}
+              withPhoto={withPhoto}
             />
           ),
         )}

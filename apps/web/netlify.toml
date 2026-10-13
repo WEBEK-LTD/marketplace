@@ -18,7 +18,7 @@
 # load-bearing and why the publish path is repository-root-relative. One Next.js application serves the public
 # marketplace at `/` and the staff console at `/admin` (0108); there is no admin site and no admin hostname.
 [build]
-  command = "pnpm --filter \"@repo/web...\" run build"
+  command = "pnpm --filter \"@repo/web...\" --filter \"@repo/api...\" run build"
   publish = "apps/web/.next"
 
 [build.environment]

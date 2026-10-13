@@ -182,6 +182,11 @@ create function pg_temp.nobody() returns uuid language sql immutable as
 
 -- The two addresses the owner named, each carrying its topic as its `page_key` (owner decision 1); one page that
 -- carries a key and is still a draft, so it maps nothing; and one published page with no key at all.
+-- The seeded static pages are cleared first. 0112 publishes the twenty-two addresses the route map fixes,
+-- and this block supplies its own pages in states it controls — including slugs those seeded rows hold. What
+-- is asserted below is a mechanism, not the catalogue, and the transaction is rolled back.
+delete from public.pages where page_key is not null;
+
 insert into public.pages (id, slug, page_key, status, published_at, template) values
   ('ae200000-0000-4000-8000-000000000001', 'faq', 'faq', 'published', '2026-05-01T10:00:00Z', 'help'),
   ('ae200000-0000-4000-8000-000000000002', 'help', 'help', 'published', '2026-05-01T10:00:00Z', 'help'),

@@ -35,6 +35,7 @@ const LISTING = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  primaryImage: null,
 } as const;
 
 const FACET = {

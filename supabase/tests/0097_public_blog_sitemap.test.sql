@@ -187,8 +187,13 @@ select is(
   (select array_agg(entry_type order by entry_type) from app_private.public_sitemap_counts()),
   array['blog_post', 'category', 'listing', 'page', 'seller', 'service'],
   'and they are exactly the six expected kinds');
-select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'page'), 0::bigint,
-  'with no CMS page authored, the page count is zero');
+-- The same correction the category line below records, for the same reason. This said "zero" while nothing
+-- had ever been authored; 0112 seeds twenty-two static pages, and zero was never the point — what the line is
+-- worth is that the index's number is the reader's number.
+select is(
+  (select entry_count from app_private.public_sitemap_counts() where entry_type = 'page'),
+  (select count(*) from app_private.public_sitemap_pages(1000000, 0)),
+  'the page count is the number of pages the reader will serve');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'listing'), 0::bigint,
   'the listing count is zero');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'service'), 0::bigint,
@@ -232,8 +237,11 @@ insert into public.blog_post_translations (blog_post_id, locale_code, title, bod
   ('ab200000-0000-4000-8000-000000000006', 'en', 'Later', 'Body.'),
   ('ab200000-0000-4000-8000-000000000007', 'en', 'Retired', 'Body.');
 
+-- A fixture slug that is obviously a fixture: `about` is one of the twenty-two addresses 0112 seeds, and a
+-- test that takes a production slug is a test that collides with its own platform.
 insert into public.pages (id, slug, status, published_at, template, is_indexable) values
-  ('ab300000-0000-4000-8000-000000000001', 'about', 'published', '2026-05-01T10:00:00Z', 'standard', true);
+  ('ab300000-0000-4000-8000-000000000001', 'sitemap-fixture-page', 'published', '2026-05-01T10:00:00Z',
+   'standard', true);
 insert into public.page_translations (page_id, locale_code, title, body) values
   ('ab300000-0000-4000-8000-000000000001', 'en', 'About us', 'The body.');
 
@@ -381,13 +389,17 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- The other kinds still work, not merely still report zero
 -- ---------------------------------------------------------------------------------------------------
-select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'page'), 1::bigint,
-  'the page kind still counts a published, indexable, written page');
+-- Asked about the fixture rather than about the whole table, because the table now also holds the twenty-two
+-- seeded pages. The claim is the same one: a newly published, indexable, written page is counted and served.
 select is(
-  (select array_agg(slug) from app_private.public_sitemap_pages(100, 0)),
-  array['about'], 'and its reader still returns it');
+  (select entry_count from app_private.public_sitemap_counts() where entry_type = 'page'),
+  (select count(*) from app_private.public_sitemap_pages(1000000, 0)),
+  'the page kind still counts exactly what its reader serves');
+select ok(
+  exists (select 1 from app_private.public_sitemap_pages(1000000, 0) where slug = 'sitemap-fixture-page'),
+  'and a page published during this test is among them');
 select is(
-  (select locales from app_private.public_sitemap_pages(100, 0) where slug = 'about'),
+  (select locales from app_private.public_sitemap_pages(1000000, 0) where slug = 'sitemap-fixture-page'),
   array['en', 'ar'], 'with the locales 0086 already resolved for it, unchanged');
 select is((select entry_count from app_private.public_sitemap_counts() where entry_type = 'listing'), 0::bigint,
   'and the listing count is still what it was');

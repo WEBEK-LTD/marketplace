@@ -17,8 +17,10 @@ import { HOMEPAGE_STORE } from '../src/admin/homepage.service.js';
 import { HOMEPAGE_PUBLIC_STORE } from '../src/cms/homepage-public.service.js';
 import { SUPABASE_AUTH_CLIENT } from '../src/auth/login.service.js';
 import { STAFF_CONSOLE_STORE, type StaffConsoleRow } from '../src/admin/staff-console.service.js';
+import { LISTING_MEDIA_STORE } from '../src/catalog/listing-images.js';
 import { INTERNAL_CREDENTIAL_HEADER } from '../src/v1/internal-credential.guard.js';
 import { TEST_ENV, TEST_INTERNAL_CREDENTIAL } from './support/app.js';
+import { mediaDouble } from './support/listing-media.js';
 
 /**
  * The homepage at the API boundary (0093).
@@ -256,6 +258,13 @@ async function createApp(doubles: Doubles = {}): Promise<Seen[]> {
     .useValue(publicStore)
     .overrideProvider(HOMEPAGE_STORE)
     .useValue(adminStore)
+    /*
+      0116. The real `LISTING_MEDIA_STORE` points at `db.invalid`, and a failed photographs read resolves to
+      no photographs by design — so without this the suite would pass on a swallowed error. The double states
+      the absence instead.
+    */
+    .overrideProvider(LISTING_MEDIA_STORE)
+    .useValue(mediaDouble())
     .compile();
 
   app = moduleRef.createNestApplication<NestFastifyApplication>(
@@ -361,6 +370,8 @@ describe('GET /v1/homepage', () => {
       currencyCode: 'EGP',
       currencyMinorUnit: 2,
       isNegotiable: null,
+      // 0116: a service card's photograph is always null — see `HomepageListingCardSchema`.
+      primaryImage: null,
     });
   });
 
@@ -499,6 +510,8 @@ describe('GET /v1/homepage', () => {
         publicHomepageSellers: async () => [],
         publicHomepagePosts: async () => [],
       })
+      .overrideProvider(LISTING_MEDIA_STORE)
+      .useValue(mediaDouble())
       .compile();
     app = moduleRef.createNestApplication<NestFastifyApplication>(
       createFastifyAdapter(TEST_ENV, { logStream: { write: () => undefined } }),

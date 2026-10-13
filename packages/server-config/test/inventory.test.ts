@@ -71,7 +71,15 @@ describe('environment inventory', () => {
     // One Next.js deployment since 0108, serving the marketplace at `/` and the staff console at `/admin`. Its
     // three variables cover both surfaces: the internal credential, the API address, and the public origin the
     // sitemap and robots documents are built from.
-    expect(variablesFor('web').map((e) => e.name)).toEqual(['INTERNAL_BFF_CREDENTIAL', 'API_BASE_URL', 'PUBLIC_WEB_ORIGIN']);
+    expect(variablesFor('web').map((e) => e.name)).toEqual([
+      'INTERNAL_BFF_CREDENTIAL',
+      'API_BASE_URL',
+      // 0116: the one host stored photographs are served from, for the img-src directive and nothing else.
+      // Not a Supabase variable: this deployment still holds none, and the photograph URLs are composed by
+      // the API from its own.
+      'MEDIA_PUBLIC_ORIGIN',
+      'PUBLIC_WEB_ORIGIN',
+    ]);
     // And the console is not an app of its own in the inventory. That is the assertion, not an omission: a row
     // keyed to it would describe a second environment that nobody provisions and no process reads.
   });
@@ -95,11 +103,17 @@ describe('environment inventory', () => {
     expect(secret?.apps).toEqual(['api']);
   });
 
-  it('shares one Redis variable between the worker and the API login throttle (C-1)', () => {
+  it('shares one Redis variable between the worker and the API login throttle (C-1), and it is optional', () => {
     const entry = ENV_INVENTORY.find((candidate) => candidate.name === 'REDIS_URL');
     expect(entry?.apps).toEqual(['api', 'worker']);
     expect(entry?.secret).toBe(true);
-    expect(entry?.required).toBe(true);
+    // 0117 made it optional, and the reason is the narrow one: the API's use of it is a cache in front of a
+    // throttle that already counts in PostgreSQL when it is unreachable, so an API with no Redis enforces
+    // the same C-1 limits over the same windows. It is still one variable shared by both applications, and
+    // it is still a secret — the worker's own runtime is built on BullMQ and genuinely needs it.
+    expect(entry?.required).toBe(false);
+    // Optional has never meant defaulted here: there is no value to inherit by accident.
+    expect(entry?.default).toBeNull();
   });
 
   it('admits exactly two database connections, one per role that holds one (R13)', () => {

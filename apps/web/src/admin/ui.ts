@@ -30,9 +30,14 @@ import { FOCUS_RING, FOCUS_RING_INVERTED, INTERACTIVE, SURFACE_CARD, cx } from '
 /** The masthead: the one inverted surface in the console, and what names it as the console. */
 export const ADMIN_HEADER = 'bg-surface-ink text-on-ink';
 
-/** The wordmark inside it. The section name is lighter rather than smaller, so the two read as one phrase. */
-export const ADMIN_WORDMARK = 'text-lg font-semibold tracking-normal text-on-ink';
-export const ADMIN_WORDMARK_SECTION = 'font-normal text-on-ink-muted';
+/**
+ * The section name beside the brand lockup.
+ *
+ * There was a text wordmark here too until the brand's own mark arrived; the lockup carries the name now, so
+ * what is left is the one word that says which surface this is. Lighter rather than smaller, so the mark and
+ * the word read as one phrase rather than as a logo with a label stuck to it.
+ */
+export const ADMIN_WORDMARK_SECTION = 'text-lg font-normal text-on-ink-muted';
 
 /** The section bar below the masthead, on canvas so the working area starts immediately. */
 export const ADMIN_NAV = 'border-b border-hairline bg-surface-canvas';

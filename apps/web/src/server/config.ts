@@ -20,3 +20,23 @@ export function validateServerConfigAtStartup(): void {
   // Safe metadata only: no configuration values and no variable names (owner decision R11).
   console.info(JSON.stringify(configLoadedEvent('web', WEB_SERVER_FIELDS)));
 }
+
+/**
+ * The origin stored listing photographs are served from, for the `img-src` directive (0116).
+ *
+ * **Its own reader, and one that cannot throw.** The CSP is set at the top of the proxy, on every response,
+ * before anything else is read — so a reader that validated the whole configuration here would turn one
+ * mistyped variable into a site that serves no response at all. The strict validation still happens, in
+ * `validateServerConfigAtStartup` through `WEB_SERVER_FIELDS`, where a malformed value is a named start-up
+ * failure; and `buildContentSecurityPolicy` refuses anything that is not an `https` origin regardless. So
+ * this reads the one variable and leaves both checks where they belong.
+ *
+ * Still server-side: it is read while building a response header, and `NEXT_PUBLIC_` would put a value in a
+ * client bundle that no browser code uses.
+ */
+export function readMediaPublicOrigin(
+  source: Readonly<Record<string, string | undefined>> = process.env,
+): string | null {
+  const value = source.MEDIA_PUBLIC_ORIGIN;
+  return value === undefined || value === '' ? null : value;
+}

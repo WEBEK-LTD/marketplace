@@ -19,8 +19,10 @@ import { configureApp, createFastifyAdapter, NEST_APP_OPTIONS } from '../src/app
 import { AppModule } from '../src/app.module.js';
 import { SUPABASE_AUTH_CLIENT } from '../src/auth/login.service.js';
 import { CURRENT_USER_STORE } from '../src/users/current-user.service.js';
+import { LISTING_MEDIA_STORE } from '../src/catalog/listing-images.js';
 import { INTERNAL_CREDENTIAL_HEADER } from '../src/v1/internal-credential.guard.js';
 import { TEST_ENV, TEST_INTERNAL_CREDENTIAL } from './support/app.js';
+import { mediaDouble } from './support/listing-media.js';
 
 /**
  * Blocking at the API boundary (0103).
@@ -112,6 +114,13 @@ async function start(doubles: Doubles = {}): Promise<Recorded> {
       buyerSettingsUpdate: async () => true,
       referenceCountries: async () => [],
     })
+    /*
+      0116. The real `LISTING_MEDIA_STORE` points at `db.invalid`, and a failed photographs read resolves to
+      no photographs by design — so without this the suite would pass on a swallowed error. The double states
+      the absence instead.
+    */
+    .overrideProvider(LISTING_MEDIA_STORE)
+    .useValue(mediaDouble())
     .compile();
 
   app = moduleRef.createNestApplication<NestFastifyApplication>(

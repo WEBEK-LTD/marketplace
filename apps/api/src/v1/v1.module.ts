@@ -5,6 +5,7 @@ import { TrackController } from './track.controller.js';
 import { ListingAnalyticsController } from './listing-analytics.controller.js';
 import type { ApiEnv } from '../config/env.js';
 import { CategoriesService } from '../catalog/categories.service.js';
+import { ListingMediaController } from './listing-media.controller.js';
 import { ListingsService } from '../catalog/listings.service.js';
 import { SearchService } from '../catalog/search.service.js';
 import { SellersService } from '../catalog/sellers.service.js';
@@ -44,6 +45,7 @@ import { SeoController } from './seo.controller.js';
 import { SeoRedirectsAdminController } from './seo-redirects-admin.controller.js';
 import { SeoMetadataAdminController } from './seo-metadata-admin.controller.js';
 import { SeoSettingsAdminController } from './seo-settings-admin.controller.js';
+import { SiteSettingsAdminController } from './site-settings-admin.controller.js';
 import { CmsMediaAdminController } from './cms-media-admin.controller.js';
 import { CategoriesAdminController } from './categories-admin.controller.js';
 import { AttributesAdminController } from './attributes-admin.controller.js';
@@ -120,6 +122,7 @@ export class V1Module {
         SeoRedirectsAdminController,
         SeoMetadataAdminController,
         SeoSettingsAdminController,
+        SiteSettingsAdminController,
         CmsMediaAdminController,
         CategoriesAdminController,
         // Phase 8-C. Three console surfaces and one seller surface; 0087's controller is untouched.
@@ -129,6 +132,12 @@ export class V1Module {
         SellerVocabularyController,
         CategoriesController,
         ListingsController,
+        /*
+          0116. Declared after `ListingsController` and mounted on the same `v1/listings` prefix. Its paths
+          are all longer than 4-B's two, so neither shadows the other: `:slug/media` and `:slug/media/...`
+          cannot match `:slug`.
+        */
+        ListingMediaController,
         ServicesController,
         // `sellers/me` before `sellers/:slug`. Fastify's router prefers a static segment over a
         // parametric one whatever the order, and a test proves it; declaring it first says so anyway.

@@ -4,12 +4,14 @@ import type {
   ListingAttribute,
   ListingCategory,
   ListingDetail,
+  ListingImage,
   ListingSummary,
   ListingTag,
   PublicSeller,
   PublicLocale,
 } from '@repo/contracts';
 import { CatalogUnavailableError } from './catalog-errors.js';
+import { ListingImagesService } from './listing-images.js';
 
 /**
  * Public listings (Phase 4-B).
@@ -110,7 +112,13 @@ export function decodeCursor(cursor: string): { createdAt: Date; id: string } | 
   return Number.isNaN(createdAt.getTime()) ? null : { createdAt, id: match[2]! };
 }
 
-function toSummary(row: ListingRow): ListingSummary {
+/**
+ * One row into one card.
+ *
+ * `primaryImage` is passed in rather than read here: the photographs of a whole page come back in one call
+ * (0116), so the caller holds the map and this function stays a pure projection.
+ */
+function toSummary(row: ListingRow, primaryImage: ListingImage | null): ListingSummary {
   return {
     id: row.id,
     slug: row.slug,
@@ -121,6 +129,7 @@ function toSummary(row: ListingRow): ListingSummary {
     currencyMinorUnit: row.currencyMinorUnit,
     isNegotiable: row.isNegotiable,
     listingTypeCode: row.listingTypeCode,
+    primaryImage,
   };
 }
 
@@ -128,7 +137,10 @@ function toSummary(row: ListingRow): ListingSummary {
 export class ListingsService {
   private readonly logger = new Logger(ListingsService.name);
 
-  constructor(@Inject(LISTING_STORE) private readonly store: ListingStore) {}
+  constructor(
+    @Inject(LISTING_STORE) private readonly store: ListingStore,
+    private readonly images: ListingImagesService,
+  ) {}
 
   /**
    * One page of the browse list.
@@ -159,8 +171,11 @@ export class ListingsService {
     const hasMore = rows.length > limit;
     const page = hasMore ? rows.slice(0, limit) : rows;
     const last = page.at(-1);
+    // One call for the whole page, after the page is cut: the probe row is not on it and its photographs
+    // would be read for nothing.
+    const byListing = await this.images.forListings(page.map((row) => row.id));
     return {
-      items: page.map(toSummary),
+      items: page.map((row) => toSummary(row, this.images.primaryOf(byListing.get(row.id)))),
       nextCursor: hasMore && last !== undefined ? encodeCursor(last.createdAt, last.id) : null,
     };
   }
@@ -197,10 +212,14 @@ export class ListingsService {
       throw new CatalogUnavailableError(new Error('incomplete listing row'));
     }
 
+    // The whole gallery, in order, primary first. One call; the detail page shows all of them.
+    const images = await this.images.forListing(row.id);
+
     return {
       kind: 'found',
       listing: {
-        ...toSummary(row as ListingRow),
+        ...toSummary(row as ListingRow, this.images.primaryOf(images)),
+        images: [...images],
         description: row.description,
         contentLanguage: row.contentLanguage ?? '',
         createdAt: row.createdAt.toISOString(),

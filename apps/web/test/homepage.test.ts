@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { withoutBrandChrome } from './support/brand-chrome.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { startBuiltApp, type RunningApp } from './support/next-server.js';
 import { startStubApi, type StubApi } from './support/stub-api.js';
@@ -54,6 +55,9 @@ const LISTING_CARD = {
   currencyCode: 'EGP',
   currencyMinorUnit: 2,
   isNegotiable: true,
+  // 0116. A listing card on the front page carries the same photograph field the browse list does, and a
+  // null is the ordinary state — a listing whose seller has not uploaded one.
+  primaryImage: null,
 } as const;
 
 const SECTIONS = [
@@ -255,7 +259,8 @@ describe('a composed homepage', () => {
 
   it('formats a price from its own currencys minor unit, with the catalogues own words', async () => {
     const hit = await load('/');
-    expect(textOf(hit.html)).toContain('EGP 2500.00');
+    // Grouped in threes by `PriceLockup` since 0112; `formatListingAmount` still serialises it ungrouped.
+    expect(textOf(hit.html)).toContain('EGP 2,500.00');
     // The same component the browse list uses, so the negotiable badge appears here too.
     expect(hit.html).toContain('Negotiable');
   });
@@ -272,6 +277,40 @@ describe('a composed homepage', () => {
     const hit = await load('/');
     expect(hit.html).toContain('href="/service/some-help"');
     expect(hit.html).toContain('href="/listing/a-table"');
+  });
+
+  it('opens on a photographic band whose heading is the proposition, not the brand (0112)', async () => {
+    const hit = await load('/');
+
+    // **The `<h1>` says what the site is for.** It was the site's own name until 0112 — sixty pixels under the
+    // logo that had just said it — so the largest type on the front page carried no information at all.
+    expect(hit.html).toContain('>Apartments, villas and land across Egypt — at the real price</h1>');
+    expect(hit.html).not.toContain('>BedonOver</h1>');
+
+    // **The photograph is a CSS layer, not an `<img>`**, so a missing file paints nothing rather than a
+    // broken-image mark — which is what the first build of this band actually rendered. The class is the one
+    // place `hero.jpg` is named, and dropping that file in is the whole of putting a picture on the front page.
+    expect(hit.html).toContain('mp-hero-photo');
+    expect(hit.html).not.toContain('src="/brand/hero.jpg"');
+    // The scrim is flat, because the photograph is owner-supplied and may be bright anywhere.
+    expect(hit.html).toMatch(/bg-surface-ink\/\d/);
+
+    // **The search is one bar.** The field and the button share a container that takes the edge and the focus
+    // ring; before 0112 they were two separate white controls that stacked into what read as two fields.
+    expect(hit.html).toContain('id="home-search"');
+    expect(hit.html).toMatch(/<form[^>]+role="search"[^>]+class="[^"]*rounded-2xl[^"]*"/);
+
+    // The floating accent rule above the name is gone with the name: a 64px dash with nothing on it.
+    expect(hit.html).not.toContain('block h-0.5 w-16 rounded-full bg-accent-400');
+  });
+
+  it('offers the catalogue doors the V1 release actually stocks', async () => {
+    // Two doors, not three. `/services` keeps its route, its header entry and its footer entry; the front page
+    // simply stops advertising a shelf that OD-A9 leaves empty in V1.
+    const hit = await load('/');
+    const hero = hit.html.slice(0, hit.html.indexOf('</div></div></div>'));
+    expect(hero).toContain('href="/listings"');
+    expect(hero).toContain('href="/categories"');
   });
 
   it('renders the hero call to action as a link to a path on this site', async () => {
@@ -423,7 +462,7 @@ describe('what 0093 did not change', () => {
 
   it('serves no image from any section, because there is no media origin', async () => {
     const hit = await load('/');
-    expect(hit.html).not.toContain('<img');
+    expect(withoutBrandChrome(hit.html)).not.toContain('<img');
     expect(hit.html).not.toContain('cms-media/');
   });
 });

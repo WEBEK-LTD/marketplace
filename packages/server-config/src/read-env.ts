@@ -151,6 +151,9 @@ export const NEXT_SERVER_FIELDS = Object.freeze({
 export const WEB_SERVER_FIELDS = Object.freeze({
   ...NEXT_SERVER_FIELDS,
   PUBLIC_WEB_ORIGIN: httpOrigin,
+  // 0116. Optional on the same terms and for the same reason: the storage origin is deployment
+  // configuration, and the one thing that cannot be done without it is naming it in a CSP directive.
+  MEDIA_PUBLIC_ORIGIN: httpOrigin,
 });
 
 export interface NextServerConfig {
@@ -170,6 +173,19 @@ export interface WebServerConfig extends NextServerConfig {
    * absolute URL stay unavailable instead.
    */
   readonly publicWebOrigin: string | null;
+  /**
+   * The origin that serves stored listing photographs, or `null` while none is configured (0116).
+   *
+   * **Its only use is the `img-src` directive**, and `null` is fail-closed rather than permissive: the policy
+   * keeps exactly the sources it had, so a stored photograph is blocked by the browser. It is never a
+   * wildcard and never derived from a request header — an attacker-supplied `Host` becoming an allowed image
+   * source is the whole class of bug this avoids.
+   *
+   * The photograph URLs themselves are not built from this. The API composes them from its own
+   * `SUPABASE_URL` and they arrive in the response body, which is why this deployment holds no Supabase
+   * variable of any kind.
+   */
+  readonly mediaPublicOrigin: string | null;
 }
 
 /*
@@ -191,10 +207,12 @@ export function readWebServerConfig(source: Readonly<Record<string, string | und
   // optimistic for that one entry. Widened here deliberately rather than asserted away, because the whole point
   // of this field is that its absence is an ordinary state the app has to carry.
   const origin: string | undefined = values.PUBLIC_WEB_ORIGIN;
+  const mediaOrigin: string | undefined = values.MEDIA_PUBLIC_ORIGIN;
   return Object.freeze({
     apiBaseUrl: values.API_BASE_URL,
     internalBffCredential: values.INTERNAL_BFF_CREDENTIAL,
     publicWebOrigin: origin ?? null,
+    mediaPublicOrigin: mediaOrigin ?? null,
   });
 }
 

@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { withoutBrandChrome } from '../support/brand-chrome.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
@@ -383,7 +384,7 @@ describe('the cover image on the screen (0099)', () => {
     apiServes({ who: { kind: 'staff', permissions: ADMIN }, data: 'withCover' });
     const { html } = await get(`/cms/pages/${PAGE}`);
     // The path is text. Nothing on this screen fetches the object or mints a credential for it.
-    expect(html).not.toContain('<img');
+    expect(withoutBrandChrome(html)).not.toContain('<img');
     expect(html).not.toContain('background-image');
     expect(html).not.toContain('token=');
     expect(html).not.toContain('/storage/v1/');

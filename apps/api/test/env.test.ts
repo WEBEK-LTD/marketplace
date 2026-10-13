@@ -67,7 +67,6 @@ describe('environment validation', () => {
       'NODE_ENV',
       'OTP_PEPPER',
       'PSEUDONYMOUS_USER_ID_KEY',
-      'REDIS_URL',
       'SUPABASE_SECRET_KEY',
       'SUPABASE_URL',
       'WAABEK_API_KEY',

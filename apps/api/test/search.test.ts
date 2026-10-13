@@ -6,8 +6,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { configureApp, createFastifyAdapter, NEST_APP_OPTIONS } from '../src/app.factory.js';
 import { AppModule } from '../src/app.module.js';
 import { SEARCH_PORT, type SearchRow } from '../src/catalog/search.service.js';
+import { LISTING_MEDIA_STORE } from '../src/catalog/listing-images.js';
 import { INTERNAL_CREDENTIAL_HEADER } from '../src/v1/internal-credential.guard.js';
 import { TEST_ENV, TEST_INTERNAL_CREDENTIAL } from './support/app.js';
+import { mediaDouble } from './support/listing-media.js';
 
 /**
  * `GET /v1/search` (Phase 4-F, V1).
@@ -97,6 +99,13 @@ async function start(doubles: Doubles = {}): Promise<Recorded> {
         return rows.slice(from, from + input.limit);
       },
     })
+    /*
+      0116. The real `LISTING_MEDIA_STORE` points at `db.invalid`, and a failed photographs read resolves to
+      no photographs by design — so without this the suite would pass on a swallowed error. The double states
+      the absence instead.
+    */
+    .overrideProvider(LISTING_MEDIA_STORE)
+    .useValue(mediaDouble())
     .compile();
 
   app = moduleRef.createNestApplication<NestFastifyApplication>(
@@ -260,8 +269,10 @@ describe('GET /v1/search', () => {
     for (const item of items) {
       const keys = Object.keys(item).sort();
       if (item.type === 'listing') {
+        // 0116 added `primaryImage` to the listing shape and deliberately not to the service one: a service has
+        // no `listing_media` row, so a field for it could never be filled. Both inventories stay closed.
         expect(keys).toEqual(
-          ['type', 'id', 'slug', 'title', 'city', 'priceMinor', 'currencyCode', 'currencyMinorUnit', 'isNegotiable', 'listingTypeCode'].sort(),
+          ['type', 'id', 'slug', 'title', 'city', 'priceMinor', 'currencyCode', 'currencyMinorUnit', 'isNegotiable', 'listingTypeCode', 'primaryImage'].sort(),
         );
       } else {
         expect(keys).toEqual(

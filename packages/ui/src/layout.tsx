@@ -66,6 +66,25 @@ export interface SectionHeaderProps {
   readonly as?: 'h1' | 'h2' | 'h3';
   /** On an ink band the text roles invert. */
   readonly tone?: 'default' | 'ink';
+  /**
+   * Whether the accent rule is drawn above the title (0112).
+   *
+   * `rule` is right where sections share one surface — an inner page, a detail surface — because then the rule is
+   * the only thing marking where one section ends and the next begins. It is wrong on a page composed of bands,
+   * where the change of surface already does that job: eight sections each with the same hairline-and-tick above
+   * the same small heading is one template repeated eight times, which is what the home page looked like. So a
+   * banded page passes `none` and the band carries the structure.
+   */
+  readonly ornament?: 'rule' | 'none';
+  /**
+   * The title's step on the type scale.
+   *
+   * `lead` is one step up, for the section a page opens its content with. Without it every section heading on a
+   * page sat at exactly the same size, so a page had no hierarchy below its `<h1>` — the reader could not tell
+   * the main shelf from a footnote shelf. The heading level is unchanged by this: the document outline is a
+   * separate question from the type size, and `as` still answers it.
+   */
+  readonly size?: 'default' | 'lead';
   readonly id?: string;
   readonly className?: string;
 }
@@ -97,24 +116,34 @@ export function SectionHeader({
   action,
   as: Tag = 'h2',
   tone = 'default',
+  ornament = 'rule',
+  size = 'default',
   id,
   className,
 }: SectionHeaderProps) {
   const SIZES = { h1: TYPE.h1, h2: TYPE.h2, h3: TYPE.h3 } as const;
   const ink = tone === 'ink';
+  const titleType = size === 'lead' ? TYPE.h1 : SIZES[Tag];
   return (
     <div className={className}>
-      <span
-        aria-hidden="true"
-        className={cx('relative block h-px w-full', ink ? 'bg-edge-on-ink' : 'bg-edge')}
-      >
+      {ornament === 'none' ? null : (
         <span
-          className={cx('absolute inset-y-[-1px] start-0 block w-16 rounded-full', ink ? 'bg-on-ink' : ACCENT_BAR)}
-        />
-      </span>
-      <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
+          aria-hidden="true"
+          className={cx('relative block h-px w-full', ink ? 'bg-edge-on-ink' : 'bg-edge')}
+        >
+          <span
+            className={cx('absolute inset-y-[-1px] start-0 block w-16 rounded-full', ink ? 'bg-on-ink' : ACCENT_BAR)}
+          />
+        </span>
+      )}
+      <div
+        className={cx(
+          'flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-8',
+          ornament === 'none' ? '' : 'pt-6',
+        )}
+      >
         <div className="min-w-0 space-y-3">
-          <Tag id={id} className={cx(SIZES[Tag], ink ? 'text-on-ink' : 'text-ink-strong')}>
+          <Tag id={id} className={cx(titleType, ink ? 'text-on-ink' : 'text-ink-strong')}>
             {title}
           </Tag>
           {description === undefined ? null : (
@@ -139,6 +168,12 @@ export function SectionHeader({
  * `wide` is the two-up variant, and it exists so that the two catalogues do not look like the same catalogue.
  * A service carries facts a product does not — a delivery time, a revision count — and giving it a wider card
  * lets those be read rather than truncated. That difference is deliberate composition, not inconsistency.
+ *
+ * **0112 drops the fourth column.** At four across on an 80rem measure a card is about 270 pixels wide, which
+ * truncated the majority of real titles — the screenshots showed "Vintage Olympia typewriter in working…" — and
+ * left no room for the place, the rooms and the area that a property card has to carry. Three columns give each
+ * card about 370 pixels, which is enough for two lines of a real title and a photograph at a usable size. The
+ * row count is a composition decision and this is the one that fits the content.
  */
 export function CardGrid({
   children,
@@ -152,8 +187,8 @@ export function CardGrid({
   return (
     <ul
       className={cx(
-        'grid list-none grid-cols-1 gap-4 sm:gap-5',
-        variant === 'wide' ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+        'grid list-none grid-cols-1 gap-5 sm:gap-6',
+        variant === 'wide' ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3',
         className,
       )}
     >

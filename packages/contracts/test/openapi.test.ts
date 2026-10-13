@@ -263,6 +263,12 @@ describe('OpenAPI document', () => {
       '/v1/homepage',
       '/v1/listings',
       '/v1/listings/{slug}',
+      // 0116: a listing's photographs. Five operations, all under `:slug/media`, all behind the caller's own
+      // session — longer paths than 4-B's two, so neither shadows the other.
+      '/v1/listings/{slug}/media',
+      '/v1/listings/{slug}/media/uploads',
+      '/v1/listings/{slug}/media/{mediaId}',
+      '/v1/listings/{slug}/media/{mediaId}/primary',
       '/v1/messaging/conversations',
       '/v1/messaging/conversations/{conversationId}/attachments/{attachmentId}/link',
       '/v1/messaging/conversations/{conversationId}/closed',

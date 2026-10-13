@@ -38,11 +38,19 @@ export class NavigationController {
     @Query('menus') menus?: string,
     @Query('locale') locale?: string,
   ): Promise<PublicNavigationResponse> {
-    const resolved = await this.navigation.menus({
-      menuKeys: keysOf(menus),
-      locale: publicLocaleOf(locale),
-    });
-    return { menus: [...resolved] };
+    const resolvedLocale = publicLocaleOf(locale);
+    // Both halves of the chrome in one round trip, which is the reason the office details are carried here
+    // rather than on an endpoint of their own: every public page renders the footer, and a second request per
+    // page would be a second cost for one answer. See `PublicNavigationResponseSchema` for the full note.
+    const [resolved, office] = await Promise.all([
+      this.navigation.menus({ menuKeys: keysOf(menus), locale: resolvedLocale }),
+      this.navigation.officeContact(resolvedLocale),
+    ]);
+    // An office that has set nothing is an absent field, not an empty object: the contract says an absent
+    // field means unset, and that has to be true of the whole object as well as of each field in it.
+    return Object.keys(office).length === 0
+      ? { menus: [...resolved] }
+      : { menus: [...resolved], office };
   }
 }
 

@@ -123,6 +123,11 @@ const ADMIN_PERMISSIONS = [
     // nothing until that increment; admin and super_admin only, and held by neither narrow console role, so it is
     // another real test of permission-driven navigation.
     'analytics.listing.read',
+    // 0113's office settings, and the first section in the `settings` module. `settings.site.manage` has been
+    // seeded since 0033 and was consumed by nothing until that increment — `public.site_settings` had no
+    // maintained writer at all. Admin and super_admin only, and held by neither narrow console role, so it is
+    // another real test of permission-driven navigation.
+    'settings.site.manage',
   ]),
 ].sort();
 
@@ -489,7 +494,7 @@ describe('the shell itself', () => {
     apiServes(staff(['admin'], ADMIN_PERMISSIONS, { name: 'Nadia' }));
     const { html } = await get('');
 
-    expect(html).toContain('Marketplace');
+    expect(html).toContain('BedonOver');
     expect(html).toContain('Nadia');
     expect(html).toContain(EN.Sections.role.admin);
     expect(html).toContain('العربية');

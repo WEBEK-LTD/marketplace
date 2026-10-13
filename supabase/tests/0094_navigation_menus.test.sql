@@ -212,6 +212,11 @@ create function pg_temp.nobody() returns uuid language sql immutable as
   $f$ select 'ad000000-0000-4000-8000-000000000002'::uuid $f$;
 
 -- Two pages: one published at an address the web application serves, one still a draft.
+-- The seeded static pages are cleared first. 0112 publishes the twenty-two addresses the route map fixes,
+-- and this block supplies its own pages in states it controls — including slugs those seeded rows hold. What
+-- is asserted below is a mechanism, not the catalogue, and the transaction is rolled back.
+delete from public.pages where page_key is not null;
+
 insert into public.pages (id, slug, status, published_at, template) values
   ('ae000000-0000-4000-8000-000000000001', 'about', 'published', '2026-05-01T10:00:00Z', 'standard'),
   ('ae000000-0000-4000-8000-000000000002', 'nav-draft-page', 'draft', null, 'standard');

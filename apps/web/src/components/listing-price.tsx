@@ -53,6 +53,32 @@ export function formatListingAmountParts(
   }
 }
 
+/**
+ * The integer part of a decimal string, grouped in threes (0112).
+ *
+ * **Why this exists at all.** `toDecimalString` is the money package's canonical serialisation and must stay
+ * exactly what it is — it is what an amount *is*, and it travels. Grouping is what an amount *looks like*, and
+ * for property it is not a nicety: a card reading `EGP 425000000.00` cannot be read at a glance by anybody, and
+ * a column of them cannot be compared at all. Eight unbroken digits is the single least legible thing on the
+ * page. `EGP 425,000,000.00` is the same figure and is read instantly.
+ *
+ * **It is applied in {@link PriceLockup} only**, which is the component whose whole job is setting a price as a
+ * figure. `formatListingAmount` and `formatListingAmountParts` are unchanged, so nothing that compares, stores
+ * or transmits an amount sees a separator.
+ *
+ * A comma every three digits, in both languages. Arabic pages in this product use Western digits — that is
+ * already settled and is why the lockup is `tabular-nums` — and the comma is the grouping separator in use in
+ * Egypt for them. No locale formatter is involved, so this adds no per-language display decision of the kind
+ * D15 reserves; it adds a separator to digits that were already Western in both scripts.
+ */
+export function groupDigits(decimal: string): string {
+  const [whole = '', fraction] = decimal.split('.');
+  const negative = whole.startsWith('-');
+  const digits = negative ? whole.slice(1) : whole;
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${negative ? '-' : ''}${grouped}${fraction === undefined ? '' : `.${fraction}`}`;
+}
+
 /** The amount alone, or null when the listing carries none. */
 export function formatListingAmount(
   priceMinor: string | null,
@@ -139,7 +165,7 @@ export function PriceLockup({
       */}
       <span className="mp-currency">{parts.code}</span>
       {' '}
-      {parts.amount}
+      {groupDigits(parts.amount)}
     </p>
   );
 }

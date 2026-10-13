@@ -132,6 +132,11 @@ export const CONSOLE_SECTIONS: readonly ConsoleSection[] = Object.freeze([
   // was nothing to read, and until 0102 there was no rollup to read it from. The key is held by Admin and Super
   // Admin alone, so this section refuses as many people as the platform one does.
   { id: 'listingAnalytics', href: '/analytics/listings', permission: 'analytics.listing.read' },
+  // Phase 8, increment 0113. The first section in the `settings` module, and the second gated on a **manage**
+  // key for the same reason the SEO one is: 0033 seeds `settings.site.manage` and no `settings.site.read`, so
+  // there is no read key to gate it on and none is invented. `public.site_settings` has existed since 0008 and
+  // until now the only way to change a value was direct SQL against the database.
+  { id: 'siteSettings', href: '/settings/office', permission: 'settings.site.manage' },
 ] as const);
 
 /** The sections one permission set opens. Never a superset, and never role-based. */

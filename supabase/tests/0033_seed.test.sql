@@ -10,7 +10,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(86);
+select plan(88);
 
 -- ---------------------------------------------------------------------------------------------------
 -- Locales — English primary, Arabic secondary (D6)
@@ -259,10 +259,16 @@ select is(
 -- ---------------------------------------------------------------------------------------------------
 -- Site settings
 -- ---------------------------------------------------------------------------------------------------
--- Ten as of 7-H: the six seeded here, the three earlier migrations own, and `finance.payment_due_hours`,
--- which 0070 seeds because D25's default value was pending until 7-H supplied it.
-select is((select count(*) from public.site_settings), 10::bigint,
-  'ten settings exist: the six seeded here, the three earlier migrations own, and 0070''s payment window');
+-- Eighteen as of 0113: the ten counted before — the six seeded here, the three earlier migrations own, and
+-- `finance.payment_due_hours` from 0070 — plus the eight `office.*` rows 0113 adds for the public footer.
+--
+-- The number is kept rather than replaced with "at least ten", because what this assertion is worth is
+-- catching a setting that arrived without anybody deciding it should: a settings table grows by migration,
+-- and a count that cannot move is the only thing that notices when one grows by accident.
+select is((select count(*) from public.site_settings), 18::bigint,
+  'eighteen settings exist: the ten counted through 0070, and 0113''s eight office details');
+select is((select count(*) from public.site_settings where category = 'office'), 8::bigint,
+  'eight of them are the office''s own, which 0113 added and 0113''s suite describes');
 select is(
   (select value #>> '{}' from public.site_settings where key = 'finance.payment_due_hours'),
   '48', 'and the payment window is the approved 48 hours, seeded by 0070 rather than by this migration');
@@ -279,10 +285,25 @@ select is((select value #>> '{}' from public.site_settings where key = 'branding
   'and so is the domain');
 select is((select value #>> '{}' from public.site_settings where key = 'platform.display_timezone'), 'Africa/Cairo',
   'the display timezone is set; everything is still stored and computed in UTC (C20)');
+-- **Every public setting, named.** This is the assertion that matters most in this block and it is stated as
+-- the exact set rather than as a count: `is_public` decides what `app_private.public_site_settings` will
+-- serve to anybody, so a setting that becomes public by accident is a leak, and the only way to notice one is
+-- for this list to stop matching. 0113's eight are here because the office's telephone, address and opening
+-- hours are the details printed on a shop door — and they are listed one by one so that adding a ninth is a
+-- deliberate edit to this line.
 select is(
   (select coalesce(string_agg(key, ',' order by key), '') from public.site_settings where is_public),
-  'branding.site_domain,branding.site_name,platform.display_timezone',
-  'only branding and the timezone are readable by the public site'
+  'branding.site_domain,branding.site_name,office.address_ar,office.address_en,office.email,'
+    || 'office.hours_ar,office.hours_en,office.social_links,office.telephone,office.whatsapp,'
+    || 'platform.display_timezone',
+  'exactly branding, the timezone and the office''s own details are readable by the public site'
+);
+-- And nothing financial, nothing about a window and nothing about security ever is.
+select is(
+  (select count(*) from public.site_settings
+    where is_public and (key like 'finance.%' or key like 'security.%' or key like 'orders.%')),
+  0::bigint,
+  'no financial, security or order setting is public'
 );
 select is((select count(*) from public.site_settings where value_type = 'number'
             and jsonb_typeof(value) <> 'number'), 0::bigint,

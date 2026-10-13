@@ -606,6 +606,13 @@ export const PROBLEM_CODES = [
   // that sent one has a bug, and dropping it silently would hide it.
   'SEO_SETTINGS_NOT_ALLOWED',
   'SEO_SETTINGS_MEDIA_MISSING',
+  // Site settings (0113). Migration 0008 owns the rule; the API reports it.
+  //
+  // `SITE_SETTING_NOT_ALLOWED` — the value's JSON type does not match the type the setting declares, or 0008's
+  // own `site_settings_value_matches_type` refused it. One code, because there is one rule: a setting's type is
+  // a migration decision and a value either is of that type or is not. An unknown key is **not** this code — a
+  // setting nobody declared is an absence, and this surface cannot create one.
+  'SITE_SETTING_NOT_ALLOWED',
   // The CMS media library (0098). Migration 0030 and the `cms-media` bucket own both of these rules; the API
   // reports them.
   //
@@ -626,6 +633,15 @@ export const PROBLEM_CODES = [
   // retired version: the remedy is the same in all four, and naming which check failed would help only
   // somebody probing the format.
   'LISTING_ANALYTICS_CURSOR_INVALID',
+  // 0116 listing photographs. `LISTING_MEDIA_OBJECT_MISSING` — a confirmation arrived for one of the four
+  // objects the storage provider does not have. Its own code for the same reason the three media families
+  // above each have one: the remedy is specific, which is to upload the bytes and confirm again, and a
+  // generic conflict would leave a client guessing which of four things went wrong.
+  //
+  // There is deliberately no code for "not yours" and none for "no such photograph": both are the plain
+  // NOT_FOUND every other refusal on this surface answers, because the database returns nothing in either
+  // case and a distinct code would confirm that somebody else's listing is real.
+  'LISTING_MEDIA_OBJECT_MISSING',
 ] as const;
 
 export const ProblemCodeSchema = z.enum(PROBLEM_CODES).openapi('ProblemCode');

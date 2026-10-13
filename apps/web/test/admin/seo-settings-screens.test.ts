@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { withoutBrandChrome } from '../support/brand-chrome.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
@@ -434,7 +435,7 @@ describe('the share image, which cannot be shown', () => {
   it('renders no image element and no upload control anywhere', async () => {
     apiServes({ who: { kind: 'staff', permissions: ADMIN } });
     const { html } = await get('/seo/settings');
-    expect(html).not.toContain('<img');
+    expect(withoutBrandChrome(html)).not.toContain('<img');
     expect(html).not.toContain('type="file"');
     expect(html).not.toContain('cms-media.supabase');
   });

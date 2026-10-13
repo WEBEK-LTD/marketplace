@@ -28,7 +28,15 @@ import { fileURLToPath } from 'node:url';
 export const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 /** The build this repository deploys, and the only one. */
-export const EXPECTED_BUILD_COMMAND = 'pnpm --filter "@repo/web..." run build';
+/*
+ * 0117 added the second filter. The site now serves the API as well as the two web surfaces — one Netlify
+ * Function running the NestJS application, mounted at `/_api/*` — so `@repo/api` and its own dependencies
+ * have to be built by the same command that builds the web app. The `...` suffix is required on both for
+ * the reason the root `netlify.toml` already records: a fresh checkout has no `dist/` anywhere, and a
+ * filter without it builds the package alone and not what the package imports.
+ */
+export const EXPECTED_BUILD_COMMAND =
+  'pnpm --filter "@repo/web..." --filter "@repo/api..." run build';
 export const EXPECTED_PUBLISH_DIR = 'apps/web/.next';
 export const EXPECTED_NODE_VERSION = '24.21.0';
 export const EXPECTED_PLUGINS = Object.freeze(['@netlify/plugin-nextjs']);
@@ -87,9 +95,9 @@ export function parseTomlSubset(text) {
       result.unsupported.push({ line: index + 1, text: line, reason: 'not a table header or a key/value pair' });
       continue;
     }
-    const value = readBasicString(pair[2]);
+    const value = readValue(pair[2]);
     if (value === null) {
-      result.unsupported.push({ line: index + 1, text: line, reason: 'value is not a basic quoted string' });
+      result.unsupported.push({ line: index + 1, text: line, reason: 'value is not one this check reads' });
       continue;
     }
     const target = isArrayTable
@@ -113,6 +121,63 @@ function stripComment(line) {
     else if (ch === '#' && !inString) return line.slice(0, i);
   }
   return line;
+}
+
+/**
+ * One value, or null when this check cannot read it.
+ *
+ * **Why this reads more than strings, and why that is not a loosening.** The point of refusing an unreadable
+ * line has never been that only strings are allowed; it is that nothing in the file goes unscanned, so a build
+ * command or a publish directory cannot hide in a line this check skipped. 0117 put the API on this site, and
+ * a function needs an integer status, a boolean and two arrays to say so. Reading them keeps every line in
+ * scope — an array's members are scanned for `@repo/admin` and `apps/admin` exactly as a string is.
+ *
+ * Still deliberately small: a basic string, an integer, a boolean, or an inline array of basic strings. A
+ * multi-line array, a float, a date and a table inline are all still unreadable, and still a failure.
+ */
+function readValue(text) {
+  const trimmed = text.trim();
+  if (trimmed.startsWith('[')) return readInlineArray(trimmed);
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  if (/^-?[0-9]+$/.test(trimmed)) return Number(trimmed);
+  return readBasicString(trimmed);
+}
+
+/** An inline `["a", "b"]` of basic strings, or null when it is anything else. */
+function readInlineArray(text) {
+  if (!text.endsWith(']')) return null;
+  const inner = text.slice(1, -1).trim();
+  if (inner === '') return [];
+  const members = [];
+  let rest = inner;
+  while (rest !== '') {
+    if (!rest.startsWith('"')) return null;
+    let value = '';
+    let index = 1;
+    let closed = false;
+    for (; index < rest.length; index += 1) {
+      const ch = rest[index];
+      if (ch === '\\') {
+        const next = rest[index + 1];
+        if (next === undefined) return null;
+        value += next === 'n' ? '\n' : next === 't' ? '\t' : next;
+        index += 1;
+        continue;
+      }
+      if (ch === '"') {
+        closed = true;
+        break;
+      }
+      value += ch;
+    }
+    if (!closed) return null;
+    members.push(value);
+    rest = rest.slice(index + 1).trim();
+    if (rest.startsWith(',')) rest = rest.slice(1).trim();
+    else if (rest !== '') return null;
+  }
+  return members;
 }
 
 /** The value of a `"…"` basic string, with escapes resolved, or null when the text is not one. */
@@ -145,13 +210,22 @@ export function readConfig(text) {
     publish: build.get('publish'),
     nodeVersion: environment.get('NODE_VERSION'),
     plugins: (parsed.arrays.get('plugins') ?? []).map((entry) => entry.get('package')),
+    // Every value the file holds, whatever table it is in, for the admin scan below.
+    values: [
+      ...[...parsed.tables.values()].flatMap((table) => [...table.values()]),
+      ...[...parsed.arrays.values()].flatMap((entries) => entries.flatMap((entry) => [...entry.values()])),
+    ],
     unsupported: parsed.unsupported,
   };
 }
 
 /** Every value in a configuration that names a build to run or a directory to publish. */
 function configuredValues(config) {
-  return [config.command, config.publish, config.nodeVersion, ...config.plugins].filter((v) => typeof v === 'string');
+  // Arrays are flattened in: a path hidden inside `included_files` is exactly the kind of thing this scan
+  // exists to catch, and it would be invisible if only the named scalars were collected.
+  return [config.command, config.publish, config.nodeVersion, ...config.plugins, ...config.values]
+    .flat()
+    .filter((v) => typeof v === 'string');
 }
 
 /**

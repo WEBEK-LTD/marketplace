@@ -250,6 +250,13 @@ import {
   ListingsResponseSchema,
 } from '../listings.js';
 import {
+  ListingMediaAttachRequestSchema,
+  ListingMediaAttachResponseSchema,
+  ListingMediaListResponseSchema,
+  ListingMediaUploadRequestSchema,
+  ListingMediaUploadResponseSchema,
+} from '../listing-media.js';
+import {
   SEARCH_DEFAULT_LIMIT,
   SEARCH_MAX_LIMIT,
   SEARCH_MIN_QUERY_LENGTH,
@@ -1340,6 +1347,157 @@ function buildRegistry(): OpenAPIRegistry {
         content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
       },
       429: sellerProfileUpdateThrottled,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  /**
+   * One 404 for both halves of the only refusal these five operations have.
+   *
+   * A listing that does not exist and a listing the caller may not manage are the same answer, because the
+   * database's predicate returns nothing in both cases — and because telling them apart would make this a way
+   * to ask whether somebody else's listing is there.
+   */
+  const listingMediaMissing = {
+    description: 'No listing this caller may manage photographs for answers to this slug.',
+    content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+  } as const;
+
+  /*
+    0116 — a listing's photographs. Five operations on one resource, addressed by the listing's slug exactly
+    as every other listing surface is, and authorized entirely by `app_private.listing_media_can_manage`: the
+    listing's own seller, or staff holding `catalog.listing.moderate` at AAL2. One 404 covers both "no such
+    listing" and "not yours", which is what keeps these from being a way to ask whether somebody else's
+    listing exists.
+  */
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/listings/{slug}/media',
+    operationId: 'getV1ListingMedia',
+    summary: "One listing's photographs, for whoever manages them",
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. The photographs of the listing a slug names, in order, with each one\u2019s published state \u2014 a photograph added to a draft is stored unpublished and goes public with the listing, and this is where a screen can say so. Withdrawn photographs are absent. The addresses are the same public ones the catalogue serves: `listing-variants` is a public bucket whose read policy names the bucket rather than the row, so nothing is signed and nothing expires. A listing the caller may not manage answers 404, identically to one that does not exist.',
+    request: { ...sessionHeader, params: z.object({ slug: z.string() }) },
+    responses: {
+      200: {
+        description: 'The photographs.',
+        content: { 'application/json': { schema: ListingMediaListResponseSchema } },
+      },
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: listingMediaMissing,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/listings/{slug}/media/uploads',
+    operationId: 'postV1ListingMediaUploads',
+    summary: 'Authorize the four objects of one photograph',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Authorizes the four objects one photograph is made of \u2014 a private original and the three served sizes `thumb`, `card` and `full` \u2014 and returns four short-lived, single-object upload URLs. The request describes each object by key, content type and size and never its destination: there is no `objectPath`, `bucket` or `fileName` to send, and the body is strict, so any of them is a validation failure. Each path is derived in the database from the listing\u2019s own identifier plus a fresh random name, so no request can choose a path, traverse out of its namespace, overwrite an earlier upload or reach another listing. The type and size limits are the two buckets\u2019 own. The response carries no storage credential and no project key, and nothing is written to the listing by this operation.',
+    request: {
+      ...sessionHeader,
+      params: z.object({ slug: z.string() }),
+      body: { content: { 'application/json': { schema: ListingMediaUploadRequestSchema } }, required: true },
+    },
+    responses: {
+      201: {
+        description: 'The four authorized upload targets.',
+        content: { 'application/json': { schema: ListingMediaUploadResponseSchema } },
+      },
+      422: validationFailed,
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: listingMediaMissing,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/v1/listings/{slug}/media',
+    operationId: 'postV1ListingMedia',
+    summary: 'Confirm the four uploads as one photograph',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. The confirmation step: records the four objects that were uploaded to authorized paths as one photograph, in one transaction \u2014 all four or none, because a photograph missing one of its three sizes is a card the catalogue cannot render. Each path must lie under the prefix the authorizer itself would have issued for that key, so another listing\u2019s object, a nested path and any traversal are refused; the three served widths must be distinct and ascending; and every object must actually exist in storage, so a confirmation cannot record bytes nobody uploaded. The first photograph a listing gets is its primary. A photograph attached to a listing that is not publicly visible is stored unpublished and is published with the listing. Answers with the listing\u2019s photographs as they now stand.',
+    request: {
+      ...sessionHeader,
+      params: z.object({ slug: z.string() }),
+      body: { content: { 'application/json': { schema: ListingMediaAttachRequestSchema } }, required: true },
+    },
+    responses: {
+      200: {
+        description: 'The photograph that was attached, and the listing\u2019s photographs.',
+        content: { 'application/json': { schema: ListingMediaAttachResponseSchema } },
+      },
+      409: {
+        description: 'One of the four objects is not in storage, so nothing was recorded.',
+        content: { [PROBLEM_JSON_MEDIA_TYPE]: { schema: ProblemDetailsSchema } },
+      },
+      422: validationFailed,
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: listingMediaMissing,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: '/v1/listings/{slug}/media/{mediaId}/primary',
+    operationId: 'putV1ListingMediaPrimary',
+    summary: 'Make one photograph the one the card shows',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Makes this photograph the listing\u2019s primary and the others not, in one statement, so a listing is never without a primary or with two. A withdrawn photograph is refused. Answers with the listing\u2019s photographs as they now stand.',
+    request: {
+      ...sessionHeader,
+      params: z.object({ slug: z.string(), mediaId: z.string() }),
+    },
+    responses: {
+      200: {
+        description: 'The photographs, with the new primary first.',
+        content: { 'application/json': { schema: ListingMediaListResponseSchema } },
+      },
+      422: validationFailed,
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: listingMediaMissing,
+      503: unavailable,
+      500: internalError,
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/v1/listings/{slug}/media/{mediaId}',
+    operationId: 'deleteV1ListingMedia',
+    summary: 'Withdraw one photograph',
+    description:
+      'Requires the internal BFF credential and the caller\u2019s session. Withdraws one photograph and unpublishes its variants together, which 0011\u2019s own constraint requires. Withdrawn rather than deleted: the object is still in a public bucket, so a row claiming the photograph is gone would claim more than the platform did. When the primary is withdrawn the next photograph in order takes its place, so a listing with pictures always has one. Answers with the listing\u2019s photographs as they now stand.',
+    request: {
+      ...sessionHeader,
+      params: z.object({ slug: z.string(), mediaId: z.string() }),
+    },
+    responses: {
+      200: {
+        description: 'The photographs that remain.',
+        content: { 'application/json': { schema: ListingMediaListResponseSchema } },
+      },
+      422: validationFailed,
+      400: validationFailed,
+      401: authenticationRequired,
+      403: credentialRejected,
+      404: listingMediaMissing,
       503: unavailable,
       500: internalError,
     },

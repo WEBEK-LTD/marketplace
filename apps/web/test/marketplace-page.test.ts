@@ -46,6 +46,7 @@ const LISTING = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  primaryImage: null,
 } as const;
 
 const SERVICE = {
@@ -172,7 +173,8 @@ describe('the two sections', () => {
     // Fields only the service card has, proving the existing cards are reused rather than flattened.
     expect(page.html).toContain('14 days');
     expect(page.html).toContain('Fixed price');
-    expect(textOf(page.html)).toContain('EGP 2500.00');
+    // Grouped in threes by `PriceLockup` since 0112.
+    expect(textOf(page.html)).toContain('EGP 2,500.00');
   });
 
   it('links each item to the surface that owns it, in the right locale', async () => {

@@ -23,7 +23,7 @@ export {
   type BlogPostLookup,
 } from './blog';
 export { readHomepage, type HomepageFetchOptions } from './homepage';
-export { readSiteNavigation, type NavigationFetchOptions } from './navigation';
+export { readSiteChrome, readSiteNavigation, type NavigationFetchOptions, type SiteChrome } from './navigation';
 export { readFaqs, type FaqsFetchOptions } from './faqs';
 export {
   handleCmsPage,
@@ -88,6 +88,16 @@ export {
   type SellerListingsHandlerOptions,
   type SellerListingsLookup,
 } from './seller-listings';
+export {
+  handleListingMediaAttach,
+  handleListingMediaList,
+  handleListingMediaPrimary,
+  handleListingMediaUpload,
+  handleListingMediaWithdraw,
+  readListingMedia,
+  type ListingMediaHandlerOptions,
+  type ListingMediaLookup,
+} from './listing-media';
 export {
   handleSeller,
   handleSellerIdentity,

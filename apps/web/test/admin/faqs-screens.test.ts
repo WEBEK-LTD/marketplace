@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http';
+import { withoutBrandChrome } from '../support/brand-chrome.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import arMessages from '../../messages/admin/ar.json';
 import enMessages from '../../messages/admin/en.json';
@@ -396,7 +397,7 @@ describe('nothing financial, promotional or visual is on these screens', () => {
       ]) {
         expect(html, name).not.toContain(`name="${name}"`);
       }
-      expect(html).not.toContain('<img');
+      expect(withoutBrandChrome(html)).not.toContain('<img');
       for (const word of ['wallet', 'payout', 'settlement', 'commission']) {
         expect(html.toLowerCase(), word).not.toContain(word);
       }

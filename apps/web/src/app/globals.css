@@ -62,6 +62,7 @@
   --color-surface-brand-soft: var(--token-surface-brandSoft);
   --color-surface-accent-soft: var(--token-surface-accentSoft);
   --color-surface-ink: var(--token-surface-ink);
+  --color-surface-ink-deep: var(--token-surface-inkDeep);
   --color-surface-ink-raised: var(--token-surface-inkRaised);
   --color-surface-ink-muted: var(--token-surface-inkMuted);
   --color-ink-strong: var(--token-text-color-strong);
@@ -197,6 +198,31 @@ html:is([lang="ar"], [dir="rtl"]) {
 .mp-band {
   margin-inline: calc(50% - 50dvw);
   padding-inline: calc(50dvw - 50%);
+}
+
+/*
+ * The home page's opening photograph.
+ *
+ * **A CSS background rather than an `<img>`, and the reason is a screenshot.** The band was built with a
+ * decorative `<img alt="">` on the assumption that a browser renders nothing for a broken decorative image.
+ * It does not: Chromium painted its broken-image mark in the corner of the hero, on every page load, because
+ * the file is not in the repository and is the owner's to supply. A background image that cannot be fetched
+ * paints nothing at all, in every browser, which is the behaviour this band needs — the emerald underneath is
+ * a complete design on its own and the photograph is an enhancement of it.
+ *
+ * It is a rule here rather than a utility or an inline style for two reasons: the nonce-based CSP admits no
+ * inline `style` attribute, and the application should name this asset in exactly one place so that replacing
+ * the file is the whole of changing the picture.
+ *
+ * To put a photograph on the front page, drop a landscape JPEG at `apps/web/public/brand/hero.jpg`. Nothing
+ * else changes. About 2400×1400 and under half a megabyte, with its subject in the upper half: the lower third
+ * of the band carries the type.
+ */
+.mp-hero-photo {
+  background-image: url("/brand/hero.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /*

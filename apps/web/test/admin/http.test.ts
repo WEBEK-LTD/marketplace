@@ -63,7 +63,7 @@ describe('admin pages', () => {
     expect(html).toContain('<html lang="en" dir="ltr">');
     expect(html).toContain('>You are signed out</h1>');
     expect(html).toContain('<meta name="robots" content="noindex, nofollow"/>');
-    expect(html).toContain(`© ${new Date().getFullYear()} Marketplace`);
+    expect(html).toContain(`© ${new Date().getFullYear()} BedonOver`);
     expect(html).not.toContain('Console sections');
   });
 
@@ -97,7 +97,7 @@ describe('admin pages', () => {
 
     // The marketplace renders its own home and its composed chrome; the console renders neither.
     expect(marketplaceHtml).not.toContain('>You are signed out</h1>');
-    expect(consoleHtml).not.toContain('Marketplace</h1>');
+    expect(consoleHtml).not.toContain('BedonOver</h1>');
 
     // The two sign-in pages are different pages at different addresses on one host.
     const staff = await get(`${ADMIN}/login`);

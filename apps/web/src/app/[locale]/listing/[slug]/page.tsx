@@ -176,6 +176,10 @@ export default async function ListingPage({ params }: PageParams) {
             descriptionHeading: t('descriptionHeading'),
             yes: t('yes'),
             no: t('no'),
+            photosHeading: t('photosHeading'),
+            // Interpolated here rather than in the view: `t` is the page's and a presentational component
+            // should not be handed a translator.
+            photoNumber: ({ number, total }) => t('photoNumber', { number, total }),
           }}
           actions={
             <>

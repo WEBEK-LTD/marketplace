@@ -10,6 +10,7 @@ import {
   type BuyerSettings,
   type CountryReference,
   type FavoriteItem,
+  type ListingImage,
   type ProblemCode,
   type ProfileStatus,
   type SavedSearch,
@@ -17,6 +18,7 @@ import {
   type UpdateBuyerProfileRequest,
   type UpdateBuyerSettingsRequest,
 } from '@repo/contracts';
+import { ListingImagesService } from '../catalog/listing-images.js';
 import { RequestValidationException } from '../common/request-validation.exception.js';
 import {
   decodeBlockReference,
@@ -367,7 +369,10 @@ const PROFILE_STATUSES = new Set<ProfileStatus>(['active', 'suspended', 'deleted
 export class BuyerAccountService {
   private readonly logger = new Logger(BuyerAccountService.name);
 
-  constructor(@Inject(BUYER_ACCOUNT_STORE) private readonly store: BuyerAccountStore) {}
+  constructor(
+    @Inject(BUYER_ACCOUNT_STORE) private readonly store: BuyerAccountStore,
+    private readonly images: ListingImagesService,
+  ) {}
 
   /* ---------------------------------------------------------------------------------------------- */
   /* Favorites                                                                                       */
@@ -399,7 +404,19 @@ export class BuyerAccountService {
         ? encodeFavoritesCursor({ createdAt: last.createdAt, id: last.listingId })
         : null;
 
-    return { items: page.map((row) => this.favoriteItem(row)), nextCursor };
+    // The saved listings' photographs, in one call (0116). Only the ones whose card is still being shown:
+    // a favourite the reader says is gone has no card to put a picture on.
+    //
+    // The reader is the public one, so a favourite that is no longer publicly visible has no photograph
+    // here either — which is the right answer twice over, because such a row's card is already withheld.
+    const byListing = await this.images.forListings(
+      page.filter((row) => row.isAvailable).map((row) => row.listingId),
+    );
+
+    return {
+      items: page.map((row) => this.favoriteItem(row, this.images.primaryOf(byListing.get(row.listingId)))),
+      nextCursor,
+    };
   }
 
   async addFavorite(input: { userId: string; listingId: string }): Promise<{ changed: boolean }> {
@@ -687,7 +704,7 @@ export class BuyerAccountService {
    * guesses: the two states a surface has to tell apart are "here it is" and "it is gone", and a card
    * with an invented price would be neither.
    */
-  private favoriteItem(row: FavoriteRow): FavoriteItem {
+  private favoriteItem(row: FavoriteRow, primaryImage: ListingImage | null): FavoriteItem {
     const complete =
       row.isAvailable &&
       row.slug !== null &&
@@ -712,6 +729,7 @@ export class BuyerAccountService {
             currencyMinorUnit: Number(row.currencyMinorUnit),
             isNegotiable: row.isNegotiable as boolean,
             listingTypeCode: row.listingTypeCode as string,
+            primaryImage,
           }
         : null,
     };

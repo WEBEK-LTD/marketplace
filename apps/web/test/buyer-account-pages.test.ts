@@ -42,6 +42,9 @@ const LISTING = {
   currencyMinorUnit: 2,
   isNegotiable: true,
   listingTypeCode: 'product',
+  // 0116. A saved listing whose seller has not uploaded a photograph is the ordinary case, and the card has
+  // to read well without one — which is what this fixture keeps asserting.
+  primaryImage: null,
 };
 
 const FAVORITE = {

@@ -52,15 +52,58 @@ export function createNonce(): string {
   return btoa(binary);
 }
 
-export function buildContentSecurityPolicy(nonce: string): string {
+/**
+ * Whether a value may be named as an image source.
+ *
+ * **A CSP source is not a place to be lenient.** The value is configuration, and the only shape accepted is an
+ * `https` origin with a host and nothing else: no path, no port-less wildcard, no `*`, no scheme on its own,
+ * no credentials, no whitespace — anything that could widen the directive beyond the one host it names is
+ * refused and treated as absent. `http` is refused too: the policy ends with `upgrade-insecure-requests`, so
+ * an `http` source would be upgraded and never match anyway, and naming one would be a policy that lies.
+ *
+ * A refused value does not throw. It is a deployment misconfiguration rather than a programming error, and
+ * the honest consequence is the fail-closed one — no extra source, photographs blocked — rather than a site
+ * that will not boot because a picture host was typed wrong.
+ */
+function usableImageOrigin(value: string | null | undefined): string | null {
+  if (typeof value !== 'string' || value === '') return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  const ok =
+    url.protocol === 'https:' &&
+    url.hostname !== '' &&
+    !url.hostname.includes('*') &&
+    url.username === '' &&
+    url.password === '' &&
+    // Already an origin: no path, query, fragment or trailing slash, and nothing a directive could not hold.
+    value === url.origin &&
+    !/[\s;,'"]/.test(value);
+  return ok ? value : null;
+}
+
+/**
+ * The policy for one response.
+ *
+ * `mediaOrigin` (0116) is the one host stored listing photographs are served from, and it is named in
+ * `img-src` and nowhere else — not in `connect-src`, because nothing fetches from it, and not in
+ * `default-src`, because a picture host has no business being a fallback for scripts. Absent or malformed, the
+ * directive stays exactly what it was: **fail-closed**, so a deployment that has not been told where its
+ * photographs live shows none rather than opening the policy up.
+ */
+export function buildContentSecurityPolicy(nonce: string, mediaOrigin?: string | null): string {
   if (!NONCE_PATTERN.test(nonce)) {
     throw new TypeError('Invalid CSP nonce.');
   }
+  const media = usableImageOrigin(mediaOrigin);
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'nonce-${nonce}'`,
-    "img-src 'self' blob: data:",
+    `img-src 'self' blob: data:${media === null ? '' : ` ${media}`}`,
     "font-src 'self'",
     "connect-src 'self'",
     "object-src 'none'",

@@ -14,16 +14,19 @@ import {
   cx,
 } from '@repo/ui';
 import { CatalogCard } from './catalog-card';
+import { ListingGallery, type ListingGalleryLabels } from './listing-gallery';
+import { CARD_PHOTO_SIZES, ListingPhoto, anyPhotographed } from './listing-photo';
 import { ListingPrice, formatListingAmount, type ListingPriceLabels, PriceLockup } from './listing-price';
 
 /**
  * The public listing surfaces (Phase 4-B, restyled in 0109).
  *
  * Everything renders on the server: a listing is content, and a crawler and a visitor with no JavaScript should
- * both see it. Nothing here ships an image — `ListingSummarySchema` is `.strict()` with eight fields and no media
- * among them, because the platform has no media origin to address one with. 0109 did not add a placeholder box
- * for that: a grid in which every card has an empty picture frame reads as an outage, not as a design, so the
- * card is typographic and spends the space on the title and the price instead.
+ * both see it. **0116 gave `ListingSummarySchema` its `primaryImage`**, so a card now carries its photograph
+ * where the seller has uploaded one — three pre-sized WebP variants from a public bucket, named by plain URLs.
+ * 0109's reasoning survives for the case that has not changed: a grid in which *no* card has a photograph gets
+ * no picture frames at all rather than twenty empty ones, because that reads as an outage and not as a design.
+ * See {@link anyPhotographed}, which is where that decision is taken, once per grid.
  *
  * Direction is never hard-coded. Spacing and alignment use logical properties, so the same markup reads correctly
  * in English and in Arabic with nothing but `dir` changing.
@@ -44,10 +47,18 @@ export function ListingCard({
   listing,
   href,
   labels,
+  withPhoto = false,
 }: {
   readonly listing: ListingSummary;
   readonly href: string;
   readonly labels: ListingCardLabels;
+  /**
+   * Whether this card gets a picture region.
+   *
+   * The grid decides it, not the card — see {@link anyPhotographed}. False by default so a surface that has
+   * not been taught about photographs keeps the typographic card it had rather than growing empty frames.
+   */
+  readonly withPhoto?: boolean;
 }) {
   return (
     <CatalogCard
@@ -60,6 +71,15 @@ export function ListingCard({
       isNegotiable={listing.isNegotiable}
       labels={labels}
       listingId={listing.id}
+      /*
+        The picture region, where the grid decided there is one. `alt=""`: this card is one link labelled with
+        the listing's title, and describing the photograph would make a screen reader read it twice.
+      */
+      {...(withPhoto === false
+        ? {}
+        : {
+            media: <ListingPhoto alt="" image={listing.primaryImage} sizes={CARD_PHOTO_SIZES} />,
+          })}
     />
   );
 }
@@ -74,10 +94,19 @@ export function ListingGrid({
   readonly hrefFor: (slug: string) => string;
   readonly labels: ListingCardLabels;
 }) {
+  // One decision for the whole grid, taken here: either every card has a picture region or none does.
+  const withPhoto = anyPhotographed(listings);
+
   return (
     <CardGrid className="mt-8">
       {listings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} href={hrefFor(listing.slug)} labels={labels} />
+        <ListingCard
+          key={listing.id}
+          listing={listing}
+          href={hrefFor(listing.slug)}
+          labels={labels}
+          withPhoto={withPhoto}
+        />
       ))}
     </CardGrid>
   );
@@ -121,7 +150,7 @@ export function ListingMessage({
   );
 }
 
-export interface ListingDetailLabels extends ListingPriceLabels {
+export interface ListingDetailLabels extends ListingPriceLabels, ListingGalleryLabels {
   readonly noLongerAvailable: string;
   readonly sellerHeading: string;
   readonly categoryHeading: string;
@@ -193,6 +222,15 @@ export function ListingDetailView({
       <DetailLayout
         main={
           <div className="space-y-10">
+            {/*
+              The photographs, first in the main column (0116). Above the description because that is the order
+              a person reads a property listing in — they look, then they read — and in the main column rather
+              than full width so the buy box beside it stays on the first screen.
+
+              Nothing renders at all when there are none: see {@link ListingGallery}.
+            */}
+            <ListingGallery images={listing.images} title={listing.title} labels={labels} />
+
             <section>
               <h2 className={TYPE.h3}>{labels.descriptionHeading}</h2>
               <p

@@ -159,10 +159,12 @@ export const ProblemCode = {
   FAQ_NOT_ALLOWED: 'FAQ_NOT_ALLOWED',
   SEO_SETTINGS_NOT_ALLOWED: 'SEO_SETTINGS_NOT_ALLOWED',
   SEO_SETTINGS_MEDIA_MISSING: 'SEO_SETTINGS_MEDIA_MISSING',
+  SITE_SETTING_NOT_ALLOWED: 'SITE_SETTING_NOT_ALLOWED',
   CMS_MEDIA_NOT_ALLOWED: 'CMS_MEDIA_NOT_ALLOWED',
   CMS_MEDIA_OBJECT_MISSING: 'CMS_MEDIA_OBJECT_MISSING',
   CMS_MEDIA_PATH_TAKEN: 'CMS_MEDIA_PATH_TAKEN',
   LISTING_ANALYTICS_CURSOR_INVALID: 'LISTING_ANALYTICS_CURSOR_INVALID',
+  LISTING_MEDIA_OBJECT_MISSING: 'LISTING_MEDIA_OBJECT_MISSING',
 } as const;
 
 export interface ValidationIssue {
@@ -260,6 +262,33 @@ export interface CategoryDetailResponse {
   seo: CategorySeo;
 }
 
+export type ListingImageVariantKey = typeof ListingImageVariantKey[keyof typeof ListingImageVariantKey];
+
+
+export const ListingImageVariantKey = {
+  thumb: 'thumb',
+  card: 'card',
+  full: 'full',
+} as const;
+
+export interface ListingImageVariant {
+  key: ListingImageVariantKey;
+  url: string;
+  /** @exclusiveMinimum 0 */
+  width: number;
+  /** @exclusiveMinimum 0 */
+  height: number;
+}
+
+/**
+ * @nullable
+ */
+export type ListingImage = {
+  id: string;
+  /** @minItems 1 */
+  variants: ListingImageVariant[];
+} | null;
+
 export interface ListingSummary {
   id: string;
   /** @minLength 1 */
@@ -286,6 +315,7 @@ export interface ListingSummary {
   isNegotiable: boolean;
   /** @minLength 1 */
   listingTypeCode: string;
+  primaryImage: ListingImage | null;
 }
 
 export interface ListingsResponse {
@@ -375,6 +405,7 @@ export interface ListingDetail {
   isNegotiable: boolean;
   /** @minLength 1 */
   listingTypeCode: string;
+  primaryImage: ListingImage | null;
   /** @minLength 1 */
   description: string;
   /** @minLength 2 */
@@ -385,6 +416,7 @@ export interface ListingDetail {
   seller: PublicSeller;
   attributes: ListingAttribute[];
   tags: ListingTag[];
+  images: (ListingImage | null)[];
 }
 
 export interface ListingDetailResponse {
@@ -553,6 +585,7 @@ export interface SearchListingResult {
   isNegotiable: boolean;
   /** @minLength 1 */
   listingTypeCode: string;
+  primaryImage: ListingImage | null;
   type: SearchListingResultType;
 }
 
@@ -1023,6 +1056,135 @@ export interface SellerProfileUpdateRequest {
      * @pattern ^\+[1-9][0-9]{6,14}$
      */
   contactPhone?: string | null;
+}
+
+export type ListingMediaItemStatus = typeof ListingMediaItemStatus[keyof typeof ListingMediaItemStatus];
+
+
+export const ListingMediaItemStatus = {
+  pending: 'pending',
+  processing: 'processing',
+  ready: 'ready',
+  failed: 'failed',
+} as const;
+
+export interface ListingMediaItem {
+  id: string;
+  /** @minimum 0 */
+  position: number;
+  isPrimary: boolean;
+  status: ListingMediaItemStatus;
+  isPublished: boolean;
+  variants: ListingImageVariant[];
+}
+
+export interface ListingMediaListResponse {
+  items: ListingMediaItem[];
+}
+
+export type ListingMediaUploadTargetVariantKey = typeof ListingMediaUploadTargetVariantKey[keyof typeof ListingMediaUploadTargetVariantKey];
+
+
+export const ListingMediaUploadTargetVariantKey = {
+  original: 'original',
+  thumb: 'thumb',
+  card: 'card',
+  full: 'full',
+} as const;
+
+export interface ListingMediaUploadTarget {
+  variantKey: ListingMediaUploadTargetVariantKey;
+  uploadUrl: string;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+  expiresAt: string;
+  /** @exclusiveMinimum 0 */
+  maxByteSize: number;
+}
+
+export interface ListingMediaUploadResponse {
+  targets: ListingMediaUploadTarget[];
+}
+
+export type ListingMediaUploadItemVariantKey = typeof ListingMediaUploadItemVariantKey[keyof typeof ListingMediaUploadItemVariantKey];
+
+
+export const ListingMediaUploadItemVariantKey = {
+  original: 'original',
+  thumb: 'thumb',
+  card: 'card',
+  full: 'full',
+} as const;
+
+export type ListingMediaUploadItemContentType = typeof ListingMediaUploadItemContentType[keyof typeof ListingMediaUploadItemContentType];
+
+
+export const ListingMediaUploadItemContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/avif': 'image/avif',
+  'image/heic': 'image/heic',
+} as const;
+
+export interface ListingMediaUploadItem {
+  variantKey: ListingMediaUploadItemVariantKey;
+  contentType: ListingMediaUploadItemContentType;
+  /**
+     * @maximum 26214400
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface ListingMediaUploadRequest {
+  variants: ListingMediaUploadItem[];
+}
+
+export interface ListingMediaAttachResponse {
+  items: ListingMediaItem[];
+  attachedId: string;
+}
+
+export type ListingMediaAttachItemVariantKey = typeof ListingMediaAttachItemVariantKey[keyof typeof ListingMediaAttachItemVariantKey];
+
+
+export const ListingMediaAttachItemVariantKey = {
+  original: 'original',
+  thumb: 'thumb',
+  card: 'card',
+  full: 'full',
+} as const;
+
+export interface ListingMediaAttachItem {
+  variantKey: ListingMediaAttachItemVariantKey;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
+  objectPath: string;
+  /**
+     * @maximum 20000
+     * @exclusiveMinimum 0
+     */
+  width: number;
+  /**
+     * @maximum 20000
+     * @exclusiveMinimum 0
+     */
+  height: number;
+  /**
+     * @maximum 26214400
+     * @exclusiveMinimum 0
+     */
+  byteSize: number;
+}
+
+export interface ListingMediaAttachRequest {
+  variants: ListingMediaAttachItem[];
 }
 
 export type SellerMediaKind = typeof SellerMediaKind[keyof typeof SellerMediaKind];
@@ -7295,6 +7457,7 @@ export type GetV1Homepage200SectionsItem = {
   currencyMinorUnit: number;
   /** @nullable */
   isNegotiable: boolean | null;
+  primaryImage: ListingImage | null;
 })[];
 } | {
   sectionType: 'latest_listings';
@@ -7331,6 +7494,7 @@ export type GetV1Homepage200SectionsItem = {
   currencyMinorUnit: number;
   /** @nullable */
   isNegotiable: boolean | null;
+  primaryImage: ListingImage | null;
 })[];
 } | {
   sectionType: 'featured_categories';
@@ -7750,8 +7914,49 @@ export type GetV1Navigation200MenusItem = {
   items: GetV1Navigation200MenusItemItemsItem[];
 };
 
+export type GetV1Navigation200OfficeSocialLinksItem = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  label: string;
+  /** @maxLength 2048 */
+  url: string;
+};
+
+export type GetV1Navigation200Office = {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  telephone?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  whatsapp?: string;
+  /**
+     * @minLength 1
+     * @maxLength 320
+     */
+  email?: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  address?: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  hours?: string;
+  /** @maxItems 12 */
+  socialLinks?: GetV1Navigation200OfficeSocialLinksItem[];
+};
+
 export type GetV1Navigation200 = {
   menus: GetV1Navigation200MenusItem[];
+  office?: GetV1Navigation200Office;
 };
 
 export type GetV1AdminNavigationMenus200MenusItem = {
@@ -11110,6 +11315,394 @@ return apiFetch<patchV1SellersMeResponse>(getPatchV1SellersMeUrl(),
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(sellerProfileUpdateRequest)
+  }
+);}
+
+
+
+export type getV1ListingMediaResponse200 = {
+  data: ListingMediaListResponse
+  status: 200
+}
+
+export type getV1ListingMediaResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getV1ListingMediaResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getV1ListingMediaResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getV1ListingMediaResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getV1ListingMediaResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getV1ListingMediaResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type getV1ListingMediaResponseSuccess = (getV1ListingMediaResponse200) & {
+  headers: Headers;
+};
+export type getV1ListingMediaResponseError = (getV1ListingMediaResponse400 | getV1ListingMediaResponse401 | getV1ListingMediaResponse403 | getV1ListingMediaResponse404 | getV1ListingMediaResponse500 | getV1ListingMediaResponse503) & {
+  headers: Headers;
+};
+
+export type getV1ListingMediaResponse = (getV1ListingMediaResponseSuccess | getV1ListingMediaResponseError)
+
+export const getGetV1ListingMediaUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/listings/${slug}/media`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The photographs of the listing a slug names, in order, with each one’s published state — a photograph added to a draft is stored unpublished and goes public with the listing, and this is where a screen can say so. Withdrawn photographs are absent. The addresses are the same public ones the catalogue serves: `listing-variants` is a public bucket whose read policy names the bucket rather than the row, so nothing is signed and nothing expires. A listing the caller may not manage answers 404, identically to one that does not exist.
+ * @summary One listing's photographs, for whoever manages them
+ */
+export const getV1ListingMedia = async (slug: string, options?: Parameters<typeof apiFetch>[1]): Promise<getV1ListingMediaResponse> => {
+
+  return apiFetch<getV1ListingMediaResponse>(getGetV1ListingMediaUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type postV1ListingMediaResponse200 = {
+  data: ListingMediaAttachResponse
+  status: 200
+}
+
+export type postV1ListingMediaResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ListingMediaResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ListingMediaResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ListingMediaResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ListingMediaResponse409 = {
+  data: ProblemDetails
+  status: 409
+}
+
+export type postV1ListingMediaResponse422 = {
+  data: ProblemDetails
+  status: 422
+}
+
+export type postV1ListingMediaResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ListingMediaResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ListingMediaResponseSuccess = (postV1ListingMediaResponse200) & {
+  headers: Headers;
+};
+export type postV1ListingMediaResponseError = (postV1ListingMediaResponse400 | postV1ListingMediaResponse401 | postV1ListingMediaResponse403 | postV1ListingMediaResponse404 | postV1ListingMediaResponse409 | postV1ListingMediaResponse422 | postV1ListingMediaResponse500 | postV1ListingMediaResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ListingMediaResponse = (postV1ListingMediaResponseSuccess | postV1ListingMediaResponseError)
+
+export const getPostV1ListingMediaUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/listings/${slug}/media`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. The confirmation step: records the four objects that were uploaded to authorized paths as one photograph, in one transaction — all four or none, because a photograph missing one of its three sizes is a card the catalogue cannot render. Each path must lie under the prefix the authorizer itself would have issued for that key, so another listing’s object, a nested path and any traversal are refused; the three served widths must be distinct and ascending; and every object must actually exist in storage, so a confirmation cannot record bytes nobody uploaded. The first photograph a listing gets is its primary. A photograph attached to a listing that is not publicly visible is stored unpublished and is published with the listing. Answers with the listing’s photographs as they now stand.
+ * @summary Confirm the four uploads as one photograph
+ */
+export const postV1ListingMedia = async (slug: string,
+    listingMediaAttachRequest: ListingMediaAttachRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ListingMediaResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1ListingMediaResponse>(getPostV1ListingMediaUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(listingMediaAttachRequest)
+  }
+);}
+
+
+
+export type postV1ListingMediaUploadsResponse201 = {
+  data: ListingMediaUploadResponse
+  status: 201
+}
+
+export type postV1ListingMediaUploadsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type postV1ListingMediaUploadsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type postV1ListingMediaUploadsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type postV1ListingMediaUploadsResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type postV1ListingMediaUploadsResponse422 = {
+  data: ProblemDetails
+  status: 422
+}
+
+export type postV1ListingMediaUploadsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type postV1ListingMediaUploadsResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type postV1ListingMediaUploadsResponseSuccess = (postV1ListingMediaUploadsResponse201) & {
+  headers: Headers;
+};
+export type postV1ListingMediaUploadsResponseError = (postV1ListingMediaUploadsResponse400 | postV1ListingMediaUploadsResponse401 | postV1ListingMediaUploadsResponse403 | postV1ListingMediaUploadsResponse404 | postV1ListingMediaUploadsResponse422 | postV1ListingMediaUploadsResponse500 | postV1ListingMediaUploadsResponse503) & {
+  headers: Headers;
+};
+
+export type postV1ListingMediaUploadsResponse = (postV1ListingMediaUploadsResponseSuccess | postV1ListingMediaUploadsResponseError)
+
+export const getPostV1ListingMediaUploadsUrl = (slug: string,) => {
+
+
+
+
+  return `/v1/listings/${slug}/media/uploads`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Authorizes the four objects one photograph is made of — a private original and the three served sizes `thumb`, `card` and `full` — and returns four short-lived, single-object upload URLs. The request describes each object by key, content type and size and never its destination: there is no `objectPath`, `bucket` or `fileName` to send, and the body is strict, so any of them is a validation failure. Each path is derived in the database from the listing’s own identifier plus a fresh random name, so no request can choose a path, traverse out of its namespace, overwrite an earlier upload or reach another listing. The type and size limits are the two buckets’ own. The response carries no storage credential and no project key, and nothing is written to the listing by this operation.
+ * @summary Authorize the four objects of one photograph
+ */
+export const postV1ListingMediaUploads = async (slug: string,
+    listingMediaUploadRequest: ListingMediaUploadRequest, options?: Parameters<typeof apiFetch>[1]): Promise<postV1ListingMediaUploadsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiFetch<postV1ListingMediaUploadsResponse>(getPostV1ListingMediaUploadsUrl(slug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(listingMediaUploadRequest)
+  }
+);}
+
+
+
+export type putV1ListingMediaPrimaryResponse200 = {
+  data: ListingMediaListResponse
+  status: 200
+}
+
+export type putV1ListingMediaPrimaryResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type putV1ListingMediaPrimaryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type putV1ListingMediaPrimaryResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type putV1ListingMediaPrimaryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type putV1ListingMediaPrimaryResponse422 = {
+  data: ProblemDetails
+  status: 422
+}
+
+export type putV1ListingMediaPrimaryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type putV1ListingMediaPrimaryResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type putV1ListingMediaPrimaryResponseSuccess = (putV1ListingMediaPrimaryResponse200) & {
+  headers: Headers;
+};
+export type putV1ListingMediaPrimaryResponseError = (putV1ListingMediaPrimaryResponse400 | putV1ListingMediaPrimaryResponse401 | putV1ListingMediaPrimaryResponse403 | putV1ListingMediaPrimaryResponse404 | putV1ListingMediaPrimaryResponse422 | putV1ListingMediaPrimaryResponse500 | putV1ListingMediaPrimaryResponse503) & {
+  headers: Headers;
+};
+
+export type putV1ListingMediaPrimaryResponse = (putV1ListingMediaPrimaryResponseSuccess | putV1ListingMediaPrimaryResponseError)
+
+export const getPutV1ListingMediaPrimaryUrl = (slug: string,
+    mediaId: string,) => {
+
+
+
+
+  return `/v1/listings/${slug}/media/${mediaId}/primary`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Makes this photograph the listing’s primary and the others not, in one statement, so a listing is never without a primary or with two. A withdrawn photograph is refused. Answers with the listing’s photographs as they now stand.
+ * @summary Make one photograph the one the card shows
+ */
+export const putV1ListingMediaPrimary = async (slug: string,
+    mediaId: string, options?: Parameters<typeof apiFetch>[1]): Promise<putV1ListingMediaPrimaryResponse> => {
+
+  return apiFetch<putV1ListingMediaPrimaryResponse>(getPutV1ListingMediaPrimaryUrl(slug,mediaId),
+  {
+    ...options,
+    method: 'PUT'
+
+
+  }
+);}
+
+
+
+export type deleteV1ListingMediaResponse200 = {
+  data: ListingMediaListResponse
+  status: 200
+}
+
+export type deleteV1ListingMediaResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type deleteV1ListingMediaResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type deleteV1ListingMediaResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type deleteV1ListingMediaResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type deleteV1ListingMediaResponse422 = {
+  data: ProblemDetails
+  status: 422
+}
+
+export type deleteV1ListingMediaResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type deleteV1ListingMediaResponse503 = {
+  data: ProblemDetails
+  status: 503
+}
+
+export type deleteV1ListingMediaResponseSuccess = (deleteV1ListingMediaResponse200) & {
+  headers: Headers;
+};
+export type deleteV1ListingMediaResponseError = (deleteV1ListingMediaResponse400 | deleteV1ListingMediaResponse401 | deleteV1ListingMediaResponse403 | deleteV1ListingMediaResponse404 | deleteV1ListingMediaResponse422 | deleteV1ListingMediaResponse500 | deleteV1ListingMediaResponse503) & {
+  headers: Headers;
+};
+
+export type deleteV1ListingMediaResponse = (deleteV1ListingMediaResponseSuccess | deleteV1ListingMediaResponseError)
+
+export const getDeleteV1ListingMediaUrl = (slug: string,
+    mediaId: string,) => {
+
+
+
+
+  return `/v1/listings/${slug}/media/${mediaId}`
+}
+
+/**
+ * Requires the internal BFF credential and the caller’s session. Withdraws one photograph and unpublishes its variants together, which 0011’s own constraint requires. Withdrawn rather than deleted: the object is still in a public bucket, so a row claiming the photograph is gone would claim more than the platform did. When the primary is withdrawn the next photograph in order takes its place, so a listing with pictures always has one. Answers with the listing’s photographs as they now stand.
+ * @summary Withdraw one photograph
+ */
+export const deleteV1ListingMedia = async (slug: string,
+    mediaId: string, options?: Parameters<typeof apiFetch>[1]): Promise<deleteV1ListingMediaResponse> => {
+
+  return apiFetch<deleteV1ListingMediaResponse>(getDeleteV1ListingMediaUrl(slug,mediaId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
   }
 );}
 

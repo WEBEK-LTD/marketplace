@@ -6,6 +6,18 @@ create extension if not exists pgtap with schema extensions;
 select plan(19);
 
 -- Outbox ---------------------------------------------------------------------------------------------
+-- **The queue is emptied first, inside this transaction.**
+--
+-- This file is about the relay in isolation: one event appended, claimed once, completed once, and the counts
+-- below are written as the absolute numbers that makes true. That was correct while nothing seeded an event.
+-- 0112 publishes twenty-two static pages, and `tg_cms_announce` enqueues a `page.visibility_changed` for each
+-- — correctly, because those pages did become public — so the platform's baseline queue is no longer empty.
+--
+-- Clearing it here rather than narrowing every assertion to `aggregate_type = 'order'` is deliberate: three of
+-- them are about `claim_outbox_events`, which claims from the whole queue and has no filter to narrow. The
+-- transaction is rolled back, so nothing is removed from anything.
+delete from public.outbox_events;
+
 select ok(
   public.enqueue_outbox_event('order', 'order-1', 'order.placed', '{"order_id":"order-1"}'::jsonb) is not null,
   'an outbox event can be appended inside a transaction'

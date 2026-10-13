@@ -24,15 +24,18 @@ describe('admin locale', () => {
     const html = renderToStaticMarkup(
       <AdminDocument
         locale="ar"
-        labels={{ siteName: ar.Site.name, section: ar.Site.section, skipToContent: ar.Accessibility.skipToContent, copyright: '© 2026 السوق' }}
+        labels={{ siteName: ar.Site.name, section: ar.Site.section, skipToContent: ar.Accessibility.skipToContent, copyright: '© 2026 بدون أوفر' }}
       >
         <h1>{ar.Home.title}</h1>
       </AdminDocument>,
     );
     expect(html).toContain('<html lang="ar" dir="rtl">');
-    // The section name beside the wordmark. It is a role now rather than a grey step, and it sits on the
-    // console's inverted masthead, so the class names moved with the surface it is written on.
-    expect(html).toContain('السوق <span class="font-normal text-on-ink-muted">الإدارة</span>');
+    // The masthead is the brand lockup plus the section name. The site name used to be set in text beside
+    // the section; the lockup carries it now, so what is asserted here is that the console still says which
+    // surface it is, in Arabic, on the inverted ground.
+    expect(html).toContain('الإدارة</span>');
+    expect(html).toContain('/brand/icon-outline-white.svg');
+    expect(html).toContain('/brand/wordmark-white.svg');
     expect(html).toContain('<h1>الإدارة</h1>');
     expect(html).toContain('تخطَّ إلى المحتوى');
     expect(directionFor('ar')).toBe('rtl');

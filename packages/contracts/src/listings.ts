@@ -73,7 +73,57 @@ export const ListingTagSchema = z
   .strict()
   .openapi('ListingTag');
 
-/** The browse card: the eight approved fields, plus the minor unit its price cannot be read without. */
+/**
+ * One size of one photograph (0114).
+ *
+ * **An absolute URL, and that is a property of the bucket rather than a looseness here.** `listing-variants`
+ * is 0012's one public bucket and carries a read policy that names it, so a variant's address is an address:
+ * nothing has to be signed and nothing expires. The private buckets elsewhere in this product hand over a
+ * relative object path for exactly the opposite reason — there is nothing public to point at.
+ *
+ * The width and the height travel with it because a browser that knows them reserves the space before the
+ * bytes arrive, and a catalogue that reflows as twenty photographs load is a catalogue that feels broken.
+ */
+export const ListingImageVariantSchema = z
+  .object({
+    /** `thumb`, `card` or `full` — the three sizes 0114 authorizes and nothing else. */
+    key: z.enum(['thumb', 'card', 'full']),
+    url: z.string().url(),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+  })
+  .strict()
+  .openapi('ListingImageVariant');
+export type ListingImageVariant = z.infer<typeof ListingImageVariantSchema>;
+
+/**
+ * One photograph of a listing, in the sizes that were published for it.
+ *
+ * **There is no caption and no alt text, and that is the data rather than an omission.** 0011's
+ * `listing_media` carries no text column, nothing in the console collects one, and inventing a field the
+ * platform cannot fill would put an empty string on every image. The surfaces describe a photograph by the
+ * listing it belongs to — "Photograph 2 of «title»" — which is true, useful to a screen reader, and derived
+ * rather than stored.
+ */
+export const ListingImageSchema = z
+  .object({
+    id: z.uuid(),
+    /** Ascending by width, so a caller builds a `srcset` without sorting. */
+    variants: z.array(ListingImageVariantSchema).min(1),
+  })
+  .strict()
+  .openapi('ListingImage');
+export type ListingImage = z.infer<typeof ListingImageSchema>;
+
+/**
+ * The browse card: the eight approved fields, the minor unit its price cannot be read without, and — since
+ * 0114 — the one photograph a card shows.
+ *
+ * **`primaryImage` is nullable, and a card must still work when it is null.** The platform shipped for eight
+ * phases with no way to attach a photograph at all, so most listings have none, and a catalogue that only
+ * reads well once every row has a picture is a catalogue that reads badly for a long time. `CatalogCard`
+ * renders the media region only when there is media, which is the same rule.
+ */
 export const ListingSummarySchema = z
   .object({
     id: z.uuid(),
@@ -85,6 +135,7 @@ export const ListingSummarySchema = z
     currencyMinorUnit: z.number().int().min(0).max(4),
     isNegotiable: z.boolean(),
     listingTypeCode: z.string().min(1),
+    primaryImage: ListingImageSchema.nullable(),
   })
   .strict()
   .openapi('ListingSummary');
@@ -99,6 +150,14 @@ export const ListingDetailSchema = ListingSummarySchema.extend({
   seller: PublicSellerSchema,
   attributes: z.array(ListingAttributeSchema),
   tags: z.array(ListingTagSchema),
+  /**
+   * Every published photograph, in the order the owner arranged, primary first (0114).
+   *
+   * The detail page is where somebody looks at a property properly, so it gets all of them while the card
+   * gets one. `primaryImage` is still present and is the first of these: a caller rendering a card from a
+   * detail document should not have to work out which one that was.
+   */
+  images: z.array(ListingImageSchema),
 })
   .strict()
   .openapi('ListingDetail');

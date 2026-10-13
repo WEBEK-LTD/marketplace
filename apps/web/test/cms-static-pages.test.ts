@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { withoutBrandChrome } from './support/brand-chrome.js';
 import type { ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { cmsPageSlugs } from '@repo/config';
@@ -376,7 +377,7 @@ describe('a cover image reaches this app and is rendered by nothing (0099)', () 
     expect(page.html).toContain('First paragraph.');
     // The path is in the upstream payload and in none of the markup.
     expect(page.html).not.toContain('cms-media');
-    expect(page.html).not.toContain('<img');
+    expect(withoutBrandChrome(page.html)).not.toContain('<img');
     expect(page.html).not.toContain('og:image');
     expect(page.html).not.toContain('twitter:');
     expect(page.html).not.toContain('application/ld+json');
@@ -388,7 +389,7 @@ describe('a cover image reaches this app and is rendered by nothing (0099)', () 
     const page = await load('/ar/terms');
     expect(page.status).toBe(200);
     expect(page.html).not.toContain('cms-media');
-    expect(page.html).not.toContain('<img');
+    expect(withoutBrandChrome(page.html)).not.toContain('<img');
   });
 
   /**

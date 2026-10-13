@@ -27,6 +27,8 @@ const SUMMARY = {
   currencyMinorUnit: 2,
   isNegotiable: false,
   listingTypeCode: 'product',
+  // 0116. The card gained a photograph, nullable because most listings have none.
+  primaryImage: null,
 } as const;
 
 const DETAIL = {
@@ -41,6 +43,8 @@ const DETAIL = {
     { key: 'width', label: 'Width', unit: 'cm', kind: 'number', text: '180', boolean: null, options: [] },
   ],
   tags: [{ slug: 'handmade', name: 'Handmade' }],
+  // 0116. The whole gallery, empty for a listing nobody has photographed.
+  images: [],
 } as const;
 
 describe('a listing summary', () => {

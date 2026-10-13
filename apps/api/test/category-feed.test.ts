@@ -11,8 +11,10 @@ import {
   type CategoryFeedPort,
 } from '../src/catalog/category-feed.service.js';
 import { SEARCH_PORT, type SearchRow } from '../src/catalog/search.service.js';
+import { LISTING_MEDIA_STORE } from '../src/catalog/listing-images.js';
 import { INTERNAL_CREDENTIAL_HEADER } from '../src/v1/internal-credential.guard.js';
 import { TEST_ENV, TEST_INTERNAL_CREDENTIAL } from './support/app.js';
+import { mediaDouble } from './support/listing-media.js';
 
 /**
  * `GET /v1/categories/:slug/listings`, and the filters search now shares with it (Phase 8-D).
@@ -152,6 +154,13 @@ async function start(doubles: Doubles = {}): Promise<Seen[]> {
         return doubles.rows ?? [listingRow(1, 10)];
       },
     })
+    /*
+      0116. The real `LISTING_MEDIA_STORE` points at `db.invalid`, and a failed photographs read resolves to
+      no photographs by design — so without this the suite would pass on a swallowed error. The double states
+      the absence instead.
+    */
+    .overrideProvider(LISTING_MEDIA_STORE)
+    .useValue(mediaDouble())
     .compile();
 
   app = moduleRef.createNestApplication<NestFastifyApplication>(

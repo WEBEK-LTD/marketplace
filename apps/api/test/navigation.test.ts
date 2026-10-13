@@ -143,6 +143,9 @@ interface Doubles {
   unauthenticated?: boolean;
   publicRows?: readonly unknown[];
   publicError?: boolean;
+  /** 0113's office settings, as `app_private.public_site_settings` returns them. */
+  officeRows?: readonly { key: string; value: unknown }[];
+  officeError?: boolean;
   menuRows?: readonly unknown[];
   menuRow?: unknown;
   itemRows?: readonly unknown[];
@@ -172,6 +175,11 @@ async function createApp(doubles: Doubles = {}): Promise<Seen[]> {
       seen.push({ name: 'publicNavigationItems', input });
       if (doubles.publicError === true) throw new Error('the database is unavailable');
       return doubles.publicRows ?? [publicRow()];
+    },
+    publicSiteSettings: async (input: unknown) => {
+      seen.push({ name: 'publicSiteSettings', input });
+      if (doubles.officeError === true) throw new Error('the database is unavailable');
+      return doubles.officeRows ?? [];
     },
   };
 
@@ -301,24 +309,34 @@ describe('GET /v1/navigation', () => {
     expect(PublicNavigationResponseSchema.parse(response.json()).menus).toEqual([]);
   });
 
+  /**
+   * The navigation reads only.
+   *
+   * Every assertion in this block was written as `seen[0]` while the chrome made exactly one database call.
+   * 0113 added a second — the office's own details, which travel with the menus — so the index of the
+   * navigation read is no longer reliably zero, and "exactly one call" is no longer the claim any of these
+   * is making. Each is about *which menus were asked for*, so each now asks that question directly.
+   */
+  const menuReads = (seen: Seen[]): Seen[] => seen.filter((entry) => entry.name === 'publicNavigationItems');
+
   it('asks for all three placements when none was named', async () => {
     const seen = await createApp();
     await request({ method: 'GET', url: '/v1/navigation' });
-    expect(seen).toHaveLength(1);
-    expect(seen[0]?.input).toEqual({ menuKeys: ['header', 'footer', 'mobile'], locale: 'en' });
+    expect(menuReads(seen)).toHaveLength(1);
+    expect(menuReads(seen)[0]?.input).toEqual({ menuKeys: ['header', 'footer', 'mobile'], locale: 'en' });
   });
 
   it('asks for exactly the placements named, in that order, once each', async () => {
     const seen = await createApp();
     await request({ method: 'GET', url: '/v1/navigation?menus=footer,header,footer' });
-    expect(seen[0]?.input).toEqual({ menuKeys: ['footer', 'header'], locale: 'en' });
+    expect(menuReads(seen)[0]?.input).toEqual({ menuKeys: ['footer', 'header'], locale: 'en' });
   });
 
   it('ignores a placement this platform does not have rather than refusing', async () => {
     const seen = await createApp();
     const response = await request({ method: 'GET', url: '/v1/navigation?menus=sidebar,header' });
     expect(response.statusCode).toBe(200);
-    expect(seen[0]?.input).toEqual({ menuKeys: ['header'], locale: 'en' });
+    expect(menuReads(seen)[0]?.input).toEqual({ menuKeys: ['header'], locale: 'en' });
   });
 
   it('reads nothing at all when every placement named is unknown', async () => {
@@ -326,16 +344,17 @@ describe('GET /v1/navigation', () => {
     const response = await request({ method: 'GET', url: '/v1/navigation?menus=sidebar,nonsense' });
     expect(response.statusCode).toBe(200);
     expect(PublicNavigationResponseSchema.parse(response.json()).menus).toEqual([]);
-    // Not one database call: there was nothing to ask about.
-    expect(seen).toEqual([]);
+    // Not one *navigation* call: there was nothing to ask about. The office details are still read, and
+    // correctly so — they are part of the chrome and have nothing to do with which menus were named.
+    expect(menuReads(seen)).toEqual([]);
   });
 
   it('passes the locale through and defaults an unrecognised one', async () => {
     const seen = await createApp();
     await request({ method: 'GET', url: '/v1/navigation?locale=ar' });
     await request({ method: 'GET', url: '/v1/navigation?locale=de' });
-    expect((seen[0]?.input as { locale: string }).locale).toBe('ar');
-    expect((seen[1]?.input as { locale: string }).locale).toBe('en');
+    expect((menuReads(seen)[0]?.input as { locale: string }).locale).toBe('ar');
+    expect((menuReads(seen)[1]?.input as { locale: string }).locale).toBe('en');
   });
 
   it('nests a second level under its parent and never deeper', async () => {
@@ -437,12 +456,82 @@ describe('GET /v1/navigation', () => {
     expect(response.statusCode).toBe(403);
   });
 
-  it('asks the database for nothing but the menus', async () => {
+  it('asks the database for the menus and the office details, and for nothing else', async () => {
     // Owner decision — nothing here reads a banner, a promotion, a placement or a ranking, and the closed
-    // inventory is what keeps it that way.
+    // inventory is what keeps it that way. 0113 added the second read: the office's own contact details,
+    // which the footer needs and which travel with the menus rather than costing a second round trip.
     const seen = await createApp();
     await request({ method: 'GET', url: '/v1/navigation' });
-    expect([...new Set(seen.map((entry) => entry.name))]).toEqual(['publicNavigationItems']);
+    expect([...new Set(seen.map((entry) => entry.name))].sort()).toEqual([
+      'publicNavigationItems',
+      'publicSiteSettings',
+    ]);
+    // And the second one asks for one category by name, never for every setting on the platform.
+    expect(seen.find((entry) => entry.name === 'publicSiteSettings')?.input).toBe('office');
+  });
+
+  describe('the office details that travel with the chrome (0113)', () => {
+    it('are absent entirely when the office has set nothing', async () => {
+      // An office that has filled nothing in is an absent field, not an empty object: the contract says an
+      // absent field means unset, and that has to be true of the whole object as well as of each field.
+      await createApp({ officeRows: [] });
+      const response = await request({ method: 'GET', url: '/v1/navigation' });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).not.toHaveProperty('office');
+    });
+
+    it('carry exactly what was set, in the language asked for', async () => {
+      await createApp({
+        officeRows: [
+          { key: 'office.telephone', value: '+20 2 1234 5678' },
+          { key: 'office.address_en', value: '9 Street, Maadi' },
+          { key: 'office.address_ar', value: 'شارع ٩، المعادي' },
+          { key: 'office.social_links', value: [{ label: 'Facebook', url: 'https://example.invalid/o' }] },
+        ],
+      });
+
+      const english = JSON.parse((await request({ method: 'GET', url: '/v1/navigation?locale=en' })).body);
+      expect(english.office).toEqual({
+        telephone: '+20 2 1234 5678',
+        address: '9 Street, Maadi',
+        socialLinks: [{ label: 'Facebook', url: 'https://example.invalid/o' }],
+      });
+      // The fields nobody set are absent rather than null, so a renderer never decides what empty means.
+      expect(english.office).not.toHaveProperty('email');
+      expect(english.office).not.toHaveProperty('hours');
+
+      // The language picks between two stored values and never translates one: an address is a thing a
+      // courier reads, and a machine translation of one is a wrong address.
+      const arabic = JSON.parse((await request({ method: 'GET', url: '/v1/navigation?locale=ar' })).body);
+      expect(arabic.office.address).toBe('شارع ٩، المعادي');
+    });
+
+    it('lose one unreadable social link rather than the whole chrome', async () => {
+      // The same rule a malformed menu item follows. These values are editable from the console, so a value
+      // that does not parse is a thing that can happen, and the footer is on every page of the site.
+      await createApp({
+        officeRows: [
+          { key: 'office.telephone', value: '+20 2 1234 5678' },
+          { key: 'office.social_links', value: [{ label: 'Good', url: 'https://example.invalid/o' }, { nope: 1 }] },
+        ],
+      });
+      const body = JSON.parse((await request({ method: 'GET', url: '/v1/navigation' })).body);
+      expect(body.office.socialLinks).toEqual([{ label: 'Good', url: 'https://example.invalid/o' }]);
+      expect(body.office.telephone).toBe('+20 2 1234 5678');
+    });
+
+    it('never carry a value of the wrong shape, whatever the column holds', async () => {
+      // A string setting holding a number, and a list setting holding a string. Both are impossible through
+      // the writer and through 0008's constraint; neither may reach a browser if one ever happened.
+      await createApp({
+        officeRows: [
+          { key: 'office.telephone', value: 42 },
+          { key: 'office.social_links', value: 'not-a-list' },
+        ],
+      });
+      const body = JSON.parse((await request({ method: 'GET', url: '/v1/navigation' })).body);
+      expect(body).not.toHaveProperty('office');
+    });
   });
 });
 
