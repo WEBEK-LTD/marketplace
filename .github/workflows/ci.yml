@@ -34,7 +34,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -88,7 +88,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job policy --output "$RUNNER_TEMP/artifacts/tool-versions-policy.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: policy
           path: ${{ runner.temp }}/artifacts/
@@ -103,7 +103,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -129,7 +129,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job security --output "$RUNNER_TEMP/artifacts/tool-versions-security.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: security
           path: ${{ runner.temp }}/artifacts/
@@ -144,7 +144,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -186,7 +186,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job lint-typecheck --output "$RUNNER_TEMP/artifacts/tool-versions-lint-typecheck.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lint-typecheck
           path: ${{ runner.temp }}/artifacts/
@@ -201,7 +201,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -273,7 +273,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job build-test --output "$RUNNER_TEMP/artifacts/tool-versions-build-test.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: build-test
           path: ${{ runner.temp }}/artifacts/
@@ -292,7 +292,7 @@ jobs:
         app: [web]
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -340,7 +340,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job tool1-${{ matrix.app }} --output "$RUNNER_TEMP/artifacts/tool-versions-tool1-${{ matrix.app }}.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tool1-${{ matrix.app }}
           path: ${{ runner.temp }}/artifacts/
@@ -355,7 +355,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -485,7 +485,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job supabase-local --output "$RUNNER_TEMP/artifacts/tool-versions-supabase-local.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: supabase-local
           path: ${{ runner.temp }}/artifacts/
@@ -500,7 +500,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -554,7 +554,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job e2e --output "$RUNNER_TEMP/artifacts/tool-versions-e2e.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e
           path: ${{ runner.temp }}/artifacts/
@@ -572,7 +572,7 @@ jobs:
       contents: read
     steps:
       - name: Set up Node.js 24.21.0 (official setup-node)
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.21.0
       - name: Verify Node.js version (I2)
@@ -612,7 +612,7 @@ jobs:
         run: node scripts/ci/checks.mjs tool-versions --job b10-hosted --output "$RUNNER_TEMP/artifacts/tool-versions-b10-hosted.json"
       - name: Upload sanitised artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: b10-hosted
           path: ${{ runner.temp }}/artifacts/
